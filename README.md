@@ -1,13 +1,15 @@
-# 🤖 AI Stock Trading Bot
+# 🤖 AI Trading Bot - Stocks, Crypto & NFTs
 
-A sophisticated multi-strategy AI-powered stock trading bot with real-time portfolio management, risk control, and beautiful web dashboard.
+A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptocurrencies, and NFTs** with professional account management, payment processing, and portfolio management.
 
 ## Features
 
 ### 🎯 Multiple AI Strategies
-- **Technical Analysis Bot**: Uses RSI, MACD, Bollinger Bands, and Moving Averages
-- **Momentum Bot**: Analyzes price momentum and volume changes
-- **Consensus Algorithm**: Aggregates signals from multiple bots for better accuracy
+- **Technical Analysis Bot**: RSI, MACD, Bollinger Bands, Moving Averages (Stocks)
+- **Momentum Bot**: Price momentum and volume analysis (Stocks)
+- **Crypto Bot**: 24-hour volatility, RSI, volume trends (Crypto)
+- **NFT Bot**: Floor price trends, rarity, holder distribution (NFTs)
+- **Consensus Algorithm**: Aggregates signals from multiple bots for accuracy
 
 ### 💼 Portfolio Management
 - Real-time portfolio tracking
@@ -30,6 +32,34 @@ A sophisticated multi-strategy AI-powered stock trading bot with real-time portf
 - Trade history
 - Risk metrics
 - WebSocket updates for real-time data
+
+### 💰 Account Management
+- Secure user registration and authentication
+- Session-based login system
+- Multi-asset portfolio tracking
+- API key generation for programmatic access
+
+### 💳 Fast Payment Processing
+- **Multiple deposit methods**: Credit card, bank transfer, crypto, PayPal
+- **Multiple withdrawal methods**: Bank transfer, crypto wallet, card
+- **Instant processing** for card/PayPal deposits (1-2 minutes)
+- **Fast crypto transfers** (5-30 minutes)
+- **Secure wallet management** for crypto withdrawals
+- **Transparent fee structure** - clearly shown before transactions
+- **Transaction history** with detailed records
+
+### 🏪 Multi-Asset Trading
+- **Stocks**: S&P 500 companies
+- **Cryptocurrencies**: Bitcoin, Ethereum, Cardano, Solana, Ripple
+- **NFTs**: Trending collections from OpenSea
+- Unified portfolio across all asset classes
+
+### 🔐 Security Features
+- Password hashing for account protection
+- Session tokens with expiration
+- Wallet address verification
+- Transaction verification for large withdrawals
+- Optional two-factor authentication support
 
 ### 📊 Paper Trading
 - Test strategies with virtual money before live trading
@@ -73,16 +103,26 @@ Get a free API key from [Alpha Vantage](https://www.alphavantage.co/api/)
 
 ## Usage
 
-### Start Web Dashboard & Server
+### Start Complete API Server (Recommended)
 ```bash
-npm run server
+node src/api-server.js
 ```
 Access the dashboard at: `http://localhost:3000`
+- Full account management
+- Payment processing
+- Stocks, crypto, and NFT trading
+- WebSocket real-time updates
 
-### Run CLI Trading Bot
+### Run CLI Trading Bot (Stocks Only)
 ```bash
 npm start
 ```
+
+### Start Web Dashboard & Server (Legacy)
+```bash
+npm run server
+```
+Access dashboard at: `http://localhost:3000`
 
 ### Run with Development Mode
 ```bash
@@ -95,13 +135,16 @@ npm run dev
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ALPHA_VANTAGE_API_KEY` | demo | Your Alpha Vantage API key |
+| `ALPHA_VANTAGE_API_KEY` | demo | Stock data API key from Alpha Vantage |
+| `OPENSEA_API_KEY` | (optional) | OpenSea API key for NFT data |
 | `INITIAL_CAPITAL` | 10000 | Starting portfolio value |
 | `MAX_POSITION_SIZE` | 0.2 | Max % of portfolio per position (0-1) |
 | `MAX_LOSS_PERCENT` | 2 | Stop loss threshold (%) |
 | `MIN_GAIN_PERCENT` | 1.5 | Take profit threshold (%) |
 | `TRADING_ENABLED` | false | Enable actual trading |
-| `STOCKS` | AAPL,MSFT,GOOGL | Comma-separated stock symbols |
+| `STOCKS` | AAPL,MSFT,GOOGL | Stock symbols to trade |
+| `PORT` | 3000 | API server port |
+| `NODE_ENV` | development | Environment mode |
 
 ## How It Works
 
@@ -153,13 +196,45 @@ npm run dev
 
 ## API Endpoints
 
+### Authentication
 ```
-GET  /api/portfolio          - Get portfolio metrics
-GET  /api/analysis           - Get stock analysis results
-GET  /api/positions          - Get open positions
-GET  /api/trades             - Get trade history
-GET  /api/trading/status     - Get trading status
-POST /api/trading/toggle     - Start/stop trading
+POST /api/auth/register              - Create new account
+POST /api/auth/login                 - Login and get session
+POST /api/auth/logout                - Logout (requires session)
+```
+
+### Account Management
+```
+GET  /api/account/profile            - Get user profile (requires session)
+GET  /api/account/balance            - Get USD balance (requires session)
+GET  /api/account/portfolio-value    - Total portfolio value (requires session)
+GET  /api/account/wallets            - List saved wallets (requires session)
+POST /api/account/wallets            - Add new wallet (requires session)
+```
+
+### Payments & Deposits
+```
+POST /api/payments/deposit           - Create deposit request (requires session)
+POST /api/payments/withdraw          - Create withdrawal request (requires session)
+GET  /api/payments/history           - Get transaction history (requires session)
+```
+
+### Market Data
+```
+GET  /api/crypto/prices              - Get current crypto prices
+GET  /api/crypto/top                 - Get top 10 cryptocurrencies
+GET  /api/crypto/:id                 - Get crypto detailed data
+GET  /api/nft/trending               - Get trending NFT collections
+GET  /api/nft/collection/:slug       - Get NFT collection data
+```
+
+### Trading
+```
+GET  /api/portfolio                  - Get portfolio metrics (requires session)
+GET  /api/analysis                   - Get asset analysis results
+GET  /api/trades                     - Get trade history (requires session)
+GET  /api/trading/status             - Get trading bot status
+POST /api/trading/toggle             - Start/stop trading (requires session)
 ```
 
 ## Important Disclaimers ⚠️
@@ -209,6 +284,59 @@ Edit `src/core/RiskManager.js` to adjust:
 - Stop loss thresholds
 - Take profit levels
 - Portfolio risk limits
+
+## Payment Methods & Fees
+
+### Deposit Methods
+| Method | Fee | Time | Minimum |
+|--------|-----|------|---------|
+| Credit/Debit Card | 2.5% | Instant | $50 |
+| Bank Transfer | Free | 1-3 days | $100 |
+| Crypto Wallet | 0.1% | 5-30 min | 0.001 BTC equiv |
+| PayPal | 2.2% | Instant | $25 |
+
+### Withdrawal Methods
+| Method | Fee | Time | Minimum |
+|--------|-----|------|---------|
+| Bank Account | $5 | 1-3 days | $100 |
+| Credit/Debit Card | 3% | Instant | $50 |
+| Crypto Wallet | 0.2% | 5-30 min | varies |
+| SWIFT Transfer | $15 | 24-48 hrs | $500 |
+
+## Dashboard Features
+
+### Login/Registration
+- Create new trading account
+- Secure login system
+- Session-based authentication
+- API key generation
+
+### Account Management
+- View profile information
+- Manage multiple wallets
+- Add crypto and bank wallets
+- View account balance
+
+### Trading Dashboard
+- Real-time market data
+- Multi-asset portfolio view
+- Trade signals and confidence levels
+- Open positions with P&L
+- Trading statistics
+
+## Supported Assets
+
+### Stocks (Real-time)
+- All S&P 500 stocks
+- Configurable via `STOCKS` env variable
+
+### Cryptocurrencies
+- Bitcoin, Ethereum, Cardano, Solana, Ripple
+- 1000+ more via CoinGecko API
+
+### NFTs
+- Pudgy Penguins, Bored Ape Yacht Club, Azuki, and more
+- 10,000+ collections via OpenSea
 
 ## Troubleshooting
 
