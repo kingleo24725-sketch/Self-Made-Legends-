@@ -2,6 +2,12 @@
 
 **The All-in-One AI Trading Platform for Stocks, Crypto & NFTs**
 
+**⚠️ REAL MONEY TRADING PLATFORM**
+- Uses **REAL brokers and exchanges**
+- **REAL funds at risk** - Potential losses
+- **REAL profits** - Keep what you earn
+- **100% transparent** - All trades are real
+
 A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptocurrencies, and NFTs** with professional account management, payment processing, and portfolio management.
 
 ## 🎯 Start Small, Grow Big
@@ -10,6 +16,18 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - **Withdraw $1, $100, $500** - No withdrawal limits
 - **Scale at your pace** - Trade any amount you want
 - **Zero barriers to entry** - Built for everyone
+- **All REAL money** - Connected to real exchanges
+
+## ⚠️ RISK WARNING
+
+**This is a real money trading bot. You can lose money.**
+- Past performance ≠ future results
+- Markets are unpredictable
+- AI strategies can fail
+- Black swan events happen
+- Only invest what you can afford to lose
+
+**See [REAL_MONEY_SETUP.md](REAL_MONEY_SETUP.md) for full disclaimers and setup instructions.**
 
 ## Features
 
@@ -48,7 +66,8 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - Multi-asset portfolio tracking
 - API key generation for programmatic access
 
-### 💳 Fast Payment Processing
+### 💳 Real Money Payment Processing
+- **REAL MONEY** connected to Stripe, Plaid, Binance, Kraken
 - **Multiple deposit methods**: Credit card, bank transfer, crypto, PayPal
 - **Multiple withdrawal methods**: Bank transfer, crypto wallet, card
 - **Instant processing** for card/PayPal deposits (1-2 minutes)
@@ -56,12 +75,16 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - **Secure wallet management** for crypto withdrawals
 - **Transparent fee structure** - clearly shown before transactions
 - **Transaction history** with detailed records
+- **Micro-deposits** for bank verification
+- **Real-time balance updates**
 
-### 🏪 Multi-Asset Trading
-- **Stocks**: S&P 500 companies
-- **Cryptocurrencies**: Bitcoin, Ethereum, Cardano, Solana, Ripple
-- **NFTs**: Trending collections from OpenSea
-- Unified portfolio across all asset classes
+### 🏪 Real Money Multi-Asset Trading
+- **Stocks**: Real trading via Alpaca (500+ stocks)
+- **Cryptocurrencies**: Real trading via Binance/Kraken (1000+ coins)
+- **NFTs**: Real marketplace integration via OpenSea
+- **Real positions**: All trades are actual broker orders
+- **Unified portfolio** across all asset classes
+- **Real gains/losses** - Keep profits, own losses
 
 ### 🔐 Security Features
 - Password hashing for account protection
@@ -70,9 +93,12 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - Transaction verification for large withdrawals
 - Optional two-factor authentication support
 
-### 📊 Paper Trading
-- Test strategies with virtual money before live trading
-- No real capital at risk during development and testing
+### 📊 Paper Trading (Optional Testing)
+- Test strategies with virtual money before real trading
+- Use Alpaca paper trading API for risk-free testing
+- No real capital at risk during testing
+- Highly recommended before using real money
+- **We recommend 2 weeks of paper trading first**
 
 ## Installation
 
@@ -80,7 +106,7 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - Node.js 14+
 - npm or yarn
 
-### Setup
+### Setup - REAL MONEY Edition
 
 1. **Clone the repository**
 ```bash
@@ -97,19 +123,38 @@ npm install
 cp .env.example .env
 ```
 
-4. **Edit .env file with your settings**
+4. **Get API Keys (FREE)** - See [REAL_MONEY_SETUP.md](REAL_MONEY_SETUP.md)
+   - **Alpaca**: Stock trading (paper or real) - [alpaca.markets](https://alpaca.markets)
+   - **Stripe**: Card payments - [stripe.com](https://stripe.com)
+   - **Binance/Kraken**: Crypto trading - [binance.com](https://binance.com) or [kraken.com](https://kraken.com)
+   - **Plaid**: Bank connections - [plaid.com](https://plaid.com)
+
+5. **Edit .env file with API keys**
 ```
-ALPHA_VANTAGE_API_KEY=your_free_api_key
-# Start with $1, $10, $100, $1000 - ANY amount!
+# Stock Trading - REAL BROKER
+ALPACA_API_KEY=your_alpaca_key
+ALPACA_API_SECRET=your_alpaca_secret
+ALPACA_BASE_URL=https://paper-api.alpaca.markets  # Start with PAPER!
+
+# Crypto Trading - REAL EXCHANGE
+CRYPTO_EXCHANGE=binance
+CRYPTO_API_KEY=your_binance_key
+CRYPTO_API_SECRET=your_binance_secret
+
+# Card Payments - REAL PROCESSOR
+STRIPE_API_KEY=your_stripe_key
+STRIPE_SECRET_KEY=your_stripe_secret
+
+# Bank Connections
+PLAID_CLIENT_ID=your_plaid_client_id
+PLAID_SECRET=your_plaid_secret
+
+# Settings
 INITIAL_CAPITAL=1
-MAX_POSITION_SIZE=0.2
-MAX_LOSS_PERCENT=2
-MIN_GAIN_PERCENT=1.5
-TRADING_ENABLED=false
-STOCKS=AAPL,MSFT,GOOGL,AMZN,TSLA
+TRADING_ENABLED=false  # Start with FALSE, enable later
 ```
 
-Get a free API key from [Alpha Vantage](https://www.alphavantage.co/api/)
+**⚠️ NEVER commit `.env` to git - contains real API keys!**
 
 ## Usage
 
@@ -247,21 +292,31 @@ GET  /api/trading/status             - Get trading bot status
 POST /api/trading/toggle             - Start/stop trading (requires session)
 ```
 
-## Important Disclaimers ⚠️
+## ⚠️ REAL MONEY TRADING DISCLAIMER
 
-### This Bot Is For Learning & Development
-- **No Guaranteed Returns**: Past performance does not guarantee future results
-- **Market Risk**: All investments carry risk of loss
-- **Test First**: Always test with paper trading before live trading
-- **Supervision**: Monitor the bot regularly for unexpected behavior
-- **No Warranty**: Use at your own risk - we are not responsible for losses
+### This Bot Uses REAL Money
+- **REAL RISK**: You can lose your entire investment
+- **NO GUARANTEED RETURNS**: Past performance ≠ future results
+- **MARKET RISK**: All investments carry risk of loss
+- **YOUR RESPONSIBILITY**: You own all gains and losses
+- **NO WARRANTY**: We are not responsible for your losses
 
-### Limitations
-- Relies on API data availability (Alpha Vantage has free tier limits)
-- Market conditions can change rapidly
-- Black swan events can cause unexpected losses
-- Trading costs and taxes not included in calculations
-- Slippage and execution delays not modeled
+### Before Using Real Money
+1. **Read [REAL_MONEY_SETUP.md](REAL_MONEY_SETUP.md)** - Complete setup guide
+2. **Start with $1** - Test with minimal amount first
+3. **Use paper trading** - Practice for 2 weeks before real money
+4. **Monitor daily** - Don't set and forget
+5. **Only risk what you can lose** - No emergency funds
+6. **Understand the risks** - Markets can be unpredictable
+
+### Limitations & Risks
+- API downtime can cause delayed execution
+- Market conditions change rapidly
+- Black swan events can cause sudden 50%+ losses
+- Trading fees and taxes not included
+- Slippage and execution delays exist
+- Bot can malfunction or make bad trades
+- No profit guarantee - losses are possible
 
 ### Best Practices
 1. Start with paper trading only
