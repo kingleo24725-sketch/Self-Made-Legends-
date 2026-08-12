@@ -1,6 +1,15 @@
-# 🤖 AI Trading Bot - Stocks, Crypto & NFTs
+# 💎 SELF MADE LEGENDS - AI Trading Bot
+
+**The All-in-One AI Trading Platform for Stocks, Crypto & NFTs**
 
 A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptocurrencies, and NFTs** with professional account management, payment processing, and portfolio management.
+
+## 🎯 Start Small, Grow Big
+
+- **Start with $1** - No minimum deposit required
+- **Withdraw $1, $100, $500** - No withdrawal limits
+- **Scale at your pace** - Trade any amount you want
+- **Zero barriers to entry** - Built for everyone
 
 ## Features
 
@@ -91,7 +100,8 @@ cp .env.example .env
 4. **Edit .env file with your settings**
 ```
 ALPHA_VANTAGE_API_KEY=your_free_api_key
-INITIAL_CAPITAL=10000
+# Start with $1, $10, $100, $1000 - ANY amount!
+INITIAL_CAPITAL=1
 MAX_POSITION_SIZE=0.2
 MAX_LOSS_PERCENT=2
 MIN_GAIN_PERCENT=1.5
@@ -137,7 +147,7 @@ npm run dev
 |----------|---------|-------------|
 | `ALPHA_VANTAGE_API_KEY` | demo | Stock data API key from Alpha Vantage |
 | `OPENSEA_API_KEY` | (optional) | OpenSea API key for NFT data |
-| `INITIAL_CAPITAL` | 10000 | Starting portfolio value |
+| `INITIAL_CAPITAL` | **1** | Starting portfolio value - **Any amount from $1!** |
 | `MAX_POSITION_SIZE` | 0.2 | Max % of portfolio per position (0-1) |
 | `MAX_LOSS_PERCENT` | 2 | Stop loss threshold (%) |
 | `MIN_GAIN_PERCENT` | 1.5 | Take profit threshold (%) |
@@ -290,18 +300,20 @@ Edit `src/core/RiskManager.js` to adjust:
 ### Deposit Methods
 | Method | Fee | Time | Minimum |
 |--------|-----|------|---------|
-| Credit/Debit Card | 2.5% | Instant | $50 |
-| Bank Transfer | Free | 1-3 days | $100 |
-| Crypto Wallet | 0.1% | 5-30 min | 0.001 BTC equiv |
-| PayPal | 2.2% | Instant | $25 |
+| 💳 Credit/Debit Card | 2.5% | ⚡ Instant | **$0.01** |
+| 🏦 Bank Transfer | Free | 1-3 days | **$0.01** |
+| ₿ Crypto Wallet | 0.1% | 5-30 min | **$0.01** |
+| 📱 PayPal | 2.2% | ⚡ Instant | **$0.01** |
 
 ### Withdrawal Methods
 | Method | Fee | Time | Minimum |
 |--------|-----|------|---------|
-| Bank Account | $5 | 1-3 days | $100 |
-| Credit/Debit Card | 3% | Instant | $50 |
-| Crypto Wallet | 0.2% | 5-30 min | varies |
-| SWIFT Transfer | $15 | 24-48 hrs | $500 |
+| 🏦 Bank Account | $5 | 1-3 days | **$0.01** |
+| 💳 Credit/Debit Card | 3% | ⚡ Instant | **$0.01** |
+| ₿ Crypto Wallet | 0.2% | 5-30 min | **$0.01** |
+| 🌍 SWIFT Transfer | $15 | 24-48 hrs | **$0.01** |
+
+**🎉 Start with $1 - Withdraw $1, $100, $500 - NO LIMITS!**
 
 ## Dashboard Features
 

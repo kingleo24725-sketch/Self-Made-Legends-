@@ -25,7 +25,7 @@ class AccountManager {
       status: "active",
       verified: false,
       balances: {
-        usd: 0,
+        usd: 1,
         crypto: {},
         nft: {},
       },

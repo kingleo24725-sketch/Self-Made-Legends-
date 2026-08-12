@@ -7,6 +7,13 @@ class PaymentProcessor {
   }
 
   createDeposit(userId, amount, currency, method) {
+    if (!amount || amount < 0.01) {
+      return {
+        success: false,
+        error: "Minimum deposit is $0.01",
+      };
+    }
+
     const depositId = crypto.randomBytes(16).toString("hex");
     const fee = this.calculateFee(amount, method, "deposit");
 
@@ -39,15 +46,15 @@ class PaymentProcessor {
   }
 
   createWithdrawal(userId, amount, currency, method, destination) {
-    const withdrawalId = crypto.randomBytes(16).toString("hex");
-    const fee = this.calculateFee(amount, method, "withdrawal");
-
-    if (amount < this.getMinimumWithdrawal(method)) {
+    if (!amount || amount < 0.01) {
       return {
         success: false,
-        error: `Minimum withdrawal for ${method} is $${this.getMinimumWithdrawal(method)}`,
+        error: "Minimum withdrawal is $0.01",
       };
     }
+
+    const withdrawalId = crypto.randomBytes(16).toString("hex");
+    const fee = this.calculateFee(amount, method, "withdrawal");
 
     const withdrawal = {
       id: withdrawalId,
@@ -142,14 +149,14 @@ class PaymentProcessor {
 
   getMinimumWithdrawal(method) {
     const minimums = {
-      bank: 100,
-      card: 50,
-      crypto: 0.001,
-      paypal: 25,
-      swift: 500,
+      bank: 1,
+      card: 1,
+      crypto: 0.00001,
+      paypal: 1,
+      swift: 1,
     };
 
-    return minimums[method] || 50;
+    return minimums[method] || 1;
   }
 
   getEstimatedTime(method) {

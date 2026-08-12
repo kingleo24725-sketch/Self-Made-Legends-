@@ -26,7 +26,7 @@ app.use(express.static("public"));
 
 const accountManager = new AccountManager();
 const paymentProcessor = new PaymentProcessor();
-const portfolio = new Portfolio(parseInt(process.env.INITIAL_CAPITAL) || 10000);
+const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
   maxLossPercent: parseFloat(process.env.MAX_LOSS_PERCENT) || 2,
