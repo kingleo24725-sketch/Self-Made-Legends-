@@ -18,6 +18,9 @@ const CreatorEarningsProcessor = require("./payments/CreatorEarningsProcessor");
 const UniversalCardProcessor = require("./payments/UniversalCardProcessor");
 const ReferralSystem = require("./social/ReferralSystem");
 const SocialNetwork = require("./social/SocialNetwork");
+const ReferralBonusPool = require("./social/ReferralBonusPool");
+const AIImprovementEngine = require("./ai/AIImprovementEngine");
+const ContinuousUpdateEngine = require("./updates/ContinuousUpdateEngine");
 
 const app = express();
 const server = http.createServer(app);
@@ -39,6 +42,9 @@ const creatorEarnings = new CreatorEarningsProcessor(
 );
 const referralSystem = new ReferralSystem();
 const socialNetwork = new SocialNetwork();
+const referralBonusPool = new ReferralBonusPool();
+const aiEngine = new AIImprovementEngine();
+const updateEngine = new ContinuousUpdateEngine();
 const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
@@ -367,8 +373,12 @@ app.post("/api/cards/deposit", authenticateUser, (req, res) => {
     );
     creatorEarnings.completeEarning(earning.id);
 
-    // Process any pending referral bonuses
-    referralSystem.completedDeposit(req.user.userId, amount);
+    // Process any pending referral bonuses from dedicated bonus pool
+    const referralResult = referralSystem.completedDeposit(req.user.userId, amount);
+    if (referralResult.success) {
+      // Award from separate referral bonus pool (NOT from creator earnings)
+      referralBonusPool.awardBonus(req.user.userId, 20);
+    }
   }
 
   res.json(result);
@@ -452,6 +462,31 @@ app.get("/api/referrals/leaderboard", (req, res) => {
 app.get("/api/referrals/track/:code", (req, res) => {
   const tracked = referralSystem.trackReferralClick(req.params.code);
   res.json({ tracked });
+});
+
+// ===== REFERRAL BONUS POOL ENDPOINTS =====
+
+app.get("/api/referrals/bonus-pool/status", (req, res) => {
+  const status = referralBonusPool.getPoolStatus();
+  res.json({
+    ...status,
+    note: "Referral bonuses come from dedicated pool, NOT creator earnings",
+  });
+});
+
+app.post("/api/referrals/bonus-pool/fund", (req, res) => {
+  const { amount, source } = req.body;
+  if (!amount || amount <= 0) {
+    return res.status(400).json({ error: "Invalid amount" });
+  }
+
+  const result = referralBonusPool.fundBonusPool(amount, source || "platform_allocation");
+  res.json(result);
+});
+
+app.get("/api/referrals/bonus-pool/verification", (req, res) => {
+  const verification = referralBonusPool.verifySeparation();
+  res.json(verification);
 });
 
 // ===== SOCIAL ENDPOINTS - FRIENDS =====
@@ -600,6 +635,110 @@ app.post("/api/social/unblock", authenticateUser, (req, res) => {
 app.get("/api/social/feed", authenticateUser, (req, res) => {
   const feed = socialNetwork.getActivityFeed(req.user.userId);
   res.json({ feed, totalItems: feed.length });
+});
+
+// ===== AI IMPROVEMENT & CONTINUOUS UPDATE ENDPOINTS =====
+
+app.get("/api/ai/performance", (req, res) => {
+  const metrics = aiEngine.getPerformanceMetrics();
+  res.json(metrics);
+});
+
+app.get("/api/ai/accuracy", (req, res) => {
+  const accuracy = aiEngine.calculateModelAccuracy();
+  res.json({ accuracy: `${accuracy.toFixed(2)}%` });
+});
+
+app.get("/api/ai/improvements", (req, res) => {
+  const timeline = aiEngine.getImprovementTimeline(20);
+  res.json({ improvements: timeline, total: timeline.length });
+});
+
+app.post("/api/ai/improvements/record", (req, res) => {
+  const { category, description, metrics } = req.body;
+  if (!category || !description) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const result = aiEngine.recordImprovement({ category, description, metrics });
+  res.json(result);
+});
+
+app.get("/api/ai/improvements-needed", (req, res) => {
+  const areas = aiEngine.getImprovedAreasNeeded();
+  res.json(areas);
+});
+
+app.get("/api/ai/update-plan", (req, res) => {
+  const plan = aiEngine.getContinuousUpdatePlan();
+  res.json(plan);
+});
+
+app.get("/api/ai/learning-stats", (req, res) => {
+  const stats = aiEngine.getLearningStatistics();
+  res.json(stats);
+});
+
+app.post("/api/ai/feedback", authenticateUser, (req, res) => {
+  const { feedback, category } = req.body;
+  if (!feedback || !category) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const result = aiEngine.integrateUserFeedback({
+    userId: req.user.userId,
+    feedback,
+    category,
+  });
+  res.json(result);
+});
+
+// ===== CONTINUOUS UPDATE ENDPOINTS =====
+
+app.get("/api/updates/current-version", (req, res) => {
+  const version = updateEngine.getCurrentVersionInfo();
+  res.json(version);
+});
+
+app.get("/api/updates/history", (req, res) => {
+  const limit = parseInt(req.query.limit) || 20;
+  const history = updateEngine.getReleaseHistory(limit);
+  res.json({ updates: history, total: history.length });
+});
+
+app.get("/api/updates/roadmap", (req, res) => {
+  const roadmap = updateEngine.getRoadmap();
+  res.json(roadmap);
+});
+
+app.get("/api/updates/upcoming", (req, res) => {
+  const upcoming = updateEngine.getUpcomingUpdates();
+  res.json(upcoming);
+});
+
+app.get("/api/updates/queue", (req, res) => {
+  const queue = updateEngine.getUpdateQueue();
+  res.json(queue);
+});
+
+app.post("/api/updates/queue", (req, res) => {
+  const { title, description, category, priority } = req.body;
+  if (!title || !description || !category) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const result = updateEngine.queueUpdate({
+    title,
+    description,
+    category,
+    priority,
+  });
+  res.json(result);
+});
+
+app.get("/api/updates/metrics", (req, res) => {
+  const metrics = updateEngine.getDeploymentMetrics();
+  res.json(metrics);
 });
 
 app.get("/api/creator/earnings/:period", (req, res) => {

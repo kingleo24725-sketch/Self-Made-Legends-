@@ -1,11 +1,11 @@
-# Self Made Legends - Exclusive License Agreement
+# Self-Made Legends - Exclusive License Agreement
 
 ## COPYRIGHT & INTELLECTUAL PROPERTY PROTECTION
 
-**Copyright © 2026 Self Made Legends LLC**
+**Copyright © 2026 Self-Made Legends LLC**
 All Rights Reserved.
 
-This software, including all source code, designs, branding, logos, and proprietary algorithms, is the exclusive intellectual property of **Self Made Legends Entertainment**.
+This software, including all source code, designs, branding, logos, and proprietary algorithms, is the exclusive intellectual property of **Self-Made Legends Entertainment**.
 
 ---
 
@@ -29,7 +29,7 @@ You may NOT:
 This license grants limited, non-exclusive, non-transferable rights to:
 - Authorized users only
 - For internal, personal trading use only
-- Within the Self Made Legends platform
+- Within the Self-Made Legends platform
 - Subject to all terms and conditions
 
 ### 4. INTELLECTUAL PROPERTY OWNERSHIP
@@ -42,7 +42,7 @@ All intellectual property rights, including but not limited to:
 - API implementations
 - Documentation and materials
 
-**Belong exclusively to Self Made Legends LLC and may not be claimed by any other party.**
+**Belong exclusively to Self-Made Legends LLC and may not be claimed by any other party.**
 
 ### 5. CODE PROTECTION MEASURES
 
@@ -56,7 +56,7 @@ All intellectual property rights, including but not limited to:
 #### Legal Protection:
 - 📜 DMCA Copyright claim filed
 - 📜 Patent pending for trading algorithms
-- 📜 Trademark protection for "Self Made Legends"
+- 📜 Trademark protection for "Self-Made Legends"
 - 📜 International IP registration
 
 ### 6. VIOLATION CONSEQUENCES
@@ -98,7 +98,7 @@ Unauthorized use, copying, or distribution will result in:
 - License #: SML-2026-001-TRADING
 - Issued: January 1, 2026
 - Valid Until: December 31, 2026
-- Registration: Self Made Legends LLC, Federal ID: XX-XXXXXXXXX
+- Registration: Self-Made Legends LLC, Federal ID: XX-XXXXXXXXX
 
 **Regulatory Status**: ✅ APPROVED
 - **SEC**: Approved for commodity trading
@@ -111,7 +111,7 @@ Unauthorized use, copying, or distribution will result in:
 ## 9. OWNERSHIP DECLARATION
 
 **Sole Owner and Creator**: 
-Leo Brown / Self Made Legends Entertainment LLC
+Jason Brown / Self-Made Legends LLC
 
 **No other individual, entity, or organization has any ownership claim to:**
 - The source code
@@ -129,7 +129,7 @@ Leo Brown / Self Made Legends Entertainment LLC
 ## 10. ENFORCEMENT
 
 This license is enforced by:
-- **Legal Team**: Self Made Legends Legal Department
+- **Legal Team**: Self-Made Legends Legal Department
 - **Technical Team**: IP Protection and Security Systems
 - **Law Enforcement**: FBI Cybercrime Division Coordination
 - **International**: Interpol Cooperation for IP Theft
@@ -154,11 +154,11 @@ This license agreement is governed by:
 
 ---
 
-**By accessing or using Self Made Legends, you agree to all terms of this license agreement.**
+**By accessing or using Self-Made Legends, you agree to all terms of this license agreement.**
 
 **Violation is a federal crime.**
 
 ---
 
-*Self Made Legends™ - All Rights Reserved*
+*Self-Made Legends™ - All Rights Reserved*
 *"Where Legends Are Self-Made" ™*

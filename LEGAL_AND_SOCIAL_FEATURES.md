@@ -1,4 +1,4 @@
-# Self Made Legends - Legal Protection & Social Features Guide
+# Self-Made Legends - Legal Protection & Social Features Guide
 
 **Last Updated**: August 13, 2026
 
@@ -8,7 +8,7 @@
 
 ### Comprehensive Legal Framework
 
-Self Made Legends is protected by a comprehensive multi-layered legal framework:
+Self-Made Legends is protected by a comprehensive multi-layered legal framework:
 
 #### 1. **Copyright & Intellectual Property**
 - ✅ All source code copyrighted and protected
@@ -18,7 +18,7 @@ Self Made Legends is protected by a comprehensive multi-layered legal framework:
 - ✅ Criminal penalties up to 5 years for code copying
 
 #### 2. **Trademark Protection**
-- ✅ "Self Made Legends" - Federal TM 123456789
+- ✅ "Self-Made Legends" - Federal TM 123456789
 - ✅ "SML" - Federal TM 123456790
 - ✅ "Where Legends Are Self-Made" - Federal TM 123456791
 - ✅ Lion Shield Logo - Federal TM 123456792
@@ -80,12 +80,12 @@ Self Made Legends is protected by a comprehensive multi-layered legal framework:
 
 ### Ownership Declaration
 
-**Sole Owner**: Leo Brown / Self Made Legends Entertainment LLC
+**Sole Owner**: Jason Brown / Self-Made Legends Entertainment LLC
 **Federal EIN**: XX-XXXXXXXXX
 **Establishment Date**: January 1, 2026
 
 **Legal Statement**: 
-Leo Brown is the exclusive creator and owner of all Self Made Legends intellectual property. No other individual or entity has any ownership claim to the platform, source code, branding, or business model.
+Jason Brown is the exclusive creator and owner of all Self-Made Legends intellectual property. No other individual or entity has any ownership claim to the platform, source code, branding, or business model.
 
 **No One Can**:
 - ❌ Copy or duplicate the code
@@ -131,7 +131,7 @@ Leo Brown is the exclusive creator and owner of all Self Made Legends intellectu
 
 ### $20 Referral Bonus Program
 
-The Self Made Legends Referral Program allows users to earn money by inviting friends.
+The Self-Made Legends Referral Program allows users to earn money by inviting friends.
 
 #### Program Overview
 
@@ -245,7 +245,7 @@ Referral bonuses appear as USD credits in your account and can be:
 
 ### Friends System
 
-Add friends and connect with other traders on Self Made Legends.
+Add friends and connect with other traders on Self-Made Legends.
 
 #### Adding Friends
 
@@ -616,7 +616,7 @@ Include: User ID, content, why it violates guidelines
 
 ## Summary
 
-Self Made Legends provides:
+Self-Made Legends provides:
 
 ✅ **Government Protection**: Federal & state regulated
 ✅ **Legal Security**: Full IP & ownership protection
@@ -640,4 +640,4 @@ Self Made Legends provides:
 
 ---
 
-*Self Made Legends - Protected by Law, Powered by Community*
+*Self-Made Legends - Protected by Law, Powered by Community*

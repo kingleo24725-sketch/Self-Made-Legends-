@@ -1,4 +1,4 @@
-# Self Made Legends - Compliance & Government Protection Documentation
+# Self-Made Legends - Compliance & Government Protection Documentation
 
 **Document Version**: 2.0
 **Last Updated**: August 13, 2026
@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-Self Made Legends operates as a fully-regulated, government-approved trading platform with comprehensive compliance frameworks across federal, state, and international jurisdictions.
+Self-Made Legends operates as a fully-regulated, government-approved trading platform with comprehensive compliance frameworks across federal, state, and international jurisdictions.
 
 **Regulatory Status**: ✅ FULLY COMPLIANT & APPROVED
 
@@ -38,7 +38,7 @@ Self Made Legends operates as a fully-regulated, government-approved trading pla
 **Status**: ✅ CERTIFIED & APPROVED
 
 #### Certifications:
-- **Member Firm**: Self Made Legends Trading LLC
+- **Member Firm**: Self-Made Legends Trading LLC
 - **Registration #**: 1234567
 - **Active Disciplinary Status**: CLEAN (No violations)
 
@@ -172,7 +172,7 @@ Money Transmitter Licenses Held:
 
 #### Federal Registrations:
 - **Copyright Registration #**: TXu 123-456-789-012
-- **Platform Software**: Copyright © 2026 Self Made Legends LLC
+- **Platform Software**: Copyright © 2026 Self-Made Legends LLC
 - **Source Code**: All rights reserved
 - **Documentation**: Protected under copyright law
 - **UI/UX Design**: Design patent pending
@@ -188,7 +188,7 @@ Money Transmitter Licenses Held:
 **Status**: ✅ REGISTERED & ENFORCED
 
 #### Trademark Registrations:
-- **"Self Made Legends"**: TM 123456789 (Federal)
+- **"Self-Made Legends"**: TM 123456789 (Federal)
 - **"SML"**: TM 123456790 (Federal)
 - **"Where Legends Are Self-Made"**: TM 123456791 (Federal)
 - **Lion Shield Logo**: TM 123456792 (Federal)
@@ -376,18 +376,18 @@ Money Transmitter Licenses Held:
 
 ### 9.1 Legal Ownership Statement
 
-**Sole Proprietor**: Leo Brown / Self Made Legends Entertainment LLC
+**Sole Proprietor**: Jason Brown / Self-Made Legends Entertainment LLC
 **Date of Establishment**: January 1, 2026
 **Federal EIN**: XX-XXXXXXXXX
 
 **Declaration of Ownership**:
 
-I, Leo Brown, declare that I am the exclusive creator, developer, and owner of the Self Made Legends platform, including all source code, algorithms, designs, branding, business models, and intellectual property. No other individual or entity has any ownership claim to this platform or its associated intellectual property.
+I, Jason Brown, declare that I am the exclusive creator, developer, and owner of the Self-Made Legends platform, including all source code, algorithms, designs, branding, business models, and intellectual property. No other individual or entity has any ownership claim to this platform or its associated intellectual property.
 
-All code is original and not copied from any other source. All designs are original and created specifically for Self Made Legends. All branding is unique and protected under trademark law.
+All code is original and not copied from any other source. All designs are original and created specifically for Self-Made Legends. All branding is unique and protected under trademark law.
 
 **No one can**:
-- Claim ownership of Self Made Legends
+- Claim ownership of Self-Made Legends
 - Copy the source code
 - Duplicate the platform
 - Claim authorship of the design
@@ -397,10 +397,10 @@ All code is original and not copied from any other source. All designs are origi
 **Violation of this declaration may result in civil and criminal prosecution.**
 
 ### 9.2 Copyright Ownership
-All copyright, patent, and intellectual property rights are held exclusively by Self Made Legends LLC (owned by Leo Brown).
+All copyright, patent, and intellectual property rights are held exclusively by Self-Made Legends LLC (owned by Jason Brown).
 
 ### 9.3 Non-Transferability
-Ownership of Self Made Legends cannot be transferred, sold, or assigned without express written consent of the owner. Any attempted transfer is null and void.
+Ownership of Self-Made Legends cannot be transferred, sold, or assigned without express written consent of the owner. Any attempted transfer is null and void.
 
 ---
 
@@ -476,7 +476,7 @@ Ownership of Self Made Legends cannot be transferred, sold, or assigned without 
 
 ## 13. CERTIFICATION & VALIDATION
 
-**This document certifies that Self Made Legends is**:
+**This document certifies that Self-Made Legends is**:
 
 ✅ Government-approved and regulated
 ✅ Fully compliant with federal laws
@@ -515,5 +515,5 @@ Ownership of Self Made Legends cannot be transferred, sold, or assigned without 
 
 ---
 
-*Self Made Legends - Government Protected, Fully Regulated, Legally Compliant*
+*Self-Made Legends - Government Protected, Fully Regulated, Legally Compliant*
 *"Where Legends Are Self-Made" - Protected by Law*
