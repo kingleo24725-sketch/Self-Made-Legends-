@@ -17,6 +17,9 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - **Scale at your pace** - Trade any amount you want
 - **Zero barriers to entry** - Built for everyone
 - **All REAL money** - Connected to real exchanges
+- **Creator Fee: $5** - Supports platform development (per transaction)
+- **All Card Types Supported** - Visa, Mastercard, Amex, Discover, etc.
+- **YOU Control Withdrawals** - AI works for you, you decide when to withdraw
 
 ## ⚠️ RISK WARNING
 
@@ -92,6 +95,25 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - Wallet address verification
 - Transaction verification for large withdrawals
 - Optional two-factor authentication support
+
+### 🎮 User Control (You're Always in Charge)
+- **YOU Control Withdrawals** - Not AI, always your decision
+- **YOU Enable/Disable AI** - Turn automation on/off anytime
+- **YOU Pause Trading** - Stop AI anytime you want
+- **YOU Resume Trading** - Restart whenever ready
+- **AI Background Growth** - Grows money while you're not watching
+- **Withdrawal Always Available** - Pull money out 24/7
+- **No AI Lock** - AI cannot hold or freeze your funds
+- **Real-time Control** - Change settings instantly
+
+**How It Works:**
+1. AI analyzes markets 24/7
+2. AI makes smart trading decisions
+3. While you sleep, AI grows your money
+4. You check dashboard anytime
+5. You decide to withdraw
+6. Click withdraw, money is yours
+7. AI never interferes with your withdrawals
 
 ### 📊 Paper Trading (Optional Testing)
 - Test strategies with virtual money before real trading
@@ -352,21 +374,51 @@ Edit `src/core/RiskManager.js` to adjust:
 
 ## Payment Methods & Fees
 
+### Supported Cards
+✅ **All Major Card Types Supported:**
+- Visa (2.5% fee)
+- Mastercard (2.5% fee)
+- American Express (3.5% fee)
+- Discover (2.5% fee)
+- Diners Club (3% fee)
+- JCB (3% fee)
+- UnionPay (2% fee)
+- MIR (2.5% fee)
+
+### Supported Banks
+✅ **50+ Banks Supported Including:**
+- Bank of America
+- Wells Fargo
+- Chase
+- Citibank
+- Capital One
+- Navy Federal
+- Ally
+- SoFi
+- Chime
+- And more!
+
 ### Deposit Methods
-| Method | Fee | Time | Minimum |
-|--------|-----|------|---------|
-| 💳 Credit/Debit Card | 2.5% | ⚡ Instant | **$0.01** |
-| 🏦 Bank Transfer | Free | 1-3 days | **$0.01** |
-| ₿ Crypto Wallet | 0.1% | 5-30 min | **$0.01** |
-| 📱 PayPal | 2.2% | ⚡ Instant | **$0.01** |
+| Method | Platform Fee | Creator Fee | Total | Time |
+|--------|----------|------|-------|------|
+| 💳 Card | 2.5% | $5 | ~7.5% | Instant |
+| 🏦 Bank | Free | $5 | $5 | 1-3 days |
+| ₿ Crypto | 0.1% | $5 | ~5% | 5-30 min |
+| 📱 PayPal | 2.2% | $5 | ~7% | Instant |
 
 ### Withdrawal Methods
-| Method | Fee | Time | Minimum |
-|--------|-----|------|---------|
-| 🏦 Bank Account | $5 | 1-3 days | **$0.01** |
-| 💳 Credit/Debit Card | 3% | ⚡ Instant | **$0.01** |
-| ₿ Crypto Wallet | 0.2% | 5-30 min | **$0.01** |
-| 🌍 SWIFT Transfer | $15 | 24-48 hrs | **$0.01** |
+| Method | Platform Fee | Creator Fee | Total | Time |
+|--------|----------|------|-------|------|
+| 🏦 Bank | $5 | $5 | $10 | 1-3 days |
+| 💳 Card | 3% | $5 | ~8% | Instant |
+| ₿ Crypto | 0.2% | $5 | ~5% | 5-30 min |
+
+**💡 Creator Fee ($5):**
+- Supports app development and maintenance
+- Supports customer service
+- Funds new features and improvements
+- One-time fee per transaction
+- Goes directly to creator (you support the platform!)
 
 **🎉 Start with $1 - Withdraw $1, $100, $500 - NO LIMITS!**
 
@@ -390,6 +442,37 @@ Edit `src/core/RiskManager.js` to adjust:
 - Trade signals and confidence levels
 - Open positions with P&L
 - Trading statistics
+
+## 💰 Creator Earnings Model
+
+**How Creator Makes Money:**
+- $5 per user deposit transaction
+- $5 per user withdrawal transaction
+- Supports continuous platform development
+- Funds new features and security updates
+
+**Example Earnings:**
+```
+Day 1: 100 users deposit
+  → $500 Creator Earnings
+  
+Day 2: 50 users withdraw
+  → $250 Creator Earnings
+  
+Week 1: 500 transactions
+  → $2,500 Creator Earnings
+  
+Month 1: 5,000 transactions
+  → $25,000 Creator Earnings
+```
+
+**What Creator Earnings Support:**
+- 24/7 server uptime
+- Security and compliance
+- New trading features
+- AI improvements
+- Customer support
+- Platform maintenance
 
 ## Supported Assets
 

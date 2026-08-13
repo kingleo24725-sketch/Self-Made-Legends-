@@ -8,11 +8,14 @@ const socketIo = require("socket.io");
 const Portfolio = require("./core/Portfolio");
 const RiskManager = require("./core/RiskManager");
 const MultiAssetTradingEngine = require("./core/MultiAssetTradingEngine");
+const UserControlCenter = require("./core/UserControlCenter");
 const DataFetcher = require("./data/DataFetcher");
 const CryptoDataFetcher = require("./data/CryptoDataFetcher");
 const NFTDataFetcher = require("./data/NFTDataFetcher");
 const AccountManager = require("./accounts/AccountManager");
 const PaymentProcessor = require("./payments/PaymentProcessor");
+const CreatorEarningsProcessor = require("./payments/CreatorEarningsProcessor");
+const UniversalCardProcessor = require("./payments/UniversalCardProcessor");
 
 const app = express();
 const server = http.createServer(app);
@@ -26,6 +29,12 @@ app.use(express.static("public"));
 
 const accountManager = new AccountManager();
 const paymentProcessor = new PaymentProcessor();
+const cardProcessor = new UniversalCardProcessor();
+const userControl = new UserControlCenter();
+const creatorEarnings = new CreatorEarningsProcessor(
+  "creator_self_made_legends",
+  { bankName: "Creator Bank Account" }
+);
 const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
@@ -241,6 +250,181 @@ app.post("/api/trading/toggle", authenticateUser, (req, res) => {
 
 app.get("/api/trading/status", (req, res) => {
   res.json({ tradingActive, stocks, cryptos, nfts });
+});
+
+// ===== USER CONTROL ENDPOINTS =====
+
+app.get("/api/control/status", authenticateUser, (req, res) => {
+  const status = userControl.getControlStatus(req.user.userId);
+  res.json(status);
+});
+
+app.post("/api/control/enable-ai", authenticateUser, (req, res) => {
+  const result = userControl.enableAI(req.user.userId);
+  res.json(result);
+});
+
+app.post("/api/control/disable-ai", authenticateUser, (req, res) => {
+  const result = userControl.disableAI(req.user.userId);
+  res.json(result);
+});
+
+app.post("/api/control/pause-trading", authenticateUser, (req, res) => {
+  const result = userControl.pauseTrading(req.user.userId);
+  res.json(result);
+});
+
+app.post("/api/control/resume-trading", authenticateUser, (req, res) => {
+  const result = userControl.resumeTrading(req.user.userId);
+  res.json(result);
+});
+
+app.get("/api/control/ai-status", authenticateUser, (req, res) => {
+  const status = userControl.getAIStatus(req.user.userId);
+  res.json(status);
+});
+
+// ===== USER WITHDRAWAL CONTROL =====
+
+app.post("/api/withdraw/request", authenticateUser, (req, res) => {
+  const { amount, destination } = req.body;
+
+  if (!amount || amount < 0.01) {
+    return res.status(400).json({ error: "Invalid amount" });
+  }
+
+  const account = accountManager.getAccountById(req.user.userId);
+  if (account.balances.usd < amount) {
+    return res.status(400).json({ error: "Insufficient balance" });
+  }
+
+  const result = userControl.requestWithdrawal(
+    req.user.userId,
+    amount,
+    destination
+  );
+
+  if (result.success) {
+    creatorEarnings.recordTransaction(
+      req.user.userId,
+      amount,
+      "withdrawal",
+      "card"
+    );
+  }
+
+  res.json(result);
+});
+
+app.get("/api/withdraw/pending", authenticateUser, (req, res) => {
+  const pending = userControl.getPendingWithdrawals(req.user.userId);
+  res.json({ pendingWithdrawals: pending });
+});
+
+app.get("/api/withdraw/history", authenticateUser, (req, res) => {
+  const history = userControl.getWithdrawalHistory(req.user.userId);
+  res.json({ withdrawalHistory: history });
+});
+
+// ===== CARD PROCESSING ENDPOINTS =====
+
+app.post("/api/cards/deposit", authenticateUser, (req, res) => {
+  const { amount, cardType, cardLast4, bankName } = req.body;
+
+  if (!amount || !cardType || !bankName) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const result = cardProcessor.processCardDeposit(
+    req.user.userId,
+    amount,
+    cardType,
+    cardLast4,
+    bankName
+  );
+
+  if (result.success) {
+    const earning = creatorEarnings.recordTransaction(
+      req.user.userId,
+      amount,
+      "deposit",
+      cardType
+    );
+    creatorEarnings.completeEarning(earning.id);
+  }
+
+  res.json(result);
+});
+
+app.post("/api/cards/withdraw", authenticateUser, (req, res) => {
+  const { amount, cardType, cardLast4, bankName } = req.body;
+
+  const account = accountManager.getAccountById(req.user.userId);
+  if (account.balances.usd < amount) {
+    return res.status(400).json({ error: "Insufficient balance" });
+  }
+
+  const result = cardProcessor.processCardWithdrawal(
+    req.user.userId,
+    amount,
+    cardType,
+    cardLast4,
+    bankName
+  );
+
+  if (result.success) {
+    const earning = creatorEarnings.recordTransaction(
+      req.user.userId,
+      amount,
+      "withdrawal",
+      cardType
+    );
+    creatorEarnings.completeEarning(earning.id);
+  }
+
+  res.json(result);
+});
+
+app.get("/api/cards/supported", (req, res) => {
+  const cards = cardProcessor.getSupportedCards();
+  const banks = cardProcessor.getSupportedBanks();
+  res.json({
+    supportedCards: cards,
+    supportedBanks: banks,
+    totalCards: cards.length,
+    totalBanks: banks.length,
+  });
+});
+
+// ===== CREATOR EARNINGS ENDPOINTS =====
+
+app.get("/api/creator/earnings", (req, res) => {
+  const stats = creatorEarnings.getEarningsStats();
+  res.json(stats);
+});
+
+app.get("/api/creator/earnings/:period", (req, res) => {
+  const period = req.params.period;
+  let startDate, endDate;
+
+  const now = new Date();
+
+  if (period === "today") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    endDate = new Date();
+  } else if (period === "week") {
+    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    endDate = new Date();
+  } else if (period === "month") {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    endDate = new Date();
+  } else if (period === "year") {
+    startDate = new Date(now.getFullYear(), 0, 1);
+    endDate = new Date();
+  }
+
+  const earnings = creatorEarnings.getEarnings({ startDate, endDate });
+  res.json(earnings);
 });
 
 async function runAnalysis() {
