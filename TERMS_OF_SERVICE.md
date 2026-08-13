@@ -1,4 +1,4 @@
-# Self Made Legends - Terms of Service
+# Self-Made Legends LLC - Terms of Service
 
 **Effective Date**: January 1, 2026
 **Last Updated**: August 13, 2026
@@ -7,7 +7,7 @@
 
 ## 1. ACCEPTANCE OF TERMS
 
-By accessing, registering, or using the Self Made Legends platform, you agree to be bound by these Terms of Service, our Privacy Policy, our License Agreement, and all applicable laws and regulations.
+By accessing, registering, or using the Self-Made Legends LLC platform, you agree to be bound by these Terms of Service, our Privacy Policy, our License Agreement, and all applicable laws and regulations.
 
 If you do not agree to these terms, **do not use this platform**.
 
@@ -15,7 +15,7 @@ If you do not agree to these terms, **do not use this platform**.
 
 ## 2. PLATFORM DESCRIPTION
 
-Self Made Legends is a **real money trading platform** that enables users to:
+Self-Made Legends LLC is a **real money trading platform** that enables users to:
 - Trade stocks via Alpaca brokerage
 - Trade cryptocurrencies via Binance/Kraken exchanges
 - Trade NFTs via OpenSea marketplace
@@ -208,35 +208,157 @@ You agree NOT to:
 
 ## 10. LIABILITY & DISCLAIMERS
 
-### 10.1 Platform Disclaimer
-**Self Made Legends is provided "AS IS" without warranties.**
+### 10.1 Trading Loss Disclaimer - YOU Take ALL Financial Risk
+
+**By using Self-Made Legends, you assume 100% responsibility for all trading losses:**
+
+- ❌ Trading losses of any amount
+- ❌ Lost money or capital
+- ❌ Failed trades or bad timing
+- ❌ Market volatility or crashes
+- ❌ Strategy failures or AI mispredictions
+- ❌ Algorithm errors or execution delays
+- ❌ Price slippage or poor entry/exit points
+
+**Self-Made Legends LLC and Jason Brown are NOT responsible for any trading losses.**
+
+**You acknowledge:**
+- ✅ You fully understand trading involves risk
+- ✅ You can lose your entire investment
+- ✅ You are making investment decisions at your own discretion
+- ✅ Past performance ≠ future results
+- ✅ You assume all financial risk
+- ✅ You will not hold Self-Made Legends liable for losses
+
+### 10.2 Transaction & Transfer Disclaimer
+
+**Self-Made Legends LLC is NOT responsible for:**
+
+**Deposit Issues:**
+- ❌ Failed deposits or delays
+- ❌ Duplicate charges
+- ❌ Bank transfer delays
+- ❌ Card processing failures
+- ❌ Crypto network delays
+- ❌ Exchange processing times
+
+**Withdrawal Issues:**
+- ❌ Failed or delayed withdrawals
+- ❌ Wrong withdrawal address
+- ❌ Bank receiving failures
+- ❌ Card processing declines
+- ❌ Crypto network congestion
+- ❌ Exchange processing delays
+
+**Transfer Errors (User Responsibility):**
+- ❌ Sending to wrong wallet address
+- ❌ Entering wrong account numbers
+- ❌ Providing incorrect bank details
+- ❌ Choosing wrong withdrawal method
+
+**YOU are 100% responsible for verification of all transaction details before sending funds.**
+
+### 10.3 Account Security & Compromise Disclaimer
+
+**Self-Made Legends LLC is NOT responsible for:**
+- ❌ Hacked or compromised accounts
+- ❌ Stolen passwords or unauthorized access
+- ❌ Lost funds from security breaches
+- ❌ Phishing attacks or social engineering
+- ❌ Malware or device infections
+- ❌ Browser vulnerabilities
+
+**You MUST:**
+- ✅ Keep your password confidential
+- ✅ Enable two-factor authentication
+- ✅ Use strong, unique passwords
+- ✅ Log out after each session
+- ✅ Use secure devices only
+- ✅ Keep antivirus software updated
+- ✅ Never share login credentials
+
+### 10.4 Platform Availability & Market Disclaimer
+
+**Self-Made Legends is provided "AS IS" without warranties.**
 
 We do not warrant:
-- Platform availability or uptime
-- API reliability or trading execution
-- Price accuracy or data completeness
-- Profit or financial returns
-- Protection from losses
-- Non-interruption of service
+- ❌ Platform availability or uptime
+- ❌ API reliability or trading execution
+- ❌ Price accuracy or data completeness
+- ❌ Profit or financial returns
+- ❌ Protection from losses
+- ❌ Non-interruption of service
 
-### 10.2 Limitation of Liability
-**Self Made Legends LLC is not liable for:**
-- Trading losses or financial damages
-- Market volatility or price fluctuations
-- Exchange downtime or delays
-- Technical errors or data loss
+**Markets Are Unpredictable - Self-Made Legends is NOT liable for:**
+- ❌ Market crashes or volatility
+- ❌ Exchange downtime or trading halts
+- ❌ Suspended symbols or circuits
+- ❌ Execution delays or rejections
+- ❌ Broker failures or closures
+- ❌ Black swan events or extreme volatility
+- ❌ Flash crashes or price gaps
+
+### 10.5 AI & Algorithm Disclaimer
+
+**AI Predictions Can Be Wrong - Self-Made Legends is NOT liable for:**
+- ❌ Incorrect buy/sell signals
+- ❌ Missed trading opportunities
+- ❌ Bad entry or exit points
+- ❌ Algorithm errors or bugs
+- ❌ Data interpretation failures
+- ❌ AI model failures or obsolescence
+- ❌ Machine learning limitations
+
+**Important:** The AI is a trading tool, not a guarantee of profits.
+
+### 10.6 No Financial Advice & Warranties Disclaimed
+
+- 🚫 This is NOT financial advice
+- 🚫 We do NOT guarantee returns or profits
+- 🚫 AI predictions can be wrong
+- 🚫 Past performance ≠ future results
+- 🚫 Consult a financial advisor if needed
+- 🚫 **SELF-MADE LEGENDS SPECIFICALLY DISCLAIMS ALL WARRANTIES**
+
+### 10.7 Limitation of Liability
+
+**In no event shall Self-Made Legends LLC or Jason Brown be liable for:**
+
+**Direct Damages**: Maximum liability = amount in your account
+
+**NO LIABILITY FOR:**
+- Indirect damages or lost profits
+- Consequential damages
+- Lost opportunities or opportunity costs
+- Lost data or corrupted records
+- Reputational harm
+- Emotional distress
+- Punitive damages
+- Any other damages
+
+### 10.8 What We ARE Responsible For
+
+✅ **We WILL handle:**
+- Harassment and abuse moderation
+- Blocking abusive users
+- Removing offensive content
+- Investigating reported abuse
+- Protecting user safety
+- Critical security vulnerabilities
+- Platform bugs affecting trading
+- Regulatory compliance
+- Protecting your data (encrypted)
+- Processing legitimate support requests
+
+### 10.9 Force Majeure
+
+Self-Made Legends is NOT liable for events beyond our control:
+- Natural disasters
+- Wars, terrorism, or government actions
+- Internet outages
+- Pandemics or extreme weather
+- System failures
 - Third-party service failures
-- Lost profits or opportunity costs
-- Indirect, incidental, or consequential damages
-
-**Maximum liability**: The amount you have in your account.
-
-### 10.3 No Financial Advice
-- This is NOT financial advice
-- We do NOT guarantee returns
-- AI predictions can be wrong
-- Past performance ≠ future results
-- Consult a financial advisor if needed
 
 ---
 
@@ -310,14 +432,14 @@ These Terms are governed by:
 For questions or disputes:
 - **Email**: support@selfmadelegends.app
 - **Phone**: 1-800-LEGENDS-1
-- **Address**: Self Made Legends LLC, San Francisco, CA
+- **Address**: Self-Made Legends LLC LLC, San Francisco, CA
 
 ---
 
-**By using Self Made Legends, you acknowledge you have read, understood, and agree to these Terms of Service.**
+**By using Self-Made Legends LLC, you acknowledge you have read, understood, and agree to these Terms of Service.**
 
 **You assume all financial risk. Proceed at your own risk.**
 
 ---
 
-*Self Made Legends™ - Where Legends Are Self-Made™*
+*Self-Made Legends LLC™ - Where Legends Are Self-Made™*
