@@ -122,6 +122,32 @@ A comprehensive multi-asset AI-powered trading bot that trades **stocks, cryptoc
 - Highly recommended before using real money
 - **We recommend 2 weeks of paper trading first**
 
+### 🛡️ Enterprise Cybersecurity
+- **Military-Grade Encryption**: AES-256-GCM encryption for all data
+- **Multi-Factor Authentication**: TOTP, SMS, Hardware keys, Biometric
+- **24/7 Security Monitoring**: Real-time threat detection
+- **Intrusion Detection System (IDS)**: Automated attack prevention
+- **Audit Logging**: Complete activity history for compliance
+- **DDoS Protection**: Protected against worldwide attackers
+- **Rate Limiting**: Prevents brute force and bot attacks
+- **Secure Password Storage**: Bcrypt hashing with salt
+
+### 🎰 Create Your Own Crypto Tokens
+- **Custom Token Creation**: Launch your own ERC-20-style tokens
+- **Token Marketplace**: Buy and sell user-created tokens
+- **Token Trading**: Real-time price discovery and trading
+- **Supply/Demand Dynamics**: Prices fluctuate based on trading activity
+- **Token Statistics**: Market cap, holders, transfer volume
+- **Share with Community**: Promote your token to other traders
+
+### 🏆 Weekly Leaderboard & Rewards
+- **Top 10 Rankings**: Compete with other players
+- **Weekly Scores**: Ranked by returns, win rate, and trading activity
+- **$5 Weekly Prize**: #1 player gets $5 free bonus
+- **All-Time Statistics**: Track your best performance
+- **Player Profiles**: See detailed stats for any trader
+- **Historical Rankings**: View past leaderboards
+
 ## Installation
 
 ### Prerequisites
