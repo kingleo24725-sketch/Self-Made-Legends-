@@ -49,6 +49,126 @@
       animation: glow 2s ease-in-out infinite;
     }
 
+    /* SML Entertainment Logo - Orange/Blue Swoosh */
+    .sml-entertainment-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 50px;
+      height: 50px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 107, 0, 0.3);
+      box-shadow: 0 0 15px rgba(255, 107, 0, 0.4), 0 0 30px rgba(0, 180, 255, 0.2);
+      animation: swoosh-glow 2s ease-in-out infinite;
+    }
+
+    @keyframes swoosh-glow {
+      0%, 100% { box-shadow: 0 0 15px rgba(255, 107, 0, 0.4), 0 0 30px rgba(0, 180, 255, 0.2); }
+      50% { box-shadow: 0 0 25px rgba(255, 107, 0, 0.6), 0 0 40px rgba(0, 180, 255, 0.4); }
+    }
+
+    /* Lion Shield Logo for Account Section */
+    .lion-shield-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 60px;
+      margin: 10px auto;
+      background: linear-gradient(135deg, #d4a76a 0%, #9d7e3a 100%);
+      border-radius: 8px;
+      border: 2px solid #d4a76a;
+      box-shadow: 0 4px 15px rgba(212, 167, 106, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      font-size: 36px;
+      animation: shield-pulse 3s ease-in-out infinite;
+    }
+
+    @keyframes shield-pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(212, 167, 106, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
+      50% { transform: scale(1.05); box-shadow: 0 6px 20px rgba(212, 167, 106, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+    }
+
+    /* Cosmic SML Logo - Glowing Crown */
+    .cosmic-sml-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: radial-gradient(circle at 50% 30%, rgba(100, 200, 255, 0.2), rgba(200, 100, 255, 0.1));
+      border: 2px solid rgba(100, 200, 255, 0.4);
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(100, 200, 255, 0.6), 0 0 60px rgba(200, 100, 255, 0.3), inset 0 0 20px rgba(100, 200, 255, 0.2);
+      animation: cosmic-glow 3s ease-in-out infinite;
+      font-size: 48px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(100, 200, 255, 0.8), 0 0 20px rgba(200, 100, 255, 0.5);
+    }
+
+    @keyframes cosmic-glow {
+      0%, 100% {
+        box-shadow: 0 0 30px rgba(100, 200, 255, 0.6), 0 0 60px rgba(200, 100, 255, 0.3), inset 0 0 20px rgba(100, 200, 255, 0.2);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 50px rgba(100, 200, 255, 0.9), 0 0 80px rgba(200, 100, 255, 0.5), inset 0 0 30px rgba(100, 200, 255, 0.4);
+        transform: scale(1.08);
+      }
+    }
+
+    /* Universe Multi-Coin Logo */
+    .universe-coins-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      margin: 15px 0;
+      padding: 15px;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.15), transparent);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      border-radius: 8px;
+      position: relative;
+    }
+
+    .universe-coin {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+      animation: coin-float 3s ease-in-out infinite;
+    }
+
+    .universe-coin:nth-child(1) {
+      background: linear-gradient(135deg, #FF6B00, #FF8C00);
+      animation-delay: 0s;
+    }
+
+    .universe-coin:nth-child(2) {
+      background: linear-gradient(135deg, #FFD700, #FFA500);
+      animation-delay: 0.3s;
+    }
+
+    .universe-coin:nth-child(3) {
+      background: linear-gradient(135deg, #00D9FF, #0099FF);
+      animation-delay: 0.6s;
+    }
+
+    .universe-coin:nth-child(4) {
+      background: linear-gradient(135deg, #00FF88, #00CC66);
+      animation-delay: 0.9s;
+    }
+
+    @keyframes coin-float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
     @keyframes glow {
       0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
       50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.8); }
@@ -287,7 +407,19 @@
 <body>
   <nav class="navbar">
     <div class="nav-left">
-      <div class="logo-container">💎</div>
+      <!-- SML Entertainment Logo (Orange/Blue Swoosh) -->
+      <div class="sml-entertainment-logo">
+        <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="swoosh-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#FF6B00;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#00B4FF;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <path d="M 20 70 Q 50 20 80 30 Q 85 32 80 40 Q 55 35 25 80 Q 20 75 20 70 Z" fill="url(#swoosh-gradient)" />
+          <circle cx="50" cy="50" r="45" fill="none" stroke="url(#swoosh-gradient)" stroke-width="1" opacity="0.3" />
+        </svg>
+      </div>
       <div>
         <h1>SELF MADE LEGENDS</h1>
         <div class="subtitle">AI Trading Bot</div>
@@ -310,6 +442,13 @@
   <div class="container">
     <!-- Dashboard Section -->
     <section class="section active" id="dashboard">
+      <!-- Cosmic SML Logo - Glowing Crown -->
+      <div class="cosmic-sml-logo">👑</div>
+      <div style="text-align: center; margin-bottom: 30px; color: #00d4ff;">
+        <h2 style="font-size: 1.8em; margin: 0;">Welcome to Self Made Legends Universe</h2>
+        <p style="color: #00ff88; font-size: 1.1em;">Your AI-Powered Multi-Asset Trading Platform</p>
+      </div>
+
       <div class="grid">
         <div class="card">
           <h2>💰 Portfolio</h2>
@@ -369,6 +508,10 @@
 
     <!-- Stocks Section -->
     <section class="section" id="stocks">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #00d4ff; font-size: 1.6em;">📈 Professional Stock Trading</h2>
+        <p style="color: #00ff88; font-size: 0.95em;">Powered by Self Made Legends Entertainment AI</p>
+      </div>
       <div class="card">
         <h2>📊 Stock Analysis</h2>
         <div id="stock-analysis"></div>
@@ -377,6 +520,15 @@
 
     <!-- Crypto Section -->
     <section class="section" id="crypto">
+      <!-- Universe Multi-Coin Logo -->
+      <div class="universe-coins-logo">
+        <div class="universe-coin">₿</div>
+        <div class="universe-coin">Ξ</div>
+        <div class="universe-coin">◇</div>
+        <div class="universe-coin">✦</div>
+      </div>
+      <h2 style="text-align: center; color: #00ff88; margin-bottom: 20px;">Self-Made Legends Universe - Multi-Asset Trading</h2>
+
       <div class="grid">
         <div class="card">
           <h2>💎 Top Cryptocurrencies</h2>
@@ -391,6 +543,10 @@
 
     <!-- NFT Section -->
     <section class="section" id="nft">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #00d4ff; font-size: 1.6em;">🎨 NFT Trading Universe</h2>
+        <p style="color: #d4a76a; font-size: 0.95em;">Discover & Trade Legendary NFT Collections</p>
+      </div>
       <div class="card">
         <h2>🖼️ Trending NFT Collections</h2>
         <div id="trending-nfts"></div>
@@ -399,6 +555,13 @@
 
     <!-- Account Section -->
     <section class="section" id="account">
+      <!-- Lion Shield Logo -->
+      <div style="text-align: center; margin-bottom: 30px;">
+        <div class="lion-shield-logo">🦁</div>
+        <p style="color: #d4a76a; font-weight: bold; margin-top: 10px;">Self Made Legends</p>
+        <p style="color: #888; font-size: 0.9em;">Your Trading Identity</p>
+      </div>
+
       <div class="grid">
         <div class="card">
           <h2>👤 Profile</h2>
@@ -437,6 +600,10 @@
 
     <!-- Payments Section -->
     <section class="section" id="payments">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #00d4ff; font-size: 1.6em;">💰 Self Made Legends Payment Hub</h2>
+        <p style="color: #00ff88; font-size: 0.95em;">Fast & Secure Deposits & Withdrawals | $5 Creator Fee</p>
+      </div>
       <div class="grid">
         <div class="card">
           <h2>💳 Deposit Funds</h2>
