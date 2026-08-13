@@ -1,4 +1,4 @@
-# 💎 SELF MADE LEGENDS - AI Trading Bot
+# 💎 SELF-MADE LEGENDS - AI Trading Bot
 
 **The All-in-One AI Trading Platform for Stocks, Crypto & NFTs**
 
