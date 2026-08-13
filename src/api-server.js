@@ -16,6 +16,8 @@ const AccountManager = require("./accounts/AccountManager");
 const PaymentProcessor = require("./payments/PaymentProcessor");
 const CreatorEarningsProcessor = require("./payments/CreatorEarningsProcessor");
 const UniversalCardProcessor = require("./payments/UniversalCardProcessor");
+const ReferralSystem = require("./social/ReferralSystem");
+const SocialNetwork = require("./social/SocialNetwork");
 
 const app = express();
 const server = http.createServer(app);
@@ -35,6 +37,8 @@ const creatorEarnings = new CreatorEarningsProcessor(
   "creator_self_made_legends",
   { bankName: "Creator Bank Account" }
 );
+const referralSystem = new ReferralSystem();
+const socialNetwork = new SocialNetwork();
 const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
@@ -66,13 +70,24 @@ const authenticateUser = (req, res, next) => {
 };
 
 app.post("/api/auth/register", (req, res) => {
-  const { email, password, fullName } = req.body;
+  const { email, password, fullName, referralCode } = req.body;
 
   if (!email || !password || !fullName) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   const result = accountManager.createAccount(email, password, fullName);
+
+  if (result.success) {
+    // Create social profile
+    socialNetwork.createProfile(result.userId, email, fullName);
+
+    // Process referral if provided
+    if (referralCode) {
+      referralSystem.processReferral(referralCode, result.userId, email);
+    }
+  }
+
   res.json(result);
 });
 
@@ -351,6 +366,9 @@ app.post("/api/cards/deposit", authenticateUser, (req, res) => {
       cardType
     );
     creatorEarnings.completeEarning(earning.id);
+
+    // Process any pending referral bonuses
+    referralSystem.completedDeposit(req.user.userId, amount);
   }
 
   res.json(result);
@@ -401,6 +419,187 @@ app.get("/api/cards/supported", (req, res) => {
 app.get("/api/creator/earnings", (req, res) => {
   const stats = creatorEarnings.getEarningsStats();
   res.json(stats);
+});
+
+// ===== REFERRAL ENDPOINTS =====
+
+app.post("/api/referrals/generate-link", authenticateUser, (req, res) => {
+  const account = accountManager.getAccountById(req.user.userId);
+  const link = referralSystem.generateReferralLink(req.user.userId, account.email);
+  res.json(link);
+});
+
+app.get("/api/referrals/my-link", authenticateUser, (req, res) => {
+  const link = referralSystem.getReferralLink(req.user.userId);
+  if (!link) {
+    const account = accountManager.getAccountById(req.user.userId);
+    return res.json(referralSystem.generateReferralLink(req.user.userId, account.email));
+  }
+  res.json(link);
+});
+
+app.get("/api/referrals/stats", authenticateUser, (req, res) => {
+  const stats = referralSystem.getReferralStats(req.user.userId);
+  res.json(stats);
+});
+
+app.get("/api/referrals/leaderboard", (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const leaderboard = referralSystem.getLeaderboard(limit);
+  res.json({ leaderboard, totalUsers: leaderboard.length });
+});
+
+app.get("/api/referrals/track/:code", (req, res) => {
+  const tracked = referralSystem.trackReferralClick(req.params.code);
+  res.json({ tracked });
+});
+
+// ===== SOCIAL ENDPOINTS - FRIENDS =====
+
+app.post("/api/social/friends/add", authenticateUser, (req, res) => {
+  const { friendEmail } = req.body;
+  if (!friendEmail) {
+    return res.status(400).json({ error: "Friend email required" });
+  }
+
+  const result = socialNetwork.addFriend(req.user.userId, friendEmail);
+  res.json(result);
+});
+
+app.get("/api/social/friends", authenticateUser, (req, res) => {
+  const friends = socialNetwork.getFriendsList(req.user.userId);
+  res.json({ friends, totalFriends: friends.length });
+});
+
+app.post("/api/social/friends/remove", authenticateUser, (req, res) => {
+  const { friendId } = req.body;
+  if (!friendId) {
+    return res.status(400).json({ error: "Friend ID required" });
+  }
+
+  const result = socialNetwork.removeFriend(req.user.userId, friendId);
+  res.json(result);
+});
+
+app.get("/api/social/search", authenticateUser, (req, res) => {
+  const query = req.query.q || "";
+  if (query.length < 2) {
+    return res.json({ results: [] });
+  }
+
+  const results = socialNetwork.searchFriends(req.user.userId, query);
+  res.json({ results });
+});
+
+// ===== SOCIAL ENDPOINTS - MESSAGING =====
+
+app.post("/api/social/messages/send", authenticateUser, (req, res) => {
+  const { recipientId, content } = req.body;
+  if (!recipientId || !content) {
+    return res.status(400).json({ error: "Recipient and content required" });
+  }
+
+  const result = socialNetwork.sendMessage(req.user.userId, recipientId, content);
+  res.json(result);
+});
+
+app.get("/api/social/messages/:friendId", authenticateUser, (req, res) => {
+  const messages = socialNetwork.getMessages(req.user.userId, req.params.friendId);
+  const unread = messages.filter((m) => !m.read && m.recipientId === req.user.userId).length;
+  res.json({ messages, unread });
+});
+
+app.post("/api/social/messages/:messageId/read", authenticateUser, (req, res) => {
+  const result = socialNetwork.markMessageAsRead(req.params.messageId);
+  res.json(result);
+});
+
+app.post("/api/social/messages/:messageId/delete", authenticateUser, (req, res) => {
+  const result = socialNetwork.deleteMessage(req.params.messageId, req.user.userId);
+  res.json(result);
+});
+
+app.get("/api/social/messages/unread/count", authenticateUser, (req, res) => {
+  const count = socialNetwork.getUnreadMessageCount(req.user.userId);
+  res.json({ unreadCount: count });
+});
+
+// ===== SOCIAL ENDPOINTS - COMMENTS =====
+
+app.post("/api/social/comments/post", authenticateUser, (req, res) => {
+  const { tradeId, content } = req.body;
+  if (!tradeId || !content) {
+    return res.status(400).json({ error: "Trade ID and content required" });
+  }
+
+  const result = socialNetwork.commentOnTrade(req.user.userId, tradeId, content);
+  res.json(result);
+});
+
+app.get("/api/social/comments/:tradeId", (req, res) => {
+  const comments = socialNetwork.getTradeComments(req.params.tradeId);
+  res.json({ comments, totalComments: comments.length });
+});
+
+app.post("/api/social/comments/:commentId/like", authenticateUser, (req, res) => {
+  const result = socialNetwork.likeComment(req.params.commentId, req.user.userId);
+  res.json(result);
+});
+
+app.post("/api/social/comments/:commentId/reply", authenticateUser, (req, res) => {
+  const { content } = req.body;
+  if (!content) {
+    return res.status(400).json({ error: "Content required" });
+  }
+
+  const result = socialNetwork.replyToComment(req.params.commentId, req.user.userId, content);
+  res.json(result);
+});
+
+app.post("/api/social/comments/:commentId/delete", authenticateUser, (req, res) => {
+  const result = socialNetwork.deleteComment(req.params.commentId, req.user.userId);
+  res.json(result);
+});
+
+// ===== SOCIAL ENDPOINTS - PROFILES & BLOCKING =====
+
+app.get("/api/social/profile/:userId", (req, res) => {
+  const profile = socialNetwork.getPublicProfile(req.params.userId);
+  if (!profile) {
+    return res.status(404).json({ error: "Profile not found or private" });
+  }
+  res.json(profile);
+});
+
+app.post("/api/social/profile/update", authenticateUser, (req, res) => {
+  const { bio, isPublic } = req.body;
+  const result = socialNetwork.updateProfile(req.user.userId, { bio, isPublic });
+  res.json(result);
+});
+
+app.post("/api/social/block", authenticateUser, (req, res) => {
+  const { blockedUserId } = req.body;
+  if (!blockedUserId) {
+    return res.status(400).json({ error: "User ID required" });
+  }
+
+  const result = socialNetwork.blockUser(req.user.userId, blockedUserId);
+  res.json(result);
+});
+
+app.post("/api/social/unblock", authenticateUser, (req, res) => {
+  const { blockedUserId } = req.body;
+  if (!blockedUserId) {
+    return res.status(400).json({ error: "User ID required" });
+  }
+
+  const result = socialNetwork.unblockUser(req.user.userId, blockedUserId);
+  res.json(result);
+});
+
+app.get("/api/social/feed", authenticateUser, (req, res) => {
+  const feed = socialNetwork.getActivityFeed(req.user.userId);
+  res.json({ feed, totalItems: feed.length });
 });
 
 app.get("/api/creator/earnings/:period", (req, res) => {
