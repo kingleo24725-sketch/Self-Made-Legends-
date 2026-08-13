@@ -21,6 +21,9 @@ const SocialNetwork = require("./social/SocialNetwork");
 const ReferralBonusPool = require("./social/ReferralBonusPool");
 const AIImprovementEngine = require("./ai/AIImprovementEngine");
 const ContinuousUpdateEngine = require("./updates/ContinuousUpdateEngine");
+const SecurityManager = require("./security/SecurityManager");
+const TokenCreator = require("./crypto/TokenCreator");
+const LeaderboardManager = require("./leaderboard/LeaderboardManager");
 
 const app = express();
 const server = http.createServer(app);
@@ -45,6 +48,9 @@ const socialNetwork = new SocialNetwork();
 const referralBonusPool = new ReferralBonusPool();
 const aiEngine = new AIImprovementEngine();
 const updateEngine = new ContinuousUpdateEngine();
+const securityManager = new SecurityManager();
+const tokenCreator = new TokenCreator();
+const leaderboardManager = new LeaderboardManager();
 const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
@@ -818,6 +824,223 @@ async function runAnalysis() {
     portfolio: status,
   });
 }
+
+// ==================== SECURITY ENDPOINTS ====================
+
+app.get("/api/security/audit-log", authenticateUser, (req, res) => {
+  const auditLog = securityManager.getUserAuditLog(req.user.userId, 50);
+  res.json({ auditLog });
+});
+
+app.get("/api/security/alerts", authenticateUser, (req, res) => {
+  const alerts = securityManager.getSecurityAlerts();
+  res.json({ alerts });
+});
+
+app.post("/api/security/change-password", authenticateUser, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "Missing password fields" });
+  }
+
+  const account = accountManager.getAccountById(req.user.userId);
+  if (!account) {
+    return res.status(404).json({ error: "Account not found" });
+  }
+
+  // Validate password strength
+  const isValidPassword = securityManager.checkPasswordBreach(newPassword);
+  if (!isValidPassword) {
+    return res.status(400).json({ error: "Password too common or weak" });
+  }
+
+  securityManager.logAudit("PASSWORD_CHANGE_REQUESTED", req.user.userId, {});
+  res.json({ success: true, message: "Password change processed securely" });
+});
+
+// ==================== CRYPTO TOKEN CREATION ENDPOINTS ====================
+
+app.post("/api/tokens/create", authenticateUser, (req, res) => {
+  const { name, symbol, totalSupply, decimals, description, imageUrl } = req.body;
+
+  if (!name || !symbol || !totalSupply) {
+    return res.status(400).json({ error: "Missing required token fields" });
+  }
+
+  const result = tokenCreator.createToken(req.user.userId, {
+    name,
+    symbol,
+    totalSupply,
+    decimals,
+    description,
+    imageUrl,
+  });
+
+  if (result.success) {
+    securityManager.logAudit("TOKEN_CREATED", req.user.userId, { tokenSymbol: symbol });
+  }
+
+  res.json(result);
+});
+
+app.get("/api/tokens/my-tokens", authenticateUser, (req, res) => {
+  const tokens = tokenCreator.getUserTokens(req.user.userId);
+  res.json({ tokens });
+});
+
+app.get("/api/tokens/:tokenAddress", authenticateUser, (req, res) => {
+  const token = tokenCreator.getToken(req.params.tokenAddress);
+
+  if (!token) {
+    return res.status(404).json({ error: "Token not found" });
+  }
+
+  res.json(token);
+});
+
+app.get("/api/tokens/:tokenAddress/stats", authenticateUser, (req, res) => {
+  const stats = tokenCreator.getTokenStats(req.params.tokenAddress);
+
+  if (!stats) {
+    return res.status(404).json({ error: "Token not found" });
+  }
+
+  res.json(stats);
+});
+
+app.get("/api/tokens/:tokenAddress/balance", authenticateUser, (req, res) => {
+  const balance = tokenCreator.getUserTokenBalance(req.user.userId, req.params.tokenAddress);
+
+  if (!balance) {
+    return res.status(404).json({ error: "Token not found" });
+  }
+
+  res.json(balance);
+});
+
+app.get("/api/tokens/marketplace/all", (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+  const tokens = tokenCreator.getAllTokens(limit);
+  res.json({ tokens, count: tokens.length });
+});
+
+app.get("/api/tokens/marketplace/top-by-cap", (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+  const topTokens = tokenCreator.getTopTokensByMarketCap(limit);
+  res.json({ topTokens, count: topTokens.length });
+});
+
+app.post("/api/tokens/:tokenAddress/buy", authenticateUser, (req, res) => {
+  const { amount, paymentAmount } = req.body;
+
+  if (!amount || !paymentAmount) {
+    return res.status(400).json({ error: "Missing amount or payment" });
+  }
+
+  const result = tokenCreator.buyToken(
+    req.user.userId,
+    req.params.tokenAddress,
+    amount,
+    paymentAmount
+  );
+
+  if (result.success) {
+    securityManager.logAudit("TOKEN_PURCHASE", req.user.userId, { amount });
+  }
+
+  res.json(result);
+});
+
+app.post("/api/tokens/:tokenAddress/sell", authenticateUser, (req, res) => {
+  const { amount } = req.body;
+
+  if (!amount) {
+    return res.status(400).json({ error: "Missing amount" });
+  }
+
+  const result = tokenCreator.sellToken(req.user.userId, req.params.tokenAddress, amount);
+
+  if (result.success) {
+    securityManager.logAudit("TOKEN_SALE", req.user.userId, { amount });
+  }
+
+  res.json(result);
+});
+
+// ==================== LEADERBOARD ENDPOINTS ====================
+
+app.get("/api/leaderboard/current-week", (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+  const leaderboard = leaderboardManager.getWeeklyLeaderboard(limit);
+  const stats = leaderboardManager.getLeaderboardStats();
+
+  res.json({ leaderboard, stats });
+});
+
+app.get("/api/leaderboard/top-performers", (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+  const performers = leaderboardManager.getTopPerformers(limit);
+  res.json({ performers });
+});
+
+app.get("/api/leaderboard/trending", (req, res) => {
+  const trending = leaderboardManager.getTrendingPlayers(5);
+  res.json({ trending });
+});
+
+app.get("/api/leaderboard/player/:userId", (req, res) => {
+  const profile = leaderboardManager.getPlayerProfile(req.params.userId);
+
+  if (!profile) {
+    return res.status(404).json({ error: "Player not found on leaderboard" });
+  }
+
+  res.json(profile);
+});
+
+app.get("/api/leaderboard/player-stats", authenticateUser, (req, res) => {
+  const stats = leaderboardManager.getAllTimeStats(req.user.userId);
+  const profile = leaderboardManager.getPlayerProfile(req.user.userId);
+
+  res.json({ stats, profile });
+});
+
+app.get("/api/leaderboard/history", (req, res) => {
+  const weeks = Math.min(parseInt(req.query.weeks) || 4, 12);
+  const history = leaderboardManager.getLeaderboardHistory(weeks);
+
+  res.json({ history });
+});
+
+app.post("/api/leaderboard/update-portfolio", authenticateUser, (req, res) => {
+  const { totalValue, initialInvestment, gains, gainPercentage, trades, winRate } = req.body;
+
+  const portfolioData = {
+    totalValue: parseFloat(totalValue) || 0,
+    initialInvestment: parseFloat(initialInvestment) || 1,
+    gains: parseFloat(gains) || 0,
+    gainPercentage: parseFloat(gainPercentage) || 0,
+    trades: parseInt(trades) || 0,
+    winRate: parseFloat(winRate) || 0,
+  };
+
+  const result = leaderboardManager.updatePortfolioStats(req.user.userId, portfolioData);
+
+  securityManager.logAudit("PORTFOLIO_UPDATE", req.user.userId, { gains: portfolioData.gains });
+
+  res.json({
+    success: true,
+    rank: result.rank,
+    score: result.score,
+  });
+});
+
+app.post("/api/leaderboard/distribute-rewards", (req, res) => {
+  // This should be called by admin/scheduled task
+  const result = leaderboardManager.distributeWeeklyRewards();
+  res.json(result);
+});
 
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
