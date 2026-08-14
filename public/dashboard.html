@@ -687,24 +687,52 @@
     }
 
     function login() {
-      const email = prompt('Email:');
-      const password = prompt('Password:');
+      const choice = confirm('Click OK to LOGIN\nClick Cancel to CREATE NEW ACCOUNT');
+      if (choice) {
+        // Login
+        const email = prompt('Enter your email:');
+        const password = prompt('Enter your password:');
+        if (!email || !password) return;
 
-      if (!email || !password) return;
+        apiCall('/api/auth/login', 'POST', { email, password })
+          .then(data => {
+            if (data.success) {
+              setSessionId(data.sessionId);
+              currentUser = data.email;
+              document.getElementById('user-info').textContent = `👤 ${email}`;
+              document.getElementById('logout-btn').style.display = 'block';
+              alert('✅ Logged in successfully!');
+              loadAccountData();
+            } else {
+              alert('❌ Login failed: ' + (data.error || 'Unknown error'));
+            }
+          });
+      } else {
+        // Register
+        const fullName = prompt('Enter your full name:');
+        const email = prompt('Enter your email:');
+        const password = prompt('Create a password (min 8 characters):');
+        if (!fullName || !email || !password) return;
 
-      apiCall('/api/auth/login', 'POST', { email, password })
-        .then(data => {
-          if (data.success) {
-            setSessionId(data.sessionId);
-            currentUser = data.email;
-            document.getElementById('user-info').textContent = `👤 ${email}`;
-            document.getElementById('logout-btn').style.display = 'block';
-            alert('Logged in successfully!');
-            loadAccountData();
-          } else {
-            alert('Login failed: ' + (data.error || 'Unknown error'));
-          }
-        });
+        apiCall('/api/auth/register', 'POST', { fullName, email, password })
+          .then(data => {
+            if (data.success) {
+              alert('✅ Account created! Now logging you in...');
+              apiCall('/api/auth/login', 'POST', { email, password })
+                .then(loginData => {
+                  if (loginData.success) {
+                    setSessionId(loginData.sessionId);
+                    currentUser = email;
+                    document.getElementById('user-info').textContent = `👤 ${email}`;
+                    document.getElementById('logout-btn').style.display = 'block';
+                    loadAccountData();
+                  }
+                });
+            } else {
+              alert('❌ Registration failed: ' + (data.error || 'Unknown error'));
+            }
+          });
+      }
     }
 
     function logout() {
