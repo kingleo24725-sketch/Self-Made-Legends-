@@ -24,6 +24,7 @@ const ContinuousUpdateEngine = require("./updates/ContinuousUpdateEngine");
 const SecurityManager = require("./security/SecurityManager");
 const TokenCreator = require("./crypto/TokenCreator");
 const LeaderboardManager = require("./leaderboard/LeaderboardManager");
+const StripeProcessor = require("./payments/StripeProcessor");
 
 const app = express();
 const server = http.createServer(app);
@@ -51,6 +52,7 @@ const updateEngine = new ContinuousUpdateEngine();
 const securityManager = new SecurityManager();
 const tokenCreator = new TokenCreator();
 const leaderboardManager = new LeaderboardManager();
+const stripeProcessor = process.env.STRIPE_SECRET_KEY ? new StripeProcessor() : null;
 const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
@@ -220,6 +222,78 @@ app.post("/api/payments/withdraw", authenticateUser, (req, res) => {
 app.get("/api/payments/history", authenticateUser, (req, res) => {
   const history = paymentProcessor.getTransactionHistory(req.user.userId);
   res.json(history);
+});
+
+// ===== STRIPE CREATOR FEE ENDPOINTS =====
+
+app.get("/api/stripe/config", (req, res) => {
+  res.json({
+    publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || "",
+    creatorFee: 5.00,
+    currency: "usd",
+  });
+});
+
+app.post("/api/stripe/create-creator-fee", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) {
+    return res.status(503).json({ error: "Payment processing not configured" });
+  }
+  try {
+    const account = accountManager.getAccountById(req.user.userId);
+    const userEmail = account?.email || req.user.email || "";
+    const result = await stripeProcessor.createCreatorFeeIntent(req.user.userId, userEmail);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Stripe error:", err.message);
+    res.status(500).json({ error: "Payment setup failed: " + err.message });
+  }
+});
+
+app.post("/api/stripe/checkout", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) {
+    return res.status(503).json({ error: "Payment processing not configured" });
+  }
+  try {
+    const account = accountManager.getAccountById(req.user.userId);
+    const userEmail = account?.email || req.user.email || "";
+    const result = await stripeProcessor.createCheckoutSession(req.user.userId, userEmail);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Stripe checkout error:", err.message);
+    res.status(500).json({ error: "Checkout setup failed: " + err.message });
+  }
+});
+
+app.post("/api/stripe/verify-payment", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) {
+    return res.status(503).json({ error: "Payment processing not configured" });
+  }
+  const { paymentIntentId } = req.body;
+  if (!paymentIntentId) return res.status(400).json({ error: "paymentIntentId required" });
+  try {
+    const result = await stripeProcessor.verifyPayment(paymentIntentId);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: "Verification failed: " + err.message });
+  }
+});
+
+// Stripe webhook — raw body needed for signature verification
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (req, res) => {
+  if (!stripeProcessor) return res.sendStatus(503);
+  const sig = req.headers["stripe-signature"];
+  try {
+    const event = stripeProcessor.constructWebhookEvent(req.body, sig);
+    if (event.type === "payment_intent.succeeded") {
+      const intent = event.data.object;
+      const userId = intent.metadata?.userId;
+      console.log(`Creator fee paid by user ${userId} — $${intent.amount / 100}`);
+    }
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("Webhook error:", err.message);
+    res.status(400).send("Webhook Error: " + err.message);
+  }
 });
 
 app.get("/api/crypto/prices", async (req, res) => {

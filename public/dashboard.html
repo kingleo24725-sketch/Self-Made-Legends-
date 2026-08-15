@@ -645,6 +645,18 @@
         </div>
       </div>
 
+      <div class="card" style="border: 2px solid #00d4ff; margin-top: 20px;">
+        <h2 style="color: #00d4ff;">⭐ Activate Creator Account — $5 Fee</h2>
+        <p style="color: #aaa; margin-bottom: 16px;">
+          Pay the one-time $5 Creator Fee to unlock token creation, premium leaderboard rewards, and more.
+          Payments go directly to Self-Made Legends LLC via Stripe — fully secure.
+        </p>
+        <button class="btn btn-success" onclick="payCreatorFee()" id="creator-fee-btn" style="width:100%; font-size:1.1em;">
+          💳 Pay $5 Creator Fee via Stripe
+        </button>
+        <div id="creator-fee-status" style="margin-top:12px; color:#00ff88; display:none;"></div>
+      </div>
+
       <div class="card">
         <h2>📜 Transaction History</h2>
         <div id="transaction-history"></div>
@@ -833,6 +845,32 @@
           } else {
             alert('Error: ' + (data.error || 'Unknown error'));
           }
+        });
+    }
+
+    function payCreatorFee() {
+      if (!sessionId) { alert('Please log in first.'); return; }
+      const btn = document.getElementById('creator-fee-btn');
+      const status = document.getElementById('creator-fee-status');
+      btn.disabled = true;
+      btn.textContent = '⏳ Setting up payment...';
+
+      apiCall('/api/stripe/checkout', 'POST', {})
+        .then(data => {
+          if (data.checkoutUrl) {
+            status.style.display = 'block';
+            status.textContent = 'Redirecting to Stripe secure payment page...';
+            setTimeout(() => { window.location.href = data.checkoutUrl; }, 800);
+          } else {
+            btn.disabled = false;
+            btn.textContent = '💳 Pay $5 Creator Fee via Stripe';
+            alert('Error: ' + (data.error || 'Could not create payment session'));
+          }
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.textContent = '💳 Pay $5 Creator Fee via Stripe';
+          alert('Payment setup failed. Please try again.');
         });
     }
 
