@@ -106,6 +106,22 @@ class AccountManager {
     return null;
   }
 
+  updateAvatar(userId, avatarDataUrl) {
+    const account = this.getAccountById(userId);
+    if (!account) return { success: false, error: "Account not found" };
+    // Enforce max ~200KB base64 (≈ 150KB image)
+    if (avatarDataUrl && avatarDataUrl.length > 200000) {
+      return { success: false, error: "Image too large — please use a smaller photo" };
+    }
+    account.avatar = avatarDataUrl || null;
+    return { success: true };
+  }
+
+  getAvatar(userId) {
+    const account = this.getAccountById(userId);
+    return account ? (account.avatar || null) : null;
+  }
+
   addWallet(email, walletType, walletAddress, label) {
     const account = this.accounts.get(email);
     if (!account) return { success: false, error: "Account not found" };

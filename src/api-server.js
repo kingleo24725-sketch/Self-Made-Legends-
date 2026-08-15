@@ -165,7 +165,31 @@ app.get("/api/account/profile", authenticateUser, (req, res) => {
     fullName: account.fullName,
     createdAt: account.createdAt,
     verified: account.verified,
+    hasAvatar: !!account.avatar,
   });
+});
+
+// Avatar upload — accepts base64 data URL from client-side canvas resize
+app.post("/api/account/avatar", authenticateUser, (req, res) => {
+  const { avatar } = req.body;
+  if (!avatar) return res.status(400).json({ error: "No image provided" });
+  if (!avatar.startsWith("data:image/")) return res.status(400).json({ error: "Invalid image format" });
+  const result = accountManager.updateAvatar(req.user.userId, avatar);
+  res.json(result);
+});
+
+// Get avatar for any user (used by leaderboard)
+app.get("/api/account/avatar/:userId", (req, res) => {
+  const avatar = accountManager.getAvatar(req.params.userId);
+  if (!avatar) return res.status(404).json({ error: "No avatar" });
+  // Return as JSON (data URL) — client uses as <img src="">
+  res.json({ avatar });
+});
+
+// Get own avatar
+app.get("/api/account/avatar", authenticateUser, (req, res) => {
+  const avatar = accountManager.getAvatar(req.user.userId);
+  res.json({ avatar: avatar || null });
 });
 
 app.get("/api/account/balance", authenticateUser, (req, res) => {

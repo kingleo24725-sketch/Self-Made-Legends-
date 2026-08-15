@@ -146,7 +146,7 @@
     }
   }
 
-  function render(lbData, season) {
+  async function render(lbData, season) {
     const lb = lbData.leaderboard || [];
     const updatedAt = lbData.updatedAt ? new Date(lbData.updatedAt).toLocaleString() : '';
 
@@ -167,6 +167,26 @@
       return;
     }
 
+    // Fetch avatars for top entries (best-effort, silent fail)
+    const avatarCache = {};
+    async function fetchAvatar(userId) {
+      if (!userId || avatarCache[userId] !== undefined) return;
+      avatarCache[userId] = null;
+      try {
+        const r = await fetch(`/api/account/avatar/${userId}`);
+        if (r.ok) { const d = await r.json(); avatarCache[userId] = d.avatar || null; }
+      } catch (_) {}
+    }
+
+    function avatarEl(userId, size = 32) {
+      const src = avatarCache[userId];
+      if (!src) return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:#1a1f2e;font-size:${Math.round(size*0.55)}px;flex-shrink:0;">👤</span>`;
+      return `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;" alt="">`;
+    }
+
+    // Pre-fetch avatars for top 10
+    await Promise.all(lb.slice(0, 10).map(p => fetchAvatar(p.userId)));
+
     // Podium top 3
     if (lb.length >= 1) {
       const icons = ['🥇','🥈','🥉'];
@@ -175,6 +195,7 @@
       document.getElementById('podium').style.display = 'grid';
       document.getElementById('podium').innerHTML = spots.map((p, i) => `
         <div class="podium-spot p${i+1}">
+          <div style="display:flex;justify-content:center;margin-bottom:8px;">${avatarEl(p.userId, 56)}</div>
           <span class="podium-crown">${icons[i]}</span>
           <div class="podium-rank" style="color:${colors[i]}">#${i+1}</div>
           <div class="podium-name">${escH(maskName(p.email || p.userId || 'Legend'))}</div>
@@ -196,7 +217,7 @@
           const gain = p.gainPercentage || 0;
           return `<tr>
             <td class="rank-num ${rank <= 10 ? 'top3' : ''}">#${rank}</td>
-            <td class="player-name">${escH(maskName(p.email || p.userId || 'Legend'))}</td>
+            <td class="player-name"><div style="display:flex;align-items:center;gap:8px;">${avatarEl(p.userId, 28)}${escH(maskName(p.email || p.userId || 'Legend'))}</div></td>
             <td class="${gain >= 0 ? 'gain-positive' : 'gain-negative'}">${fmt(gain)}</td>
             <td class="score-col">${p.score != null ? Math.round(p.score).toLocaleString() : '—'}</td>
             <td style="color:#888;">${p.trades || 0}</td>
