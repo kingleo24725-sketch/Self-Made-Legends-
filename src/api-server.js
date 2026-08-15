@@ -815,6 +815,11 @@ app.get("/api/social/search", authenticateUser, (req, res) => {
 
 // ===== SOCIAL ENDPOINTS - MESSAGING =====
 
+app.get("/api/social/messages/threads", authenticateUser, (req, res) => {
+  const convos = socialNetwork.getConversations(req.user.userId);
+  res.json({ conversations: convos });
+});
+
 app.post("/api/social/messages/send", authenticateUser, (req, res) => {
   const { recipientId, content } = req.body;
   if (!recipientId || !content) {
@@ -822,6 +827,19 @@ app.post("/api/social/messages/send", authenticateUser, (req, res) => {
   }
 
   const result = socialNetwork.sendMessage(req.user.userId, recipientId, content);
+
+  if (result.success) {
+    const senderAcct = accountManager.getAccountById(req.user.userId);
+    const senderName = senderAcct ? (senderAcct.fullName || senderAcct.email) : 'Someone';
+    emitToUser(recipientId, 'new_message', {
+      messageId:  result.messageId,
+      senderId:   req.user.userId,
+      senderName,
+      content:    content.slice(0, 120),
+      timestamp:  new Date().toISOString(),
+    });
+  }
+
   res.json(result);
 });
 

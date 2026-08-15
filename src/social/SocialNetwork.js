@@ -373,6 +373,42 @@ class SocialNetwork {
     ).length;
   }
 
+  // Returns one entry per unique conversation partner, sorted by most recent
+  getConversations(userId) {
+    const seen  = new Map(); // otherUserId → {latest, unread}
+    for (const m of this.messages) {
+      if (m.deleted) continue;
+      const otherId = m.senderId === userId ? m.recipientId : m.recipientId === userId ? m.senderId : null;
+      if (!otherId || otherId === userId) continue;
+      const existing = seen.get(otherId);
+      const ts = new Date(m.timestamp).getTime();
+      if (!existing || ts > existing.ts) {
+        seen.set(otherId, {
+          ts,
+          latest: m.content,
+          latestTime: m.timestamp,
+        });
+      }
+    }
+    // Attach unread counts and profile info
+    const convos = [];
+    for (const [otherId, meta] of seen) {
+      const profile = this.userProfiles.get(otherId);
+      const unread  = this.messages.filter(
+        m => m.senderId === otherId && m.recipientId === userId && !m.read && !m.deleted
+      ).length;
+      convos.push({
+        userId: otherId,
+        fullName: profile ? profile.fullName : 'Unknown',
+        email:    profile ? profile.email    : '',
+        latest:  meta.latest,
+        latestTime: meta.latestTime,
+        unread,
+      });
+    }
+    return convos.sort((a, b) => new Date(b.latestTime) - new Date(a.latestTime));
+  }
+
   getActivityFeed(userId, limit = 20) {
     // Get comments on trades from friends
     const friends = this.userProfiles.get(userId)?.friends || [];

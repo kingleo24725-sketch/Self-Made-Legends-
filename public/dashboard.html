@@ -2962,6 +2962,387 @@
   function esc3(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   </script>
 
+<!-- ── Friends & DM Bubble ────────────────────────────────────────────── -->
+<style>
+  #dm-bubble{position:fixed;bottom:24px;left:24px;z-index:9999;}
+  #dm-toggle{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#006064,#00838f);border:2px solid rgba(0,188,212,.5);box-shadow:0 4px 20px rgba(0,0,0,.5);cursor:pointer;font-size:22px;display:flex;align-items:center;justify-content:center;color:#fff;transition:.2s;position:relative;}
+  #dm-toggle:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(0,188,212,.4);}
+  #dm-badge{position:absolute;top:-4px;right:-4px;background:#ff6b6b;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px;border:2px solid #0f1419;}
+  #dm-panel{position:absolute;bottom:68px;left:0;width:320px;height:440px;background:#13161f;border:1px solid #1e2a3a;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.8);display:none;flex-direction:column;overflow:hidden;}
+  #dm-panel.open{display:flex;}
+  .dm-head{background:linear-gradient(135deg,#006064,#00838f);padding:12px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .dm-head-title{font-weight:800;font-size:14px;color:#fff;flex:1;}
+  .dm-head-btn{background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;transition:.15s;}
+  .dm-head-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+  .dm-view{flex:1;overflow-y:auto;display:flex;flex-direction:column;}
+  .dm-view::-webkit-scrollbar{width:4px;}
+  .dm-view::-webkit-scrollbar-thumb{background:#2a3a4a;border-radius:2px;}
+  .dm-search-bar{padding:10px 12px;border-bottom:1px solid #1e2a3a;flex-shrink:0;}
+  .dm-search-input{width:100%;background:#0d1220;border:1px solid #1e2a3a;border-radius:8px;color:#e0e0e0;padding:7px 12px;font-size:12px;outline:none;}
+  .dm-search-input:focus{border-color:rgba(0,188,212,.5);}
+  .dm-row{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;transition:.12s;border-bottom:1px solid rgba(255,255,255,.03);}
+  .dm-row:hover{background:rgba(255,255,255,.04);}
+  .dm-avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#006064,#00838f);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;}
+  .dm-row-name{font-size:13px;font-weight:600;color:#e0e0e0;}
+  .dm-row-sub{font-size:11px;color:#555;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+  .dm-unread-dot{min-width:18px;height:18px;background:#ff6b6b;border-radius:9px;font-size:10px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;padding:0 4px;margin-left:auto;flex-shrink:0;}
+  /* Thread view */
+  .dm-thread-msgs{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+  .dm-thread-msgs::-webkit-scrollbar{width:4px;}
+  .dm-thread-msgs::-webkit-scrollbar-thumb{background:#2a3a4a;border-radius:2px;}
+  .dm-bubble-out{align-self:flex-end;background:linear-gradient(135deg,#006064,#00838f);color:#fff;border-radius:14px 14px 2px 14px;padding:8px 12px;font-size:12px;max-width:78%;line-height:1.5;}
+  .dm-bubble-in{align-self:flex-start;background:#1e2a3a;color:#e0e0e0;border-radius:14px 14px 14px 2px;padding:8px 12px;font-size:12px;max-width:78%;line-height:1.5;}
+  .dm-bubble-time{font-size:10px;color:#444;margin-top:2px;align-self:flex-end;}
+  .dm-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #1e2a3a;flex-shrink:0;}
+  .dm-input{flex:1;background:#0d1220;border:1px solid #1e2a3a;border-radius:10px;color:#e0e0e0;padding:8px 11px;font-size:12px;outline:none;}
+  .dm-input:focus{border-color:rgba(0,188,212,.5);}
+  .dm-send-btn{background:linear-gradient(135deg,#006064,#00838f);border:none;color:#fff;border-radius:10px;padding:8px 13px;cursor:pointer;font-size:13px;transition:.15s;flex-shrink:0;}
+  .dm-send-btn:hover{opacity:.85;}
+  .dm-empty{color:#444;text-align:center;padding:40px 20px;font-size:12px;line-height:1.6;}
+  @media(max-width:400px){#dm-panel{width:calc(100vw - 32px);left:-8px;}}
+</style>
+
+<div id="dm-bubble">
+  <div id="dm-panel">
+    <div class="dm-head">
+      <span style="font-size:18px;">💬</span>
+      <span class="dm-head-title" id="dm-head-title">Friends & Messages</span>
+      <button class="dm-head-btn" id="dm-search-btn" onclick="dmShowSearch()" title="Add friend">+ Add</button>
+      <button class="dm-head-btn" id="dm-back-btn" onclick="dmShowList()" style="display:none" title="Back">← Back</button>
+    </div>
+
+    <!-- List view: conversations + friends -->
+    <div id="dm-list-view" class="dm-view">
+      <div class="dm-search-bar" style="padding:8px 12px;">
+        <input class="dm-search-input" placeholder="🔍 Search conversations…" id="dm-filter-input" oninput="dmFilter(this.value)">
+      </div>
+      <div id="dm-convos" style="flex:1;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Search / Add friend view -->
+    <div id="dm-search-view" class="dm-view" style="display:none;">
+      <div class="dm-search-bar">
+        <input class="dm-search-input" placeholder="Search by name or email…" id="dm-add-input" oninput="dmSearchUsers(this.value)">
+      </div>
+      <div id="dm-search-results"></div>
+    </div>
+
+    <!-- Thread view: DM with a specific person -->
+    <div id="dm-thread-view" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+      <div class="dm-thread-msgs" id="dm-thread-msgs"></div>
+      <div class="dm-input-row">
+        <input class="dm-input" id="dm-msg-input" placeholder="Message…" maxlength="500" autocomplete="off">
+        <button class="dm-send-btn" onclick="dmSendMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+  <button id="dm-toggle" onclick="toggleDM()" title="Friends & Messages">
+    💬
+    <span id="dm-badge"></span>
+  </button>
+</div>
+
+<script>
+(function(){
+  let dmOpen = false;
+  let dmCurrentView = 'list'; // 'list' | 'search' | 'thread'
+  let dmActiveContact = null; // { userId, fullName }
+  let dmAllContacts = [];     // loaded friends + conversation partners
+  let dmUnreadTotal = 0;
+
+  function sesh() {
+    try { return JSON.parse(localStorage.getItem('sml_session') || 'null'); } catch(_){ return null; }
+  }
+  function hdrs() {
+    const s = sesh();
+    return s && s.sessionId
+      ? { 'Content-Type': 'application/json', 'x-session-id': s.sessionId }
+      : { 'Content-Type': 'application/json' };
+  }
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function initials(name){ return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); }
+
+  function timeAgo(ts) {
+    const diff = Date.now() - new Date(ts).getTime();
+    if (diff < 60000) return 'now';
+    if (diff < 3600000) return Math.floor(diff/60000) + 'm';
+    if (diff < 86400000) return Math.floor(diff/3600000) + 'h';
+    return Math.floor(diff/86400000) + 'd';
+  }
+
+  window.toggleDM = function() {
+    dmOpen = !dmOpen;
+    document.getElementById('dm-panel').classList.toggle('open', dmOpen);
+    if (dmOpen) { dmLoadList(); }
+  };
+
+  // ── List view ─────────────────────────────────────────────────────────────
+  async function dmLoadList() {
+    const s = sesh();
+    if (!s) {
+      document.getElementById('dm-convos').innerHTML = '<div class="dm-empty">Sign in to message friends</div>';
+      return;
+    }
+    try {
+      const [threadRes, friendRes] = await Promise.all([
+        fetch('/api/social/messages/threads', { headers: hdrs() }).then(r=>r.json()),
+        fetch('/api/social/friends', { headers: hdrs() }).then(r=>r.json()),
+      ]);
+      const convos   = threadRes.conversations || [];
+      const friends  = friendRes.friends || [];
+
+      // Merge: convos first, then friends not already in convos
+      const inConvos = new Set(convos.map(c => c.userId));
+      const friendsOnly = friends.filter(f => !inConvos.has(f.userId || f.friendId));
+
+      dmAllContacts = [
+        ...convos,
+        ...friendsOnly.map(f => ({ userId: f.userId||f.friendId, fullName: f.fullName||f.email, email: f.email, latest: null, unread: 0 })),
+      ];
+
+      // Total unread
+      dmUnreadTotal = convos.reduce((s, c) => s + (c.unread || 0), 0);
+      updateDMBadge(dmUnreadTotal);
+
+      renderDMList(dmAllContacts);
+    } catch(_) {
+      document.getElementById('dm-convos').innerHTML = '<div class="dm-empty">Could not load messages</div>';
+    }
+  }
+
+  function renderDMList(contacts) {
+    const el = document.getElementById('dm-convos');
+    if (!contacts.length) {
+      el.innerHTML = '<div class="dm-empty">No friends yet.<br>Tap <strong>+ Add</strong> to find players.</div>';
+      return;
+    }
+    el.innerHTML = contacts.map(c => `
+      <div class="dm-row" onclick="dmOpenThread(${JSON.stringify({ userId: c.userId, fullName: c.fullName })})">
+        <div class="dm-avatar">${esc(initials(c.fullName))}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="dm-row-name">${esc(c.fullName || 'Unknown')}</div>
+          <div class="dm-row-sub">${c.latest ? esc(c.latest) : '<span style="color:#3a4a5a">No messages yet</span>'}</div>
+        </div>
+        ${c.latest ? `<div style="color:#3a5a6a;font-size:10px;margin-left:4px;flex-shrink:0;">${timeAgo(c.latestTime)}</div>` : ''}
+        ${c.unread > 0 ? `<div class="dm-unread-dot">${c.unread}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  window.dmFilter = function(q) {
+    if (!q) { renderDMList(dmAllContacts); return; }
+    renderDMList(dmAllContacts.filter(c => (c.fullName||'').toLowerCase().includes(q.toLowerCase()) || (c.email||'').toLowerCase().includes(q.toLowerCase())));
+  };
+
+  // ── Thread view ───────────────────────────────────────────────────────────
+  window.dmOpenThread = async function(contact) {
+    if (typeof contact === 'string') { try { contact = JSON.parse(contact); } catch(_){ return; } }
+    dmActiveContact = contact;
+    dmCurrentView = 'thread';
+    document.getElementById('dm-list-view').style.display   = 'none';
+    document.getElementById('dm-search-view').style.display = 'none';
+    document.getElementById('dm-thread-view').style.display = 'flex';
+    document.getElementById('dm-head-title').textContent    = contact.fullName || 'DM';
+    document.getElementById('dm-search-btn').style.display  = 'none';
+    document.getElementById('dm-back-btn').style.display    = 'inline';
+    document.getElementById('dm-msg-input').focus();
+    await dmLoadThread();
+  };
+
+  async function dmLoadThread() {
+    if (!dmActiveContact) return;
+    const el = document.getElementById('dm-thread-msgs');
+    el.innerHTML = '<div style="color:#444;text-align:center;padding:20px;font-size:11px;">Loading…</div>';
+    try {
+      const r = await fetch(`/api/social/messages/${dmActiveContact.userId}`, { headers: hdrs() });
+      const { messages } = await r.json();
+
+      // Mark messages as read
+      const s = sesh();
+      if (s) {
+        (messages || []).filter(m => m.recipientId === s.userId && !m.read).forEach(m => {
+          fetch(`/api/social/messages/${m.id}/read`, { method:'POST', headers: hdrs() }).catch(()=>{});
+        });
+      }
+
+      renderThread(messages || []);
+    } catch(_) {
+      el.innerHTML = '<div style="color:#444;text-align:center;padding:20px;font-size:11px;">Could not load messages</div>';
+    }
+  }
+
+  function renderThread(messages) {
+    const el = document.getElementById('dm-thread-msgs');
+    const s  = sesh();
+    const myId = s ? s.userId : null;
+
+    if (!messages.length) {
+      el.innerHTML = '<div class="dm-empty">No messages yet.<br>Say something! 👋</div>';
+      return;
+    }
+
+    // Sort oldest first
+    const sorted = [...messages].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+    el.innerHTML = sorted.map(m => {
+      const mine = m.senderId === myId;
+      return `<div class="${mine ? 'dm-bubble-out' : 'dm-bubble-in'}">${esc(m.content)}</div>
+              <div class="dm-bubble-time" style="align-self:${mine?'flex-end':'flex-start'}">${timeAgo(m.timestamp)}</div>`;
+    }).join('');
+    el.scrollTop = el.scrollHeight;
+  }
+
+  window.dmSendMessage = async function() {
+    if (!dmActiveContact) return;
+    const input = document.getElementById('dm-msg-input');
+    const content = input.value.trim();
+    if (!content) return;
+    input.value = '';
+
+    // Optimistic append
+    const el = document.getElementById('dm-thread-msgs');
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<div class="dm-bubble-out">${esc(content)}</div><div class="dm-bubble-time" style="align-self:flex-end">now</div>`;
+    el.appendChild(...Array.from(wrap.children));
+    el.scrollTop = el.scrollHeight;
+
+    try {
+      await fetch('/api/social/messages/send', {
+        method: 'POST',
+        headers: hdrs(),
+        body: JSON.stringify({ recipientId: dmActiveContact.userId, content }),
+      });
+    } catch(_) {}
+  };
+
+  document.getElementById('dm-msg-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') dmSendMessage();
+  });
+
+  // ── Search / Add friend view ──────────────────────────────────────────────
+  window.dmShowSearch = function() {
+    dmCurrentView = 'search';
+    document.getElementById('dm-list-view').style.display   = 'none';
+    document.getElementById('dm-thread-view').style.display = 'none';
+    document.getElementById('dm-search-view').style.display = 'flex';
+    document.getElementById('dm-head-title').textContent    = 'Add Friend';
+    document.getElementById('dm-search-btn').style.display  = 'none';
+    document.getElementById('dm-back-btn').style.display    = 'inline';
+    document.getElementById('dm-add-input').focus();
+  };
+
+  window.dmShowList = function() {
+    dmCurrentView = 'list';
+    dmActiveContact = null;
+    document.getElementById('dm-thread-view').style.display = 'none';
+    document.getElementById('dm-search-view').style.display = 'none';
+    document.getElementById('dm-list-view').style.display   = 'flex';
+    document.getElementById('dm-head-title').textContent    = 'Friends & Messages';
+    document.getElementById('dm-search-btn').style.display  = 'inline';
+    document.getElementById('dm-back-btn').style.display    = 'none';
+  };
+
+  let _searchTimer;
+  window.dmSearchUsers = function(q) {
+    clearTimeout(_searchTimer);
+    if (!q || q.length < 2) { document.getElementById('dm-search-results').innerHTML = ''; return; }
+    _searchTimer = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/social/search?q=${encodeURIComponent(q)}`, { headers: hdrs() });
+        const { results } = await r.json();
+        const el = document.getElementById('dm-search-results');
+        if (!results || !results.length) {
+          el.innerHTML = '<div class="dm-empty" style="padding:20px;">No players found</div>';
+          return;
+        }
+        el.innerHTML = results.map(u => `
+          <div class="dm-row">
+            <div class="dm-avatar">${esc(initials(u.fullName))}</div>
+            <div style="flex:1;min-width:0;">
+              <div class="dm-row-name">${esc(u.fullName)}</div>
+              <div class="dm-row-sub">${esc(u.email)}</div>
+            </div>
+            <button onclick="dmAddFriend('${esc(u.email)}',this)" style="background:rgba(0,188,212,.15);border:1px solid rgba(0,188,212,.3);color:#00bcd4;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">+ Add</button>
+          </div>
+        `).join('');
+      } catch(_) {}
+    }, 300);
+  };
+
+  window.dmAddFriend = async function(email, btn) {
+    try {
+      btn.disabled = true;
+      btn.textContent = '…';
+      const r = await fetch('/api/social/friends/add', {
+        method: 'POST',
+        headers: hdrs(),
+        body: JSON.stringify({ friendEmail: email }),
+      });
+      const data = await r.json();
+      if (data.success) {
+        btn.textContent = '✓ Added';
+        btn.style.color = '#00ff88';
+        btn.style.borderColor = '#00ff88';
+      } else {
+        btn.textContent = data.error || 'Error';
+        btn.disabled = false;
+      }
+    } catch(_) {
+      btn.textContent = 'Error';
+      btn.disabled = false;
+    }
+  };
+
+  // ── Badge update ──────────────────────────────────────────────────────────
+  function updateDMBadge(count) {
+    const badge = document.getElementById('dm-badge');
+    if (!badge) return;
+    if (count > 0) {
+      badge.style.display = 'flex';
+      badge.textContent = count > 99 ? '99+' : count;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
+  // Poll unread count every 30s when panel is closed
+  setInterval(async () => {
+    if (dmOpen || !sesh()) return;
+    try {
+      const r = await fetch('/api/social/messages/unread/count', { headers: hdrs() });
+      const { unreadCount } = await r.json();
+      updateDMBadge(unreadCount || 0);
+    } catch(_) {}
+  }, 30000);
+
+  // Socket.io: real-time new messages
+  document.addEventListener('sml:new_message', (e) => {
+    const msg = e.detail;
+    dmUnreadTotal++;
+    updateDMBadge(dmUnreadTotal);
+    // If thread with this sender is open, append the message
+    if (dmOpen && dmCurrentView === 'thread' && dmActiveContact && dmActiveContact.userId === msg.senderId) {
+      const el = document.getElementById('dm-thread-msgs');
+      const div1 = document.createElement('div');
+      div1.className = 'dm-bubble-in';
+      div1.textContent = msg.content;
+      const div2 = document.createElement('div');
+      div2.className = 'dm-bubble-time';
+      div2.style.alignSelf = 'flex-start';
+      div2.textContent = 'now';
+      el.appendChild(div1);
+      el.appendChild(div2);
+      el.scrollTop = el.scrollHeight;
+      dmUnreadTotal = Math.max(0, dmUnreadTotal - 1);
+      updateDMBadge(dmUnreadTotal);
+      // Mark read
+      if (msg.messageId) {
+        fetch(`/api/social/messages/${msg.messageId}/read`, { method:'POST', headers: hdrs() }).catch(()=>{});
+      }
+    }
+  });
+})();
+</script>
+
 <!-- ── Community Tab Section ─────────────────────────────────────────── -->
 <style>
   .comm-card{background:#1a1f2e;border:1px solid #2a3050;border-radius:14px;padding:16px;display:flex;align-items:flex-start;gap:12px;transition:.15s;}
@@ -3404,6 +3785,13 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
 
     socket.on('path_completed', ({ message }) => {
       showToast('🎓', 'Learning Path Complete!', message, '#9c27b0');
+    });
+
+    socket.on('new_message', (msg) => {
+      // Dispatch to DM panel via DOM event
+      document.dispatchEvent(new CustomEvent('sml:new_message', { detail: msg }));
+      showToast('💬', msg.senderName, msg.content.slice(0, 60) + (msg.content.length > 60 ? '…' : ''), '#00bcd4');
+      if (window.SMLSounds) SMLSounds.notification();
     });
 
     socket.on('feed_update', (feed) => {
