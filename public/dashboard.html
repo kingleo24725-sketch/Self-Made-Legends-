@@ -1131,8 +1131,32 @@
               <a href="/leaderboard.html" target="_blank" style="flex:1; background:#00d4ff; color:#000; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">📊 Full Leaderboard</a>
               <a href="/hall-of-fame.html" target="_blank" style="flex:1; background:#1a1f2e; border:1px solid #ffd700; color:#ffd700; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">🏆 Hall of Fame</a>
               <a href="/tournament.html" target="_blank" style="flex:1; background:#1a1f2e; border:1px solid rgba(255,100,0,0.5); color:#ff9030; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">🏟️ Tournament</a>
+              <a href="/training.html" target="_blank" style="flex:1; background:#1a1f2e; border:1px solid rgba(0,230,118,0.5); color:#00e676; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">🎓 Boot Camp</a>
+              <a href="/teams.html" target="_blank" style="flex:1; background:#1a1f2e; border:1px solid rgba(156,39,176,0.5); color:#ce93d8; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">👥 Teams</a>
             </div>
           </div>
+        </div>
+
+        <!-- Boot Camp Progress Card -->
+        <div class="card" style="margin-bottom:20px;" id="bootcamp-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+            <h3 style="color:#00e676;">🎓 Boot Camp Progress</h3>
+            <a href="/training.html" style="color:#00d4ff; font-size:0.82em; text-decoration:none;">View All Lessons →</a>
+          </div>
+          <div id="bc-progress-bar-wrap" style="background:#0d1b2a; border-radius:999px; height:12px; overflow:hidden; margin-bottom:10px;">
+            <div id="bc-progress-bar" style="height:100%; background:linear-gradient(90deg,#00e676,#00d4ff); border-radius:999px; transition:width .6s ease; width:0%"></div>
+          </div>
+          <div id="bc-progress-label" style="color:#888; font-size:0.82em; margin-bottom:14px;">Loading…</div>
+          <div id="bc-lesson-chips" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+        </div>
+
+        <!-- Teams Card -->
+        <div class="card" style="margin-bottom:20px;" id="my-team-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+            <h3 style="color:#ce93d8;">👥 My Team</h3>
+            <a href="/teams.html" style="color:#00d4ff; font-size:0.82em; text-decoration:none;">Team Leaderboard →</a>
+          </div>
+          <div id="my-team-content" style="color:#888; font-size:0.9em;">Loading…</div>
         </div>
 
         <!-- Social Feed -->
@@ -2721,6 +2745,198 @@
     const icons = { none:'⛔', chain:'⛓️', diamond_chain:'💎', rainbow_chain:'🌈', sunglasses:'🕶️', prism_shades:'🔆', cap:'🧢', crown:'👑', halo:'✨', earrings:'💎', headphones:'🎧' };
     return icons[id] || '•';
   }
+
+  // ── Boot Camp Progress ──────────────────────────────────────────────────
+  async function loadBootCampProgress() {
+    const sml_session = localStorage.getItem('sml_session');
+    if (!sml_session) {
+      document.getElementById('bc-progress-label').textContent = 'Sign in to track your Boot Camp progress.';
+      document.getElementById('bc-lesson-chips').innerHTML = '<a href="/training.html" style="color:#00d4ff;font-size:0.85em;text-decoration:none;">Start Boot Camp →</a>';
+      return;
+    }
+    try {
+      const data = await apiCall('/training/progress');
+      const done = (data.completedLessons || []).length;
+      const total = data.totalLessons || 6;
+      const pct = Math.round((done / total) * 100);
+      document.getElementById('bc-progress-bar').style.width = pct + '%';
+      document.getElementById('bc-progress-label').textContent = data.graduated
+        ? '🏆 Graduated! All 6 lessons complete.'
+        : `${done} of ${total} lessons completed`;
+      const lessonIcons = ['📈','💹','📊','🛡️','🔬','🏆'];
+      const completedSet = new Set(data.completedLessons || []);
+      document.getElementById('bc-lesson-chips').innerHTML = lessonIcons.map((icon, i) => {
+        const done2 = completedSet.has(i + 1);
+        return `<a href="/training.html" style="text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:999px;font-size:0.78em;border:1px solid ${done2 ? '#00e676' : '#333'};color:${done2 ? '#00e676' : '#555'};background:${done2 ? 'rgba(0,230,118,.08)' : 'transparent'};">${icon} L${i+1} ${done2 ? '✓' : ''}</a>`;
+      }).join('');
+    } catch(e) {
+      document.getElementById('bc-progress-label').textContent = 'Could not load Boot Camp progress.';
+    }
+  }
+
+  // ── My Team ─────────────────────────────────────────────────────────────
+  async function loadMyTeamCard() {
+    const sml_session = localStorage.getItem('sml_session');
+    if (!sml_session) {
+      document.getElementById('my-team-content').innerHTML = '<a href="/teams.html" style="color:#ce93d8;font-size:0.85em;text-decoration:none;">Sign in to create or join a team →</a>';
+      return;
+    }
+    try {
+      const data = await apiCall('/teams/my');
+      const el = document.getElementById('my-team-content');
+      if (!data.team) {
+        el.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <span style="color:#888">You're not in a team yet.</span>
+          <a href="/teams.html" style="background:linear-gradient(135deg,#9c27b0,#673ab7);color:#fff;text-decoration:none;padding:8px 16px;border-radius:999px;font-size:0.82em;font-weight:700;">Create or Join a Team</a>
+        </div>`;
+      } else {
+        const t = data.team;
+        const memberCount = (t.memberIds ? t.memberIds.length : t.memberCount);
+        el.innerHTML = `<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:1.1em;font-weight:800;color:#fff">${esc2(t.name)}</div>
+            <div style="font-size:0.8em;color:#888;margin-top:2px;">👥 ${memberCount} member${memberCount !== 1 ? 's' : ''} &bull; Code: <span style="font-family:monospace;color:#ffd700;letter-spacing:2px">${t.code}</span></div>
+          </div>
+          <a href="/teams.html" style="margin-left:auto;color:#00d4ff;font-size:0.82em;text-decoration:none;white-space:nowrap;">Manage →</a>
+        </div>`;
+      }
+    } catch(e) {
+      document.getElementById('my-team-content').textContent = 'Could not load team info.';
+    }
+  }
+  function esc2(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  loadBootCampProgress();
+  loadMyTeamCard();
   </script>
+
+<!-- ── AI Coach Chat Bubble ───────────────────────────────────────────── -->
+<style>
+  #coach-bubble{position:fixed;bottom:24px;right:24px;z-index:9999;}
+  #coach-toggle{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#1a237e,#4a148c);border:2px solid rgba(156,39,176,.6);box-shadow:0 4px 20px rgba(0,0,0,.5);cursor:pointer;font-size:26px;display:flex;align-items:center;justify-content:center;color:#fff;transition:.2s;}
+  #coach-toggle:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(156,39,176,.4);}
+  #coach-panel{position:absolute;bottom:72px;right:0;width:340px;max-height:520px;background:#1a1f2e;border:1px solid #2a3050;border-radius:20px;box-shadow:0 8px 40px rgba(0,0,0,.7);display:none;flex-direction:column;overflow:hidden;}
+  #coach-panel.open{display:flex;}
+  .cp-head{background:linear-gradient(135deg,#1a237e,#4a148c);padding:14px 16px;display:flex;align-items:center;gap:10px;}
+  .cp-head-icon{font-size:22px;}
+  .cp-head-title{font-weight:800;font-size:15px;color:#fff;}
+  .cp-head-sub{font-size:11px;color:rgba(255,255,255,.6);}
+  .cp-tip{background:rgba(0,212,255,.07);border-bottom:1px solid #2a3050;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.7);line-height:1.5;}
+  .cp-tip span{color:#00d4ff;font-weight:700;}
+  .cp-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:120px;}
+  .cp-msg{max-width:86%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.55;}
+  .cp-msg.bot{background:#253058;color:#e8eaf6;align-self:flex-start;border-bottom-left-radius:4px;}
+  .cp-msg.user{background:linear-gradient(135deg,#1a237e,#4a148c);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+  .cp-qs{padding:8px 12px;border-top:1px solid #2a3050;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
+  .cp-qs::-webkit-scrollbar{display:none;}
+  .cp-q{background:#253058;border:none;color:#00d4ff;border-radius:999px;padding:5px 11px;font-size:11px;cursor:pointer;white-space:nowrap;transition:.15s;}
+  .cp-q:hover{background:#2d3a6e;}
+  .cp-input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid #2a3050;}
+  #coach-input{flex:1;background:#0d1220;border:1px solid #2a3050;border-radius:10px;color:#e8eaf6;padding:8px 12px;font-size:13px;outline:none;}
+  #coach-input:focus{border-color:rgba(156,39,176,.6);}
+  #coach-send{background:linear-gradient(135deg,#1a237e,#4a148c);border:none;color:#fff;border-radius:10px;padding:8px 14px;cursor:pointer;font-size:14px;transition:.15s;}
+  #coach-send:hover{opacity:.85;}
+  @media(max-width:400px){#coach-panel{width:calc(100vw - 32px);right:-8px;}}
+</style>
+
+<div id="coach-bubble">
+  <div id="coach-panel">
+    <div class="cp-head">
+      <div class="cp-head-icon">🤖</div>
+      <div>
+        <div class="cp-head-title">SML Trading Coach</div>
+        <div class="cp-head-sub">AI assistant for beginners</div>
+      </div>
+    </div>
+    <div class="cp-tip" id="cp-daily-tip"><span>Tip:</span> Loading today's tip…</div>
+    <div class="cp-msgs" id="cp-msgs">
+      <div class="cp-msg bot">Hey! I'm your SML Trading Coach 🤖 Ask me anything about stocks, trading strategies, or how to use this platform. I'm here to help beginners get started!</div>
+    </div>
+    <div class="cp-qs" id="cp-qs"></div>
+    <div class="cp-input-row">
+      <input id="coach-input" placeholder="Ask the coach…" maxlength="400" autocomplete="off"/>
+      <button id="coach-send" onclick="coachSend()">➤</button>
+    </div>
+  </div>
+  <button id="coach-toggle" onclick="toggleCoach()" title="Ask the Trading Coach">🤖</button>
+</div>
+
+<script>
+(function(){
+  let coachOpen = false;
+
+  window.toggleCoach = function() {
+    coachOpen = !coachOpen;
+    const panel = document.getElementById('coach-panel');
+    panel.classList.toggle('open', coachOpen);
+    if (coachOpen) {
+      loadCoachInit();
+      document.getElementById('coach-input').focus();
+    }
+  };
+
+  let coachInitDone = false;
+  async function loadCoachInit() {
+    if (coachInitDone) return;
+    coachInitDone = true;
+    try {
+      const [tipRes, qsRes] = await Promise.all([
+        fetch('/api/coach/tip').then(r => r.json()),
+        fetch('/api/coach/questions').then(r => r.json()),
+      ]);
+      if (tipRes.tip) {
+        document.getElementById('cp-daily-tip').innerHTML = `<span>Tip of the day:</span> ${tipRes.tip}`;
+      }
+      if (qsRes.questions) {
+        document.getElementById('cp-qs').innerHTML = qsRes.questions
+          .map(q => `<button class="cp-q" onclick="coachAsk(${JSON.stringify(q)})">${q}</button>`).join('');
+      }
+    } catch(e) {}
+  }
+
+  window.coachAsk = function(q) {
+    document.getElementById('coach-input').value = q;
+    coachSend();
+  };
+
+  window.coachSend = async function() {
+    const input = document.getElementById('coach-input');
+    const query = input.value.trim();
+    if (!query) return;
+    input.value = '';
+    addMsg(query, 'user');
+    addMsg('…', 'bot', 'coach-typing');
+    try {
+      const r = await fetch('/api/coach/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      const data = await r.json();
+      const typing = document.getElementById('coach-typing');
+      if (typing) typing.remove();
+      addMsg(data.answer || 'Sorry, I couldn\'t understand that. Try asking about stocks, trading, or the leaderboard!', 'bot');
+    } catch(e) {
+      const typing = document.getElementById('coach-typing');
+      if (typing) typing.remove();
+      addMsg('Network error. Please try again.', 'bot');
+    }
+  };
+
+  function addMsg(text, side, id) {
+    const msgs = document.getElementById('cp-msgs');
+    const div = document.createElement('div');
+    div.className = 'cp-msg ' + side;
+    div.textContent = text;
+    if (id) div.id = id;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  document.getElementById('coach-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') coachSend();
+  });
+})();
+</script>
 </body>
 </html>

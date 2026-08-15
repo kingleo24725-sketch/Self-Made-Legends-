@@ -32,6 +32,9 @@ const MissionSystem = require("./gamification/MissionSystem");
 const SeasonManager = require("./gamification/SeasonManager");
 const SocialFeed = require("./gamification/SocialFeed");
 const TournamentManager = require("./gamification/TournamentManager");
+const CoachSystem = require("./gamification/CoachSystem");
+const TrainingCamp = require("./gamification/TrainingCamp");
+const TeamManager = require("./social/TeamManager");
 
 const app = express();
 const server = http.createServer(app);
@@ -68,6 +71,9 @@ const seasonManager = new SeasonManager();
 const socialFeed = new SocialFeed();
 socialFeed.seedDemoEvents();
 const tournamentManager = new TournamentManager();
+const coachSystem = new CoachSystem();
+const trainingCamp = new TrainingCamp();
+const teamManager = new TeamManager();
 
 // AI bot portfolio — auto-simulated for "Beat the AI" challenge
 const aiBot = { name: 'SML-AI Bot', gainPct: 0, history: [] };
@@ -1454,6 +1460,88 @@ app.post("/api/admin/tournament/championship", requireAdmin, (req, res) => {
   if (!winnerUserId) return res.status(400).json({ error: "winnerUserId required" });
   const result = tournamentManager.setChampionshipWinner(winnerUserId);
   res.json(result);
+});
+
+// ── AI Coach ─────────────────────────────────────────────────────────────
+app.post("/api/coach/ask", (req, res) => {
+  const { query } = req.body;
+  if (!query || typeof query !== 'string') return res.status(400).json({ error: 'query required' });
+  const answer = coachSystem.getResponse(query.slice(0, 400));
+  res.json({ answer });
+});
+
+app.get("/api/coach/tip", (req, res) => {
+  res.json({ tip: coachSystem.getDailyTip() });
+});
+
+app.get("/api/coach/questions", (req, res) => {
+  res.json({ questions: coachSystem.getQuickQuestions() });
+});
+
+// ── Training Camp ─────────────────────────────────────────────────────────
+app.get("/api/training/lessons", (req, res) => {
+  res.json({ lessons: trainingCamp.getLessons() });
+});
+
+app.get("/api/training/lesson/:id", (req, res) => {
+  const lesson = trainingCamp.getLesson(parseInt(req.params.id, 10));
+  if (!lesson) return res.status(404).json({ error: 'Lesson not found' });
+  res.json(lesson);
+});
+
+app.get("/api/training/progress", authenticateUser, (req, res) => {
+  res.json(trainingCamp.getProgress(req.user.userId));
+});
+
+app.post("/api/training/quiz", authenticateUser, (req, res) => {
+  const { lessonId, answer } = req.body;
+  if (lessonId === undefined || answer === undefined) return res.status(400).json({ error: 'lessonId and answer required' });
+  const result = trainingCamp.submitQuiz(req.user.userId, parseInt(lessonId, 10), parseInt(answer, 10));
+  if (result.success && result.graduated) {
+    badgeSystem.checkAndAward(req.user.userId, 'training_graduate');
+    missionSystem.completeAction(req.user.userId, 'training_graduate');
+  }
+  res.json(result);
+});
+
+// ── Teams ─────────────────────────────────────────────────────────────────
+app.post("/api/teams/create", authenticateUser, (req, res) => {
+  const { name, description } = req.body;
+  const result = teamManager.createTeam(req.user.userId, name, description);
+  res.json(result);
+});
+
+app.post("/api/teams/join", authenticateUser, (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'code required' });
+  const result = teamManager.joinTeam(req.user.userId, code);
+  res.json(result);
+});
+
+app.post("/api/teams/leave", authenticateUser, (req, res) => {
+  const result = teamManager.leaveTeam(req.user.userId);
+  res.json(result);
+});
+
+app.get("/api/teams/my", authenticateUser, (req, res) => {
+  const team = teamManager.getUserTeam(req.user.userId);
+  res.json({ team });
+});
+
+app.get("/api/teams/leaderboard", (req, res) => {
+  const lb = leaderboardManager.getPublicLeaderboard ? leaderboardManager.getPublicLeaderboard() : [];
+  teamManager.updateTeamStats(lb.map(e => ({ userId: e.id || e.userId, gainPct: e.gainPercent || e.gainPct || 0 })));
+  res.json({ teams: teamManager.getTeamLeaderboard() });
+});
+
+app.get("/api/teams/all", (req, res) => {
+  res.json({ teams: teamManager.getAllTeams() });
+});
+
+app.get("/api/teams/:teamId", (req, res) => {
+  const team = teamManager.getTeam(req.params.teamId);
+  if (!team) return res.status(404).json({ error: 'Team not found' });
+  res.json(team);
 });
 
 // ── Streaks ───────────────────────────────────────────────────────────────

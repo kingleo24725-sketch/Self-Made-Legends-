@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>SML Teams</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0d0f1a;--surface:#161926;--card:#1e2235;--border:#2a3050;
+    --accent:#00d4ff;--gold:#ffd700;--green:#00e676;--red:#ff5252;
+    --text:#e8eaf6;--muted:#7986cb;--purple:#9c27b0;
+    --grad:linear-gradient(135deg,#1a237e,#4a148c,#880e4f);
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh}
+  header{background:var(--grad);padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+  .logo{font-size:28px;font-weight:900;letter-spacing:2px;color:#fff}
+  .logo span{color:var(--gold)}
+  nav{margin-left:auto;display:flex;gap:12px;flex-wrap:wrap}
+  nav a{color:rgba(255,255,255,.8);text-decoration:none;font-size:14px;padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.2);transition:.2s}
+  nav a:hover{background:rgba(255,255,255,.1);color:#fff}
+  .hero{background:var(--grad);padding:36px 20px;text-align:center}
+  .hero h1{font-size:clamp(24px,5vw,42px);font-weight:900;color:#fff}
+  .hero h1 span{color:var(--gold)}
+  .hero p{color:rgba(255,255,255,.8);margin-top:8px;font-size:16px}
+  .main{max-width:1000px;margin:0 auto;padding:32px 16px}
+
+  /* My Team */
+  .my-team-card{background:var(--card);border:2px solid var(--accent);border-radius:20px;padding:24px;margin-bottom:32px}
+  .my-team-card h2{font-size:18px;color:var(--accent);margin-bottom:4px}
+  .team-name{font-size:26px;font-weight:900;color:#fff;margin-bottom:6px}
+  .team-desc{color:var(--muted);font-size:14px;margin-bottom:14px}
+  .team-meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .meta-chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 14px;font-size:13px}
+  .code-box{display:inline-flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 16px;font-family:monospace;font-size:18px;letter-spacing:4px;color:var(--gold);cursor:pointer;margin-bottom:16px}
+  .code-box:hover{border-color:var(--gold)}
+  .btn{padding:10px 20px;border-radius:999px;font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.2s}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#0080ff);color:#fff}
+  .btn-primary:hover{opacity:.85}
+  .btn-danger{background:rgba(255,82,82,.12);color:var(--red);border:1px solid var(--red)}
+  .btn-danger:hover{background:rgba(255,82,82,.2)}
+  .btn-outline{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border)}
+  .btn-outline:hover{background:rgba(255,255,255,.12)}
+  .btn-gold{background:linear-gradient(135deg,#ffd700,#ff8800);color:#000;font-weight:900}
+  .btn-gold:hover{opacity:.85}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* No-team panel */
+  .no-team{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;margin-bottom:32px}
+  .no-team h2{font-size:22px;color:#fff;margin-bottom:8px}
+  .no-team p{color:var(--muted);margin-bottom:24px;font-size:15px}
+  .action-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:480px;margin:0 auto}
+  @media(max-width:480px){.action-grid{grid-template-columns:1fr}}
+  .action-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;text-align:center;transition:.2s}
+  .action-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .action-card .icon{font-size:30px;margin-bottom:8px}
+  .action-card h3{font-size:15px;font-weight:700;margin-bottom:4px}
+  .action-card p{font-size:12px;color:var(--muted)}
+
+  /* Leaderboard */
+  .section-title{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:18px}
+  .lb-table{width:100%;border-collapse:collapse}
+  .lb-table th{text-align:left;font-size:12px;color:var(--muted);padding:8px 14px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px}
+  .lb-table td{padding:14px;border-bottom:1px solid var(--border);font-size:14px}
+  .lb-table tr:last-child td{border-bottom:none}
+  .lb-table tr:hover td{background:rgba(255,255,255,.02)}
+  .rank-num{font-weight:900;color:var(--gold);font-size:16px}
+  .team-row-name{font-weight:700;color:#fff}
+  .gain-pos{color:var(--green);font-weight:700}
+  .gain-neg{color:var(--red);font-weight:700}
+  .card-table{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  .medal-1{color:#ffd700}
+  .medal-2{color:#c0c0c0}
+  .medal-3{color:#cd7f32}
+
+  /* Modals */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--card);border:1px solid var(--border);border-radius:20px;width:100%;max-width:420px;padding:28px;position:relative}
+  .modal h2{font-size:20px;font-weight:800;margin-bottom:16px;color:#fff}
+  .modal-close{position:absolute;top:14px;right:16px;font-size:20px;cursor:pointer;color:var(--muted);background:none;border:none}
+  .modal-close:hover{color:#fff}
+  .form-group{margin-bottom:14px}
+  .form-group label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .form-group input,.form-group textarea{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:10px 14px;font-size:14px;outline:none;transition:.2s}
+  .form-group input:focus,.form-group textarea:focus{border-color:var(--accent)}
+  .form-group textarea{resize:vertical;min-height:70px}
+  .err{color:var(--red);font-size:13px;margin-top:8px;min-height:18px}
+  footer{text-align:center;padding:40px 16px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">SML <span>TEAMS</span></div>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="leaderboard.html">Leaderboard</a>
+    <a href="training.html">Boot Camp</a>
+    <a href="tournament.html">Tournament</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <h1>👥 <span>Teams</span></h1>
+  <p>Form a squad, climb together, and dominate the team leaderboard.</p>
+</div>
+
+<div class="main">
+  <div id="myTeamSection"></div>
+
+  <div class="section-title">🏆 Team Leaderboard</div>
+  <div class="card-table">
+    <table class="lb-table">
+      <thead>
+        <tr><th>#</th><th>Team</th><th>Members</th><th>Avg Gain %</th></tr>
+      </thead>
+      <tbody id="teamLb">
+        <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('createModal')">✕</button>
+    <h2>⚡ Create a Team</h2>
+    <div class="form-group">
+      <label>Team Name *</label>
+      <input id="createName" maxlength="40" placeholder="e.g. Bull Gang, Diamond Hands…"/>
+    </div>
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea id="createDesc" maxlength="200" placeholder="What's your squad about?"></textarea>
+    </div>
+    <div class="err" id="createErr"></div>
+    <button class="btn btn-gold" onclick="createTeam()" style="width:100%;margin-top:8px">Create Team</button>
+  </div>
+</div>
+
+<!-- Join Modal -->
+<div class="modal-overlay" id="joinModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('joinModal')">✕</button>
+    <h2>🔑 Join a Team</h2>
+    <div class="form-group">
+      <label>Team Code</label>
+      <input id="joinCode" maxlength="6" placeholder="6-character code" style="text-transform:uppercase;letter-spacing:4px;font-size:18px;font-family:monospace"/>
+    </div>
+    <div class="err" id="joinErr"></div>
+    <button class="btn btn-primary" onclick="joinTeam()" style="width:100%;margin-top:8px">Join Team</button>
+  </div>
+</div>
+
+<footer>Self-Made Legends &copy; 2025 &bull; Team System</footer>
+
+<script>
+const API = '/api';
+const session = localStorage.getItem('sml_session');
+
+async function apiCall(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (session) headers['x-session-id'] = session;
+  const r = await fetch(API + path, { headers, ...opts });
+  return r.json();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+async function loadMyTeam() {
+  const section = document.getElementById('myTeamSection');
+  if (!session) {
+    section.innerHTML = `<div class="no-team">
+      <h2>👥 Build Your Squad</h2>
+      <p>Sign in on the dashboard to create or join a team.</p>
+      <a href="dashboard.html" class="btn btn-primary" style="text-decoration:none;display:inline-block">Go to Dashboard</a>
+    </div>`;
+    return;
+  }
+  const data = await apiCall('/teams/my');
+  if (!data.team) {
+    section.innerHTML = `<div class="no-team">
+      <h2>You're not on a team yet</h2>
+      <p>Create your own squad or join one with a team code.</p>
+      <div class="action-grid">
+        <div class="action-card" onclick="openModal('createModal')">
+          <div class="icon">⚡</div>
+          <h3>Create Team</h3>
+          <p>Start your own squad and invite players</p>
+        </div>
+        <div class="action-card" onclick="openModal('joinModal')">
+          <div class="icon">🔑</div>
+          <h3>Join Team</h3>
+          <p>Enter a 6-character team code</p>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    const t = data.team;
+    section.innerHTML = `<div class="my-team-card">
+      <h2>My Team</h2>
+      <div class="team-name">${esc(t.name)}</div>
+      <div class="team-desc">${esc(t.description || '')}</div>
+      <div class="team-meta">
+        <div class="meta-chip">👥 ${t.memberIds ? t.memberIds.length : t.memberCount} member${(t.memberIds ? t.memberIds.length : t.memberCount) !== 1 ? 's' : ''}</div>
+        <div class="meta-chip">📊 Avg Gain: <span style="color:var(--green)">${(t.avgGainPct || 0).toFixed(2)}%</span></div>
+      </div>
+      <div style="margin-bottom:8px;font-size:13px;color:var(--muted)">📋 Invite Code (tap to copy):</div>
+      <div class="code-box" onclick="copyCode('${t.code}')">
+        ${t.code} <span style="font-size:13px;letter-spacing:0;color:var(--muted)">📋</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-danger" onclick="leaveTeam()">Leave Team</button>
+      </div>
+    </div>`;
+  }
+}
+
+function copyCode(code) {
+  navigator.clipboard.writeText(code).then(() => {
+    const el = document.querySelector('.code-box');
+    if (el) { el.textContent = 'Copied!'; setTimeout(() => location.reload(), 900); }
+  });
+}
+
+async function leaveTeam() {
+  if (!confirm('Are you sure you want to leave your team?')) return;
+  const r = await apiCall('/teams/leave', { method: 'POST', body: '{}' });
+  if (r.success) location.reload();
+  else alert(r.error || 'Error leaving team');
+}
+
+async function createTeam() {
+  const name = document.getElementById('createName').value.trim();
+  const description = document.getElementById('createDesc').value.trim();
+  document.getElementById('createErr').textContent = '';
+  const r = await apiCall('/teams/create', {
+    method: 'POST', body: JSON.stringify({ name, description })
+  });
+  if (r.success) { closeModal('createModal'); location.reload(); }
+  else document.getElementById('createErr').textContent = r.error || 'Failed to create team';
+}
+
+async function joinTeam() {
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  document.getElementById('joinErr').textContent = '';
+  const r = await apiCall('/teams/join', {
+    method: 'POST', body: JSON.stringify({ code })
+  });
+  if (r.success) { closeModal('joinModal'); location.reload(); }
+  else document.getElementById('joinErr').textContent = r.error || 'Failed to join team';
+}
+
+async function loadLeaderboard() {
+  const data = await apiCall('/teams/leaderboard');
+  const tbody = document.getElementById('teamLb');
+  if (!data.teams || !data.teams.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--muted)">No teams yet. Be the first to create one!</td></tr>';
+    return;
+  }
+  const medals = ['🥇','🥈','🥉'];
+  tbody.innerHTML = data.teams.map((t, i) => {
+    const medal = medals[i] || '';
+    const gainClass = t.avgGainPct >= 0 ? 'gain-pos' : 'gain-neg';
+    const gainSign = t.avgGainPct >= 0 ? '+' : '';
+    return `<tr>
+      <td class="rank-num">${medal || (i+1)}</td>
+      <td><div class="team-row-name">${esc(t.name)}</div></td>
+      <td style="color:var(--muted)">${t.memberCount}</td>
+      <td class="${gainClass}">${gainSign}${t.avgGainPct.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Enter key on join code
+document.getElementById('joinCode').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinTeam();
+});
+document.getElementById('createName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createTeam();
+});
+
+loadMyTeam();
+loadLeaderboard();
+</script>
+</body>
+</html>

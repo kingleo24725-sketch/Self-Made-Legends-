@@ -1,4 +1,4 @@
-const CACHE = 'sml-v3';
+const CACHE = 'sml-v4';
 const STATIC = [
   '/dashboard.html',
   '/manifest.json',
@@ -7,6 +7,8 @@ const STATIC = [
   '/leaderboard.html',
   '/hall-of-fame.html',
   '/tournament.html',
+  '/training.html',
+  '/teams.html',
   '/404.html',
   '/js/avatar-builder.js',
 ];
