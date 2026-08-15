@@ -97,6 +97,7 @@
     <a href="leaderboard.html">Leaderboard</a>
     <a href="training.html">Boot Camp</a>
     <a href="tournament.html">Tournament</a>
+    <button class="sml-mute-btn" onclick="if(window.SMLSounds)SMLSounds.toggleMute()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:14px;" title="Toggle sounds">🔊</button>
   </nav>
 </header>
 
@@ -154,7 +155,7 @@
 </div>
 
 <footer>Self-Made Legends &copy; 2025 &bull; Team System</footer>
-
+<script src="/js/sounds.js"></script>
 <script>
 const API = '/api';
 const session = localStorage.getItem('sml_session');
@@ -248,7 +249,7 @@ async function createTeam() {
   const r = await apiCall('/teams/create', {
     method: 'POST', body: JSON.stringify({ name, description })
   });
-  if (r.success) { closeModal('createModal'); location.reload(); }
+  if (r.success) { if (window.SMLSounds) SMLSounds.teamJoin(); closeModal('createModal'); setTimeout(() => location.reload(), 400); }
   else document.getElementById('createErr').textContent = r.error || 'Failed to create team';
 }
 
@@ -258,7 +259,7 @@ async function joinTeam() {
   const r = await apiCall('/teams/join', {
     method: 'POST', body: JSON.stringify({ code })
   });
-  if (r.success) { closeModal('joinModal'); location.reload(); }
+  if (r.success) { if (window.SMLSounds) SMLSounds.teamJoin(); closeModal('joinModal'); setTimeout(() => location.reload(), 400); }
   else document.getElementById('joinErr').textContent = r.error || 'Failed to join team';
 }
 

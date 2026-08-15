@@ -1294,6 +1294,7 @@
               currentUser = email;
               document.getElementById('user-info').textContent = `👤 ${email}`;
               document.getElementById('logout-btn').style.display = 'block';
+              if (window.SMLSounds) SMLSounds.coin();
               if (data.loginStreak > 1) {
                 const streakMsg = data.bonusXP > 0
                   ? `🔥 ${data.loginStreak}-day login streak! +${data.bonusXP} bonus XP!`
@@ -1759,6 +1760,7 @@
         .then(data => renderBadges({ badges: data.badges.map(b => ({ ...b, earned: false })), earned: 0, total: data.badges.length }));
     }
 
+    let _lastBadgeCount = 0;
     function renderBadges(data) {
       const summary = document.getElementById('badge-summary');
       if (summary && data.earned !== undefined) {
@@ -1768,6 +1770,8 @@
         const pct = data.total ? Math.round((data.earned / data.total) * 100) : 0;
         document.getElementById('badge-progress-bar').style.width = pct + '%';
         document.getElementById('badge-progress-text').textContent = pct + '% complete';
+        if (data.earned > _lastBadgeCount && _lastBadgeCount > 0 && window.SMLSounds) SMLSounds.badge();
+        _lastBadgeCount = data.earned;
       }
       const gallery = document.getElementById('badge-gallery');
       if (!gallery || !data.badges) return;
@@ -2178,6 +2182,7 @@
         const shareText = `I just ${gainPct >= 0 ? 'made' : 'lost'} ${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(1)}% on $${symbol} 📈 — Self-Made Legends 👑 Join the game!`;
         _tradeCardShareText = shareText;
         showTradeCard({ displayName: 'Demo User', symbol, gainPct: gainPct.toFixed(2), rank: null, season: 'Season 1', shareText });
+        if (window.SMLSounds) (gainPct >= 0 ? SMLSounds.tradeWin() : SMLSounds.tradeLoss());
         return;
       }
       fetch('/api/trades/generate-card', {
@@ -2187,7 +2192,11 @@
       })
         .then(r => r.json())
         .then(data => {
-          if (data.success) { _tradeCardShareText = data.card.shareText; showTradeCard(data.card); }
+          if (data.success) {
+            _tradeCardShareText = data.card.shareText;
+            showTradeCard(data.card);
+            if (window.SMLSounds) (parseFloat(data.card.gainPct) >= 0 ? SMLSounds.tradeWin() : SMLSounds.tradeLoss());
+          }
         })
         .catch(() => {});
     }
@@ -2374,6 +2383,7 @@
 
   <!-- Avatar Builder Script -->
   <script src="/js/avatar-builder.js"></script>
+  <script src="/js/sounds.js"></script>
 
   <!-- Avatar Builder Modal -->
   <div id="avatar-builder-modal">
@@ -2614,6 +2624,7 @@
         }
         statusEl.style.color = '#00ff88';
         statusEl.textContent = '✅ Avatar saved!';
+        if (window.SMLSounds) SMLSounds.avatarSave();
         applyAvatarToUI(dataUrl);
         // Update profile name display if set
         if (avatarName) {
@@ -2843,10 +2854,11 @@
   <div id="coach-panel">
     <div class="cp-head">
       <div class="cp-head-icon">🤖</div>
-      <div>
+      <div style="flex:1">
         <div class="cp-head-title">SML Trading Coach</div>
         <div class="cp-head-sub">AI assistant for beginners</div>
       </div>
+      <button class="sml-mute-btn" style="background:none;border:none;cursor:pointer;font-size:17px;color:rgba(255,255,255,.7);padding:4px 6px;border-radius:8px;" onclick="SMLSounds.toggleMute()" title="Toggle sounds">🔊</button>
     </div>
     <div class="cp-tip" id="cp-daily-tip"><span>Tip:</span> Loading today's tip…</div>
     <div class="cp-msgs" id="cp-msgs">
@@ -2916,6 +2928,7 @@
       const typing = document.getElementById('coach-typing');
       if (typing) typing.remove();
       addMsg(data.answer || 'Sorry, I couldn\'t understand that. Try asking about stocks, trading, or the leaderboard!', 'bot');
+      if (window.SMLSounds) SMLSounds.notification();
     } catch(e) {
       const typing = document.getElementById('coach-typing');
       if (typing) typing.remove();

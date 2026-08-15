@@ -11,6 +11,7 @@ const STATIC = [
   '/teams.html',
   '/404.html',
   '/js/avatar-builder.js',
+  '/js/sounds.js',
 ];
 
 self.addEventListener('install', e => {

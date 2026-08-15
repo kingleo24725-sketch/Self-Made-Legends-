@@ -94,6 +94,7 @@
     <a href="/leaderboard.html">📊 Leaderboard</a>
     <a href="/hall-of-fame.html">🎖️ Hall of Fame</a>
     <a href="/dashboard.html" class="lb-btn">Play Now →</a>
+    <button class="sml-mute-btn" onclick="if(window.SMLSounds)SMLSounds.toggleMute()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:14px;" title="Toggle sounds">🔊</button>
   </div>
 </div>
 
@@ -185,8 +186,10 @@
       </div>`;
   }
 
+  let _victoryPlayed = false;
   function renderChampionship(t) {
     if (t.status === 'complete' && t.grandChampion) {
+      if (!_victoryPlayed && window.SMLSounds) { SMLSounds.victory(); _victoryPlayed = true; }
       return `
         <div class="championship-section">
           <h3>🏆 Grand Championship</h3>
@@ -282,5 +285,6 @@
   load();
   setInterval(load, 60000);
 </script>
+<script src="/js/sounds.js"></script>
 </body>
 </html>

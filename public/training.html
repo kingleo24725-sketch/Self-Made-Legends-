@@ -84,6 +84,7 @@
     <a href="leaderboard.html">Leaderboard</a>
     <a href="teams.html">Teams</a>
     <a href="tournament.html">Tournament</a>
+    <button class="sml-mute-btn" onclick="if(window.SMLSounds)SMLSounds.toggleMute()" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:20px;padding:6px 12px;cursor:pointer;font-size:14px;" title="Toggle sounds">🔊</button>
   </nav>
 </header>
 
@@ -135,7 +136,7 @@
 </div>
 
 <footer>Self-Made Legends &copy; 2025 &bull; Boot Camp Training</footer>
-
+<script src="/js/sounds.js"></script>
 <script>
 const API = '/api';
 const session = localStorage.getItem('sml_session');
@@ -236,6 +237,11 @@ async function submitAnswer(index) {
   resultEl.textContent = (result.correct ? '✓ Correct! ' : '✗ Not quite. ') + (result.explanation || '');
 
   if (result.correct) {
+    if (result.graduated) {
+      if (window.SMLSounds) SMLSounds.graduate();
+    } else {
+      if (window.SMLSounds) SMLSounds.correct();
+    }
     if (!progress.completedLessons.includes(currentLesson.id)) {
       progress.completedLessons.push(currentLesson.id);
     }
@@ -243,6 +249,8 @@ async function submitAnswer(index) {
     updateHero();
     loadLessons();
     if (result.graduated) document.getElementById('gradBanner').classList.add('show');
+  } else {
+    if (window.SMLSounds) SMLSounds.wrong();
   }
 }
 
