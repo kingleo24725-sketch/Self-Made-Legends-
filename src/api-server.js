@@ -224,29 +224,16 @@ app.get("/api/payments/history", authenticateUser, (req, res) => {
   res.json(history);
 });
 
-// ===== STRIPE CREATOR FEE ENDPOINTS =====
+// ===== STRIPE CREATOR SUBSCRIPTION ENDPOINTS =====
 
 app.get("/api/stripe/config", (req, res) => {
   res.json({
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || "",
-    creatorFee: 5.00,
+    creatorFee: 10.00,
+    interval: "month",
+    billingDay: 1,
     currency: "usd",
   });
-});
-
-app.post("/api/stripe/create-creator-fee", authenticateUser, async (req, res) => {
-  if (!stripeProcessor) {
-    return res.status(503).json({ error: "Payment processing not configured" });
-  }
-  try {
-    const account = accountManager.getAccountById(req.user.userId);
-    const userEmail = account?.email || req.user.email || "";
-    const result = await stripeProcessor.createCreatorFeeIntent(req.user.userId, userEmail);
-    res.json({ success: true, ...result });
-  } catch (err) {
-    console.error("Stripe error:", err.message);
-    res.status(500).json({ error: "Payment setup failed: " + err.message });
-  }
 });
 
 app.post("/api/stripe/checkout", authenticateUser, async (req, res) => {
@@ -264,17 +251,17 @@ app.post("/api/stripe/checkout", authenticateUser, async (req, res) => {
   }
 });
 
-app.post("/api/stripe/verify-payment", authenticateUser, async (req, res) => {
+app.post("/api/stripe/cancel-subscription", authenticateUser, async (req, res) => {
   if (!stripeProcessor) {
     return res.status(503).json({ error: "Payment processing not configured" });
   }
-  const { paymentIntentId } = req.body;
-  if (!paymentIntentId) return res.status(400).json({ error: "paymentIntentId required" });
+  const { subscriptionId } = req.body;
+  if (!subscriptionId) return res.status(400).json({ error: "subscriptionId required" });
   try {
-    const result = await stripeProcessor.verifyPayment(paymentIntentId);
+    const result = await stripeProcessor.cancelSubscription(subscriptionId);
     res.json({ success: true, ...result });
   } catch (err) {
-    res.status(500).json({ error: "Verification failed: " + err.message });
+    res.status(500).json({ error: "Cancellation failed: " + err.message });
   }
 });
 
@@ -284,10 +271,16 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (req,
   const sig = req.headers["stripe-signature"];
   try {
     const event = stripeProcessor.constructWebhookEvent(req.body, sig);
-    if (event.type === "payment_intent.succeeded") {
-      const intent = event.data.object;
-      const userId = intent.metadata?.userId;
-      console.log(`Creator fee paid by user ${userId} — $${intent.amount / 100}`);
+    const obj = event.data.object;
+    if (event.type === "customer.subscription.created") {
+      const userId = obj.metadata?.userId;
+      console.log(`Creator subscription STARTED — user ${userId}`);
+    } else if (event.type === "invoice.paid") {
+      const userId = obj.subscription_details?.metadata?.userId || obj.metadata?.userId;
+      console.log(`Creator subscription RENEWED — user ${userId} — $${obj.amount_paid / 100}`);
+    } else if (event.type === "customer.subscription.deleted") {
+      const userId = obj.metadata?.userId;
+      console.log(`Creator subscription CANCELLED — user ${userId}`);
     }
     res.sendStatus(200);
   } catch (err) {

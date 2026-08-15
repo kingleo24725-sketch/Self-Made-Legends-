@@ -602,7 +602,7 @@
     <section class="section" id="payments">
       <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="color: #00d4ff; font-size: 1.6em;">💰 Self Made Legends Payment Hub</h2>
-        <p style="color: #00ff88; font-size: 0.95em;">Fast & Secure Deposits & Withdrawals | $5 Creator Fee</p>
+        <p style="color: #00ff88; font-size: 0.95em;">Fast & Secure Deposits & Withdrawals | $10/month Creator Subscription</p>
       </div>
       <div class="grid">
         <div class="card">
@@ -646,13 +646,16 @@
       </div>
 
       <div class="card" style="border: 2px solid #00d4ff; margin-top: 20px;">
-        <h2 style="color: #00d4ff;">⭐ Activate Creator Account — $5 Fee</h2>
-        <p style="color: #aaa; margin-bottom: 16px;">
-          Pay the one-time $5 Creator Fee to unlock token creation, premium leaderboard rewards, and more.
-          Payments go directly to Self-Made Legends LLC via Stripe — fully secure.
+        <h2 style="color: #00d4ff;">⭐ Creator Membership — $10 / Month</h2>
+        <p style="color: #aaa; margin-bottom: 8px;">
+          Subscribe for <strong style="color:#00ff88;">$10/month</strong> to unlock token creation,
+          premium leaderboard rewards, and creator-only features.
+        </p>
+        <p style="color: #888; font-size: 0.88em; margin-bottom: 16px;">
+          Billed on the <strong>1st of every month</strong> · Cancel anytime · Powered by Stripe
         </p>
         <button class="btn btn-success" onclick="payCreatorFee()" id="creator-fee-btn" style="width:100%; font-size:1.1em;">
-          💳 Pay $5 Creator Fee via Stripe
+          💳 Subscribe — $10/month
         </button>
         <div id="creator-fee-status" style="margin-top:12px; color:#00ff88; display:none;"></div>
       </div>
@@ -863,13 +866,13 @@
             setTimeout(() => { window.location.href = data.checkoutUrl; }, 800);
           } else {
             btn.disabled = false;
-            btn.textContent = '💳 Pay $5 Creator Fee via Stripe';
+            btn.textContent = '💳 Subscribe — $10/month';
             alert('Error: ' + (data.error || 'Could not create payment session'));
           }
         })
         .catch(() => {
           btn.disabled = false;
-          btn.textContent = '💳 Pay $5 Creator Fee via Stripe';
+          btn.textContent = '💳 Subscribe — $10/month';
           alert('Payment setup failed. Please try again.');
         });
     }

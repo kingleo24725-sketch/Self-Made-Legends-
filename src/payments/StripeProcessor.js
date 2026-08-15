@@ -1,69 +1,70 @@
 const stripe = require("stripe");
 
-const CREATOR_FEE = 500; // $5.00 in cents
+const CREATOR_FEE_CENTS = 1000; // $10.00/month
+
+// Returns Unix timestamp for midnight UTC on the 1st of next month
+function nextFirstOfMonth() {
+  const now = new Date();
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+  return Math.floor(next.getTime() / 1000);
+}
 
 class StripeProcessor {
   constructor() {
     this.stripe = stripe(process.env.STRIPE_SECRET_KEY);
     this.publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
+    // Cached Stripe Price ID for the $10/month subscription
+    this._priceId = process.env.STRIPE_CREATOR_PRICE_ID || null;
   }
 
-  // Create a PaymentIntent for the $5 creator fee
-  async createCreatorFeeIntent(userId, userEmail) {
-    const paymentIntent = await this.stripe.paymentIntents.create({
-      amount: CREATOR_FEE,
-      currency: "usd",
-      receipt_email: userEmail,
-      description: "Self-Made Legends LLC – $5 Creator Fee",
-      metadata: {
-        userId: String(userId),
-        type: "creator_fee",
-        platform: "Self-Made Legends",
-      },
+  // Get or create the recurring $10/month Price on Stripe
+  async getOrCreatePrice() {
+    if (this._priceId) return this._priceId;
+
+    const product = await this.stripe.products.create({
+      name: "Self-Made Legends Creator Subscription",
+      description: "$10/month creator membership — billed on the 1st of each month",
     });
 
-    return {
-      clientSecret: paymentIntent.client_secret,
-      publishableKey: this.publishableKey,
-      amount: CREATOR_FEE,
-      paymentIntentId: paymentIntent.id,
-    };
+    const price = await this.stripe.prices.create({
+      product: product.id,
+      unit_amount: CREATOR_FEE_CENTS,
+      currency: "usd",
+      recurring: { interval: "month" },
+    });
+
+    this._priceId = price.id;
+    return price.id;
   }
 
-  // Confirm a creator fee was paid (called after Stripe confirms)
-  async verifyPayment(paymentIntentId) {
-    const intent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
-    return {
-      paid: intent.status === "succeeded",
-      amount: intent.amount,
-      status: intent.status,
-    };
-  }
-
-  // Create a Stripe Checkout Session for the $5 fee (simpler UI flow)
+  // Create a Stripe Checkout Session for the $10/month subscription
   async createCheckoutSession(userId, userEmail, successUrl, cancelUrl) {
+    const priceId = await this.getOrCreatePrice();
+
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      customer_email: userEmail,
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Self-Made Legends Creator Fee",
-              description: "One-time $5 fee to activate your creator account",
-            },
-            unit_amount: CREATOR_FEE,
-          },
-          quantity: 1,
+      customer_email: userEmail || undefined,
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      // Anchor billing to the 1st of next month
+      subscription_data: {
+        billing_cycle_anchor: nextFirstOfMonth(),
+        prorate: false,
+        metadata: {
+          userId: String(userId),
+          type: "creator_subscription",
+          platform: "Self-Made Legends",
         },
-      ],
-      mode: "payment",
-      success_url: successUrl || "https://web-production-576d9.up.railway.app/dashboard.html?payment=success",
-      cancel_url: cancelUrl || "https://web-production-576d9.up.railway.app/dashboard.html?payment=cancelled",
+      },
+      success_url:
+        successUrl ||
+        "https://web-production-576d9.up.railway.app/dashboard.html?payment=success",
+      cancel_url:
+        cancelUrl ||
+        "https://web-production-576d9.up.railway.app/dashboard.html?payment=cancelled",
       metadata: {
         userId: String(userId),
-        type: "creator_fee",
+        type: "creator_subscription",
       },
     });
 
@@ -73,7 +74,26 @@ class StripeProcessor {
     };
   }
 
-  // Handle Stripe webhook to confirm payment on the server
+  // Retrieve subscription status for a customer
+  async getSubscriptionStatus(stripeCustomerId) {
+    const subs = await this.stripe.subscriptions.list({
+      customer: stripeCustomerId,
+      status: "active",
+      limit: 1,
+    });
+    return {
+      active: subs.data.length > 0,
+      subscription: subs.data[0] || null,
+    };
+  }
+
+  // Cancel a subscription
+  async cancelSubscription(subscriptionId) {
+    const sub = await this.stripe.subscriptions.cancel(subscriptionId);
+    return { cancelled: sub.status === "canceled", status: sub.status };
+  }
+
+  // Handle Stripe webhook to confirm subscription events on the server
   constructWebhookEvent(rawBody, signature) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) throw new Error("STRIPE_WEBHOOK_SECRET not configured");
