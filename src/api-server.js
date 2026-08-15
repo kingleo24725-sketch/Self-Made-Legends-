@@ -1383,6 +1383,26 @@ app.get("/api/leaderboard/public", (req, res) => {
   res.json({ leaderboard: lb, updatedAt: new Date().toISOString(), gender: gender || 'all' });
 });
 
+// ── Tagline / Avatar Identity ─────────────────────────────────────────────
+app.post("/api/account/tagline", authenticateUser, (req, res) => {
+  const { avatarName, tagline } = req.body;
+  const result = accountManager.setTagline(req.user.userId, avatarName || '', tagline || '');
+  res.json(result);
+});
+
+app.get("/api/account/tagline", authenticateUser, (req, res) => {
+  const data = accountManager.getTagline(req.user.userId);
+  if (!data) return res.status(404).json({ error: 'Account not found' });
+  res.json(data);
+});
+
+// Public tagline for leaderboard display
+app.get("/api/account/tagline/:userId", (req, res) => {
+  const data = accountManager.getTagline(req.params.userId);
+  if (!data) return res.status(404).json({ error: 'Not found' });
+  res.json(data);
+});
+
 // ── Gender ────────────────────────────────────────────────────────────────
 app.post("/api/account/gender", authenticateUser, (req, res) => {
   const { gender } = req.body;

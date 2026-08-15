@@ -106,6 +106,22 @@ class AccountManager {
     return null;
   }
 
+  setTagline(userId, avatarName, tagline) {
+    const account = this.getAccountById(userId);
+    if (!account) return { success: false, error: 'Account not found' };
+    if (avatarName && avatarName.length > 30) return { success: false, error: 'Avatar name max 30 characters' };
+    if (tagline && tagline.length > 160) return { success: false, error: 'Tagline max 160 characters' };
+    account.avatarName = (avatarName || '').trim();
+    account.tagline    = (tagline    || '').trim();
+    return { success: true };
+  }
+
+  getTagline(userId) {
+    const account = this.getAccountById(userId);
+    if (!account) return null;
+    return { avatarName: account.avatarName || '', tagline: account.tagline || '' };
+  }
+
   setGender(userId, gender) {
     const account = this.getAccountById(userId);
     if (!account) return { success: false, error: 'Account not found' };

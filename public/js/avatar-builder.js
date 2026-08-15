@@ -14,16 +14,18 @@
     { id: 'deep',   label: 'Deep',       color: '#4A2208', shadow: '#2E1204', lip: '#481810' },
   ];
 
+  // 'rainbow' is a sentinel — resolved to url(#abRainbow) in SVG
   AB.HAIR_COLORS = [
-    { id: 'black',   label: 'Black',   color: '#18100A', dark: '#0C0804' },
-    { id: 'brown',   label: 'Brown',   color: '#4A2810', dark: '#2E1800' },
-    { id: 'auburn',  label: 'Auburn',  color: '#823200', dark: '#5A2000' },
-    { id: 'blonde',  label: 'Blonde',  color: '#D4A020', dark: '#A87808' },
-    { id: 'red',     label: 'Red',     color: '#B81818', dark: '#880000' },
-    { id: 'silver',  label: 'Silver',  color: '#B8B8B8', dark: '#888888' },
-    { id: 'gold',    label: 'Gold',    color: '#FFD700', dark: '#C8A800' },
-    { id: 'blue',    label: 'Blue',    color: '#0070E0', dark: '#0050A8' },
-    { id: 'purple',  label: 'Purple',  color: '#8800CC', dark: '#600088' },
+    { id: 'black',   label: 'Black',    color: '#18100A',         dark: '#0C0804' },
+    { id: 'brown',   label: 'Brown',    color: '#4A2810',         dark: '#2E1800' },
+    { id: 'auburn',  label: 'Auburn',   color: '#823200',         dark: '#5A2000' },
+    { id: 'blonde',  label: 'Blonde',   color: '#D4A020',         dark: '#A87808' },
+    { id: 'red',     label: 'Red',      color: '#B81818',         dark: '#880000' },
+    { id: 'silver',  label: 'Silver',   color: '#B8B8B8',         dark: '#888888' },
+    { id: 'gold',    label: 'Gold',     color: '#FFD700',         dark: '#C8A800' },
+    { id: 'blue',    label: 'Blue',     color: '#0070E0',         dark: '#0050A8' },
+    { id: 'purple',  label: 'Purple',   color: '#8800CC',         dark: '#600088' },
+    { id: 'rainbow', label: 'Rainbow',  color: 'url(#abRainbow)', dark: 'url(#abRainbowDark)', isGradient: true },
   ];
 
   AB.EYE_COLORS = [
@@ -36,29 +38,33 @@
   ];
 
   const OUTFIT_PALETTES = {
-    blue:   { m: '#1840B0', d: '#102880', l: '#3870E0', a: '#B0D0FF' },
-    purple: { m: '#6020C8', d: '#401890', l: '#8848E8', a: '#D8C0FF' },
-    red:    { m: '#B81818', d: '#881010', l: '#E84040', a: '#FFB8B8' },
-    green:  { m: '#0A6040', d: '#085030', l: '#18B878', a: '#A8F0D0' },
-    black:  { m: '#202830', d: '#101820', l: '#384858', a: '#90A8B8' },
+    blue:    { m: '#1840B0', d: '#102880', l: '#3870E0', a: '#B0D0FF' },
+    purple:  { m: '#6020C8', d: '#401890', l: '#8848E8', a: '#D8C0FF' },
+    red:     { m: '#B81818', d: '#881010', l: '#E84040', a: '#FFB8B8' },
+    green:   { m: '#0A6040', d: '#085030', l: '#18B878', a: '#A8F0D0' },
+    black:   { m: '#202830', d: '#101820', l: '#384858', a: '#90A8B8' },
+    rainbow: { m: 'url(#abRainbow)', d: 'url(#abRainbowDark)', l: 'url(#abRainbowLight)', a: '#FFFFFF', isGradient: true },
   };
 
   AB.OUTFITS = [
-    { id: 'hoodie',  label: 'SML Hoodie',    colors: ['blue','purple','red','green','black'] },
-    { id: 'suit',    label: 'SML Suit',       colors: ['black','blue','purple','red','green'] },
-    { id: 'street',  label: 'Street Wear',    colors: ['black','red','blue','green','purple'] },
-    { id: 'jersey',  label: 'SML Jersey',     colors: ['blue','red','green','purple','black'] },
-    { id: 'blazer',  label: 'Luxury Blazer',  colors: ['black','blue','purple','red','green'] },
-    { id: 'tee',     label: 'Graphic Tee',    colors: ['black','blue','red','green','purple'] },
+    { id: 'hoodie',  label: 'SML Hoodie',   colors: ['blue','purple','red','green','black','rainbow'] },
+    { id: 'suit',    label: 'SML Suit',      colors: ['black','blue','purple','red','green','rainbow'] },
+    { id: 'street',  label: 'Street Wear',   colors: ['black','red','blue','green','purple','rainbow'] },
+    { id: 'jersey',  label: 'SML Jersey',    colors: ['blue','red','green','purple','black','rainbow'] },
+    { id: 'blazer',  label: 'Luxury Blazer', colors: ['black','blue','purple','red','green','rainbow'] },
+    { id: 'tee',     label: 'Graphic Tee',   colors: ['black','blue','red','green','purple','rainbow'] },
   ];
 
   AB.ACCESSORIES = [
     { id: 'none',          label: 'None' },
     { id: 'chain',         label: 'Gold Chain' },
     { id: 'diamond_chain', label: 'Diamond Chain' },
+    { id: 'rainbow_chain', label: 'Rainbow Chain' },
     { id: 'sunglasses',    label: 'Sunglasses' },
+    { id: 'prism_shades',  label: 'Prism Shades' },
     { id: 'cap',           label: 'SML Cap' },
     { id: 'crown',         label: 'Crown' },
+    { id: 'halo',          label: 'Rainbow Halo' },
     { id: 'earrings',      label: 'Diamond Earrings' },
     { id: 'headphones',    label: 'Headphones' },
   ];
@@ -92,21 +98,79 @@
     { id: 'diamond', label: 'Diamond',     colors: ['#001828','#000C18'] },
     { id: 'fire',    label: 'Fire',        colors: ['#2A0800','#140000'] },
     { id: 'neon',    label: 'Neon City',   colors: ['#08082A','#040410'] },
+    { id: 'prism',   label: 'Prism',       colors: ['#180018','#001020'] },
   ];
+
+  // ── SVG Gradient Defs (always injected) ───────────────────────────────────
+  // Rainbow uses userSpaceOnUse across the full 200px width so all elements
+  // share the same coherent spectrum band.
+  const RAINBOW_DEFS = `
+    <linearGradient id="abRainbow" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="180" y2="0">
+      <stop offset="0%"   stop-color="#FF2020"/>
+      <stop offset="18%"  stop-color="#FF8800"/>
+      <stop offset="36%"  stop-color="#FFE000"/>
+      <stop offset="54%"  stop-color="#00D840"/>
+      <stop offset="72%"  stop-color="#0088FF"/>
+      <stop offset="90%"  stop-color="#CC00FF"/>
+      <stop offset="100%" stop-color="#FF0088"/>
+    </linearGradient>
+    <linearGradient id="abRainbowDark" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="180" y2="0">
+      <stop offset="0%"   stop-color="#AA0000"/>
+      <stop offset="18%"  stop-color="#AA5500"/>
+      <stop offset="36%"  stop-color="#AA9000"/>
+      <stop offset="54%"  stop-color="#008030"/>
+      <stop offset="72%"  stop-color="#0055AA"/>
+      <stop offset="90%"  stop-color="#880099"/>
+      <stop offset="100%" stop-color="#AA0055"/>
+    </linearGradient>
+    <linearGradient id="abRainbowLight" gradientUnits="userSpaceOnUse" x1="20" y1="0" x2="180" y2="0">
+      <stop offset="0%"   stop-color="#FF7070"/>
+      <stop offset="18%"  stop-color="#FFBB44"/>
+      <stop offset="36%"  stop-color="#FFFF80"/>
+      <stop offset="54%"  stop-color="#80FF90"/>
+      <stop offset="72%"  stop-color="#70C0FF"/>
+      <stop offset="90%"  stop-color="#EE88FF"/>
+      <stop offset="100%" stop-color="#FF80BB"/>
+    </linearGradient>
+    <linearGradient id="abRainbowV" gradientUnits="userSpaceOnUse" x1="0" y1="120" x2="0" y2="200">
+      <stop offset="0%"   stop-color="#FF2020"/>
+      <stop offset="25%"  stop-color="#FFDD00"/>
+      <stop offset="50%"  stop-color="#00D840"/>
+      <stop offset="75%"  stop-color="#0088FF"/>
+      <stop offset="100%" stop-color="#CC00FF"/>
+    </linearGradient>`;
 
   // ── SVG Layers ────────────────────────────────────────────────────────────
 
   function svgBg(bgId) {
     const s = AB.BG_STYLES.find(b => b.id === bgId) || AB.BG_STYLES[0];
-    return `<defs>
-      <radialGradient id="abBG" cx="50%" cy="35%" r="70%">
-        <stop offset="0%" stop-color="${s.colors[0]}"/>
-        <stop offset="100%" stop-color="${s.colors[1]}"/>
-      </radialGradient>
-      <clipPath id="abClip"><circle cx="100" cy="100" r="100"/></clipPath>
-    </defs>
-    <circle cx="100" cy="100" r="100" fill="url(#abBG)"/>
-    <circle cx="100" cy="100" r="100" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+
+    // Prism background: rotating rainbow gradient overlay
+    const prismOverlay = bgId === 'prism' ? `
+      <defs>
+        <radialGradient id="abBG" cx="50%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="#300040"/>
+          <stop offset="100%" stop-color="#001030"/>
+        </radialGradient>
+        <clipPath id="abClip"><circle cx="100" cy="100" r="100"/></clipPath>
+        ${RAINBOW_DEFS}
+      </defs>
+      <circle cx="100" cy="100" r="100" fill="url(#abBG)"/>
+      <circle cx="100" cy="100" r="100" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <ellipse cx="60" cy="60" rx="80" ry="60" fill="url(#abRainbow)" opacity="0.12" transform="rotate(-30 100 100)"/>
+      <ellipse cx="140" cy="140" rx="80" ry="60" fill="url(#abRainbow)" opacity="0.1" transform="rotate(30 100 100)"/>` : `
+      <defs>
+        <radialGradient id="abBG" cx="50%" cy="35%" r="70%">
+          <stop offset="0%" stop-color="${s.colors[0]}"/>
+          <stop offset="100%" stop-color="${s.colors[1]}"/>
+        </radialGradient>
+        <clipPath id="abClip"><circle cx="100" cy="100" r="100"/></clipPath>
+        ${RAINBOW_DEFS}
+      </defs>
+      <circle cx="100" cy="100" r="100" fill="url(#abBG)"/>
+      <circle cx="100" cy="100" r="100" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+
+    return prismOverlay;
   }
 
   // Hair layer drawn BEHIND the head (hair around/below)
@@ -295,7 +359,6 @@
     const isFemale = gender === 'female';
     const browW = isFemale ? 2.2 : 3;
 
-    // Eyes differ by gender — female gets lashes
     function eye(cx, dir) {
       const lashSign = dir === 'L' ? 1 : -1;
       const lx = dir === 'L' ? cx - 12 : cx + 12;
@@ -332,7 +395,6 @@
          <path d="M93,107 Q100,110 107,107" stroke="rgba(255,255,255,0.25)" stroke-width="1" fill="none"/>`
       : `<path d="M90,110 Q100,117 110,110" stroke="${lip}" stroke-width="2.2" fill="none" stroke-linecap="round"/>`;
 
-    // Cheek blush for female
     const blush = isFemale
       ? `<ellipse cx="74" cy="100" rx="12" ry="7" fill="${lip}" opacity="0.15"/>
          <ellipse cx="126" cy="100" rx="12" ry="7" fill="${lip}" opacity="0.15"/>`
@@ -420,6 +482,17 @@
         <circle cx="100" cy="153" r="1.8" fill="white" opacity="0.8"/>
         <circle cx="116" cy="152" r="1.8" fill="white" opacity="0.8"/>`;
 
+      case 'rainbow_chain': return `
+        <path d="M73,138 Q84,149 100,153 Q116,149 127,138" stroke="url(#abRainbow)" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M81,151 Q90,158 100,160 Q110,158 119,151" stroke="url(#abRainbow)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="78" cy="142" r="3" fill="#FF2020" opacity="0.9"/>
+        <circle cx="88" cy="149" r="3" fill="#FF8800" opacity="0.9"/>
+        <circle cx="100" cy="153" r="3" fill="#00D840" opacity="0.9"/>
+        <circle cx="112" cy="149" r="3" fill="#0088FF" opacity="0.9"/>
+        <circle cx="122" cy="142" r="3" fill="#CC00FF" opacity="0.9"/>
+        <polygon points="100,157 93,164 100,172 107,164" fill="url(#abRainbow)" opacity="0.95"/>
+        <polygon points="100,157 93,164 100,161 107,164" fill="white" opacity="0.6"/>`;
+
       case 'sunglasses': return `
         <rect x="71" y="78" width="25" height="17" rx="9" fill="#111" opacity="0.92"/>
         <rect x="71" y="78" width="25" height="17" rx="9" fill="#1A3A60" opacity="0.45"/>
@@ -430,6 +503,17 @@
         <path d="M129,86 L145,84" stroke="#808080" stroke-width="2.8" fill="none"/>
         <path d="M75,82 Q80,81 88,82" stroke="white" stroke-width="1.4" fill="none" opacity="0.35"/>
         <path d="M108,82 Q113,81 121,82" stroke="white" stroke-width="1.4" fill="none" opacity="0.35"/>`;
+
+      case 'prism_shades': return `
+        <rect x="71" y="78" width="25" height="17" rx="9" fill="url(#abRainbow)" opacity="0.75"/>
+        <rect x="71" y="78" width="25" height="17" rx="9" fill="rgba(0,0,0,0.35)"/>
+        <rect x="104" y="78" width="25" height="17" rx="9" fill="url(#abRainbow)" opacity="0.75"/>
+        <rect x="104" y="78" width="25" height="17" rx="9" fill="rgba(0,0,0,0.35)"/>
+        <path d="M96,86 L104,86" stroke="#888" stroke-width="2.8" fill="none"/>
+        <path d="M71,86 L55,84" stroke="#888" stroke-width="2.8" fill="none"/>
+        <path d="M129,86 L145,84" stroke="#888" stroke-width="2.8" fill="none"/>
+        <path d="M73,81 Q83,79 92,81" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" fill="none"/>
+        <path d="M106,81 Q116,79 125,81" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" fill="none"/>`;
 
       case 'cap': return `
         <path d="M50,76 Q100,68 150,76 L154,84 Q100,76 46,84 Z" fill="#1A2230"/>
@@ -450,6 +534,14 @@
         <circle cx="137" cy="68" r="3" fill="#FFD700"/>
         <path d="M63,48 L77,60 L89,42 L100,56 L111,42 L123,60 L137,48" stroke="#B8960A" stroke-width="1.5" fill="none"/>
         <path d="M68,64 Q100,58 132,64" stroke="rgba(255,220,100,0.5)" stroke-width="1" fill="none"/>`;
+
+      case 'halo': return `
+        <ellipse cx="100" cy="32" rx="36" ry="10" fill="none" stroke="url(#abRainbow)" stroke-width="5.5" opacity="0.95"/>
+        <ellipse cx="100" cy="32" rx="36" ry="10" fill="none" stroke="white" stroke-width="1.5" opacity="0.4"/>
+        <ellipse cx="100" cy="32" rx="34" ry="8" fill="none" stroke="url(#abRainbowLight)" stroke-width="1" opacity="0.6"/>
+        <circle cx="100" cy="22" r="3" fill="white" opacity="0.8"/>
+        <circle cx="88" cy="24" r="2" fill="white" opacity="0.6"/>
+        <circle cx="112" cy="24" r="2" fill="white" opacity="0.6"/>`;
 
       case 'earrings': return `
         <circle cx="56" cy="96" r="5" fill="#00E5FF" opacity="0.95"/>
@@ -491,7 +583,7 @@
       accessoryId = 'none', bgId = 'default',
     } = cfg;
 
-    const skin     = AB.SKIN_TONES.find(s => s.id === skinId)     || AB.SKIN_TONES[2];
+    const skin     = AB.SKIN_TONES.find(s => s.id === skinId)      || AB.SKIN_TONES[2];
     const hc       = AB.HAIR_COLORS.find(h => h.id === hairColorId) || AB.HAIR_COLORS[0];
     const ec       = (AB.EYE_COLORS.find(e => e.id === eyeColorId)  || AB.EYE_COLORS[0]).color;
     const styleId  = hairStyleId || (gender === 'female' ? 'long_straight' : 'fade');

@@ -1388,19 +1388,25 @@
       apiCall('/api/account/profile')
         .then(data => {
           if (!data.error) {
-            apiCall('/api/account/gender').then(gData => {
+            Promise.all([
+              apiCall('/api/account/gender').catch(() => ({})),
+              apiCall('/api/account/tagline').catch(() => ({})),
+            ]).then(([gData, tData]) => {
               const gLabel = gData.gender === 'male' ? '♂ Male' : gData.gender === 'female' ? '♀ Female' : gData.gender === 'other' ? 'Prefer not to say' : 'Not set';
+              const handleHtml = tData.avatarName
+                ? `<p><strong>Handle:</strong> <span class="avatar-handle" style="color:#00d4ff; font-style:italic;">"${tData.avatarName}"</span></p>`
+                : '';
+              const taglineHtml = tData.tagline
+                ? `<p style="margin-top:6px; color:#888; font-size:0.85em; font-style:italic; border-left:2px solid #2a3040; padding-left:10px;">${tData.tagline}</p>`
+                : '';
               document.getElementById('profile-info').innerHTML = `
                 <p><strong>Email:</strong> ${data.email}</p>
                 <p><strong>Name:</strong> ${data.fullName}</p>
-                <p><strong>Joined:</strong> ${new Date(data.createdAt).toLocaleDateString()}</p>
+                ${handleHtml}
+                ${taglineHtml}
+                <p style="margin-top:6px;"><strong>Joined:</strong> ${new Date(data.createdAt).toLocaleDateString()}</p>
                 <p><strong>Division:</strong> ${gLabel} <button onclick="changeGender()" style="margin-left:8px;font-size:0.78em;padding:2px 8px;border-radius:4px;border:1px solid #333;background:rgba(255,255,255,0.05);color:#aaa;cursor:pointer;">Change</button></p>
-              `;
-            }).catch(() => {
-              document.getElementById('profile-info').innerHTML = `
-                <p><strong>Email:</strong> ${data.email}</p>
-                <p><strong>Name:</strong> ${data.fullName}</p>
-                <p><strong>Joined:</strong> ${new Date(data.createdAt).toLocaleDateString()}</p>
+                <button onclick="openAvatarBuilder(); setTimeout(()=>abCat('identity'),200);" style="margin-top:10px;font-size:0.8em;padding:5px 12px;border-radius:6px;border:1px solid #2a3040;background:rgba(0,212,255,0.06);color:#00d4ff;cursor:pointer;">✏️ Edit Handle &amp; Tagline</button>
               `;
             });
           }
@@ -2377,11 +2383,12 @@
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px;">
             <button class="ab-cat active" data-cat="skin" onclick="abCat('skin')">🎨 Skin</button>
             <button class="ab-cat" data-cat="hair" onclick="abCat('hair')">💈 Hair</button>
-            <button class="ab-cat" data-cat="haircolor" onclick="abCat('haircolor')">🎨 Color</button>
+            <button class="ab-cat" data-cat="haircolor" onclick="abCat('haircolor')">🌈 Color</button>
             <button class="ab-cat" data-cat="eyes" onclick="abCat('eyes')">👁 Eyes</button>
             <button class="ab-cat" data-cat="outfit" onclick="abCat('outfit')">👔 Outfit</button>
             <button class="ab-cat" data-cat="accessories" onclick="abCat('accessories')">💎 Accessories</button>
             <button class="ab-cat" data-cat="bg" onclick="abCat('bg')">🌌 Background</button>
+            <button class="ab-cat" data-cat="identity" onclick="abCat('identity')">✏️ Identity</button>
           </div>
 
           <!-- Skin panel -->
@@ -2398,6 +2405,33 @@
           <div id="ab-cat-accessories" class="ab-cat-panel" style="grid-template-columns:repeat(4,1fr); gap:8px;"></div>
           <!-- Background panel -->
           <div id="ab-cat-bg" class="ab-cat-panel" style="grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+
+          <!-- Identity panel -->
+          <div id="ab-cat-identity" class="ab-cat-panel" style="grid-template-columns:1fr; gap:14px; padding:4px 0;">
+            <div>
+              <label style="display:block; font-size:0.72em; text-transform:uppercase; letter-spacing:0.07em; color:#888; margin-bottom:6px;">Avatar Name / Handle</label>
+              <input id="ab-name-input" type="text" maxlength="30" placeholder="e.g. The Bull, Queen Profits…"
+                style="width:100%; background:#0f1419; border:1px solid #2a3040; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none;"
+                oninput="document.getElementById('ab-name-count').textContent = (30 - this.value.length) + ' left'"/>
+              <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                <div style="font-size:0.7em; color:#555;">Shown next to your rank on the leaderboard</div>
+                <div id="ab-name-count" style="font-size:0.7em; color:#555;">30 left</div>
+              </div>
+            </div>
+            <div>
+              <label style="display:block; font-size:0.72em; text-transform:uppercase; letter-spacing:0.07em; color:#888; margin-bottom:6px;">Your Tagline</label>
+              <textarea id="ab-tagline-input" maxlength="160" placeholder="Tell your story — where you're from, your trading style, your goals…"
+                style="width:100%; background:#0f1419; border:1px solid #2a3040; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; resize:vertical; min-height:72px; font-family:inherit;"
+                oninput="document.getElementById('ab-tag-count').textContent = (160 - this.value.length) + ' left'"></textarea>
+              <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                <div style="font-size:0.7em; color:#555;">160 characters · shown on your public profile</div>
+                <div id="ab-tag-count" style="font-size:0.7em; color:#555;">160 left</div>
+              </div>
+            </div>
+            <div style="background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.1); border-radius:8px; padding:12px; font-size:0.78em; color:#666; line-height:1.5;">
+              💡 Your avatar name and tagline appear on the leaderboard and your public profile — make it your own legend.
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2406,7 +2440,15 @@
   <script>
   // ── Avatar Builder UI ──────────────────────────────────────────────────────
   let _abCfg = null;
-  const OUTFIT_COLOR_HEX = { blue:'#1840B0', purple:'#6020C8', red:'#B81818', green:'#0A6040', black:'#202830' };
+  const OUTFIT_COLOR_HEX = {
+    blue:'#1840B0', purple:'#6020C8', red:'#B81818', green:'#0A6040', black:'#202830',
+    rainbow:'linear-gradient(90deg,#FF2020,#FF8800,#FFE000,#00D840,#0088FF,#CC00FF)',
+  };
+  const HAIR_COLOR_SWATCH = {
+    black:'#18100A', brown:'#4A2810', auburn:'#823200', blonde:'#D4A020',
+    red:'#B81818', silver:'#B8B8B8', gold:'#FFD700', blue:'#0070E0', purple:'#8800CC',
+    rainbow:'linear-gradient(90deg,#FF2020,#FF8800,#FFE000,#00D840,#0088FF,#CC00FF)',
+  };
 
   function openAvatarBuilder() {
     if (!window.AvatarBuilder) return;
@@ -2416,6 +2458,17 @@
     document.getElementById('avatar-builder-modal').style.display = 'block';
     document.body.style.overflow = 'hidden';
     abRefreshPreview();
+    // Load existing tagline/name if logged in
+    if (getSessionId && getSessionId()) {
+      apiCall('/api/account/tagline').then(d => {
+        if (!d.error) {
+          const ni = document.getElementById('ab-name-input');
+          const ti = document.getElementById('ab-tagline-input');
+          if (ni && d.avatarName) { ni.value = d.avatarName; document.getElementById('ab-name-count').textContent = (30 - d.avatarName.length) + ' left'; }
+          if (ti && d.tagline)    { ti.value = d.tagline;    document.getElementById('ab-tag-count').textContent  = (160 - d.tagline.length)    + ' left'; }
+        }
+      }).catch(() => {});
+    }
   }
 
   function closeAvatarBuilder() {
@@ -2525,9 +2578,24 @@
       });
       const data = await r.json();
       if (data.success) {
+        // Also save identity (name + tagline) if filled in
+        const avatarName = (document.getElementById('ab-name-input')?.value || '').trim();
+        const tagline    = (document.getElementById('ab-tagline-input')?.value || '').trim();
+        if (avatarName || tagline) {
+          await fetch('/api/account/tagline', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() },
+            body: JSON.stringify({ avatarName, tagline })
+          }).catch(() => {});
+        }
         statusEl.style.color = '#00ff88';
         statusEl.textContent = '✅ Avatar saved!';
         applyAvatarToUI(dataUrl);
+        // Update profile name display if set
+        if (avatarName) {
+          const ni = document.getElementById('profile-info');
+          if (ni) { const span = ni.querySelector('.avatar-handle'); if (span) span.textContent = '"' + avatarName + '"'; }
+        }
         setTimeout(() => closeAvatarBuilder(), 900);
       } else {
         statusEl.style.color = '#ff6b6b';
@@ -2566,11 +2634,12 @@
 
     populateHairPanel();
 
-    // Hair colors
+    // Hair colors (rainbow uses CSS gradient for swatch)
     const hcGrid = document.getElementById('ab-cat-haircolor');
     AB.HAIR_COLORS.forEach(h => {
+      const swatchBg = HAIR_COLOR_SWATCH[h.id] || h.color;
       hcGrid.innerHTML += `<div class="ab-option" data-abkey="hairColorId" data-abval="${h.id}" onclick="abSet('hairColorId','${h.id}')">
-        <div class="swatch" style="background:${h.color};"></div>
+        <div class="swatch" style="background:${swatchBg};"></div>
         <label>${h.label}</label>
       </div>`;
     });
@@ -2587,9 +2656,11 @@
     // Outfits
     const outfitGrid = document.getElementById('ab-cat-outfit');
     AB.OUTFITS.forEach(o => {
-      const colorSwatches = o.colors.map(cid =>
-        `<div class="ab-outfit-color" data-abval="${cid}" style="background:${OUTFIT_COLOR_HEX[cid] || '#333'};" onclick="event.stopPropagation(); abSetOutfitColor('${cid}'); document.querySelectorAll('.ab-outfit-card').forEach(c=>c.classList.toggle('active', c.dataset.outfit==='${o.id}')); abSet('outfitId','${o.id}');" title="${cid}"></div>`
-      ).join('');
+      const colorSwatches = o.colors.map(cid => {
+        const bg = OUTFIT_COLOR_HEX[cid] || '#333';
+        const style = bg.startsWith('linear') ? `background:${bg};` : `background:${bg};`;
+        return `<div class="ab-outfit-color" data-abval="${cid}" style="${style}" onclick="event.stopPropagation(); abSetOutfitColor('${cid}'); document.querySelectorAll('.ab-outfit-card').forEach(c=>c.classList.toggle('active', c.dataset.outfit==='${o.id}')); abSet('outfitId','${o.id}');" title="${cid}"></div>`;
+      }).join('');
       outfitGrid.innerHTML += `<div class="ab-outfit-card" data-abkey="outfitId" data-abval="${o.id}" data-outfit="${o.id}" onclick="abSet('outfitId','${o.id}')">
         <div style="font-size:0.82em; font-weight:bold; color:#e0e0e0;">${o.label}</div>
         <div class="ab-outfit-colors">${colorSwatches}</div>
@@ -2647,7 +2718,7 @@
   }
 
   function accIcon(id) {
-    const icons = { none:'⛔', chain:'⛓️', diamond_chain:'💎', sunglasses:'🕶️', cap:'🧢', crown:'👑', earrings:'💎', headphones:'🎧' };
+    const icons = { none:'⛔', chain:'⛓️', diamond_chain:'💎', rainbow_chain:'🌈', sunglasses:'🕶️', prism_shades:'🔆', cap:'🧢', crown:'👑', halo:'✨', earrings:'💎', headphones:'🎧' };
     return icons[id] || '•';
   }
   </script>
