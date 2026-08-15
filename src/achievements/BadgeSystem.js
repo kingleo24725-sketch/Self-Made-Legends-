@@ -4,8 +4,14 @@ const BADGES = {
   ten_trades:     { id: "ten_trades",     name: "Getting Warmed Up", icon: "🔥", description: "Completed 10 trades",                   tier: "bronze" },
   fifty_trades:   { id: "fifty_trades",   name: "Trade Machine",     icon: "🤖", description: "Completed 50 trades",                   tier: "silver" },
   winner:         { id: "winner",         name: "Winner",            icon: "✅", description: "Closed a profitable trade",             tier: "bronze" },
-  hot_streak:     { id: "hot_streak",     name: "Hot Streak",        icon: "🌶️", description: "5 winning trades in a row",             tier: "silver" },
   big_gain:       { id: "big_gain",       name: "Big Mover",         icon: "📈", description: "Single trade returned 10%+",            tier: "silver" },
+
+  // Trading streaks — cold → mild → hot → on fire → unstoppable
+  cold_streak:    { id: "cold_streak",    name: "Cold Streak",       icon: "🧊", description: "3 losing trades in a row — shake it off", tier: "bronze" },
+  mild_streak:    { id: "mild_streak",    name: "Warming Up",        icon: "🌤️", description: "3 winning trades in a row",              tier: "bronze" },
+  hot_streak:     { id: "hot_streak",     name: "Hot Streak",        icon: "🌶️", description: "5 winning trades in a row",              tier: "silver" },
+  on_fire:        { id: "on_fire",        name: "On Fire",           icon: "🔥", description: "10 winning trades in a row",             tier: "gold"   },
+  unstoppable:    { id: "unstoppable",    name: "Unstoppable",       icon: "⚡", description: "20 winning trades in a row",             tier: "gold"   },
 
   // Portfolio milestones
   first_profit:   { id: "first_profit",   name: "In The Green",      icon: "💚", description: "Portfolio turned profitable",           tier: "bronze" },
@@ -21,10 +27,15 @@ const BADGES = {
   token_creator:  { id: "token_creator",  name: "Token Creator",     icon: "🪙", description: "Created your first crypto token",      tier: "silver" },
   market_maker:   { id: "market_maker",   name: "Market Maker",      icon: "💎", description: "Your token was traded 10 times",       tier: "gold"   },
 
+  // Login streak milestones
+  login_3:        { id: "login_3",        name: "3-Day Streak",      icon: "📆", description: "Logged in 3 days in a row",            tier: "bronze" },
+  login_7:        { id: "login_7",        name: "Weekly Warrior",    icon: "🗓️", description: "Logged in 7 days in a row",            tier: "silver" },
+  login_30:       { id: "login_30",       name: "Monthly Grind",     icon: "🏆", description: "Logged in 30 days in a row",           tier: "gold"   },
+
   // Community milestones
   day_1:          { id: "day_1",          name: "Day One",           icon: "🌅", description: "Joined Self-Made Legends",             tier: "bronze" },
-  week_1:         { id: "week_1",         name: "One Week Strong",   icon: "📅", description: "Active for 7 days",                   tier: "bronze" },
-  month_1:        { id: "month_1",        name: "Dedicated",         icon: "🗓️", description: "Active for 30 days",                  tier: "silver" },
+  week_1:         { id: "week_1",         name: "One Week Strong",   icon: "📅", description: "Member for 7 days",                   tier: "bronze" },
+  month_1:        { id: "month_1",        name: "Dedicated",         icon: "🌟", description: "Member for 30 days",                  tier: "silver" },
   creator_member: { id: "creator_member", name: "Creator Member",    icon: "⭐", description: "Subscribed as a Creator Member",      tier: "gold"   },
 };
 
@@ -49,15 +60,71 @@ class BadgeSystem {
         tradeCount: 0,
         winCount: 0,
         currentWinStreak: 0,
+        currentLossStreak: 0,
+        maxWinStreak: 0,
         bestRank: 999,
         tokenCreated: false,
         tokenTradeCount: 0,
         creatorMember: false,
         lastActiveDate: Date.now(),
         activeDays: 1,
+        loginStreak: 1,
+        maxLoginStreak: 1,
+        lastLoginDate: new Date().toISOString().split('T')[0],
       });
     }
     return this.userStats.get(userId);
+  }
+
+  // Call on every login — tracks consecutive daily logins and awards streak badges + XP
+  onLogin(userId) {
+    const stats = this._getStats(userId);
+    const today = new Date().toISOString().split('T')[0];
+    const newBadges = [];
+    let bonusXP = 0;
+
+    if (stats.lastLoginDate !== today) {
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+      if (stats.lastLoginDate === yesterday) {
+        stats.loginStreak++;
+        // Streak XP bonuses
+        if (stats.loginStreak === 3)  bonusXP += 50;
+        if (stats.loginStreak === 7)  bonusXP += 200;
+        if (stats.loginStreak === 30) bonusXP += 1000;
+      } else {
+        stats.loginStreak = 1; // streak broken
+      }
+      stats.maxLoginStreak = Math.max(stats.maxLoginStreak, stats.loginStreak);
+      stats.lastLoginDate = today;
+    }
+
+    if (stats.loginStreak >= 3)  { const b = this._award(userId, "login_3");  if (b) newBadges.push(b); }
+    if (stats.loginStreak >= 7)  { const b = this._award(userId, "login_7");  if (b) newBadges.push(b); }
+    if (stats.loginStreak >= 30) { const b = this._award(userId, "login_30"); if (b) newBadges.push(b); }
+
+    return { newBadges, bonusXP, loginStreak: stats.loginStreak, maxLoginStreak: stats.maxLoginStreak };
+  }
+
+  // Get current streak info for a user (for display)
+  getStreakInfo(userId) {
+    const stats = this._getStats(userId);
+    let tradeStreakType = 'neutral';
+    let tradeStreakLabel = '';
+    if (stats.currentWinStreak >= 20)     { tradeStreakType = 'unstoppable'; tradeStreakLabel = `⚡ ${stats.currentWinStreak}-Win Unstoppable Streak!`; }
+    else if (stats.currentWinStreak >= 10) { tradeStreakType = 'on_fire';    tradeStreakLabel = `🔥 ${stats.currentWinStreak}-Win ON FIRE Streak!`; }
+    else if (stats.currentWinStreak >= 5)  { tradeStreakType = 'hot';        tradeStreakLabel = `🌶️ ${stats.currentWinStreak}-Win Hot Streak!`; }
+    else if (stats.currentWinStreak >= 3)  { tradeStreakType = 'mild';       tradeStreakLabel = `🌤️ ${stats.currentWinStreak}-Win Warming Up`; }
+    else if (stats.currentLossStreak >= 3) { tradeStreakType = 'cold';       tradeStreakLabel = `🧊 ${stats.currentLossStreak}-Loss Cold Streak`; }
+
+    return {
+      loginStreak: stats.loginStreak,
+      maxLoginStreak: stats.maxLoginStreak,
+      currentWinStreak: stats.currentWinStreak,
+      currentLossStreak: stats.currentLossStreak,
+      maxWinStreak: stats.maxWinStreak,
+      tradeStreakType,
+      tradeStreakLabel,
+    };
   }
 
   _getUserBadges(userId) {
@@ -84,16 +151,31 @@ class BadgeSystem {
     if (profitable) {
       stats.winCount++;
       stats.currentWinStreak++;
+      stats.currentLossStreak = 0;
     } else {
+      stats.currentLossStreak++;
       stats.currentWinStreak = 0;
     }
+    stats.maxWinStreak = Math.max(stats.maxWinStreak, stats.currentWinStreak);
 
+    // Trade count milestones
     if (stats.tradeCount === 1)  { const b = this._award(userId, "first_trade");  if (b) newBadges.push(b); }
     if (stats.tradeCount >= 10)  { const b = this._award(userId, "ten_trades");   if (b) newBadges.push(b); }
     if (stats.tradeCount >= 50)  { const b = this._award(userId, "fifty_trades"); if (b) newBadges.push(b); }
     if (profitable)              { const b = this._award(userId, "winner");        if (b) newBadges.push(b); }
-    if (stats.currentWinStreak >= 5) { const b = this._award(userId, "hot_streak"); if (b) newBadges.push(b); }
     if (returnPct >= 10)         { const b = this._award(userId, "big_gain");     if (b) newBadges.push(b); }
+
+    // Trading streak badges — cold → mild → hot → on fire → unstoppable
+    if (stats.currentLossStreak >= 3) { const b = this._award(userId, "cold_streak");  if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 3)  { const b = this._award(userId, "mild_streak");  if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 5)  { const b = this._award(userId, "hot_streak");   if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 10) { const b = this._award(userId, "on_fire");      if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 20) { const b = this._award(userId, "unstoppable");  if (b) newBadges.push(b); }
+
+    // Reset cold streak badge so it can be re-earned after breaking out
+    if (profitable && stats.currentLossStreak === 0) {
+      this._getUserBadges(userId).delete("cold_streak");
+    }
 
     return newBadges;
   }

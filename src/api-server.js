@@ -137,6 +137,15 @@ app.post("/api/auth/login", (req, res) => {
   }
 
   const result = accountManager.login(email, password);
+  if (result.success && result.userId) {
+    const loginResult = badgeSystem.onLogin(result.userId);
+    result.loginStreak = loginResult.loginStreak;
+    result.newBadges = loginResult.newBadges;
+    result.bonusXP = loginResult.bonusXP;
+    if (loginResult.bonusXP > 0) {
+      missionSystem.completeAction(result.userId, "login_streak");
+    }
+  }
   res.json(result);
 });
 
@@ -1342,6 +1351,11 @@ app.post("/api/admin/ban-user", requireAdmin, (req, res) => {
 app.get("/api/leaderboard/public", (req, res) => {
   const lb = leaderboardManager.getLeaderboard(50);
   res.json({ leaderboard: lb, updatedAt: new Date().toISOString() });
+});
+
+// ── Streaks ───────────────────────────────────────────────────────────────
+app.get("/api/streaks/me", authenticateUser, (req, res) => {
+  res.json(badgeSystem.getStreakInfo(req.user.userId));
 });
 
 // ── Missions ──────────────────────────────────────────────────────────────

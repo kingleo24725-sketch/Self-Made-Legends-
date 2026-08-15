@@ -652,9 +652,35 @@
         </div>
       </div>
 
+      <!-- Streak Widget -->
+      <div class="card" id="streak-widget" style="display:none;">
+        <h2 style="margin-bottom:14px;">🔥 Your Streaks</h2>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;">
+          <div style="background:#0d1b2a; border-radius:8px; padding:14px; text-align:center;">
+            <div id="streak-trade-icon" style="font-size:1.8em;">➖</div>
+            <div id="streak-trade-label" style="color:#888; font-size:0.8em; margin-top:6px;">Trade Streak</div>
+            <div id="streak-trade-val" style="color:#e0e0e0; font-size:0.85em; margin-top:2px;">—</div>
+          </div>
+          <div style="background:#0d1b2a; border-radius:8px; padding:14px; text-align:center;">
+            <div id="streak-login-icon" style="font-size:1.8em;">📆</div>
+            <div style="color:#888; font-size:0.8em; margin-top:6px;">Login Streak</div>
+            <div id="streak-login-val" style="color:#00d4ff; font-size:1.4em; font-weight:bold; margin-top:2px;">—</div>
+          </div>
+          <div style="background:#0d1b2a; border-radius:8px; padding:14px; text-align:center;">
+            <div style="font-size:1.8em;">🏆</div>
+            <div style="color:#888; font-size:0.8em; margin-top:6px;">Best Win Streak</div>
+            <div id="streak-best-val" style="color:#ffd700; font-size:1.4em; font-weight:bold; margin-top:2px;">—</div>
+          </div>
+        </div>
+        <div id="streak-message" style="margin-top:12px; text-align:center; font-size:0.9em; color:#aaa;"></div>
+      </div>
+
       <div class="card">
         <h2>📈 Market Overview</h2>
         <div id="market-overview"></div>
+        <div style="margin-top:14px; text-align:center;">
+          <a href="/leaderboard.html" target="_blank" style="color:#00d4ff; font-size:0.9em; text-decoration:none;">📊 View Full National Leaderboard →</a>
+        </div>
       </div>
     </section>
 
@@ -1175,9 +1201,17 @@
               currentUser = email;
               document.getElementById('user-info').textContent = `👤 ${email}`;
               document.getElementById('logout-btn').style.display = 'block';
-              alert('✅ Logged in successfully!');
+              if (data.loginStreak > 1) {
+                const streakMsg = data.bonusXP > 0
+                  ? `🔥 ${data.loginStreak}-day login streak! +${data.bonusXP} bonus XP!`
+                  : `🔥 ${data.loginStreak}-day login streak! Keep it going!`;
+                alert('✅ Logged in successfully!\n\n' + streakMsg);
+              } else {
+                alert('✅ Logged in successfully!');
+              }
               loadAccountData();
               loadBadges();
+              loadStreaks();
             } else {
               alert('❌ Login failed: ' + (data.error || 'Unknown error'));
             }
@@ -1202,6 +1236,7 @@
                     document.getElementById('logout-btn').style.display = 'block';
                     loadAccountData();
                     loadBadges();
+                    loadStreaks();
                     // Show onboarding for new users
                     localStorage.removeItem('sml_onboarded');
                     checkOnboarding();
@@ -2064,6 +2099,48 @@
     loadAIChallenge();
     setInterval(loadSocialFeed, 120000); // refresh feed every 2 min
     setInterval(loadAIChallenge, 300000); // refresh AI every 5 min
+
+    // ── Streaks ──────────────────────────────────────────────────────────
+    function loadStreaks() {
+      if (!getSessionId() || isDemo) return;
+      fetch('/api/streaks/me', { headers: { 'X-Session-Id': getSessionId() } })
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('streak-widget').style.display = 'block';
+
+          // Login streak
+          document.getElementById('streak-login-val').textContent = data.loginStreak + ' days';
+          document.getElementById('streak-best-val').textContent = data.maxWinStreak + ' wins';
+
+          // Trade streak
+          const typeMap = {
+            unstoppable: { icon: '⚡', color: '#ffd700' },
+            on_fire:     { icon: '🔥', color: '#ff6b6b' },
+            hot:         { icon: '🌶️', color: '#ff8c00' },
+            mild:        { icon: '🌤️', color: '#00ff88' },
+            cold:        { icon: '🧊', color: '#00d4ff' },
+            neutral:     { icon: '➖', color: '#888' },
+          };
+          const t = typeMap[data.tradeStreakType] || typeMap.neutral;
+          document.getElementById('streak-trade-icon').textContent = t.icon;
+          document.getElementById('streak-trade-val').style.color = t.color;
+          document.getElementById('streak-trade-val').textContent = data.tradeStreakLabel || 'No active streak';
+
+          // Motivational message
+          const msgs = {
+            unstoppable: '👑 You are UNSTOPPABLE. The market fears you.',
+            on_fire:     '🔥 You\'re ON FIRE — keep pressing your edge!',
+            hot:         '🌶️ Hot streak going. Stay disciplined and keep winning.',
+            mild:        '🌤️ Warming up nicely. Stay focused.',
+            cold:        '🧊 Cold streak — take a breath, review your strategy, come back stronger.',
+            neutral:     data.loginStreak >= 7
+              ? '🗓️ Great login consistency. Discipline builds legends.'
+              : 'Keep trading and logging in daily to build your streaks.',
+          };
+          document.getElementById('streak-message').textContent = msgs[data.tradeStreakType] || msgs.neutral;
+        })
+        .catch(() => {});
+    }
 
     // ── Service Worker registration ─────────────────────────────────────
     if ('serviceWorker' in navigator) {
