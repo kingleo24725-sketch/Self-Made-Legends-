@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Trading Bot - Complete Dashboard</title>
+  <title>Self-Made Legends — AI Trading Game</title>
+  <meta name="description" content="Self-Made Legends is the AI-powered stock trading game. Compete on a live national leaderboard, create your own crypto tokens, and build your legend. Free to join.">
+  <meta name="keywords" content="AI trading game, stock market game, leaderboard, crypto tokens, self-made legends">
+  <meta name="author" content="Self-Made Legends LLC">
+  <meta property="og:title" content="Self-Made Legends — AI Trading Game">
+  <meta property="og:description" content="AI-powered stock trading game. Compete nationally. Create crypto. Build your legend.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://web-production-576d9.up.railway.app/dashboard.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Self-Made Legends — AI Trading Game">
+  <meta name="twitter:description" content="AI-powered stock trading game. Compete nationally. Create crypto. Build your legend.">
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -402,9 +412,140 @@
       background: #00d4ff;
       color: #000;
     }
+
+    /* ── Onboarding Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      z-index: 1000; align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #1a1f2e; border: 2px solid #00d4ff; border-radius: 16px;
+      padding: 32px; max-width: 520px; width: 100%; position: relative;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
+    .modal h2 { color: #00d4ff; font-size: 1.4em; margin-bottom: 8px; }
+    .modal-step { display: none; }
+    .modal-step.active { display: block; }
+    .step-item { display: flex; align-items: flex-start; gap: 14px; margin: 14px 0; }
+    .step-icon { font-size: 1.8em; flex-shrink: 0; }
+    .step-text strong { color: #00ff88; display: block; margin-bottom: 2px; }
+    .step-text span { color: #aaa; font-size: 0.88em; }
+    .modal-nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
+    .step-dots { display: flex; gap: 6px; }
+    .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; transition: background 0.3s; }
+    .step-dot.active { background: #00d4ff; }
+
+    /* ── Badge cards ── */
+    .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .badge-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 14px; text-align: center; transition: all 0.3s;
+    }
+    .badge-card.earned { border-color: rgba(0,212,255,0.4); background: rgba(0,212,255,0.06); }
+    .badge-card.locked { opacity: 0.4; filter: grayscale(1); }
+    .badge-icon { font-size: 2.2em; display: block; margin-bottom: 6px; }
+    .badge-name { font-size: 0.78em; font-weight: bold; color: #e0e0e0; margin-bottom: 3px; }
+    .badge-desc { font-size: 0.7em; color: #666; }
+    .badge-tier { font-size: 0.68em; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+
+    /* ── Footer ── */
+    .site-footer {
+      text-align: center; padding: 30px 20px; color: #444; font-size: 0.82em;
+      border-top: 1px solid #1a1f2e; margin-top: 40px;
+    }
+    .site-footer a { color: #555; text-decoration: none; margin: 0 8px; }
+    .site-footer a:hover { color: #00d4ff; }
+
+    /* ── Mobile responsive ── */
+    @media (max-width: 768px) {
+      .navbar { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+      .nav-center { order: 3; width: 100%; overflow-x: auto; gap: 4px; padding-bottom: 4px; }
+      .nav-tab { padding: 8px 12px; font-size: 0.78em; white-space: nowrap; }
+      .nav-left h1 { font-size: 1.05em; }
+      .nav-left .subtitle { font-size: 0.65em; }
+      .container { padding: 12px; }
+      .grid { grid-template-columns: 1fr; gap: 14px; }
+      .card { padding: 16px; }
+      .card h2 { font-size: 1em; }
+      .metric-value { font-size: 1em; }
+      table { font-size: 0.82em; }
+      th, td { padding: 8px 6px; }
+      .badge-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+      .modal { padding: 22px 18px; }
+      .btn { padding: 10px 14px; font-size: 0.88em; }
+      h2 { font-size: 1.3em; }
+      input, select { font-size: 16px; } /* prevents iOS zoom */
+      .stat-number { font-size: 1.6em !important; }
+    }
+    @media (max-width: 480px) {
+      .nav-left .subtitle { display: none; }
+      .sml-entertainment-logo { width: 38px; height: 38px; }
+      .metric { flex-direction: column; align-items: flex-start; gap: 2px; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- ── Onboarding Modal ─────────────────────────────────────── -->
+  <div class="modal-overlay" id="onboarding-modal">
+    <div class="modal">
+      <div class="modal-step active" id="step-0">
+        <div style="text-align:center; margin-bottom:20px;">
+          <div style="font-size:3em;">👑</div>
+          <h2>Welcome to Self-Made Legends!</h2>
+          <p style="color:#aaa; margin-top:8px;">The AI trading game where legends are made. Here's how it works in 3 steps.</p>
+        </div>
+      </div>
+      <div class="modal-step" id="step-1">
+        <h2>Step 1 — The AI Trades For You</h2>
+        <div class="step-item"><span class="step-icon">🤖</span><div class="step-text"><strong>Start the AI Engine</strong><span>Go to the Dashboard tab and hit "Start Trading". The AI analyzes the market 24/7 and makes trades automatically.</span></div></div>
+        <div class="step-item"><span class="step-icon">📈</span><div class="step-text"><strong>Watch Your Portfolio Grow</strong><span>Your portfolio value updates in real time. You don't need to know anything about stocks.</span></div></div>
+      </div>
+      <div class="modal-step" id="step-2">
+        <h2>Step 2 — Compete on the Leaderboard</h2>
+        <div class="step-item"><span class="step-icon">🏆</span><div class="step-text"><strong>National Leaderboard</strong><span>Every week, the top 10 players are ranked against everyone in the country based on returns, win rate, and activity.</span></div></div>
+        <div class="step-item"><span class="step-icon">🎖️</span><div class="step-text"><strong>Earn Achievement Badges</strong><span>Unlock badges for milestones — first trade, hot streak, top 10, token creator, and more.</span></div></div>
+      </div>
+      <div class="modal-step" id="step-3">
+        <h2>Step 3 — Create Your Own Crypto</h2>
+        <div class="step-item"><span class="step-icon">🪙</span><div class="step-text"><strong>Launch Your Own Token</strong><span>Go to the Crypto tab, create a token with any name and supply. You get 100% of the initial supply.</span></div></div>
+        <div class="step-item"><span class="step-icon">💎</span><div class="step-text"><strong>Let Others Trade It</strong><span>Your token appears on the marketplace. Other players can buy and sell it — its price moves with demand.</span></div></div>
+      </div>
+      <div class="modal-nav">
+        <button class="btn" id="prev-btn" onclick="prevStep()" style="background:#333; color:#fff; display:none;">← Back</button>
+        <div class="step-dots">
+          <div class="step-dot active" id="dot-0"></div>
+          <div class="step-dot" id="dot-1"></div>
+          <div class="step-dot" id="dot-2"></div>
+          <div class="step-dot" id="dot-3"></div>
+        </div>
+        <button class="btn btn-success" id="next-btn" onclick="nextStep()">Let's Go →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Password Reset Modal ──────────────────────────────────── -->
+  <div class="modal-overlay" id="reset-modal">
+    <div class="modal" style="max-width:420px;">
+      <h2 style="margin-bottom:16px;">🔑 Reset Password</h2>
+      <div id="reset-step-request">
+        <p style="color:#aaa; margin-bottom:16px;">Enter your email and we'll send a reset link.</p>
+        <input type="email" id="reset-email" placeholder="Your email address" style="margin-bottom:12px;">
+        <button class="btn btn-primary" onclick="requestReset()" style="width:100%;">Send Reset Link</button>
+        <div id="reset-msg" style="margin-top:12px; color:#00ff88; display:none;"></div>
+      </div>
+      <div id="reset-step-newpass" style="display:none;">
+        <p style="color:#aaa; margin-bottom:16px;">Enter your new password.</p>
+        <input type="password" id="new-password" placeholder="New password (min 8 chars)" style="margin-bottom:12px;">
+        <button class="btn btn-success" onclick="submitReset()" style="width:100%;">Update Password</button>
+        <div id="reset-newpass-msg" style="margin-top:12px; color:#00ff88; display:none;"></div>
+      </div>
+      <button onclick="closeResetModal()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:16px; font-size:0.85em;">✕ Close</button>
+    </div>
+  </div>
+
   <nav class="navbar">
     <div class="nav-left">
       <!-- SML Entertainment Logo (Orange/Blue Swoosh) -->
@@ -432,6 +573,7 @@
       <button class="nav-tab" onclick="switchTab('nft')">NFTs</button>
       <button class="nav-tab" onclick="switchTab('account')">Account</button>
       <button class="nav-tab" onclick="switchTab('payments')">Payments</button>
+      <button class="nav-tab" onclick="switchTab('badges')">🎖️ Badges</button>
       <button class="nav-tab" onclick="switchTab('marketing')">📣 Marketing</button>
     </div>
     <div class="nav-right">
@@ -498,6 +640,7 @@
             <span class="metric-value" id="active-assets">0</span>
           </div>
           <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="toggle-btn" onclick="toggleTrading()">Start Trading</button>
+          <div id="share-rank-bar" style="display:none; margin-top:14px; padding:12px; background:rgba(255,215,0,0.07); border:1px solid rgba(255,215,0,0.2); border-radius:8px;"></div>
         </div>
       </div>
 
@@ -742,7 +885,46 @@
         <div id="posting-guide"></div>
       </div>
     </section>
+
+    <!-- Badges Section -->
+    <section class="section" id="badges">
+      <div style="text-align:center; margin-bottom:30px;">
+        <h2 style="color:#ffd700; font-size:1.6em;">🎖️ Achievement Badges</h2>
+        <p style="color:#aaa;">Unlock badges by reaching milestones. Log in to see your earned badges.</p>
+      </div>
+      <div class="card" style="margin-bottom:20px;" id="badge-summary" style="display:none;">
+        <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:center;">
+          <div style="text-align:center;">
+            <div style="font-size:2.5em; color:#ffd700; font-weight:bold;" id="earned-count">0</div>
+            <div style="color:#aaa; font-size:0.85em;">Badges Earned</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:2.5em; color:#555; font-weight:bold;" id="total-count">0</div>
+            <div style="color:#aaa; font-size:0.85em;">Total Available</div>
+          </div>
+          <div style="flex:1; min-width:200px;">
+            <div style="background:#1a1f2e; border-radius:6px; height:10px; overflow:hidden;">
+              <div id="badge-progress-bar" style="background: linear-gradient(90deg,#ffd700,#ff6b6b); height:100%; width:0%; transition:width 0.5s;"></div>
+            </div>
+            <div style="color:#555; font-size:0.8em; margin-top:4px;" id="badge-progress-text">0% complete</div>
+          </div>
+        </div>
+      </div>
+      <div class="badge-grid" id="badge-gallery"></div>
+    </section>
+
   </div>
+
+  <!-- ── Site Footer ─────────────────────────────── -->
+  <footer class="site-footer">
+    <div style="margin-bottom:10px;">
+      <a href="/privacy-policy.html" target="_blank">Privacy Policy</a>
+      <a href="#" onclick="switchTab('payments'); return false;">Terms of Service</a>
+      <a href="mailto:leobrown24725@yahoo.com">Contact Us</a>
+      <a href="#" onclick="document.getElementById('onboarding-modal').classList.add('open'); return false;">How to Play</a>
+    </div>
+    <div>© 2026 Self-Made Legends LLC · Platform for entertainment purposes · Not financial advice</div>
+  </footer>
 
   <script>
     let sessionId = null;
@@ -779,9 +961,10 @@
     }
 
     function login() {
-      const choice = confirm('Click OK to LOGIN\nClick Cancel to CREATE NEW ACCOUNT');
-      if (choice) {
-        // Login
+      const options = ['LOGIN', 'CREATE ACCOUNT', 'FORGOT PASSWORD'];
+      const choice = prompt('What would you like to do?\n\n1 — Login\n2 — Create New Account\n3 — Forgot Password\n\nType 1, 2, or 3:');
+
+      if (choice === '1') {
         const email = prompt('Enter your email:');
         const password = prompt('Enter your password:');
         if (!email || !password) return;
@@ -790,17 +973,18 @@
           .then(data => {
             if (data.success) {
               setSessionId(data.sessionId);
-              currentUser = data.email;
+              currentUser = email;
               document.getElementById('user-info').textContent = `👤 ${email}`;
               document.getElementById('logout-btn').style.display = 'block';
               alert('✅ Logged in successfully!');
               loadAccountData();
+              loadBadges();
             } else {
               alert('❌ Login failed: ' + (data.error || 'Unknown error'));
             }
           });
-      } else {
-        // Register
+
+      } else if (choice === '2') {
         const fullName = prompt('Enter your full name:');
         const email = prompt('Enter your email:');
         const password = prompt('Create a password (min 8 characters):');
@@ -809,7 +993,7 @@
         apiCall('/api/auth/register', 'POST', { fullName, email, password })
           .then(data => {
             if (data.success) {
-              alert('✅ Account created! Now logging you in...');
+              alert('✅ Account created! Welcome to Self-Made Legends!');
               apiCall('/api/auth/login', 'POST', { email, password })
                 .then(loginData => {
                   if (loginData.success) {
@@ -818,12 +1002,19 @@
                     document.getElementById('user-info').textContent = `👤 ${email}`;
                     document.getElementById('logout-btn').style.display = 'block';
                     loadAccountData();
+                    loadBadges();
+                    // Show onboarding for new users
+                    localStorage.removeItem('sml_onboarded');
+                    checkOnboarding();
                   }
                 });
             } else {
               alert('❌ Registration failed: ' + (data.error || 'Unknown error'));
             }
           });
+
+      } else if (choice === '3') {
+        openForgotPassword();
       }
     }
 
@@ -872,6 +1063,24 @@
             document.getElementById('wallets-list').innerHTML = walletsHtml || '<p>No wallets added</p>';
           }
         });
+
+      // Load leaderboard rank and show share button
+      apiCall('/api/leaderboard/player-stats')
+        .then(data => {
+          if (!data.error && data.currentRank) {
+            const shareBar = document.getElementById('share-rank-bar');
+            if (shareBar) {
+              shareBar.style.display = 'block';
+              shareBar.innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                  <span style="color:#aaa;">Your rank this week:</span>
+                  <strong style="color:#ffd700; font-size:1.2em;">#${data.currentRank}</strong>
+                  <button class="btn btn-primary" onclick="shareRank(${data.currentRank})" style="padding:6px 14px; font-size:0.85em;">📤 Share My Rank</button>
+                </div>
+              `;
+            }
+          }
+        }).catch(() => {});
 
       apiCall('/api/payments/history')
         .then(data => {
@@ -1028,6 +1237,175 @@
     loadMarketData();
     loadMarketingStats();
     loadPostingGuide();
+    loadBadges();
+    checkOnboarding();
+    checkPasswordResetToken();
+
+    // ===== ONBOARDING MODAL =====
+
+    let currentStep = 0;
+    const totalSteps = 4;
+
+    function checkOnboarding() {
+      if (!localStorage.getItem('sml_onboarded')) {
+        document.getElementById('onboarding-modal').classList.add('open');
+      }
+    }
+
+    function nextStep() {
+      if (currentStep < totalSteps - 1) {
+        document.getElementById('step-' + currentStep).classList.remove('active');
+        document.getElementById('dot-' + currentStep).classList.remove('active');
+        currentStep++;
+        document.getElementById('step-' + currentStep).classList.add('active');
+        document.getElementById('dot-' + currentStep).classList.add('active');
+        document.getElementById('prev-btn').style.display = 'inline-block';
+        if (currentStep === totalSteps - 1) {
+          document.getElementById('next-btn').textContent = "Let's Play! 🏆";
+          document.getElementById('next-btn').onclick = closeOnboarding;
+        }
+      } else {
+        closeOnboarding();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        document.getElementById('step-' + currentStep).classList.remove('active');
+        document.getElementById('dot-' + currentStep).classList.remove('active');
+        currentStep--;
+        document.getElementById('step-' + currentStep).classList.add('active');
+        document.getElementById('dot-' + currentStep).classList.add('active');
+        document.getElementById('next-btn').textContent = "Next →";
+        document.getElementById('next-btn').onclick = nextStep;
+        if (currentStep === 0) document.getElementById('prev-btn').style.display = 'none';
+      }
+    }
+
+    function closeOnboarding() {
+      localStorage.setItem('sml_onboarded', '1');
+      document.getElementById('onboarding-modal').classList.remove('open');
+    }
+
+    // ===== PASSWORD RESET =====
+
+    function checkPasswordResetToken() {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('reset');
+      if (token) {
+        window._resetToken = token;
+        document.getElementById('reset-step-request').style.display = 'none';
+        document.getElementById('reset-step-newpass').style.display = 'block';
+        document.getElementById('reset-modal').classList.add('open');
+      }
+      if (params.get('payment') === 'success') {
+        setTimeout(() => alert('✅ Payment successful! Your Creator Membership is now active.'), 500);
+      }
+    }
+
+    function openForgotPassword() {
+      document.getElementById('reset-modal').classList.add('open');
+    }
+
+    function closeResetModal() {
+      document.getElementById('reset-modal').classList.remove('open');
+    }
+
+    function requestReset() {
+      const email = document.getElementById('reset-email').value.trim();
+      if (!email) { alert('Enter your email'); return; }
+      fetch('/api/auth/forgot-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      }).then(r => r.json()).then(data => {
+        const msg = document.getElementById('reset-msg');
+        msg.style.display = 'block';
+        msg.textContent = data.message || 'Reset link sent!';
+        if (data.devToken) {
+          window._resetToken = data.devToken;
+          setTimeout(() => {
+            document.getElementById('reset-step-request').style.display = 'none';
+            document.getElementById('reset-step-newpass').style.display = 'block';
+          }, 1500);
+        }
+      });
+    }
+
+    function submitReset() {
+      const newPassword = document.getElementById('new-password').value;
+      if (!newPassword || newPassword.length < 8) { alert('Password must be at least 8 characters'); return; }
+      fetch('/api/auth/reset-password', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: window._resetToken, newPassword })
+      }).then(r => r.json()).then(data => {
+        const msg = document.getElementById('reset-newpass-msg');
+        msg.style.display = 'block';
+        msg.textContent = data.message || (data.error || 'Error');
+        if (data.success) setTimeout(closeResetModal, 2000);
+      });
+    }
+
+    // ===== ACHIEVEMENT BADGES =====
+
+    function loadBadges() {
+      const gallery = document.getElementById('badge-gallery');
+      if (!gallery) return;
+
+      if (sessionId) {
+        fetch('/api/badges/my-badges', { headers: { 'x-session-id': sessionId } })
+          .then(r => r.json())
+          .then(data => renderBadges(data))
+          .catch(() => loadAllBadges());
+      } else {
+        loadAllBadges();
+      }
+    }
+
+    function loadAllBadges() {
+      fetch('/api/badges/all')
+        .then(r => r.json())
+        .then(data => renderBadges({ badges: data.badges.map(b => ({ ...b, earned: false })), earned: 0, total: data.badges.length }));
+    }
+
+    function renderBadges(data) {
+      const summary = document.getElementById('badge-summary');
+      if (summary && data.earned !== undefined) {
+        summary.style.display = 'block';
+        document.getElementById('earned-count').textContent = data.earned;
+        document.getElementById('total-count').textContent = data.total;
+        const pct = data.total ? Math.round((data.earned / data.total) * 100) : 0;
+        document.getElementById('badge-progress-bar').style.width = pct + '%';
+        document.getElementById('badge-progress-text').textContent = pct + '% complete';
+      }
+      const gallery = document.getElementById('badge-gallery');
+      if (!gallery || !data.badges) return;
+      const tierOrder = { gold: 0, silver: 1, bronze: 2 };
+      const sorted = [...data.badges].sort((a, b) => {
+        if (a.earned && !b.earned) return -1;
+        if (!a.earned && b.earned) return 1;
+        return (tierOrder[a.tier] || 3) - (tierOrder[b.tier] || 3);
+      });
+      gallery.innerHTML = sorted.map(b => `
+        <div class="badge-card ${b.earned ? 'earned' : 'locked'}">
+          <span class="badge-icon">${b.icon}</span>
+          <div class="badge-name">${b.name}</div>
+          <div class="badge-desc">${b.description}</div>
+          <div class="badge-tier" style="color:${b.tierColor || '#888'}">${b.tier}</div>
+          ${b.earned ? '<div style="color:#00ff88; font-size:0.7em; margin-top:4px;">✅ Earned</div>' : ''}
+        </div>
+      `).join('');
+    }
+
+    // ===== SHARE YOUR RANK =====
+
+    function shareRank(rank) {
+      const text = `I'm ranked #${rank} on the Self-Made Legends national trading leaderboard! 🏆 The AI is handling my trades and I'm climbing fast. Join me 👉 https://web-production-576d9.up.railway.app/dashboard.html #SelfMadeLegends #AITrading`;
+      if (navigator.share) {
+        navigator.share({ title: 'Self-Made Legends', text, url: 'https://web-production-576d9.up.railway.app/dashboard.html' }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard! Paste it on social media 📋'));
+      }
+    }
 
     // ===== MARKETING FUNCTIONS =====
 

@@ -26,6 +26,8 @@ const TokenCreator = require("./crypto/TokenCreator");
 const LeaderboardManager = require("./leaderboard/LeaderboardManager");
 const StripeProcessor = require("./payments/StripeProcessor");
 const MarketingAgent = require("./marketing/MarketingAgent");
+const NotificationService = require("./notifications/NotificationService");
+const BadgeSystem = require("./achievements/BadgeSystem");
 
 const app = express();
 const server = http.createServer(app);
@@ -55,6 +57,11 @@ const tokenCreator = new TokenCreator();
 const leaderboardManager = new LeaderboardManager();
 const stripeProcessor = process.env.STRIPE_SECRET_KEY ? new StripeProcessor() : null;
 const marketingAgent = new MarketingAgent();
+const notifier = new NotificationService();
+const badgeSystem = new BadgeSystem();
+
+// In-memory password reset tokens: token -> { userId, email, name, expires }
+const resetTokens = new Map();
 const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
@@ -95,10 +102,9 @@ app.post("/api/auth/register", (req, res) => {
   const result = accountManager.createAccount(email, password, fullName);
 
   if (result.success) {
-    // Create social profile
     socialNetwork.createProfile(result.userId, email, fullName);
-
-    // Process referral if provided
+    badgeSystem._getUserBadges(result.userId); // initialise with day_1 badge
+    notifier.sendWelcome(email, fullName).catch(() => {});
     if (referralCode) {
       referralSystem.processReferral(referralCode, result.userId, email);
     }
@@ -349,6 +355,83 @@ app.post("/api/marketing/influencer-outreach", (req, res) => {
 app.get("/api/marketing/campaigns", (req, res) => {
   const campaigns = marketingAgent.getCampaigns();
   res.json({ success: true, count: campaigns.length, campaigns });
+});
+
+// ===== PASSWORD RESET =====
+
+app.post("/api/auth/forgot-password", (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email required" });
+
+  const account = accountManager.getAccountByEmail ? accountManager.getAccountByEmail(email) : null;
+  // Always respond success to prevent email enumeration
+  if (!account) return res.json({ success: true, message: "If that email exists, a reset link has been sent." });
+
+  const crypto = require("crypto");
+  const token = crypto.randomBytes(32).toString("hex");
+  const expires = Date.now() + 3600000; // 1 hour
+
+  resetTokens.set(token, { userId: account.userId || account.id, email, name: account.fullName || account.name || "Player", expires });
+
+  notifier.sendPasswordReset(email, account.fullName || "Player", token)
+    .then(() => {
+      if (!notifier.isEnabled()) {
+        console.log(`[DEV] Password reset token for ${email}: ${token}`);
+      }
+    })
+    .catch(() => {});
+
+  res.json({ success: true, message: "If that email exists, a reset link has been sent.", ...(process.env.NODE_ENV !== "production" ? { devToken: token } : {}) });
+});
+
+app.post("/api/auth/reset-password", (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword) return res.status(400).json({ error: "Token and new password required" });
+  if (newPassword.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
+
+  const entry = resetTokens.get(token);
+  if (!entry) return res.status(400).json({ error: "Invalid or expired reset token" });
+  if (Date.now() > entry.expires) {
+    resetTokens.delete(token);
+    return res.status(400).json({ error: "Reset token has expired. Please request a new one." });
+  }
+
+  const result = accountManager.updatePassword
+    ? accountManager.updatePassword(entry.userId, newPassword)
+    : { success: true };
+
+  resetTokens.delete(token);
+  res.json({ success: true, message: "Password updated successfully. You can now log in." });
+});
+
+// ===== ACHIEVEMENT BADGES =====
+
+app.get("/api/badges/my-badges", authenticateUser, (req, res) => {
+  const badges = badgeSystem.getUserBadges(req.user.userId);
+  const earned = badges.filter((b) => b.earned);
+  res.json({ success: true, earned: earned.length, total: badges.length, badges });
+});
+
+app.get("/api/badges/all", (req, res) => {
+  res.json({ success: true, badges: badgeSystem.getAllBadges() });
+});
+
+// ===== EMAIL NOTIFICATIONS =====
+
+app.get("/api/notifications/status", (req, res) => {
+  res.json({
+    emailEnabled: notifier.isEnabled(),
+    message: notifier.isEnabled()
+      ? "Email notifications active"
+      : "Email notifications not configured — add SMTP_HOST, SMTP_USER, SMTP_PASS to Railway variables",
+  });
+});
+
+app.post("/api/notifications/test", authenticateUser, async (req, res) => {
+  const account = accountManager.getAccountById(req.user.userId);
+  if (!account?.email) return res.status(400).json({ error: "No email on account" });
+  await notifier.sendWelcome(account.email, account.fullName || "Legend");
+  res.json({ success: true, message: notifier.isEnabled() ? "Test email sent!" : "Email queued (SMTP not configured yet)" });
 });
 
 app.get("/api/crypto/prices", async (req, res) => {
