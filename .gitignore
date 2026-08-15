@@ -16,4 +16,6 @@ yarn-error.log*
 dist/
 build/
 data/*.db
+data/*.db-shm
+data/*.db-wal
 .cache/
