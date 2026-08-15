@@ -1,4 +1,7 @@
 'use strict';
+
+const db = require('../database/db');
+
 class MissionSystem {
   constructor() {
     this.userMissions = new Map(); // userId -> { date, missions }
@@ -13,6 +16,37 @@ class MissionSystem {
       { id: 'refer_friend', title: 'Bring a Legend', desc: 'Share your referral link', target: 1, xp: 60, icon: '🔗' },
     ];
     this.userXP = new Map(); // userId -> total XP
+  }
+
+  async restore() {
+    const today = this._todayKey();
+    const [xpRows, missionRows] = await Promise.all([
+      db.all('SELECT * FROM user_xp'),
+      db.all('SELECT * FROM mission_progress WHERE date = ?', [today]),
+    ]);
+    for (const row of xpRows) this.userXP.set(row.user_id, row.total_xp || 0);
+    for (const row of missionRows) {
+      try { this.userMissions.set(row.user_id, { date: today, missions: JSON.parse(row.data) }); } catch (_) {}
+    }
+    console.log(`✅ MissionSystem: restored ${xpRows.length} XP entries, ${missionRows.length} mission progress entries`);
+  }
+
+  _persistXP(userId) {
+    db.run(
+      `INSERT INTO user_xp (user_id, total_xp) VALUES (?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET total_xp=excluded.total_xp`,
+      [userId, this.userXP.get(userId) || 0]
+    ).catch(e => console.error('MissionSystem XP persist error:', e.message));
+  }
+
+  _persistMissions(userId) {
+    const entry = this.userMissions.get(userId);
+    if (!entry) return;
+    db.run(
+      `INSERT INTO mission_progress (user_id, date, data) VALUES (?, ?, ?)
+       ON CONFLICT(user_id, date) DO UPDATE SET data=excluded.data`,
+      [userId, entry.date, JSON.stringify(entry.missions)]
+    ).catch(e => console.error('MissionSystem missions persist error:', e.message));
   }
 
   _todayKey() {
@@ -48,9 +82,11 @@ class MissionSystem {
           xpEarned += m.xp;
           const cur = this.userXP.get(userId) || 0;
           this.userXP.set(userId, cur + m.xp);
+          this._persistXP(userId);
         }
       }
     });
+    this._persistMissions(userId);
     return { missions, xpEarned };
   }
 

@@ -1,3 +1,7 @@
+'use strict';
+
+const db = require('../database/db');
+
 const BADGES = {
   // Trading milestones
   first_trade:       { id: "first_trade",       name: "First Blood",        icon: "⚡", description: "Made your first trade",                    tier: "bronze"   },
@@ -63,6 +67,40 @@ class BadgeSystem {
     this.userStats = new Map();
   }
 
+  async restore() {
+    const [statsRows, badgeRows] = await Promise.all([
+      db.all('SELECT * FROM user_stats'),
+      db.all('SELECT * FROM user_badges'),
+    ]);
+    for (const row of statsRows) {
+      try { this.userStats.set(row.user_id, JSON.parse(row.data)); } catch (_) {}
+    }
+    const grouped = new Map();
+    for (const row of badgeRows) {
+      if (!grouped.has(row.user_id)) grouped.set(row.user_id, new Set());
+      grouped.get(row.user_id).add(row.badge_id);
+    }
+    for (const [uid, set] of grouped) this.userBadges.set(uid, set);
+    console.log(`✅ BadgeSystem: restored ${statsRows.length} stat entries, ${badgeRows.length} badge entries`);
+  }
+
+  _persistStats(userId) {
+    const data = this.userStats.get(userId);
+    if (!data) return;
+    db.run(
+      `INSERT INTO user_stats (user_id, data) VALUES (?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET data=excluded.data`,
+      [userId, JSON.stringify(data)]
+    ).catch(e => console.error('BadgeSystem stats persist error:', e.message));
+  }
+
+  _persistBadge(userId, badgeId) {
+    db.run(
+      `INSERT OR IGNORE INTO user_badges (user_id, badge_id, earned_at) VALUES (?, ?, ?)`,
+      [userId, badgeId, Date.now()]
+    ).catch(e => console.error('BadgeSystem badge persist error:', e.message));
+  }
+
   _getStats(userId) {
     if (!this.userStats.has(userId)) {
       this.userStats.set(userId, {
@@ -116,6 +154,7 @@ class BadgeSystem {
     if (stats.loginStreak >= 60) { const b = this._award(userId, "login_60"); if (b) newBadges.push(b); }
     if (stats.loginStreak >= 90) { const b = this._award(userId, "login_90"); if (b) newBadges.push(b); }
 
+    this._persistStats(userId);
     return { newBadges, bonusXP, loginStreak: stats.loginStreak, maxLoginStreak: stats.maxLoginStreak };
   }
 
@@ -153,6 +192,7 @@ class BadgeSystem {
     const badges = this._getUserBadges(userId);
     if (badges.has(badgeId)) return null;
     badges.add(badgeId);
+    this._persistBadge(userId, badgeId);
     return BADGES[badgeId];
   }
 
@@ -171,6 +211,7 @@ class BadgeSystem {
       stats.currentWinStreak = 0;
     }
     stats.maxWinStreak = Math.max(stats.maxWinStreak, stats.currentWinStreak);
+    this._persistStats(userId);
 
     // Trade count milestones
     if (stats.tradeCount === 1)   { const b = this._award(userId, "first_trade");        if (b) newBadges.push(b); }
@@ -219,6 +260,7 @@ class BadgeSystem {
     const newBadges = [];
 
     stats.bestRank = Math.min(stats.bestRank, rank);
+    this._persistStats(userId);
 
     if (rank <= 10) { const b = this._award(userId, "top_10");    if (b) newBadges.push(b); }
     if (rank <= 3)  { const b = this._award(userId, "top_3");     if (b) newBadges.push(b); }
@@ -231,6 +273,7 @@ class BadgeSystem {
   onTokenCreated(userId) {
     const stats = this._getStats(userId);
     stats.tokenCreated = true;
+    this._persistStats(userId);
     const b = this._award(userId, "token_creator");
     return b ? [b] : [];
   }
@@ -239,6 +282,7 @@ class BadgeSystem {
   onTokenTraded(userId) {
     const stats = this._getStats(userId);
     stats.tokenTradeCount++;
+    this._persistStats(userId);
     const newBadges = [];
     if (stats.tokenTradeCount >= 10) { const b = this._award(userId, "market_maker"); if (b) newBadges.push(b); }
     return newBadges;

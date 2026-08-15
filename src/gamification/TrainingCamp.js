@@ -1,5 +1,7 @@
 'use strict';
 
+const db = require('../database/db');
+
 const LESSONS = [
   {
     id: 1,
@@ -215,6 +217,42 @@ class TrainingCamp {
     this.progress = new Map(); // userId -> { completedLessons: Set, quizScores: {}, graduated: bool, startedAt }
   }
 
+  async restore() {
+    const rows = await db.all('SELECT * FROM training_progress');
+    for (const row of rows) {
+      try {
+        this.progress.set(row.user_id, {
+          completedLessons: new Set(JSON.parse(row.completed_lessons || '[]')),
+          quizScores: JSON.parse(row.quiz_scores || '{}'),
+          graduated: !!row.graduated,
+          startedAt: row.started_at || null,
+        });
+      } catch (_) {}
+    }
+    console.log(`✅ TrainingCamp: restored ${rows.length} progress entries`);
+  }
+
+  _persist(userId) {
+    const p = this.progress.get(userId);
+    if (!p) return;
+    db.run(
+      `INSERT INTO training_progress (user_id, completed_lessons, quiz_scores, graduated, started_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         completed_lessons=excluded.completed_lessons,
+         quiz_scores=excluded.quiz_scores,
+         graduated=excluded.graduated,
+         started_at=excluded.started_at`,
+      [
+        userId,
+        JSON.stringify([...p.completedLessons]),
+        JSON.stringify(p.quizScores),
+        p.graduated ? 1 : 0,
+        p.startedAt || null,
+      ]
+    ).catch(e => console.error('TrainingCamp persist error:', e.message));
+  }
+
   getLessons() {
     return LESSONS.map(l => ({
       id: l.id,
@@ -276,6 +314,7 @@ class TrainingCamp {
       p.graduated = true;
     }
 
+    this._persist(userId);
     return {
       success: true,
       correct,

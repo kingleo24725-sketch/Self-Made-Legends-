@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const db = require('../database/db');
 
 class LeaderboardManager {
   constructor() {
@@ -9,6 +10,59 @@ class LeaderboardManager {
     this.allTimeStats = new Map(); // userId -> all-time stats
     this.currentWeek = this.getCurrentWeekId();
     this.lastRewardDistribution = null;
+  }
+
+  async restore() {
+    const rows = await db.all('SELECT * FROM leaderboard_scores');
+    for (const row of rows) {
+      const entry = {
+        userId: row.user_id,
+        score: row.score || 0,
+        gains: row.gains || 0,
+        gainPercentage: row.gain_pct || 0,
+        winRate: row.win_rate || 0,
+        trades: row.trades || 0,
+        totalValue: row.total_value || 0,
+        week: this.currentWeek,
+      };
+      this.weeklyScores.push(entry);
+      this.userPortfolios.set(row.user_id, {
+        userId: row.user_id,
+        totalValue: row.total_value || 0,
+        initialInvestment: 1,
+        gains: row.gains || 0,
+        gainPercentage: row.gain_pct || 0,
+        trades: row.trades || 0,
+        winRate: row.win_rate || 0,
+        lastUpdated: new Date(row.updated_at || Date.now()).toISOString(),
+      });
+    }
+    console.log(`✅ LeaderboardManager: restored ${rows.length} score entries`);
+  }
+
+  _persist(userId) {
+    const entry = this.weeklyScores.find(s => s.userId === userId);
+    if (!entry) return;
+    db.run(
+      `INSERT INTO leaderboard_scores
+        (user_id, gain_pct, score, gains, trades, win_rate, total_value, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         gain_pct=excluded.gain_pct, score=excluded.score,
+         gains=excluded.gains, trades=excluded.trades,
+         win_rate=excluded.win_rate, total_value=excluded.total_value,
+         updated_at=excluded.updated_at`,
+      [
+        userId,
+        entry.gainPercentage || 0,
+        entry.score || 0,
+        entry.gains || 0,
+        entry.trades || 0,
+        entry.winRate || 0,
+        entry.totalValue || 0,
+        Date.now(),
+      ]
+    ).catch(e => console.error('LeaderboardManager persist error:', e.message));
   }
 
   // Get current week ID
@@ -82,6 +136,7 @@ class LeaderboardManager {
 
     this.allTimeStats.set(userId, allTimeStats);
 
+    this._persist(userId);
     return {
       rank: this.getPlayerRank(userId),
       score: weeklyScore,
@@ -114,6 +169,9 @@ class LeaderboardManager {
 
     return Math.max(returnScore + winRateScore + tradeScore + growthScore, 0);
   }
+
+  // Alias used throughout api-server.js
+  getLeaderboard(limit = 10) { return this.getWeeklyLeaderboard(limit); }
 
   // Get current week's leaderboard (top 10)
   getWeeklyLeaderboard(limit = 10) {

@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const db = require("./database/db");
 const express = require("express");
 const cors = require("cors");
 const http = require("http");
@@ -1652,9 +1653,27 @@ io.on("connection", (socket) => {
 setInterval(runAnalysis, 60000);
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`🚀 Multi-Asset Trading Bot Server running on http://localhost:${PORT}`);
-  console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard.html`);
+
+async function startServer() {
+  await db.init();
+  await Promise.all([
+    accountManager.restore(),
+    badgeSystem.restore(),
+    missionSystem.restore(),
+    trainingCamp.restore(),
+    teamManager.restore(),
+    leaderboardManager.restore(),
+    tournamentManager.restore(),
+  ]);
+  server.listen(PORT, () => {
+    console.log(`🚀 Multi-Asset Trading Bot Server running on http://localhost:${PORT}`);
+    console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard.html`);
+  });
+}
+
+startServer().catch(err => {
+  console.error('❌ Server startup failed:', err);
+  process.exit(1);
 });
 
 module.exports = { app, server, io };

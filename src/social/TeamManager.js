@@ -1,10 +1,72 @@
 'use strict';
 
+const db = require('../database/db');
+
 class TeamManager {
   constructor() {
     this.teams = new Map();   // teamId -> team object
     this.members = new Map(); // userId -> teamId
     this._nextId = 1;
+  }
+
+  async restore() {
+    const [teamRows, memberRows] = await Promise.all([
+      db.all('SELECT * FROM teams'),
+      db.all('SELECT * FROM team_members'),
+    ]);
+
+    for (const row of teamRows) {
+      this.teams.set(row.id, {
+        id: row.id,
+        name: row.name,
+        description: row.description || '',
+        code: row.code,
+        captainId: row.captain_id,
+        memberIds: [],
+        createdAt: row.created_at || Date.now(),
+        totalGainPct: 0,
+        avgGainPct: 0,
+      });
+      // Track highest numeric suffix for _nextId
+      const n = parseInt(row.id.replace('team_', ''), 10);
+      if (!isNaN(n) && n >= this._nextId) this._nextId = n + 1;
+    }
+    for (const row of memberRows) {
+      const team = this.teams.get(row.team_id);
+      if (team) team.memberIds.push(row.user_id);
+      this.members.set(row.user_id, row.team_id);
+    }
+    console.log(`✅ TeamManager: restored ${teamRows.length} teams, ${memberRows.length} members`);
+  }
+
+  _persistTeam(team) {
+    db.run(
+      `INSERT INTO teams (id, name, description, code, captain_id, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name=excluded.name, description=excluded.description,
+         captain_id=excluded.captain_id`,
+      [team.id, team.name, team.description, team.code, team.captainId, team.createdAt]
+    ).catch(e => console.error('TeamManager team persist error:', e.message));
+  }
+
+  _persistMember(teamId, userId) {
+    db.run(
+      `INSERT OR IGNORE INTO team_members (team_id, user_id, joined_at) VALUES (?, ?, ?)`,
+      [teamId, userId, Date.now()]
+    ).catch(e => console.error('TeamManager member persist error:', e.message));
+  }
+
+  _deleteMember(teamId, userId) {
+    db.run('DELETE FROM team_members WHERE team_id=? AND user_id=?', [teamId, userId])
+      .catch(e => console.error('TeamManager delete member error:', e.message));
+  }
+
+  _deleteTeam(teamId) {
+    db.run('DELETE FROM team_members WHERE team_id=?', [teamId])
+      .catch(e => console.error('TeamManager delete members error:', e.message));
+    db.run('DELETE FROM teams WHERE id=?', [teamId])
+      .catch(e => console.error('TeamManager delete team error:', e.message));
   }
 
   _generateCode() {
@@ -46,6 +108,8 @@ class TeamManager {
     };
     this.teams.set(teamId, team);
     this.members.set(userId, teamId);
+    this._persistTeam(team);
+    this._persistMember(teamId, userId);
     return { success: true, team };
   }
 
@@ -59,6 +123,7 @@ class TeamManager {
 
     team.memberIds.push(userId);
     this.members.set(userId, team.id);
+    this._persistMember(team.id, userId);
     return { success: true, team };
   }
 
@@ -70,14 +135,17 @@ class TeamManager {
 
     team.memberIds = team.memberIds.filter(id => id !== userId);
     this.members.delete(userId);
+    this._deleteMember(teamId, userId);
 
     if (team.memberIds.length === 0) {
       this.teams.delete(teamId);
+      this._deleteTeam(teamId);
       return { success: true, disbanded: true };
     }
 
     if (team.captainId === userId) {
       team.captainId = team.memberIds[0];
+      this._persistTeam(team);
     }
     return { success: true, disbanded: false };
   }

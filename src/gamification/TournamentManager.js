@@ -2,10 +2,36 @@
 // Runs a 16-player single-elimination bracket for male and female divisions.
 // After both division champions are crowned, they face off in the Grand Championship.
 
+'use strict';
+
+const db = require('../database/db');
+
 class TournamentManager {
   constructor() {
     this.activeTournament = null;
     this.history = [];
+  }
+
+  async restore() {
+    const rows = await db.all('SELECT * FROM tournament_state');
+    for (const row of rows) {
+      try {
+        if (row.key === 'active')   this.activeTournament = JSON.parse(row.value);
+        if (row.key === 'history')  this.history = JSON.parse(row.value);
+      } catch (_) {}
+    }
+    console.log(`✅ TournamentManager: restored (active=${!!this.activeTournament}, history=${this.history.length})`);
+  }
+
+  _persist() {
+    const upsert = (key, value) =>
+      db.run(
+        `INSERT INTO tournament_state (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value=excluded.value`,
+        [key, JSON.stringify(value)]
+      ).catch(e => console.error('TournamentManager persist error:', e.message));
+    if (this.activeTournament) upsert('active', this.activeTournament);
+    upsert('history', this.history);
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -28,6 +54,7 @@ class TournamentManager {
     };
 
     this.activeTournament = tournament;
+    this._persist();
     return tournament;
   }
 
@@ -57,6 +84,7 @@ class TournamentManager {
     this._tryAdvanceRound(bracket, roundIndex);
     this._tryOpenChampionship();
 
+    this._persist();
     return { success: true, winner, tournament: this.activeTournament };
   }
 
@@ -78,6 +106,7 @@ class TournamentManager {
     t.grandChampion          = winner;
     t.status                 = 'complete';
 
+    this._persist();
     return { success: true, winner, tournament: t };
   }
 
