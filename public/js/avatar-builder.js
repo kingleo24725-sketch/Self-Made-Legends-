@@ -606,8 +606,8 @@
     ${neck}
     ${ears}
     ${head}
-    ${face}
     ${hairFront}
+    ${face}
     ${acc}
   </g>
 </svg>`;

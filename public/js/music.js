@@ -433,25 +433,36 @@
   window.SMLMusic = SMLMusic;
 
   // ── Auto-start on first user gesture (browser autoplay policy) ─────────
-  function onGesture() {
+  // Use BUBBLE phase (no capture) so music button can stopPropagation and
+  // handle itself — prevents the race where doc listener starts music and
+  // button listener immediately toggles it off on the same click.
+  function onAnyGesture() {
     if (SMLMusic._gestured) return;
     SMLMusic._gestured = true;
-    ['click','touchstart','keydown'].forEach(ev =>
-      document.removeEventListener(ev, onGesture, true)
-    );
+    document.removeEventListener('click',      onAnyGesture);
+    document.removeEventListener('touchstart', onAnyGesture);
+    document.removeEventListener('keydown',    onAnyGesture);
     if (!SMLMusic._muted) SMLMusic.start();
   }
 
   document.addEventListener('DOMContentLoaded', () => {
-    ['click','touchstart','keydown'].forEach(ev =>
-      document.addEventListener(ev, onGesture, true)
-    );
+    // Register bubble-phase listeners — music button stops propagation so
+    // these only fire when the user interacts with something else first.
+    document.addEventListener('click',      onAnyGesture);
+    document.addEventListener('touchstart', onAnyGesture);
+    document.addEventListener('keydown',    onAnyGesture);
+
     document.querySelectorAll('.sml-music-btn').forEach(b => {
       SMLMusic._refreshUI();
       b.addEventListener('click', e => {
+        // Stop bubble so the document listener above doesn't also fire
         e.stopPropagation();
         if (!SMLMusic._gestured) {
+          // First interaction ever — remove doc listeners, start music
           SMLMusic._gestured = true;
+          document.removeEventListener('click',      onAnyGesture);
+          document.removeEventListener('touchstart', onAnyGesture);
+          document.removeEventListener('keydown',    onAnyGesture);
           SMLMusic.start();
         } else {
           SMLMusic.toggle();
