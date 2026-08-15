@@ -28,6 +28,9 @@ const StripeProcessor = require("./payments/StripeProcessor");
 const MarketingAgent = require("./marketing/MarketingAgent");
 const NotificationService = require("./notifications/NotificationService");
 const BadgeSystem = require("./achievements/BadgeSystem");
+const MissionSystem = require("./gamification/MissionSystem");
+const SeasonManager = require("./gamification/SeasonManager");
+const SocialFeed = require("./gamification/SocialFeed");
 
 const app = express();
 const server = http.createServer(app);
@@ -59,6 +62,19 @@ const stripeProcessor = process.env.STRIPE_SECRET_KEY ? new StripeProcessor() : 
 const marketingAgent = new MarketingAgent();
 const notifier = new NotificationService();
 const badgeSystem = new BadgeSystem();
+const missionSystem = new MissionSystem();
+const seasonManager = new SeasonManager();
+const socialFeed = new SocialFeed();
+socialFeed.seedDemoEvents();
+
+// AI bot portfolio — auto-simulated for "Beat the AI" challenge
+const aiBot = { name: 'SML-AI Bot', gainPct: 0, history: [] };
+setInterval(() => {
+  const daily = (Math.random() * 4 - 1.2); // -1.2% to +2.8% daily drift
+  aiBot.gainPct = parseFloat((aiBot.gainPct + daily).toFixed(2));
+  aiBot.history.push({ date: new Date().toISOString().split('T')[0], gainPct: aiBot.gainPct });
+  if (aiBot.history.length > 90) aiBot.history.shift();
+}, 3600000); // update hourly
 
 // In-memory password reset tokens: token -> { userId, email, name, expires }
 const resetTokens = new Map();
@@ -1320,6 +1336,106 @@ app.post("/api/admin/ban-user", requireAdmin, (req, res) => {
     : { success: false, error: "banAccount not implemented" };
   securityManager.logAudit("ADMIN_BAN", "admin", { userId, reason });
   res.json(result);
+});
+
+// ── Public Leaderboard (no auth required) ─────────────────────────────────
+app.get("/api/leaderboard/public", (req, res) => {
+  const lb = leaderboardManager.getLeaderboard(50);
+  res.json({ leaderboard: lb, updatedAt: new Date().toISOString() });
+});
+
+// ── Missions ──────────────────────────────────────────────────────────────
+app.get("/api/missions/today", authenticateUser, (req, res) => {
+  const stats = missionSystem.getUserStats(req.user.userId);
+  res.json(stats);
+});
+
+app.post("/api/missions/complete", authenticateUser, (req, res) => {
+  const { actionId } = req.body;
+  if (!actionId) return res.status(400).json({ error: "actionId required" });
+  const result = missionSystem.completeAction(req.user.userId, actionId);
+  res.json({ success: true, ...result });
+});
+
+app.get("/api/missions/xp-leaderboard", (req, res) => {
+  res.json({ leaderboard: missionSystem.getLeaderboard() });
+});
+
+// ── Season ────────────────────────────────────────────────────────────────
+app.get("/api/season/current", (req, res) => {
+  res.json(seasonManager.getCurrentSeason());
+});
+
+app.get("/api/season/hall-of-fame", (req, res) => {
+  res.json({ hallOfFame: seasonManager.getHallOfFame() });
+});
+
+app.post("/api/admin/end-season", requireAdmin, (req, res) => {
+  const lb = leaderboardManager.getLeaderboard(3);
+  const winners = lb.map((p, i) => ({ rank: i + 1, userId: p.userId, email: p.email, score: p.score }));
+  const closed = seasonManager.endSeason(winners);
+  res.json({ success: true, closedSeason: closed, newSeason: seasonManager.getCurrentSeason() });
+});
+
+// ── Social Feed ───────────────────────────────────────────────────────────
+app.get("/api/social/feed", (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+  res.json({ feed: socialFeed.getFeed(limit) });
+});
+
+// ── AI Challenge ──────────────────────────────────────────────────────────
+app.get("/api/ai-challenge/status", (req, res) => {
+  res.json({
+    aiBot: { name: aiBot.name, gainPct: aiBot.gainPct },
+    history: aiBot.history.slice(-7),
+    updatedAt: new Date().toISOString(),
+  });
+});
+
+app.get("/api/ai-challenge/my-status", authenticateUser, (req, res) => {
+  const account = accountManager.getAccount(req.user.userId);
+  const userGainPct = account && account.portfolioGainPct != null ? account.portfolioGainPct : 0;
+  const beating = userGainPct > aiBot.gainPct;
+  if (beating) missionSystem.completeAction(req.user.userId, 'beat_ai');
+  res.json({
+    userGainPct,
+    aiGainPct: aiBot.gainPct,
+    beating,
+    diff: parseFloat((userGainPct - aiBot.gainPct).toFixed(2)),
+  });
+});
+
+// ── Trade Card ────────────────────────────────────────────────────────────
+app.post("/api/trades/generate-card", authenticateUser, (req, res) => {
+  const { symbol, gainPct, entryPrice, exitPrice, holdTime } = req.body;
+  if (!symbol || gainPct == null) return res.status(400).json({ error: "symbol and gainPct required" });
+  const account = accountManager.getAccount(req.user.userId);
+  const lb = leaderboardManager.getLeaderboard(200);
+  const rankEntry = lb.findIndex(p => p.userId === req.user.userId);
+  const rank = rankEntry >= 0 ? rankEntry + 1 : null;
+  const displayName = account ? (account.fullName || account.email) : 'A Legend';
+
+  // Add to social feed if notable
+  if (Math.abs(gainPct) >= 3) {
+    socialFeed.addTrade(req.user.userId, displayName, { symbol, gainPct, tradeType: gainPct >= 0 ? 'SELL' : 'LOSS' });
+  }
+
+  missionSystem.completeAction(req.user.userId, 'make_3_trades');
+
+  res.json({
+    success: true,
+    card: {
+      displayName,
+      symbol,
+      gainPct: parseFloat(gainPct).toFixed(2),
+      entryPrice,
+      exitPrice,
+      holdTime,
+      rank,
+      season: seasonManager.getCurrentSeason().name,
+      shareText: `I just ${gainPct >= 0 ? 'made' : 'lost'} ${gainPct >= 0 ? '+' : ''}${parseFloat(gainPct).toFixed(1)}% on $${symbol} 📈${rank ? ` — Ranked #${rank} nationally` : ''} on Self-Made Legends 👑 Join the game!`,
+    },
+  });
 });
 
 io.on("connection", (socket) => {

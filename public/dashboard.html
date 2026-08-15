@@ -579,6 +579,8 @@
       <button class="nav-tab" onclick="switchTab('account')">Account</button>
       <button class="nav-tab" onclick="switchTab('payments')">Payments</button>
       <button class="nav-tab" onclick="switchTab('badges')">🎖️ Badges</button>
+      <button class="nav-tab" onclick="switchTab('missions'); loadMissions()">🎯 Missions</button>
+      <button class="nav-tab" onclick="switchTab('compete')">⚔️ Compete</button>
       <button class="nav-tab" onclick="switchTab('marketing')">📣 Marketing</button>
       <button class="nav-tab" onclick="switchTab('referrals'); loadReferrals()">🔗 Refer</button>
     </div>
@@ -970,6 +972,133 @@
             <li>Future rewards (badges, bonuses) will unlock as the platform grows</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <!-- Missions Section -->
+    <section class="section" id="missions">
+      <div style="max-width:700px; margin:0 auto;">
+        <h2 style="color:#00d4ff; font-size:1.6em; margin-bottom:6px;">🎯 Daily Missions</h2>
+        <p style="color:#aaa; margin-bottom:24px;">Complete 3 missions each day to earn XP. Missions reset at midnight.</p>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:18px;">
+            <h3 style="color:#ffd700;">Today's Missions</h3>
+            <div style="color:#888; font-size:0.85em;" id="missions-xp">Total XP: —</div>
+          </div>
+          <div id="missions-list" style="display:flex; flex-direction:column; gap:12px;">
+            <div style="color:#555; text-align:center; padding:20px;">Log in to see your daily missions</div>
+          </div>
+        </div>
+
+        <div class="card" style="background:rgba(0,212,255,0.04);">
+          <h3 style="color:#00ff88; margin-bottom:12px;">⚡ XP Leaderboard</h3>
+          <div id="xp-leaderboard" style="color:#555; font-size:0.9em;">Loading…</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compete Section -->
+    <section class="section" id="compete">
+      <div style="max-width:860px; margin:0 auto;">
+        <h2 style="color:#00d4ff; font-size:1.6em; margin-bottom:6px;">⚔️ Compete</h2>
+        <p style="color:#aaa; margin-bottom:24px;">Track the season, beat the AI, and watch what top traders are doing.</p>
+
+        <div class="grid" style="grid-template-columns:1fr 1fr; gap:18px; margin-bottom:20px;">
+          <!-- Beat the AI -->
+          <div class="card" style="grid-column:span 1;">
+            <h3 style="color:#ffd700; margin-bottom:14px;">🤖 Beat the AI</h3>
+            <p style="color:#888; font-size:0.85em; margin-bottom:16px;">The SML-AI Bot trades automatically. Can you outperform it?</p>
+            <div style="display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
+              <div style="flex:1; background:#0d1b2a; border-radius:8px; padding:14px; text-align:center; min-width:100px;">
+                <div id="ai-gain" style="color:#ff6b6b; font-size:1.5em; font-weight:bold;">—</div>
+                <div style="color:#555; font-size:0.78em; margin-top:4px;">AI Bot Gain</div>
+              </div>
+              <div style="flex:1; background:#0d1b2a; border-radius:8px; padding:14px; text-align:center; min-width:100px;">
+                <div id="my-gain-ai" style="color:#00ff88; font-size:1.5em; font-weight:bold;">—</div>
+                <div style="color:#555; font-size:0.78em; margin-top:4px;">Your Gain</div>
+              </div>
+            </div>
+            <div id="ai-status" style="text-align:center; padding:10px; border-radius:8px; font-weight:bold; font-size:0.9em; background:rgba(0,0,0,0.3); color:#888;">Log in to check your status</div>
+            <button onclick="loadAIChallenge()" style="width:100%; margin-top:12px; background:#1a1f2e; border:1px solid #333; color:#00d4ff; border-radius:6px; padding:8px; cursor:pointer; font-size:0.85em;">🔄 Refresh</button>
+          </div>
+
+          <!-- Season Countdown -->
+          <div class="card" style="grid-column:span 1;">
+            <h3 style="color:#ffd700; margin-bottom:14px;">🏆 Current Season</h3>
+            <div id="season-name-d" style="color:#e0e0e0; font-size:1.05em; font-weight:600; margin-bottom:6px;">Loading…</div>
+            <div id="season-dates-d" style="color:#888; font-size:0.82em; margin-bottom:16px;"></div>
+            <div style="background:#0d1b2a; border-radius:8px; padding:16px; text-align:center;">
+              <div id="season-days" style="color:#00d4ff; font-size:2.5em; font-weight:900;">—</div>
+              <div style="color:#555; font-size:0.8em; margin-top:4px;">Days Remaining</div>
+            </div>
+            <div id="season-prize-d" style="color:#ffd700; font-size:0.82em; margin-top:12px; text-align:center;"></div>
+            <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
+              <a href="/leaderboard.html" target="_blank" style="flex:1; background:#00d4ff; color:#000; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">📊 Full Leaderboard</a>
+              <a href="/hall-of-fame.html" target="_blank" style="flex:1; background:#1a1f2e; border:1px solid #ffd700; color:#ffd700; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">🏆 Hall of Fame</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Social Feed -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+            <h3 style="color:#00ff88;">📡 Live Activity Feed</h3>
+            <span style="color:#555; font-size:0.78em;">15-min delay · notable trades only</span>
+          </div>
+          <div id="social-feed" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="color:#555; text-align:center; padding:20px; font-size:0.9em;">Loading feed…</div>
+          </div>
+        </div>
+
+        <!-- Trade Card Generator -->
+        <div class="card">
+          <h3 style="color:#ffd700; margin-bottom:14px;">📤 Generate Trade Card</h3>
+          <p style="color:#888; font-size:0.85em; margin-bottom:16px;">Create a shareable card for your best trade. Post it anywhere to grow the platform.</p>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+            <input id="tc-symbol" type="text" placeholder="Ticker (e.g. AAPL)" style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:10px 12px; color:#e0e0e0; font-size:0.9em; outline:none;">
+            <input id="tc-gain" type="number" step="0.01" placeholder="Gain % (e.g. 8.4)" style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:10px 12px; color:#e0e0e0; font-size:0.9em; outline:none;">
+          </div>
+          <button onclick="generateTradeCard()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:10px 22px; font-weight:bold; cursor:pointer;">Generate Card</button>
+          <div id="trade-card-result" style="margin-top:16px; display:none;">
+            <div id="trade-card-box" style="background:linear-gradient(135deg,#0d1b2a,#1a1f2e); border:1px solid #333; border-radius:10px; padding:20px;"></div>
+            <button onclick="copyTradeCard()" style="margin-top:10px; background:#333; border:none; color:#00ff88; border-radius:6px; padding:8px 18px; cursor:pointer; font-size:0.85em;">📋 Copy Share Text</button>
+            <button onclick="shareTradeCard()" style="margin-top:10px; margin-left:8px; background:#00d4ff; border:none; color:#000; border-radius:6px; padding:8px 18px; cursor:pointer; font-size:0.85em; font-weight:bold;">📤 Share</button>
+          </div>
+        </div>
+
+        <!-- Broker Partners -->
+        <div class="card" style="margin-top:20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.15);">
+          <h3 style="color:#00ff88; margin-bottom:12px;">🏦 Ready for Real Money?</h3>
+          <p style="color:#888; font-size:0.88em; margin-bottom:16px;">Self-Made Legends uses simulated trading — but these brokers let you take your skills live. No affiliation; just options worth knowing.</p>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px;">
+            <div style="background:#0d1b2a; border-radius:8px; padding:14px; text-align:center;">
+              <div style="font-size:1.4em; margin-bottom:6px;">🟢</div>
+              <div style="color:#e0e0e0; font-weight:bold; font-size:0.9em;">Robinhood</div>
+              <div style="color:#888; font-size:0.78em; margin:4px 0;">Commission-free US stocks</div>
+              <div style="color:#555; font-size:0.75em;">robinhood.com</div>
+            </div>
+            <div style="background:#0d1b2a; border-radius:8px; padding:14px; text-align:center;">
+              <div style="font-size:1.4em; margin-bottom:6px;">🔵</div>
+              <div style="color:#e0e0e0; font-weight:bold; font-size:0.9em;">Webull</div>
+              <div style="color:#888; font-size:0.78em; margin:4px 0;">Advanced charts + paper trading</div>
+              <div style="color:#555; font-size:0.75em;">webull.com</div>
+            </div>
+            <div style="background:#0d1b2a; border-radius:8px; padding:14px; text-align:center;">
+              <div style="font-size:1.4em; margin-bottom:6px;">🟠</div>
+              <div style="color:#e0e0e0; font-weight:bold; font-size:0.9em;">moomoo</div>
+              <div style="color:#888; font-size:0.78em; margin:4px 0;">Real-time data + community</div>
+              <div style="color:#555; font-size:0.75em;">moomoo.com</div>
+            </div>
+            <div style="background:#0d1b2a; border-radius:8px; padding:14px; text-align:center;">
+              <div style="font-size:1.4em; margin-bottom:6px;">⚫</div>
+              <div style="color:#e0e0e0; font-weight:bold; font-size:0.9em;">Fidelity</div>
+              <div style="color:#888; font-size:0.78em; margin:4px 0;">Full-service, beginner-friendly</div>
+              <div style="color:#555; font-size:0.75em;">fidelity.com</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -1736,6 +1865,205 @@
         copyReferralLink();
       }
     }
+
+    // ── Missions ────────────────────────────────────────────────────────
+    let _tradeCardShareText = '';
+
+    function loadMissions() {
+      if (isDemo) {
+        document.getElementById('missions-list').innerHTML = `
+          <div style="background:#0d1b2a; border-radius:8px; padding:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div><div style="color:#e0e0e0; font-weight:600;">📈 Active Trader</div><div style="color:#888; font-size:0.82em;">Complete 3 trades today</div></div>
+            <div style="color:#555; font-size:0.85em;">0 / 3</div>
+          </div>
+          <div style="color:#555; font-size:0.85em; text-align:center; padding:8px;">Create an account to track your progress</div>`;
+        return;
+      }
+      if (!getSessionId()) return;
+      fetch('/api/missions/today', { headers: { 'X-Session-Id': getSessionId() } })
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('missions-xp').textContent = `Total XP: ${data.totalXP || 0}`;
+          const missions = data.missions || [];
+          document.getElementById('missions-list').innerHTML = missions.length === 0
+            ? '<div style="color:#555; text-align:center; padding:20px;">No missions available today.</div>'
+            : missions.map(m => `
+              <div style="background:#0d1b2a; border-radius:8px; padding:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; border-left:3px solid ${m.completed ? '#00ff88' : '#333'};">
+                <div>
+                  <div style="color:${m.completed ? '#00ff88' : '#e0e0e0'}; font-weight:600;">${m.icon || '⭐'} ${escapeHtml(m.title)}</div>
+                  <div style="color:#888; font-size:0.82em; margin-top:2px;">${escapeHtml(m.desc)}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="color:${m.completed ? '#00ff88' : '#555'}; font-size:0.85em;">${m.completed ? '✅ Complete' : `${m.progress}/${m.target}`}</div>
+                  <div style="color:#ffd700; font-size:0.78em;">+${m.xp} XP</div>
+                </div>
+              </div>`).join('');
+        })
+        .catch(() => {});
+
+      fetch('/api/missions/xp-leaderboard')
+        .then(r => r.json())
+        .then(data => {
+          const lb = data.leaderboard || [];
+          document.getElementById('xp-leaderboard').innerHTML = lb.length === 0
+            ? '<div style="color:#555; text-align:center; padding:12px;">No XP earned yet — start completing missions!</div>'
+            : `<table style="width:100%; border-collapse:collapse; font-size:0.85em;">
+                <thead><tr><th style="color:#555; text-align:left; padding:6px;">Rank</th><th style="color:#555; text-align:left; padding:6px;">User</th><th style="color:#555; text-align:right; padding:6px;">XP</th></tr></thead>
+                <tbody>${lb.slice(0, 10).map((e, i) => `
+                  <tr style="border-bottom:1px solid #1a1f2e;">
+                    <td style="padding:6px; color:${i < 3 ? '#ffd700' : '#888'};">#${i + 1}</td>
+                    <td style="padding:6px; color:#ccc;">${escapeHtml(String(e.userId).slice(0, 8))}…</td>
+                    <td style="padding:6px; color:#00d4ff; text-align:right;">${e.xp.toLocaleString()}</td>
+                  </tr>`).join('')}</tbody>
+               </table>`;
+        })
+        .catch(() => {});
+    }
+
+    // ── AI Challenge ─────────────────────────────────────────────────────
+    function loadAIChallenge() {
+      fetch('/api/ai-challenge/status')
+        .then(r => r.json())
+        .then(data => {
+          const g = data.aiBot?.gainPct || 0;
+          document.getElementById('ai-gain').textContent = (g >= 0 ? '+' : '') + g.toFixed(2) + '%';
+          document.getElementById('ai-gain').style.color = g >= 0 ? '#ff6b6b' : '#00ff88';
+        })
+        .catch(() => {});
+
+      if (getSessionId() && !isDemo) {
+        fetch('/api/ai-challenge/my-status', { headers: { 'X-Session-Id': getSessionId() } })
+          .then(r => r.json())
+          .then(data => {
+            const u = data.userGainPct || 0;
+            document.getElementById('my-gain-ai').textContent = (u >= 0 ? '+' : '') + u.toFixed(2) + '%';
+            document.getElementById('my-gain-ai').style.color = u >= 0 ? '#00ff88' : '#ff6b6b';
+            document.getElementById('ai-status').textContent = data.beating
+              ? `🔥 You're BEATING the AI by +${data.diff.toFixed(2)}%!`
+              : `😤 AI is ahead by ${Math.abs(data.diff).toFixed(2)}% — keep trading!`;
+            document.getElementById('ai-status').style.color = data.beating ? '#00ff88' : '#ffd700';
+            document.getElementById('ai-status').style.background = data.beating ? 'rgba(0,255,136,0.08)' : 'rgba(255,215,0,0.06)';
+          })
+          .catch(() => {});
+      }
+    }
+
+    // ── Season ────────────────────────────────────────────────────────────
+    function loadSeason() {
+      fetch('/api/season/current')
+        .then(r => r.json())
+        .then(s => {
+          document.getElementById('season-name-d').textContent = s.name || 'Current Season';
+          document.getElementById('season-days').textContent = s.daysLeft || '—';
+          if (s.prize) document.getElementById('season-prize-d').textContent = '🎁 Prize: ' + s.prize;
+          const start = s.startDate ? new Date(s.startDate).toLocaleDateString() : '';
+          const end = s.endDate ? new Date(s.endDate).toLocaleDateString() : '';
+          if (start && end) document.getElementById('season-dates-d').textContent = start + ' — ' + end;
+        })
+        .catch(() => {});
+    }
+
+    // ── Social Feed ───────────────────────────────────────────────────────
+    function loadSocialFeed() {
+      fetch('/api/social/feed')
+        .then(r => r.json())
+        .then(data => {
+          const feed = data.feed || [];
+          const el = document.getElementById('social-feed');
+          if (!el) return;
+          if (feed.length === 0) {
+            el.innerHTML = '<div style="color:#555; text-align:center; padding:20px; font-size:0.9em;">No activity yet — make some big trades to appear here!</div>';
+            return;
+          }
+          el.innerHTML = feed.map(e => {
+            if (e.type === 'trade') {
+              const up = parseFloat(e.gainPct) >= 0;
+              return `<div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:#0d1b2a; border-radius:8px;">
+                <span style="font-size:1.4em;">${up ? '📈' : '📉'}</span>
+                <div style="flex:1;">
+                  <span style="color:#e0e0e0; font-weight:600;">${escapeHtml(e.displayName)}</span>
+                  <span style="color:#888; font-size:0.85em;"> ${up ? 'gained' : 'lost'} </span>
+                  <span style="color:${up ? '#00ff88' : '#ff6b6b'}; font-weight:bold;">${up ? '+' : ''}${e.gainPct}%</span>
+                  <span style="color:#888; font-size:0.85em;"> on $${escapeHtml(e.symbol)}</span>
+                </div>
+                <div style="color:#555; font-size:0.78em; white-space:nowrap;">${e.timeAgo || ''}</div>
+              </div>`;
+            }
+            if (e.type === 'badge') {
+              return `<div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:#0d1b2a; border-radius:8px;">
+                <span style="font-size:1.4em;">${e.badgeIcon || '🎖️'}</span>
+                <div style="flex:1;"><span style="color:#e0e0e0; font-weight:600;">${escapeHtml(e.displayName)}</span><span style="color:#888; font-size:0.85em;"> earned the </span><span style="color:#ffd700;">${escapeHtml(e.badgeName)}</span><span style="color:#888; font-size:0.85em;"> badge</span></div>
+                <div style="color:#555; font-size:0.78em;">${e.timeAgo || ''}</div>
+              </div>`;
+            }
+            if (e.type === 'rank') {
+              return `<div style="display:flex; align-items:center; gap:12px; padding:10px 14px; background:#0d1b2a; border-radius:8px;">
+                <span style="font-size:1.4em;">🏆</span>
+                <div style="flex:1;"><span style="color:#e0e0e0; font-weight:600;">${escapeHtml(e.displayName)}</span><span style="color:#888; font-size:0.85em;"> moved to </span><span style="color:#00d4ff; font-weight:bold;">#${e.newRank}</span><span style="color:#888; font-size:0.85em;"> nationally</span></div>
+                <div style="color:#555; font-size:0.78em;">${e.timeAgo || ''}</div>
+              </div>`;
+            }
+            return '';
+          }).join('');
+        })
+        .catch(() => {});
+    }
+
+    // ── Trade Card ────────────────────────────────────────────────────────
+    function generateTradeCard() {
+      const symbol = document.getElementById('tc-symbol').value.trim().toUpperCase();
+      const gainPct = parseFloat(document.getElementById('tc-gain').value);
+      if (!symbol || isNaN(gainPct)) { alert('Enter a ticker and gain % to generate your card.'); return; }
+
+      if (isDemo || !getSessionId()) {
+        const shareText = `I just ${gainPct >= 0 ? 'made' : 'lost'} ${gainPct >= 0 ? '+' : ''}${gainPct.toFixed(1)}% on $${symbol} 📈 — Self-Made Legends 👑 Join the game!`;
+        _tradeCardShareText = shareText;
+        showTradeCard({ displayName: 'Demo User', symbol, gainPct: gainPct.toFixed(2), rank: null, season: 'Season 1', shareText });
+        return;
+      }
+      fetch('/api/trades/generate-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() },
+        body: JSON.stringify({ symbol, gainPct })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) { _tradeCardShareText = data.card.shareText; showTradeCard(data.card); }
+        })
+        .catch(() => {});
+    }
+
+    function showTradeCard(card) {
+      const up = parseFloat(card.gainPct) >= 0;
+      document.getElementById('trade-card-box').innerHTML = `
+        <div style="border-bottom:1px solid #333; padding-bottom:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+          <span style="color:#00d4ff; font-weight:bold;">👑 Self-Made Legends</span>
+          <span style="color:#555; font-size:0.78em;">${escapeHtml(card.season || '')}</span>
+        </div>
+        <div style="font-size:1.6em; font-weight:900; color:${up ? '#00ff88' : '#ff6b6b'};">${up ? '+' : ''}${card.gainPct}%</div>
+        <div style="color:#888; font-size:0.9em; margin-top:4px;">on <strong style="color:#e0e0e0;">$${escapeHtml(card.symbol)}</strong></div>
+        ${card.rank ? `<div style="color:#ffd700; font-size:0.85em; margin-top:6px;">Ranked #${card.rank} Nationally</div>` : ''}
+        <div style="color:#555; font-size:0.8em; margin-top:10px; word-break:break-word;">${escapeHtml(card.shareText)}</div>`;
+      document.getElementById('trade-card-result').style.display = 'block';
+    }
+
+    function copyTradeCard() {
+      if (!_tradeCardShareText) return;
+      navigator.clipboard.writeText(_tradeCardShareText).then(() => alert('✅ Copied! Paste it anywhere.'));
+    }
+
+    function shareTradeCard() {
+      if (!_tradeCardShareText) return;
+      if (navigator.share) navigator.share({ title: 'Self-Made Legends Trade', text: _tradeCardShareText }).catch(() => copyTradeCard());
+      else copyTradeCard();
+    }
+
+    // Load compete tab data on page load
+    loadSeason();
+    loadSocialFeed();
+    loadAIChallenge();
+    setInterval(loadSocialFeed, 120000); // refresh feed every 2 min
+    setInterval(loadAIChallenge, 300000); // refresh AI every 5 min
 
     // ── Service Worker registration ─────────────────────────────────────
     if ('serviceWorker' in navigator) {

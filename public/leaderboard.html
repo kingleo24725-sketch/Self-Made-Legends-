@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>National Leaderboard — Self-Made Legends</title>
+  <meta name="description" content="Live national leaderboard for Self-Made Legends — the AI-powered stock trading game. See who's on top.">
+  <meta property="og:title" content="Self-Made Legends — National Leaderboard">
+  <meta property="og:description" content="Who's the top trader in America right now? Check the live leaderboard.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1419; color: #e0e0e0; min-height: 100vh; }
+
+    .header { background: linear-gradient(90deg,rgba(0,0,0,0.9),rgba(0,30,60,0.8)); border-bottom: 3px solid #00d4ff; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 50; }
+    .header h1 { color: #00d4ff; font-size: 1.4em; }
+    .header a { color: #00ff88; text-decoration: none; font-size: 0.9em; }
+    .header .join-btn { background: #00ff88; color: #000; border: none; border-radius: 8px; padding: 10px 22px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 0.95em; }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; }
+
+    .season-banner { background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(0,212,255,0.08)); border: 1px solid rgba(255,215,0,0.3); border-radius: 12px; padding: 18px 24px; margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .season-name { color: #ffd700; font-weight: bold; font-size: 1.05em; }
+    .season-meta { color: #aaa; font-size: 0.85em; }
+    .days-left { background: rgba(255,215,0,0.15); color: #ffd700; border-radius: 6px; padding: 4px 12px; font-size: 0.85em; font-weight: bold; }
+
+    .podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 32px; align-items: end; }
+    .podium-spot { border-radius: 12px; padding: 20px 14px; text-align: center; }
+    .podium-spot.p1 { background: linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,215,0,0.05)); border: 2px solid #ffd700; order: 2; }
+    .podium-spot.p2 { background: linear-gradient(135deg,rgba(192,192,192,0.1),rgba(192,192,192,0.03)); border: 1px solid #aaa; order: 1; }
+    .podium-spot.p3 { background: linear-gradient(135deg,rgba(205,127,50,0.1),rgba(205,127,50,0.03)); border: 1px solid #cd7f32; order: 3; }
+    .podium-crown { font-size: 2em; display: block; margin-bottom: 6px; }
+    .podium-rank { font-size: 1.8em; font-weight: 900; }
+    .podium-name { font-size: 0.85em; color: #ccc; margin-top: 4px; word-break: break-all; }
+    .podium-gain { font-size: 1em; font-weight: bold; margin-top: 6px; }
+
+    .lb-table { width: 100%; border-collapse: collapse; }
+    .lb-table thead th { color: #555; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 12px; border-bottom: 1px solid #1a1f2e; text-align: left; }
+    .lb-table tbody tr { border-bottom: 1px solid #1a1f2e; transition: background 0.15s; }
+    .lb-table tbody tr:hover { background: rgba(0,212,255,0.04); }
+    .lb-table td { padding: 12px 12px; }
+    .rank-num { font-weight: bold; color: #555; width: 40px; }
+    .rank-num.top3 { color: #ffd700; }
+    .player-name { color: #e0e0e0; font-weight: 500; }
+    .gain-positive { color: #00ff88; font-weight: bold; }
+    .gain-negative { color: #ff6b6b; font-weight: bold; }
+    .score-col { color: #00d4ff; }
+
+    .empty { text-align: center; padding: 60px 20px; color: #555; }
+    .empty .icon { font-size: 3em; margin-bottom: 12px; display: block; }
+
+    .live-badge { display: inline-block; background: rgba(255,68,68,0.15); color: #ff6b6b; border: 1px solid rgba(255,68,68,0.3); border-radius: 4px; font-size: 0.7em; padding: 2px 8px; margin-left: 8px; animation: pulse 2s infinite; vertical-align: middle; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    .cta { background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.05)); border: 1px solid rgba(0,212,255,0.2); border-radius: 12px; padding: 28px; text-align: center; margin-top: 40px; }
+    .cta h3 { color: #00d4ff; font-size: 1.3em; margin-bottom: 8px; }
+    .cta p { color: #aaa; margin-bottom: 18px; }
+    .cta a { background: #00d4ff; color: #000; border-radius: 8px; padding: 12px 28px; text-decoration: none; font-weight: bold; display: inline-block; }
+
+    .updated { color: #555; font-size: 0.8em; text-align: right; margin-bottom: 16px; }
+
+    @media (max-width: 600px) {
+      .podium { grid-template-columns: 1fr; }
+      .podium-spot.p1 { order: 1; }
+      .podium-spot.p2 { order: 2; }
+      .podium-spot.p3 { order: 3; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🏆 National Leaderboard <span class="live-badge">● LIVE</span></h1>
+  </div>
+  <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <a href="/hall-of-fame.html">🎖️ Hall of Fame</a>
+    <a href="/dashboard.html" class="join-btn">Join the Game →</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Season Banner -->
+  <div class="season-banner" id="season-banner" style="display:none;">
+    <div>
+      <div class="season-name" id="season-name">Season 1</div>
+      <div class="season-meta" id="season-dates"></div>
+    </div>
+    <div class="days-left" id="days-left"></div>
+  </div>
+
+  <!-- Podium (top 3) -->
+  <div class="podium" id="podium" style="display:none;"></div>
+
+  <!-- Updated timestamp -->
+  <div class="updated" id="updated-at"></div>
+
+  <!-- Full table -->
+  <div id="lb-body">
+    <div class="empty"><span class="icon">⏳</span>Loading leaderboard…</div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta">
+    <h3>👑 Think you can top the board?</h3>
+    <p>Join Self-Made Legends — the AI-powered trading game. Free to play. Compete nationally. Build your legend.</p>
+    <a href="/dashboard.html">Start Playing Free →</a>
+  </div>
+
+</div>
+
+<script>
+  function fmt(num, dec = 2) {
+    if (num == null || isNaN(num)) return '—';
+    const n = parseFloat(num);
+    const sign = n >= 0 ? '+' : '';
+    return sign + n.toFixed(dec) + '%';
+  }
+
+  function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function maskName(str) {
+    if (!str) return 'Anonymous';
+    if (str.includes('@')) {
+      const [local, domain] = str.split('@');
+      return local.slice(0, 2) + '***@' + domain;
+    }
+    const parts = str.trim().split(' ');
+    if (parts.length >= 2) return parts[0] + ' ' + parts[1][0] + '.';
+    return str.slice(0, 4) + '***';
+  }
+
+  async function loadLeaderboard() {
+    try {
+      const [lbRes, seasonRes] = await Promise.all([
+        fetch('/api/leaderboard/public'),
+        fetch('/api/season/current'),
+      ]);
+      const lbData = await lbRes.json();
+      const seasonData = await seasonRes.json();
+      render(lbData, seasonData);
+    } catch (e) {
+      document.getElementById('lb-body').innerHTML = '<div class="empty"><span class="icon">⚠️</span>Could not load leaderboard. Try refreshing.</div>';
+    }
+  }
+
+  function render(lbData, season) {
+    const lb = lbData.leaderboard || [];
+    const updatedAt = lbData.updatedAt ? new Date(lbData.updatedAt).toLocaleString() : '';
+
+    if (updatedAt) document.getElementById('updated-at').textContent = 'Updated: ' + updatedAt;
+
+    // Season banner
+    if (season && season.active) {
+      document.getElementById('season-name').textContent = season.name || 'Current Season';
+      document.getElementById('days-left').textContent = (season.daysLeft || 0) + ' days left';
+      const s = new Date(season.startDate).toLocaleDateString();
+      const e = new Date(season.endDate).toLocaleDateString();
+      document.getElementById('season-dates').textContent = s + ' — ' + e;
+      document.getElementById('season-banner').style.display = 'flex';
+    }
+
+    if (lb.length === 0) {
+      document.getElementById('lb-body').innerHTML = '<div class="empty"><span class="icon">👑</span>No rankings yet — be the first Legend!</div>';
+      return;
+    }
+
+    // Podium top 3
+    if (lb.length >= 1) {
+      const icons = ['🥇','🥈','🥉'];
+      const colors = ['#ffd700','#aaa','#cd7f32'];
+      const spots = [lb[0], lb[1], lb[2]].filter(Boolean);
+      document.getElementById('podium').style.display = 'grid';
+      document.getElementById('podium').innerHTML = spots.map((p, i) => `
+        <div class="podium-spot p${i+1}">
+          <span class="podium-crown">${icons[i]}</span>
+          <div class="podium-rank" style="color:${colors[i]}">#${i+1}</div>
+          <div class="podium-name">${escH(maskName(p.email || p.userId || 'Legend'))}</div>
+          <div class="podium-gain ${(p.gainPercentage || 0) >= 0 ? 'gain-positive' : 'gain-negative'}">${fmt(p.gainPercentage)}</div>
+        </div>`).join('');
+    }
+
+    // Full table (4+)
+    const rest = lb.slice(3);
+    if (rest.length === 0) {
+      document.getElementById('lb-body').innerHTML = '';
+      return;
+    }
+    document.getElementById('lb-body').innerHTML = `
+      <table class="lb-table">
+        <thead><tr><th>Rank</th><th>Trader</th><th>Gain %</th><th>Score</th><th>Trades</th></tr></thead>
+        <tbody>${rest.map((p, i) => {
+          const rank = i + 4;
+          const gain = p.gainPercentage || 0;
+          return `<tr>
+            <td class="rank-num ${rank <= 10 ? 'top3' : ''}">#${rank}</td>
+            <td class="player-name">${escH(maskName(p.email || p.userId || 'Legend'))}</td>
+            <td class="${gain >= 0 ? 'gain-positive' : 'gain-negative'}">${fmt(gain)}</td>
+            <td class="score-col">${p.score != null ? Math.round(p.score).toLocaleString() : '—'}</td>
+            <td style="color:#888;">${p.trades || 0}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+
+  loadLeaderboard();
+  setInterval(loadLeaderboard, 60000); // auto-refresh every minute
+</script>
+</body>
+</html>

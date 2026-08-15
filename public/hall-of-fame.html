@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hall of Fame — Self-Made Legends</title>
+  <meta name="description" content="The Self-Made Legends Hall of Fame — permanent recognition for all-time champions.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1419; color: #e0e0e0; min-height: 100vh; }
+
+    .header { background: linear-gradient(90deg,rgba(0,0,0,0.9),rgba(30,10,0,0.85)); border-bottom: 3px solid #ffd700; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .header h1 { color: #ffd700; font-size: 1.4em; }
+    .header a { color: #00d4ff; text-decoration: none; font-size: 0.9em; }
+
+    .container { max-width: 860px; margin: 0 auto; padding: 40px 20px 80px; }
+
+    .hero { text-align: center; margin-bottom: 50px; }
+    .hero .crown { font-size: 5em; display: block; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    .hero h2 { color: #ffd700; font-size: 2em; margin: 16px 0 8px; text-shadow: 0 0 30px rgba(255,215,0,0.4); }
+    .hero p { color: #888; max-width: 500px; margin: 0 auto; line-height: 1.7; }
+
+    .season-card { background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(0,0,0,0.3)); border: 1px solid rgba(255,215,0,0.25); border-radius: 16px; padding: 28px; margin-bottom: 24px; position: relative; overflow: hidden; }
+    .season-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, #ffd700, #ff6b6b, #00d4ff); }
+    .season-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+    .season-title { color: #ffd700; font-size: 1.2em; font-weight: bold; }
+    .season-dates { color: #555; font-size: 0.82em; }
+    .season-prize { background: rgba(255,215,0,0.1); color: #ffd700; border-radius: 6px; padding: 4px 12px; font-size: 0.8em; border: 1px solid rgba(255,215,0,0.2); }
+
+    .winners-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .winner-card { flex: 1; min-width: 180px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 16px; text-align: center; }
+    .winner-medal { font-size: 1.8em; display: block; margin-bottom: 6px; }
+    .winner-rank { font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 0.05em; }
+    .winner-name { color: #e0e0e0; font-weight: 600; margin-top: 4px; font-size: 0.95em; }
+    .winner-gain { color: #00ff88; font-weight: bold; margin-top: 4px; font-size: 0.9em; }
+
+    .empty-hof { text-align: center; padding: 60px 20px; color: #444; }
+    .empty-hof .icon { font-size: 4em; margin-bottom: 16px; display: block; opacity: 0.4; }
+    .empty-hof h3 { color: #555; margin-bottom: 8px; }
+
+    .current-season-banner { background: linear-gradient(135deg, rgba(0,212,255,0.08), rgba(0,255,136,0.04)); border: 1px solid rgba(0,212,255,0.2); border-radius: 12px; padding: 22px 24px; margin-bottom: 36px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .current-label { color: #00d4ff; font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+    .current-name { color: #e0e0e0; font-weight: bold; font-size: 1.05em; }
+    .current-days { background: rgba(0,212,255,0.12); color: #00d4ff; border-radius: 6px; padding: 6px 14px; font-weight: bold; font-size: 0.9em; }
+    .current-links { display: flex; gap: 10px; flex-wrap: wrap; }
+    .current-links a { color: #00ff88; text-decoration: none; font-size: 0.9em; }
+    .current-links a:hover { text-decoration: underline; }
+
+    footer { text-align: center; color: #444; font-size: 0.82em; padding: 24px; border-top: 1px solid #1a1f2e; }
+    footer a { color: #00d4ff; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏆 Hall of Fame</h1>
+  <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+    <a href="/leaderboard.html">📊 Live Leaderboard</a>
+    <a href="/dashboard.html" style="background:#ffd700; color:#000; border-radius:6px; padding:8px 18px; font-weight:bold; text-decoration:none;">Play Now</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="hero">
+    <span class="crown">👑</span>
+    <h2>Self-Made Legends Hall of Fame</h2>
+    <p>Every season, the top traders are permanently inducted. Their names live here forever — proof that legends are made, not born.</p>
+  </div>
+
+  <!-- Current Season -->
+  <div class="current-season-banner" id="current-season" style="display:none;">
+    <div>
+      <div class="current-label">Currently Active</div>
+      <div class="current-name" id="cs-name"></div>
+      <div style="color:#888; font-size:0.85em; margin-top:2px;" id="cs-dates"></div>
+    </div>
+    <div style="text-align:right;">
+      <div class="current-days" id="cs-days"></div>
+      <div class="current-links" style="margin-top:8px;">
+        <a href="/leaderboard.html">See Live Rankings →</a>
+        <a href="/dashboard.html">Join the Race →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hall of Fame entries -->
+  <div id="hof-container">
+    <div class="empty-hof">
+      <span class="icon">⏳</span>
+      <p>Loading…</p>
+    </div>
+  </div>
+
+</div>
+
+<footer>© 2026 Self-Made Legends LLC · <a href="/dashboard.html">Dashboard</a> · <a href="/leaderboard.html">Leaderboard</a> · <a href="/terms.html">Terms</a></footer>
+
+<script>
+  function maskName(str) {
+    if (!str) return 'Anonymous Legend';
+    if (str.includes('@')) {
+      const [local] = str.split('@');
+      return local.slice(0, 3) + '***';
+    }
+    const parts = str.trim().split(' ');
+    if (parts.length >= 2) return parts[0] + ' ' + parts[1][0] + '.';
+    return str.slice(0, 4) + '***';
+  }
+
+  function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  async function load() {
+    try {
+      const [hofRes, seasonRes] = await Promise.all([
+        fetch('/api/season/hall-of-fame'),
+        fetch('/api/season/current'),
+      ]);
+      const hofData = await hofRes.json();
+      const season = await seasonRes.json();
+      render(hofData.hallOfFame || [], season);
+    } catch (e) {
+      document.getElementById('hof-container').innerHTML = '<div class="empty-hof"><span class="icon">⚠️</span><p>Could not load. Try refreshing.</p></div>';
+    }
+  }
+
+  function render(hof, season) {
+    // Current season banner
+    if (season && season.active) {
+      document.getElementById('cs-name').textContent = season.name;
+      document.getElementById('cs-days').textContent = (season.daysLeft || 0) + ' days left';
+      const s = season.startDate ? new Date(season.startDate).toLocaleDateString() : '';
+      const e = season.endDate ? new Date(season.endDate).toLocaleDateString() : '';
+      if (s && e) document.getElementById('cs-dates').textContent = s + ' — ' + e;
+      document.getElementById('current-season').style.display = 'flex';
+    }
+
+    if (hof.length === 0) {
+      document.getElementById('hof-container').innerHTML = `
+        <div class="empty-hof">
+          <span class="icon">🏆</span>
+          <h3>No champions yet</h3>
+          <p style="margin-top:8px;">The Hall of Fame fills up when the first season ends.<br>The race is still on — <a href="/dashboard.html" style="color:#00d4ff;">your name could be first.</a></p>
+        </div>`;
+      return;
+    }
+
+    const medals = ['🥇','🥈','🥉'];
+    document.getElementById('hof-container').innerHTML = hof.map(s => {
+      const winners = Array.isArray(s.winners) ? s.winners : [];
+      const closedDate = s.closedAt ? new Date(s.closedAt).toLocaleDateString() : '';
+      const startDate = s.startDate ? new Date(s.startDate).toLocaleDateString() : '';
+      return `
+        <div class="season-card">
+          <div class="season-header">
+            <div>
+              <div class="season-title">${escH(s.name || `Season ${s.id}`)}</div>
+              <div class="season-dates">${startDate}${closedDate ? ' — ' + closedDate : ''}</div>
+            </div>
+            <div class="season-prize">${escH(s.prize || 'Hall of Fame Induction')}</div>
+          </div>
+          <div class="winners-row">
+            ${winners.length === 0
+              ? '<p style="color:#555;">No winner data recorded.</p>'
+              : winners.slice(0, 3).map((w, i) => `
+                <div class="winner-card">
+                  <span class="winner-medal">${medals[i] || '🎖️'}</span>
+                  <div class="winner-rank">Place #${i + 1}</div>
+                  <div class="winner-name">${escH(maskName(w.email || w.userId || 'Legend'))}</div>
+                  ${w.score != null ? `<div class="winner-gain">${Math.round(w.score).toLocaleString()} pts</div>` : ''}
+                </div>`).join('')}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  load();
+</script>
+</body>
+</html>

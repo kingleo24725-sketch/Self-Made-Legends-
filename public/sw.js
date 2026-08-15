@@ -4,6 +4,9 @@ const STATIC = [
   '/manifest.json',
   '/privacy-policy.html',
   '/terms.html',
+  '/leaderboard.html',
+  '/hall-of-fame.html',
+  '/404.html',
 ];
 
 self.addEventListener('install', e => {
