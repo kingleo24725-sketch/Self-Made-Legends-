@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SML Tournament Bracket — Self-Made Legends</title>
+  <meta name="description" content="Self-Made Legends Tournament — Sweet Sixteen bracket. Top 16 male and female traders compete for the Grand Championship.">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1419; color: #e0e0e0; min-height: 100vh; }
+
+    .header { background: linear-gradient(90deg,rgba(0,0,0,0.9),rgba(0,30,60,0.8)); border-bottom: 3px solid #ffd700; padding: 18px 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 50; }
+    .header h1 { color: #ffd700; font-size: 1.4em; }
+    .header a { color: #00ff88; text-decoration: none; font-size: 0.9em; }
+    .header .lb-btn { background: #00d4ff; color: #000; border: none; border-radius: 8px; padding: 8px 18px; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 0.88em; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 32px 16px 80px; }
+
+    .page-title { text-align: center; margin-bottom: 8px; }
+    .page-title h2 { font-size: 1.8em; color: #ffd700; font-weight: 900; letter-spacing: 0.02em; }
+    .page-title p { color: #888; font-size: 0.9em; margin-top: 6px; }
+
+    /* Status badge */
+    .status-chip { display: inline-block; border-radius: 20px; padding: 4px 14px; font-size: 0.8em; font-weight: bold; margin: 12px auto 28px; }
+    .status-chip.active      { background: rgba(0,255,136,0.12); color: #00ff88; border: 1px solid rgba(0,255,136,0.35); }
+    .status-chip.championship{ background: rgba(255,215,0,0.12); color: #ffd700; border: 1px solid rgba(255,215,0,0.4); }
+    .status-chip.complete    { background: rgba(0,212,255,0.1); color: #00d4ff; border: 1px solid rgba(0,212,255,0.35); }
+    .status-chip.none        { background: rgba(150,150,150,0.08); color: #888; border: 1px solid rgba(150,150,150,0.2); }
+    .status-center { text-align: center; }
+
+    /* Two-bracket grid */
+    .brackets-row { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 36px; }
+    @media (max-width: 860px) { .brackets-row { grid-template-columns: 1fr; } }
+
+    .bracket-card { background: rgba(255,255,255,0.03); border-radius: 14px; padding: 20px 16px; border: 1px solid rgba(255,255,255,0.06); }
+    .bracket-title { font-size: 1.1em; font-weight: 800; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .male-title   { color: #5aa0ff; }
+    .female-title { color: #ff64b4; }
+
+    /* Round label */
+    .round-label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.08em; color: #555; margin-bottom: 8px; margin-top: 16px; font-weight: 700; }
+
+    /* Match card */
+    .match { background: rgba(0,0,0,0.35); border-radius: 8px; border: 1px solid rgba(255,255,255,0.07); margin-bottom: 8px; overflow: hidden; }
+    .match-player { display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-size: 0.85em; transition: background 0.15s; }
+    .match-player:first-child { border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .match-player.winner { background: rgba(255,215,0,0.07); }
+    .match-player .seed { font-size: 0.75em; color: #555; min-width: 22px; font-weight: bold; }
+    .match-player .pname { flex: 1; color: #ccc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .match-player.winner .pname { color: #ffd700; font-weight: 700; }
+    .match-player .gain { font-size: 0.78em; color: #888; }
+    .match-player.winner .gain { color: #00ff88; }
+    .match-player .w-icon { font-size: 0.8em; }
+    .bye-label { color: #444; font-style: italic; font-size: 0.8em; padding: 6px 12px; }
+    .match.pending { border-color: rgba(255,255,255,0.04); }
+    .match.completed .match-player.winner { background: rgba(255,215,0,0.09); }
+
+    /* Champion chip */
+    .champion-chip { background: linear-gradient(135deg,rgba(255,215,0,0.15),rgba(255,150,0,0.08)); border: 1px solid rgba(255,215,0,0.4); border-radius: 10px; padding: 14px 16px; margin-top: 16px; text-align: center; }
+    .champion-chip .label { font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .champion-chip .name  { font-size: 1.05em; font-weight: 800; color: #ffd700; }
+
+    /* Grand Championship */
+    .championship-section { background: linear-gradient(135deg, rgba(255,215,0,0.08), rgba(255,100,0,0.06)); border: 2px solid rgba(255,215,0,0.4); border-radius: 16px; padding: 28px 24px; text-align: center; margin-bottom: 36px; }
+    .championship-section h3 { font-size: 1.4em; color: #ffd700; margin-bottom: 20px; letter-spacing: 0.04em; }
+    .championship-matchup { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; }
+    .champ-player { background: rgba(0,0,0,0.4); border-radius: 12px; padding: 16px 20px; min-width: 160px; }
+    .champ-player .div-label { font-size: 0.75em; color: #888; margin-bottom: 6px; }
+    .champ-player .cname { font-size: 1em; font-weight: 800; color: #e0e0e0; }
+    .champ-player .cgain { font-size: 0.85em; color: #00ff88; margin-top: 4px; }
+    .champ-player.champion-winner { border: 2px solid #ffd700; background: rgba(255,215,0,0.08); }
+    .champ-player.champion-winner .cname { color: #ffd700; }
+    .vs-badge { font-size: 1.6em; font-weight: 900; color: #555; }
+    .grand-champion-crown { font-size: 3em; margin-bottom: 8px; }
+    .grand-champion-name  { font-size: 1.6em; font-weight: 900; color: #ffd700; }
+    .grand-champion-sub   { color: #888; font-size: 0.9em; margin-top: 4px; }
+
+    /* No tournament */
+    .no-tournament { text-align: center; padding: 80px 20px; }
+    .no-tournament .icon { font-size: 4em; display: block; margin-bottom: 16px; }
+    .no-tournament h3 { font-size: 1.3em; color: #ffd700; margin-bottom: 10px; }
+    .no-tournament p  { color: #666; max-width: 480px; margin: 0 auto; line-height: 1.6; }
+
+    .refresh-hint { text-align: center; color: #444; font-size: 0.8em; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>🏆 SML Tournament Bracket</h1>
+  </div>
+  <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+    <a href="/leaderboard.html">📊 Leaderboard</a>
+    <a href="/hall-of-fame.html">🎖️ Hall of Fame</a>
+    <a href="/dashboard.html" class="lb-btn">Play Now →</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="page-title">
+    <h2>🏆 Sweet Sixteen Tournament</h2>
+    <p>Top 16 Male &amp; Female traders compete for the SML Grand Championship</p>
+  </div>
+
+  <div class="status-center">
+    <span class="status-chip none" id="status-chip">Loading…</span>
+  </div>
+
+  <div id="tournament-content">
+    <div class="no-tournament">
+      <span class="icon">⏳</span>
+      <h3>Loading tournament data…</h3>
+    </div>
+  </div>
+
+  <div class="refresh-hint">Auto-refreshes every 60 seconds</div>
+</div>
+
+<script>
+  function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function maskName(str) {
+    if (!str) return 'Anonymous';
+    if (str.includes('@')) {
+      const [local, domain] = str.split('@');
+      return local.slice(0, 2) + '***@' + domain;
+    }
+    const parts = str.trim().split(' ');
+    if (parts.length >= 2) return parts[0] + ' ' + parts[1][0] + '.';
+    return str.slice(0, 4) + '***';
+  }
+
+  function fmtGain(g) {
+    if (g == null) return '';
+    const n = parseFloat(g);
+    return (n >= 0 ? '+' : '') + n.toFixed(1) + '%';
+  }
+
+  function renderPlayer(player, isWinner) {
+    if (!player) return `<div class="match-player"><span class="bye-label">— BYE —</span></div>`;
+    const winnerCls = isWinner ? ' winner' : '';
+    const icon = isWinner ? ' <span class="w-icon">✓</span>' : '';
+    return `<div class="match-player${winnerCls}">
+      <span class="seed">#${player.seed || '?'}</span>
+      <span class="pname">${escH(maskName(player.email || player.userId || 'Legend'))}</span>
+      <span class="gain">${fmtGain(player.gainPercentage)}</span>
+      ${icon}
+    </div>`;
+  }
+
+  function renderMatch(match) {
+    if (!match) return '';
+    const p1Win = match.completed && match.winner?.userId === match.player1?.userId;
+    const p2Win = match.completed && match.winner?.userId === match.player2?.userId;
+    return `<div class="match ${match.completed ? 'completed' : 'pending'}">
+      ${renderPlayer(match.player1, p1Win)}
+      ${renderPlayer(match.player2, p2Win)}
+    </div>`;
+  }
+
+  function renderBracket(bracket, titleClass, titleIcon) {
+    if (!bracket) return '<p style="color:#555; padding:20px;">Bracket not yet set.</p>';
+
+    const roundsHtml = bracket.rounds.map(round => {
+      if (round.matches.length === 0) return '';
+      return `
+        <div class="round-label">${escH(round.name)}</div>
+        ${round.matches.map(m => renderMatch(m)).join('')}
+      `;
+    }).join('');
+
+    const champHtml = bracket.champion ? `
+      <div class="champion-chip">
+        <div class="label">Division Champion</div>
+        <div class="name">🏅 ${escH(maskName(bracket.champion.email || bracket.champion.userId || 'Legend'))}</div>
+      </div>` : '';
+
+    return `
+      <div class="bracket-card">
+        <div class="bracket-title ${titleClass}">${titleIcon} ${bracket.gender === 'male' ? 'Male' : 'Female'} Bracket</div>
+        ${roundsHtml}
+        ${champHtml}
+      </div>`;
+  }
+
+  function renderChampionship(t) {
+    if (t.status === 'complete' && t.grandChampion) {
+      return `
+        <div class="championship-section">
+          <h3>🏆 Grand Championship</h3>
+          <div class="grand-champion-crown">👑</div>
+          <div class="grand-champion-name">${escH(maskName(t.grandChampion.email || t.grandChampion.userId || 'Legend'))}</div>
+          <div class="grand-champion-sub">SML Grand Champion — ${escH(t.seasonName || 'Season Champion')}</div>
+        </div>`;
+    }
+
+    if (t.championship) {
+      const c = t.championship;
+      const p1 = c.player1; const p2 = c.player2;
+      const p1Win = c.completed && c.winner?.userId === p1?.userId;
+      const p2Win = c.completed && c.winner?.userId === p2?.userId;
+      return `
+        <div class="championship-section">
+          <h3>🏆 Grand Championship</h3>
+          <div class="championship-matchup">
+            <div class="champ-player ${p1Win ? 'champion-winner' : ''}">
+              <div class="div-label">${escH(p1?.divisionLabel || '♂ Male Champion')}</div>
+              <div class="cname">${escH(maskName(p1?.email || p1?.userId || 'TBD'))}</div>
+              <div class="cgain">${fmtGain(p1?.gainPercentage)}</div>
+              ${p1Win ? '<div style="color:#ffd700;font-size:1.2em;margin-top:6px;">👑 CHAMPION</div>' : ''}
+            </div>
+            <div class="vs-badge">VS</div>
+            <div class="champ-player ${p2Win ? 'champion-winner' : ''}">
+              <div class="div-label">${escH(p2?.divisionLabel || '♀ Female Champion')}</div>
+              <div class="cname">${escH(maskName(p2?.email || p2?.userId || 'TBD'))}</div>
+              <div class="cgain">${fmtGain(p2?.gainPercentage)}</div>
+              ${p2Win ? '<div style="color:#ffd700;font-size:1.2em;margin-top:6px;">👑 CHAMPION</div>' : ''}
+            </div>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="championship-section" style="opacity:0.45;">
+        <h3>🏆 Grand Championship</h3>
+        <p style="color:#666; margin-top:8px;">Opens when both division brackets are complete</p>
+      </div>`;
+  }
+
+  function setStatusChip(status) {
+    const chip = document.getElementById('status-chip');
+    const labels = {
+      active: '● LIVE — Bracket In Progress',
+      championship: '🏆 Grand Championship Open',
+      complete: '✓ Tournament Complete',
+    };
+    chip.textContent = labels[status] || 'No Active Tournament';
+    chip.className = 'status-chip ' + (labels[status] ? status : 'none');
+  }
+
+  async function load() {
+    try {
+      const res = await fetch('/api/tournament/status');
+      const data = await res.json();
+
+      if (!data.active) {
+        setStatusChip('none');
+        document.getElementById('tournament-content').innerHTML = `
+          <div class="no-tournament">
+            <span class="icon">🏆</span>
+            <h3>No Active Tournament</h3>
+            <p>The next tournament kicks off at the 3-month mark of the current season. The top 16 male and top 16 female players on the leaderboard will enter the Sweet Sixteen bracket.</p>
+          </div>`;
+        return;
+      }
+
+      const t = data.tournament;
+      setStatusChip(t.status);
+
+      const champHtml = renderChampionship(t);
+      const maleHtml  = renderBracket(t.maleBracket,   'male-title',   '♂');
+      const femaleHtml = renderBracket(t.femaleBracket, 'female-title', '♀');
+
+      document.getElementById('tournament-content').innerHTML = `
+        ${champHtml}
+        <div class="brackets-row">
+          ${maleHtml}
+          ${femaleHtml}
+        </div>`;
+    } catch (e) {
+      document.getElementById('tournament-content').innerHTML = `
+        <div class="no-tournament">
+          <span class="icon">⚠️</span>
+          <h3>Could not load tournament</h3>
+          <p>Try refreshing the page.</p>
+        </div>`;
+    }
+  }
+
+  load();
+  setInterval(load, 60000);
+</script>
+</body>
+</html>

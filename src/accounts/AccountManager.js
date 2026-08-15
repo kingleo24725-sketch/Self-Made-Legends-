@@ -106,6 +106,20 @@ class AccountManager {
     return null;
   }
 
+  setGender(userId, gender) {
+    const account = this.getAccountById(userId);
+    if (!account) return { success: false, error: 'Account not found' };
+    const allowed = ['male', 'female', 'other'];
+    if (!allowed.includes(gender)) return { success: false, error: 'Invalid gender value' };
+    account.gender = gender;
+    return { success: true };
+  }
+
+  getGender(userId) {
+    const account = this.getAccountById(userId);
+    return account ? (account.gender || null) : null;
+  }
+
   updateAvatar(userId, avatarDataUrl) {
     const account = this.getAccountById(userId);
     if (!account) return { success: false, error: "Account not found" };

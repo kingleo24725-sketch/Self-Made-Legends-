@@ -1130,6 +1130,7 @@
             <div style="display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;">
               <a href="/leaderboard.html" target="_blank" style="flex:1; background:#00d4ff; color:#000; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">📊 Full Leaderboard</a>
               <a href="/hall-of-fame.html" target="_blank" style="flex:1; background:#1a1f2e; border:1px solid #ffd700; color:#ffd700; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">🏆 Hall of Fame</a>
+              <a href="/tournament.html" target="_blank" style="flex:1; background:#1a1f2e; border:1px solid rgba(255,100,0,0.5); color:#ff9030; border-radius:6px; padding:8px; font-weight:bold; text-align:center; text-decoration:none; font-size:0.85em;">🏟️ Tournament</a>
             </div>
           </div>
         </div>
@@ -1307,6 +1308,10 @@
                     loadBadges();
                     loadStreaks();
                     loadAvatarPreview();
+                    // Prompt gender for leaderboard separation
+                    const gChoice = prompt('One quick thing — select your leaderboard division:\n1 = Male\n2 = Female\n3 = Prefer not to say\n\nEnter 1, 2, or 3:');
+                    const gMap = { '1': 'male', '2': 'female', '3': 'other' };
+                    if (gMap[gChoice]) apiCall('/api/account/gender', 'POST', { gender: gMap[gChoice] });
                     // Show onboarding for new users
                     localStorage.removeItem('sml_onboarded');
                     checkOnboarding();
@@ -1368,17 +1373,36 @@
         });
     }
 
+    function changeGender() {
+      const gChoice = prompt('Select your leaderboard division:\n1 = Male\n2 = Female\n3 = Prefer not to say\n\nEnter 1, 2, or 3:');
+      const gMap = { '1': 'male', '2': 'female', '3': 'other' };
+      if (gMap[gChoice]) {
+        apiCall('/api/account/gender', 'POST', { gender: gMap[gChoice] })
+          .then(() => loadAccountData());
+      }
+    }
+
     function loadAccountData() {
       if (!getSessionId()) return;
 
       apiCall('/api/account/profile')
         .then(data => {
           if (!data.error) {
-            document.getElementById('profile-info').innerHTML = `
-              <p><strong>Email:</strong> ${data.email}</p>
-              <p><strong>Name:</strong> ${data.fullName}</p>
-              <p><strong>Joined:</strong> ${new Date(data.createdAt).toLocaleDateString()}</p>
-            `;
+            apiCall('/api/account/gender').then(gData => {
+              const gLabel = gData.gender === 'male' ? '♂ Male' : gData.gender === 'female' ? '♀ Female' : gData.gender === 'other' ? 'Prefer not to say' : 'Not set';
+              document.getElementById('profile-info').innerHTML = `
+                <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Name:</strong> ${data.fullName}</p>
+                <p><strong>Joined:</strong> ${new Date(data.createdAt).toLocaleDateString()}</p>
+                <p><strong>Division:</strong> ${gLabel} <button onclick="changeGender()" style="margin-left:8px;font-size:0.78em;padding:2px 8px;border-radius:4px;border:1px solid #333;background:rgba(255,255,255,0.05);color:#aaa;cursor:pointer;">Change</button></p>
+              `;
+            }).catch(() => {
+              document.getElementById('profile-info').innerHTML = `
+                <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Name:</strong> ${data.fullName}</p>
+                <p><strong>Joined:</strong> ${new Date(data.createdAt).toLocaleDateString()}</p>
+              `;
+            });
           }
         });
 

@@ -31,6 +31,7 @@ const BadgeSystem = require("./achievements/BadgeSystem");
 const MissionSystem = require("./gamification/MissionSystem");
 const SeasonManager = require("./gamification/SeasonManager");
 const SocialFeed = require("./gamification/SocialFeed");
+const TournamentManager = require("./gamification/TournamentManager");
 
 const app = express();
 const server = http.createServer(app);
@@ -66,6 +67,7 @@ const missionSystem = new MissionSystem();
 const seasonManager = new SeasonManager();
 const socialFeed = new SocialFeed();
 socialFeed.seedDemoEvents();
+const tournamentManager = new TournamentManager();
 
 // AI bot portfolio — auto-simulated for "Beat the AI" challenge
 const aiBot = { name: 'SML-AI Bot', gainPct: 0, history: [] };
@@ -1373,8 +1375,65 @@ app.post("/api/admin/ban-user", requireAdmin, (req, res) => {
 
 // ── Public Leaderboard (no auth required) ─────────────────────────────────
 app.get("/api/leaderboard/public", (req, res) => {
-  const lb = leaderboardManager.getLeaderboard(50);
-  res.json({ leaderboard: lb, updatedAt: new Date().toISOString() });
+  let lb = leaderboardManager.getLeaderboard(50);
+  const { gender } = req.query;
+  if (gender === 'male' || gender === 'female') {
+    lb = lb.filter(p => accountManager.getGender(p.userId) === gender);
+  }
+  res.json({ leaderboard: lb, updatedAt: new Date().toISOString(), gender: gender || 'all' });
+});
+
+// ── Gender ────────────────────────────────────────────────────────────────
+app.post("/api/account/gender", authenticateUser, (req, res) => {
+  const { gender } = req.body;
+  if (!gender) return res.status(400).json({ error: "gender required" });
+  const result = accountManager.setGender(req.user.userId, gender);
+  res.json(result);
+});
+
+app.get("/api/account/gender", authenticateUser, (req, res) => {
+  const gender = accountManager.getGender(req.user.userId);
+  res.json({ gender });
+});
+
+// ── Tournament ────────────────────────────────────────────────────────────
+app.get("/api/tournament/status", (req, res) => {
+  res.json(tournamentManager.getStatus());
+});
+
+app.get("/api/tournament/history", (req, res) => {
+  res.json({ history: tournamentManager.getHistory() });
+});
+
+app.post("/api/admin/tournament/create", requireAdmin, (req, res) => {
+  const lb = leaderboardManager.getLeaderboard(200);
+  const maleSeeds = lb
+    .filter(p => accountManager.getGender(p.userId) === 'male')
+    .slice(0, 16)
+    .map(p => ({ userId: p.userId, email: p.email, score: p.score, gainPercentage: p.gainPercentage }));
+  const femaleSeeds = lb
+    .filter(p => accountManager.getGender(p.userId) === 'female')
+    .slice(0, 16)
+    .map(p => ({ userId: p.userId, email: p.email, score: p.score, gainPercentage: p.gainPercentage }));
+  const season = seasonManager.getCurrentSeason();
+  const t = tournamentManager.createTournament(season.id || Date.now(), season.name || 'Season Tournament', maleSeeds, femaleSeeds);
+  res.json({ success: true, tournament: t });
+});
+
+app.post("/api/admin/tournament/advance", requireAdmin, (req, res) => {
+  const { gender, roundIndex, matchIndex, winnerUserId } = req.body;
+  if (gender == null || roundIndex == null || matchIndex == null || !winnerUserId) {
+    return res.status(400).json({ error: "gender, roundIndex, matchIndex, winnerUserId required" });
+  }
+  const result = tournamentManager.setMatchWinner(gender, roundIndex, matchIndex, winnerUserId);
+  res.json(result);
+});
+
+app.post("/api/admin/tournament/championship", requireAdmin, (req, res) => {
+  const { winnerUserId } = req.body;
+  if (!winnerUserId) return res.status(400).json({ error: "winnerUserId required" });
+  const result = tournamentManager.setChampionshipWinner(winnerUserId);
+  res.json(result);
 });
 
 // ── Streaks ───────────────────────────────────────────────────────────────

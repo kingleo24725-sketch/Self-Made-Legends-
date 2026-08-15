@@ -60,6 +60,17 @@
 
     .updated { color: #555; font-size: 0.8em; text-align: right; margin-bottom: 16px; }
 
+    .gender-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .gender-tab { padding: 8px 22px; border-radius: 20px; border: 1px solid #2a3040; background: rgba(255,255,255,0.04); color: #aaa; cursor: pointer; font-size: 0.9em; font-weight: 600; transition: all 0.2s; text-decoration: none; display: inline-block; }
+    .gender-tab:hover { border-color: #00d4ff; color: #00d4ff; }
+    .gender-tab.active { background: rgba(0,212,255,0.12); border-color: #00d4ff; color: #00d4ff; }
+    .gender-tab.male.active { background: rgba(90,160,255,0.12); border-color: #5aa0ff; color: #5aa0ff; }
+    .gender-tab.female.active { background: rgba(255,100,180,0.12); border-color: #ff64b4; color: #ff64b4; }
+
+    .tournament-banner { background: linear-gradient(135deg, rgba(255,215,0,0.1), rgba(255,100,0,0.07)); border: 1px solid rgba(255,215,0,0.35); border-radius: 12px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .tournament-banner span { color: #ffd700; font-weight: bold; }
+    .tournament-banner a { background: #ffd700; color: #000; padding: 8px 18px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 0.88em; white-space: nowrap; }
+
     @media (max-width: 600px) {
       .podium { grid-template-columns: 1fr; }
       .podium-spot.p1 { order: 1; }
@@ -76,11 +87,25 @@
   </div>
   <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
     <a href="/hall-of-fame.html">🎖️ Hall of Fame</a>
+    <a href="/tournament.html">🏆 Tournament</a>
     <a href="/dashboard.html" class="join-btn">Join the Game →</a>
   </div>
 </div>
 
 <div class="container">
+
+  <!-- Tournament banner (shown when active) -->
+  <div class="tournament-banner" id="tournament-banner" style="display:none;">
+    <span>🏆 SML Tournament is LIVE — Sweet Sixteen underway!</span>
+    <a href="/tournament.html">View Bracket →</a>
+  </div>
+
+  <!-- Gender tabs -->
+  <div class="gender-tabs">
+    <a class="gender-tab active" id="tab-all" href="#" onclick="switchTab('all');return false;">🌐 All</a>
+    <a class="gender-tab male" id="tab-male" href="#" onclick="switchTab('male');return false;">♂ Male</a>
+    <a class="gender-tab female" id="tab-female" href="#" onclick="switchTab('female');return false;">♀ Female</a>
+  </div>
 
   <!-- Season Banner -->
   <div class="season-banner" id="season-banner" style="display:none;">
@@ -112,6 +137,8 @@
 </div>
 
 <script>
+  let _activeTab = 'all';
+
   function fmt(num, dec = 2) {
     if (num == null || isNaN(num)) return '—';
     const n = parseFloat(num);
@@ -132,14 +159,25 @@
     return str.slice(0, 4) + '***';
   }
 
+  function switchTab(tab) {
+    _activeTab = tab;
+    document.querySelectorAll('.gender-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    loadLeaderboard();
+  }
+
   async function loadLeaderboard() {
     try {
-      const [lbRes, seasonRes] = await Promise.all([
-        fetch('/api/leaderboard/public'),
+      const genderParam = _activeTab !== 'all' ? '?gender=' + _activeTab : '';
+      const [lbRes, seasonRes, tRes] = await Promise.all([
+        fetch('/api/leaderboard/public' + genderParam),
         fetch('/api/season/current'),
+        fetch('/api/tournament/status'),
       ]);
       const lbData = await lbRes.json();
       const seasonData = await seasonRes.json();
+      const tData = await tRes.json();
+      if (tData.active) document.getElementById('tournament-banner').style.display = 'flex';
       render(lbData, seasonData);
     } catch (e) {
       document.getElementById('lb-body').innerHTML = '<div class="empty"><span class="icon">⚠️</span>Could not load leaderboard. Try refreshing.</div>';
