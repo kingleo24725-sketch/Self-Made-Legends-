@@ -1628,18 +1628,47 @@
     }
 
     function toggleTrading() {
+      const btn = document.getElementById('toggle-btn');
+      const orig = btn.textContent;
+      btn.textContent = '⏳ Connecting…';
+      btn.disabled = true;
+
       apiCall('/api/trading/toggle', 'POST')
         .then(data => {
-          const btn = document.getElementById('toggle-btn');
-          if (data.tradingActive) {
-            btn.textContent = 'Stop Trading';
-            btn.className = 'btn btn-danger';
-          } else {
-            btn.textContent = 'Start Trading';
-            btn.className = 'btn btn-primary';
+          if (data.error) {
+            showToast('🔒', 'Login Required', 'Please log in to start trading.', '#ff6b6b');
+            btn.textContent = orig;
+            btn.disabled = false;
+            return;
           }
+          if (data.tradingActive) {
+            btn.textContent = '⏹ Stop Trading';
+            btn.className = 'btn btn-danger';
+            showToast('🤖', 'AI Engine Started!', 'The AI is now scanning markets and executing trades.', '#00ff88');
+          } else {
+            btn.textContent = '▶ Start Trading';
+            btn.className = 'btn btn-primary';
+            showToast('⏸', 'Trading Paused', 'The AI engine has been paused.', '#aaa');
+          }
+          btn.disabled = false;
+        })
+        .catch(() => {
+          showToast('❌', 'Connection Error', 'Could not reach the server. Try again.', '#ff6b6b');
+          btn.textContent = orig;
+          btn.disabled = false;
         });
     }
+
+    // Sync button state on page load
+    fetch('/api/trading/status').then(r => r.json()).then(data => {
+      const btn = document.getElementById('toggle-btn');
+      if (!btn) return;
+      if (data.tradingActive) {
+        btn.textContent = '⏹ Stop Trading';
+        btn.className = 'btn btn-danger';
+      }
+    }).catch(() => {});
+
 
     function showAddWalletForm() {
       document.getElementById('add-wallet-form').style.display = 'block';
@@ -4010,6 +4039,32 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
 
     socket.on('legend_status', ({ message }) => {
       showToast('👑', 'LEGEND STATUS!', message, '#ffd700');
+    });
+
+    socket.on('trade', (trade) => {
+      const isBuy = (trade.type || trade.signal || '').toUpperCase() === 'BUY';
+      const symbol = trade.symbol || trade.asset || '';
+      const price = trade.price ? `@ $${parseFloat(trade.price).toFixed(2)}` : '';
+      const qty = trade.quantity ? `${trade.quantity} ` : '';
+      showToast(
+        isBuy ? '📈' : '💰',
+        isBuy ? `AI Bought ${symbol}` : `AI Sold ${symbol}`,
+        `${qty}${symbol} ${price}`,
+        isBuy ? '#00ff88' : '#00d4ff'
+      );
+      // Bump the trade counter
+      const el = document.getElementById('total-trades');
+      if (el) el.textContent = (parseInt(el.textContent) || 0) + 1;
+    });
+
+    socket.on('update', ({ portfolio }) => {
+      if (!portfolio) return;
+      const m = portfolio.metrics || {};
+      const set = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+      if (m.totalValue !== undefined)   set('portfolio-value',  '$' + parseFloat(m.totalValue).toFixed(2));
+      if (m.totalReturn !== undefined)  set('total-return',     (m.totalReturn >= 0 ? '+' : '') + parseFloat(m.totalReturn).toFixed(2) + '%');
+      if (m.totalTrades !== undefined)  set('total-trades',     m.totalTrades);
+      if (portfolio.openPositions !== undefined) set('active-assets', portfolio.openPositions);
     });
   }
 
