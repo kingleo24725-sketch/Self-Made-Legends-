@@ -493,6 +493,38 @@
       .sml-entertainment-logo { width: 38px; height: 38px; }
       .metric { flex-direction: column; align-items: flex-start; gap: 2px; }
     }
+
+    /* ── Avatar Builder Modal ─────────────────────────────────────── */
+    #avatar-builder-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:300; overflow-y:auto; padding:16px 10px; }
+    .ab-wrap { max-width:820px; margin:0 auto; background:#141922; border:1px solid rgba(0,212,255,0.28); border-radius:16px; overflow:hidden; }
+    .ab-layout { display:flex; min-height:460px; }
+    .ab-sidebar { width:190px; flex-shrink:0; background:#0f1419; padding:20px 16px; display:flex; flex-direction:column; align-items:center; border-right:1px solid #1a2030; }
+    .ab-options { flex:1; padding:22px; overflow-y:auto; }
+    .ab-gender-btn { padding:8px 4px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#666; cursor:pointer; font-size:0.82em; font-weight:bold; transition:all 0.15s; }
+    .ab-gender-btn.active { border-color:#00d4ff; background:rgba(0,212,255,0.12); color:#00d4ff; }
+    .ab-cat { padding:6px 12px; border-radius:20px; border:1px solid #2a2a3a; background:none; color:#666; cursor:pointer; font-size:0.78em; transition:all 0.15s; }
+    .ab-cat.active { border-color:#00d4ff; background:rgba(0,212,255,0.1); color:#00d4ff; }
+    .ab-cat-panel { display:none; }
+    .ab-cat-panel.active { display:grid; }
+    .ab-option { border:2px solid #1a2030; border-radius:10px; padding:8px 6px; text-align:center; cursor:pointer; transition:all 0.15s; background:rgba(255,255,255,0.02); }
+    .ab-option:hover { border-color:#00d4ff; background:rgba(0,212,255,0.06); }
+    .ab-option.active { border-color:#00d4ff; background:rgba(0,212,255,0.12); }
+    .ab-option .swatch { width:36px; height:36px; border-radius:50%; margin:0 auto 5px; border:2px solid rgba(255,255,255,0.1); }
+    .ab-option label { font-size:0.7em; color:#aaa; display:block; line-height:1.2; }
+    .ab-option.active label { color:#00d4ff; }
+    .ab-outfit-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .ab-outfit-card { border:2px solid #1a2030; border-radius:10px; padding:10px; cursor:pointer; transition:all 0.15s; }
+    .ab-outfit-card:hover { border-color:#7c3aed; }
+    .ab-outfit-card.active { border-color:#00d4ff; background:rgba(0,212,255,0.07); }
+    .ab-outfit-colors { display:flex; gap:4px; margin-top:8px; flex-wrap:wrap; }
+    .ab-outfit-color { width:20px; height:20px; border-radius:50%; border:2px solid transparent; cursor:pointer; transition:border-color 0.1s; }
+    .ab-outfit-color:hover { border-color: rgba(255,255,255,0.5); }
+    .ab-outfit-color.active { border-color:#fff; box-shadow:0 0 6px rgba(255,255,255,0.5); }
+    @media (max-width:640px) {
+      .ab-layout { flex-direction:column; }
+      .ab-sidebar { width:100%; border-right:none; border-bottom:1px solid #1a2030; flex-direction:row; flex-wrap:wrap; gap:10px; justify-content:center; padding:14px; }
+      .ab-sidebar > * { flex-shrink:0; }
+    }
   </style>
 </head>
 <body>
@@ -753,30 +785,30 @@
         <div class="card">
           <h2>👤 Profile</h2>
 
-          <!-- Avatar upload zone -->
+          <!-- Avatar Creator zone -->
           <div style="text-align:center; margin-bottom:20px;">
-            <div id="avatar-preview-wrap" style="position:relative; display:inline-block; margin-bottom:12px;">
-              <div id="avatar-preview" style="width:110px; height:110px; border-radius:50%; border:3px solid #00d4ff; background:#1a1f2e; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; margin:0 auto; box-shadow:0 0 20px rgba(0,212,255,0.3);" onclick="document.getElementById('avatar-file-input').click()" title="Click to change photo">
+            <div id="avatar-preview-wrap" style="position:relative; display:inline-block; margin-bottom:14px;">
+              <div id="avatar-preview" style="width:120px; height:120px; border-radius:50%; border:3px solid #00d4ff; background:#1a1f2e; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; margin:0 auto; box-shadow:0 0 22px rgba(0,212,255,0.35);" onclick="openAvatarBuilder()" title="Design your avatar">
                 <img id="avatar-preview-img" src="" alt="" style="width:100%; height:100%; object-fit:cover; display:none;">
                 <span id="avatar-placeholder" style="font-size:3em;">👤</span>
               </div>
-              <div style="position:absolute; bottom:4px; right:4px; background:#00d4ff; color:#000; border-radius:50%; width:28px; height:28px; display:flex; align-items:center; justify-content:center; font-size:0.85em; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.4);" onclick="document.getElementById('avatar-file-input').click()" title="Upload photo">📷</div>
+              <div style="position:absolute; bottom:4px; right:4px; background:linear-gradient(135deg,#00d4ff,#7c3aed); color:#fff; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:0.9em; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.5);" onclick="openAvatarBuilder()" title="Design avatar">🎨</div>
             </div>
 
-            <!-- Hidden file input — works on phone camera, gallery, and computer -->
+            <button onclick="openAvatarBuilder()" style="background:linear-gradient(135deg,#00d4ff,#7c3aed); color:#fff; border:none; border-radius:10px; padding:11px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; display:block; width:100%; max-width:230px; margin:0 auto 10px; box-shadow:0 4px 12px rgba(0,212,255,0.25);">🎨 Design Your Avatar</button>
+            <div style="color:#444; font-size:0.78em; margin-bottom:10px;">All nationalities · Male &amp; Female · SML designer outfits</div>
+
+            <div style="color:#444; font-size:0.75em; margin-bottom:8px;">— or upload a photo —</div>
+            <button onclick="document.getElementById('avatar-file-input').click()" style="background:rgba(255,255,255,0.05); color:#777; border:1px solid #2a2a3a; border-radius:8px; padding:7px 18px; cursor:pointer; font-size:0.8em;">📷 Upload Photo</button>
             <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="handleAvatarFile(this)">
 
-            <div style="color:#888; font-size:0.82em; margin-bottom:10px;">Tap the photo to change it<br>Accepts photos from your camera, phone, or computer</div>
-
-            <!-- Upload button (appears after a file is selected) -->
-            <div id="avatar-upload-actions" style="display:none;">
+            <div id="avatar-upload-actions" style="display:none; margin-top:10px;">
               <button onclick="uploadAvatar()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 20px; font-weight:bold; cursor:pointer; margin-right:8px;">✅ Save Photo</button>
               <button onclick="cancelAvatarUpload()" style="background:#333; color:#ccc; border:none; border-radius:6px; padding:8px 14px; cursor:pointer;">Cancel</button>
             </div>
             <div id="avatar-status" style="font-size:0.85em; margin-top:8px; display:none;"></div>
           </div>
 
-          <!-- Hidden canvas for resize -->
           <canvas id="avatar-canvas" style="display:none;"></canvas>
 
           <div id="profile-info"></div>
@@ -2284,6 +2316,316 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
+  </script>
+
+  <!-- Avatar Builder Script -->
+  <script src="/js/avatar-builder.js"></script>
+
+  <!-- Avatar Builder Modal -->
+  <div id="avatar-builder-modal">
+    <div class="ab-wrap">
+      <!-- Header -->
+      <div style="background:linear-gradient(90deg,rgba(0,212,255,0.1),rgba(124,58,237,0.08)); padding:16px 22px; border-bottom:1px solid #1a2030; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <h2 style="color:#00d4ff; margin:0; font-size:1.15em;">🎨 Design Your SML Avatar</h2>
+          <div style="color:#555; font-size:0.75em; margin-top:3px;">All nationalities · Male &amp; Female · Designer outfits &amp; accessories</div>
+        </div>
+        <button onclick="closeAvatarBuilder()" style="background:none; border:none; color:#555; font-size:1.6em; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
+      </div>
+
+      <div class="ab-layout">
+        <!-- Sidebar: preview + gender + actions -->
+        <div class="ab-sidebar">
+          <div id="ab-preview" style="width:140px; height:140px; border-radius:50%; overflow:hidden; border:3px solid #00d4ff; box-shadow:0 0 22px rgba(0,212,255,0.3); background:#0f1419; margin-bottom:14px; flex-shrink:0;"></div>
+          <div style="color:#555; font-size:0.7em; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px; align-self:flex-start; width:100%;">Gender</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%; margin-bottom:12px;">
+            <button id="ab-g-male" class="ab-gender-btn active" onclick="abGender('male')">♂ Male</button>
+            <button id="ab-g-female" class="ab-gender-btn" onclick="abGender('female')">♀ Female</button>
+          </div>
+          <button onclick="abRandomize()" style="width:100%; padding:9px; background:rgba(0,255,136,0.07); color:#00ff88; border:1px solid rgba(0,255,136,0.2); border-radius:8px; cursor:pointer; font-size:0.82em; margin-bottom:7px;">🎲 Randomize</button>
+          <button onclick="abSave()" style="width:100%; padding:11px; background:linear-gradient(135deg,#00d4ff,#0088bb); color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.92em;">Save Avatar ✓</button>
+          <div id="ab-save-status" style="font-size:0.78em; text-align:center; margin-top:8px; min-height:18px;"></div>
+        </div>
+
+        <!-- Options panel -->
+        <div class="ab-options">
+          <!-- Category tabs -->
+          <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px;">
+            <button class="ab-cat active" data-cat="skin" onclick="abCat('skin')">🎨 Skin</button>
+            <button class="ab-cat" data-cat="hair" onclick="abCat('hair')">💈 Hair</button>
+            <button class="ab-cat" data-cat="haircolor" onclick="abCat('haircolor')">🎨 Color</button>
+            <button class="ab-cat" data-cat="eyes" onclick="abCat('eyes')">👁 Eyes</button>
+            <button class="ab-cat" data-cat="outfit" onclick="abCat('outfit')">👔 Outfit</button>
+            <button class="ab-cat" data-cat="accessories" onclick="abCat('accessories')">💎 Accessories</button>
+            <button class="ab-cat" data-cat="bg" onclick="abCat('bg')">🌌 Background</button>
+          </div>
+
+          <!-- Skin panel -->
+          <div id="ab-cat-skin" class="ab-cat-panel active" style="grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+          <!-- Hair panel -->
+          <div id="ab-cat-hair" class="ab-cat-panel" style="grid-template-columns:repeat(4,1fr); gap:8px;"></div>
+          <!-- Hair color panel -->
+          <div id="ab-cat-haircolor" class="ab-cat-panel" style="grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+          <!-- Eye color panel -->
+          <div id="ab-cat-eyes" class="ab-cat-panel" style="grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+          <!-- Outfit panel -->
+          <div id="ab-cat-outfit" class="ab-cat-panel ab-outfit-grid"></div>
+          <!-- Accessories panel -->
+          <div id="ab-cat-accessories" class="ab-cat-panel" style="grid-template-columns:repeat(4,1fr); gap:8px;"></div>
+          <!-- Background panel -->
+          <div id="ab-cat-bg" class="ab-cat-panel" style="grid-template-columns:repeat(3,1fr); gap:10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ── Avatar Builder UI ──────────────────────────────────────────────────────
+  let _abCfg = null;
+  const OUTFIT_COLOR_HEX = { blue:'#1840B0', purple:'#6020C8', red:'#B81818', green:'#0A6040', black:'#202830' };
+
+  function openAvatarBuilder() {
+    if (!window.AvatarBuilder) return;
+    const AB = window.AvatarBuilder;
+    if (!_abCfg) _abCfg = AB.defaultConfig('male');
+    populateABPanels();
+    document.getElementById('avatar-builder-modal').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    abRefreshPreview();
+  }
+
+  function closeAvatarBuilder() {
+    document.getElementById('avatar-builder-modal').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function abGender(g) {
+    _abCfg.gender = g;
+    const styles = window.AvatarBuilder.HAIR_STYLES[g];
+    if (!styles.find(s => s.id === _abCfg.hairStyleId)) {
+      _abCfg.hairStyleId = styles[0].id;
+    }
+    document.getElementById('ab-g-male').classList.toggle('active', g === 'male');
+    document.getElementById('ab-g-female').classList.toggle('active', g === 'female');
+    populateHairPanel();
+    abRefreshPreview();
+  }
+
+  function abCat(cat) {
+    document.querySelectorAll('.ab-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === cat));
+    document.querySelectorAll('.ab-cat-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('ab-cat-' + cat);
+    if (panel) { panel.classList.add('active'); panel.style.display = panel.style.display === 'grid' || panel.dataset.flex ? 'grid' : 'grid'; }
+    // Specifically show correct display type
+    document.querySelectorAll('.ab-cat-panel').forEach(p => {
+      if (!p.classList.contains('active')) p.style.display = 'none';
+      else p.style.display = 'grid';
+    });
+  }
+
+  function abSet(key, val) {
+    _abCfg[key] = val;
+    // Highlight the selected option
+    document.querySelectorAll(`[data-abkey="${key}"]`).forEach(el => {
+      el.classList.toggle('active', el.dataset.abval === val);
+    });
+    abRefreshPreview();
+  }
+
+  function abSetOutfitColor(colorId) {
+    _abCfg.outfitColorId = colorId;
+    document.querySelectorAll('.ab-outfit-color').forEach(el => {
+      el.classList.toggle('active', el.dataset.abval === colorId);
+    });
+    abRefreshPreview();
+  }
+
+  function abRefreshPreview() {
+    const AB = window.AvatarBuilder;
+    if (!AB) return;
+    const svg = AB.generate(_abCfg);
+    const dataUrl = AB.toDataURL(svg);
+    const el = document.getElementById('ab-preview');
+    if (el) el.innerHTML = svg;
+  }
+
+  function abRandomize() {
+    const AB = window.AvatarBuilder;
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+    const genders = ['male', 'female'];
+    const g = pick(genders);
+    _abCfg = {
+      gender: g,
+      skinId: pick(AB.SKIN_TONES).id,
+      hairStyleId: pick(AB.HAIR_STYLES[g]).id,
+      hairColorId: pick(AB.HAIR_COLORS).id,
+      eyeColorId: pick(AB.EYE_COLORS).id,
+      outfitId: pick(AB.OUTFITS).id,
+      outfitColorId: pick(AB.OUTFITS[0].colors),
+      accessoryId: pick(AB.ACCESSORIES).id,
+      bgId: pick(AB.BG_STYLES).id,
+    };
+    document.getElementById('ab-g-male').classList.toggle('active', g === 'male');
+    document.getElementById('ab-g-female').classList.toggle('active', g === 'female');
+    populateHairPanel();
+    highlightAllSelections();
+    abRefreshPreview();
+  }
+
+  async function abSave() {
+    const AB = window.AvatarBuilder;
+    if (!AB) return;
+    const statusEl = document.getElementById('ab-save-status');
+    if (!getSessionId() && !isDemo) {
+      statusEl.style.color = '#ff6b6b';
+      statusEl.textContent = 'Log in to save your avatar';
+      return;
+    }
+    statusEl.style.color = '#aaa';
+    statusEl.textContent = 'Saving…';
+    const svg = AB.generate(_abCfg);
+    const dataUrl = AB.toDataURL(svg);
+
+    try {
+      if (isDemo) {
+        // In demo mode just update the preview
+        applyAvatarToUI(dataUrl);
+        statusEl.style.color = '#00ff88';
+        statusEl.textContent = '✅ Preview updated!';
+        return;
+      }
+      const r = await fetch('/api/account/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Id': getSessionId() },
+        body: JSON.stringify({ avatar: dataUrl })
+      });
+      const data = await r.json();
+      if (data.success) {
+        statusEl.style.color = '#00ff88';
+        statusEl.textContent = '✅ Avatar saved!';
+        applyAvatarToUI(dataUrl);
+        setTimeout(() => closeAvatarBuilder(), 900);
+      } else {
+        statusEl.style.color = '#ff6b6b';
+        statusEl.textContent = '❌ ' + (data.error || 'Save failed');
+      }
+    } catch {
+      statusEl.style.color = '#ff6b6b';
+      statusEl.textContent = '❌ Network error — try again';
+    }
+  }
+
+  function applyAvatarToUI(dataUrl) {
+    const img = document.getElementById('avatar-preview-img');
+    if (img) { img.src = dataUrl; img.style.display = 'block'; }
+    const ph = document.getElementById('avatar-placeholder');
+    if (ph) ph.style.display = 'none';
+    setNavAvatar(dataUrl);
+  }
+
+  // ── Panel population ───────────────────────────────────────────────
+  function populateABPanels() {
+    const AB = window.AvatarBuilder;
+    if (!AB || document.getElementById('ab-cat-skin').children.length > 0) {
+      highlightAllSelections();
+      return;
+    }
+
+    // Skin tones
+    const skinGrid = document.getElementById('ab-cat-skin');
+    AB.SKIN_TONES.forEach(s => {
+      skinGrid.innerHTML += `<div class="ab-option" data-abkey="skinId" data-abval="${s.id}" onclick="abSet('skinId','${s.id}')">
+        <div class="swatch" style="background:${s.color};"></div>
+        <label>${s.label}</label>
+      </div>`;
+    });
+
+    populateHairPanel();
+
+    // Hair colors
+    const hcGrid = document.getElementById('ab-cat-haircolor');
+    AB.HAIR_COLORS.forEach(h => {
+      hcGrid.innerHTML += `<div class="ab-option" data-abkey="hairColorId" data-abval="${h.id}" onclick="abSet('hairColorId','${h.id}')">
+        <div class="swatch" style="background:${h.color};"></div>
+        <label>${h.label}</label>
+      </div>`;
+    });
+
+    // Eye colors
+    const eyeGrid = document.getElementById('ab-cat-eyes');
+    AB.EYE_COLORS.forEach(e => {
+      eyeGrid.innerHTML += `<div class="ab-option" data-abkey="eyeColorId" data-abval="${e.id}" onclick="abSet('eyeColorId','${e.id}')">
+        <div class="swatch" style="background:${e.color};"></div>
+        <label>${e.label}</label>
+      </div>`;
+    });
+
+    // Outfits
+    const outfitGrid = document.getElementById('ab-cat-outfit');
+    AB.OUTFITS.forEach(o => {
+      const colorSwatches = o.colors.map(cid =>
+        `<div class="ab-outfit-color" data-abval="${cid}" style="background:${OUTFIT_COLOR_HEX[cid] || '#333'};" onclick="event.stopPropagation(); abSetOutfitColor('${cid}'); document.querySelectorAll('.ab-outfit-card').forEach(c=>c.classList.toggle('active', c.dataset.outfit==='${o.id}')); abSet('outfitId','${o.id}');" title="${cid}"></div>`
+      ).join('');
+      outfitGrid.innerHTML += `<div class="ab-outfit-card" data-abkey="outfitId" data-abval="${o.id}" data-outfit="${o.id}" onclick="abSet('outfitId','${o.id}')">
+        <div style="font-size:0.82em; font-weight:bold; color:#e0e0e0;">${o.label}</div>
+        <div class="ab-outfit-colors">${colorSwatches}</div>
+      </div>`;
+    });
+
+    // Accessories
+    const accGrid = document.getElementById('ab-cat-accessories');
+    AB.ACCESSORIES.forEach(a => {
+      accGrid.innerHTML += `<div class="ab-option" data-abkey="accessoryId" data-abval="${a.id}" onclick="abSet('accessoryId','${a.id}')">
+        <div style="font-size:1.5em; margin-bottom:4px;">${accIcon(a.id)}</div>
+        <label>${a.label}</label>
+      </div>`;
+    });
+
+    // Backgrounds
+    const bgGrid = document.getElementById('ab-cat-bg');
+    AB.BG_STYLES.forEach(b => {
+      bgGrid.innerHTML += `<div class="ab-option" data-abkey="bgId" data-abval="${b.id}" onclick="abSet('bgId','${b.id}')">
+        <div class="swatch" style="background:linear-gradient(135deg,${b.colors[0]},${b.colors[1]});"></div>
+        <label>${b.label}</label>
+      </div>`;
+    });
+
+    highlightAllSelections();
+  }
+
+  function populateHairPanel() {
+    const AB = window.AvatarBuilder;
+    const hairGrid = document.getElementById('ab-cat-hair');
+    hairGrid.innerHTML = '';
+    const styles = AB.HAIR_STYLES[_abCfg.gender] || AB.HAIR_STYLES.male;
+    styles.forEach(s => {
+      hairGrid.innerHTML += `<div class="ab-option" data-abkey="hairStyleId" data-abval="${s.id}" onclick="abSet('hairStyleId','${s.id}')">
+        <div style="font-size:1.5em; margin-bottom:3px;">💈</div>
+        <label style="font-size:0.65em;">${s.label}</label>
+      </div>`;
+    });
+    // Update selected highlight
+    document.querySelectorAll('[data-abkey="hairStyleId"]').forEach(el => {
+      el.classList.toggle('active', el.dataset.abval === _abCfg.hairStyleId);
+    });
+  }
+
+  function highlightAllSelections() {
+    const keys = ['skinId','hairStyleId','hairColorId','eyeColorId','outfitId','accessoryId','bgId'];
+    keys.forEach(key => {
+      document.querySelectorAll(`[data-abkey="${key}"]`).forEach(el => {
+        el.classList.toggle('active', el.dataset.abval === _abCfg[key]);
+      });
+    });
+    document.querySelectorAll('.ab-outfit-color').forEach(el => {
+      el.classList.toggle('active', el.dataset.abval === _abCfg.outfitColorId);
+    });
+  }
+
+  function accIcon(id) {
+    const icons = { none:'⛔', chain:'⛓️', diamond_chain:'💎', sunglasses:'🕶️', cap:'🧢', crown:'👑', earrings:'💎', headphones:'🎧' };
+    return icons[id] || '•';
+  }
   </script>
 </body>
 </html>
