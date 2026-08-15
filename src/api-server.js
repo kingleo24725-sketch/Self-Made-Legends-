@@ -1254,6 +1254,74 @@ app.post("/api/leaderboard/distribute-rewards", (req, res) => {
   res.json(result);
 });
 
+// ── Admin API (protected by ADMIN_SECRET_KEY env var) ──────────────────────
+function requireAdmin(req, res, next) {
+  const adminKey = process.env.ADMIN_SECRET_KEY;
+  if (!adminKey) return res.status(503).json({ error: "Admin not configured" });
+  const provided = req.headers["x-admin-key"] || req.query.key;
+  if (provided !== adminKey) return res.status(401).json({ error: "Unauthorized" });
+  next();
+}
+
+app.get("/api/admin/stats", requireAdmin, (req, res) => {
+  const accounts = accountManager.getAllAccounts ? accountManager.getAllAccounts() : [];
+  const leaderboard = leaderboardManager.getLeaderboard(10);
+  const referralStats = referralSystem.getLeaderboard ? referralSystem.getLeaderboard(5) : [];
+  const notifStatus = notifier.getStatus ? notifier.getStatus() : { enabled: false };
+  const mktStats = marketingAgent.getStats ? marketingAgent.getStats() : {};
+
+  res.json({
+    users: {
+      total: Array.isArray(accounts) ? accounts.length : 0,
+      recent: Array.isArray(accounts)
+        ? accounts.slice(-5).map(a => ({ email: a.email, name: a.fullName, joined: a.createdAt }))
+        : [],
+    },
+    leaderboard: leaderboard.slice(0, 10),
+    referrals: referralStats,
+    stripe: {
+      enabled: !!stripeProcessor,
+      live: process.env.NODE_ENV === "production",
+    },
+    notifications: notifStatus,
+    marketing: mktStats,
+    server: {
+      uptime: Math.floor(process.uptime()),
+      nodeEnv: process.env.NODE_ENV || "development",
+      port: process.env.PORT || 3000,
+    },
+  });
+});
+
+app.get("/api/admin/users", requireAdmin, (req, res) => {
+  const accounts = accountManager.getAllAccounts ? accountManager.getAllAccounts() : [];
+  const sanitized = Array.isArray(accounts)
+    ? accounts.map(a => ({
+        userId: a.userId,
+        email: a.email,
+        name: a.fullName,
+        joined: a.createdAt,
+        isCreator: !!a.isCreatorMember,
+      }))
+    : [];
+  res.json({ users: sanitized, total: sanitized.length });
+});
+
+app.post("/api/admin/distribute-rewards", requireAdmin, (req, res) => {
+  const result = leaderboardManager.distributeWeeklyRewards();
+  res.json(result);
+});
+
+app.post("/api/admin/ban-user", requireAdmin, (req, res) => {
+  const { userId, reason } = req.body;
+  if (!userId) return res.status(400).json({ error: "userId required" });
+  const result = accountManager.banAccount
+    ? accountManager.banAccount(userId, reason || "Admin action")
+    : { success: false, error: "banAccount not implemented" };
+  securityManager.logAudit("ADMIN_BAN", "admin", { userId, reason });
+  res.json(result);
+});
+
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 });

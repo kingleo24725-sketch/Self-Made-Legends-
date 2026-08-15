@@ -14,6 +14,11 @@
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Self-Made Legends — AI Trading Game">
   <meta name="twitter:description" content="AI-powered stock trading game. Compete nationally. Create crypto. Build your legend.">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#00d4ff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SML">
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -575,6 +580,7 @@
       <button class="nav-tab" onclick="switchTab('payments')">Payments</button>
       <button class="nav-tab" onclick="switchTab('badges')">🎖️ Badges</button>
       <button class="nav-tab" onclick="switchTab('marketing')">📣 Marketing</button>
+      <button class="nav-tab" onclick="switchTab('referrals'); loadReferrals()">🔗 Refer</button>
     </div>
     <div class="nav-right">
       <div class="user-info" id="user-info">Not Logged In</div>
@@ -913,13 +919,76 @@
       <div class="badge-grid" id="badge-gallery"></div>
     </section>
 
+    <!-- Referrals Section -->
+    <section class="section" id="referrals">
+      <div style="max-width:700px; margin:0 auto;">
+        <h2 style="color:#00d4ff; font-size:1.6em; margin-bottom:6px;">🔗 Referral Program</h2>
+        <p style="color:#aaa; margin-bottom:24px;">Invite friends to Self-Made Legends. Every person you bring builds your legend.</p>
+
+        <div class="card" style="margin-bottom:20px;">
+          <h3 style="color:#00ff88; margin-bottom:16px;">Your Referral Link</h3>
+          <div id="referral-link-box" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input id="referral-link-input" type="text" readonly
+              style="flex:1; min-width:200px; background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:10px 14px; color:#00d4ff; font-size:0.9em; outline:none;"
+              placeholder="Log in to get your referral link">
+            <button onclick="copyReferralLink()"
+              style="background:#00d4ff; color:#000; border:none; border-radius:6px; padding:10px 20px; font-weight:bold; cursor:pointer; white-space:nowrap;">
+              📋 Copy Link
+            </button>
+            <button onclick="shareReferralLink()"
+              style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:10px 20px; font-weight:bold; cursor:pointer; white-space:nowrap;">
+              📤 Share
+            </button>
+          </div>
+          <div id="referral-copy-notice" style="color:#00ff88; font-size:0.85em; margin-top:8px; display:none;">✅ Copied to clipboard!</div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <h3 style="color:#ffd700; margin-bottom:16px;">📊 Your Stats</h3>
+          <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(130px,1fr)); gap:12px;">
+            <div style="background:#0d1b2a; border-radius:8px; padding:16px; text-align:center;">
+              <div id="ref-clicks" style="color:#00d4ff; font-size:2em; font-weight:bold;">—</div>
+              <div style="color:#888; font-size:0.8em; margin-top:4px;">Link Clicks</div>
+            </div>
+            <div style="background:#0d1b2a; border-radius:8px; padding:16px; text-align:center;">
+              <div id="ref-signups" style="color:#00ff88; font-size:2em; font-weight:bold;">—</div>
+              <div style="color:#888; font-size:0.8em; margin-top:4px;">Sign-Ups</div>
+            </div>
+            <div style="background:#0d1b2a; border-radius:8px; padding:16px; text-align:center;">
+              <div id="ref-converted" style="color:#ffd700; font-size:2em; font-weight:bold;">—</div>
+              <div style="color:#888; font-size:0.8em; margin-top:4px;">Converted</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.2);">
+          <h3 style="color:#00ff88; margin-bottom:12px;">💡 How Referrals Work</h3>
+          <ul style="color:#bbb; padding-left:20px; line-height:2;">
+            <li>Share your unique link with friends, family, or followers</li>
+            <li>When someone signs up using your link, you get credit</li>
+            <li>Top referrers are featured on the monthly honor board</li>
+            <li>Future rewards (badges, bonuses) will unlock as the platform grows</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Demo Banner (shown in guest/demo mode) -->
+  <div id="demo-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:200; background:linear-gradient(90deg,#1a1f2e,#0d1b2a); border-top:2px solid #ffd700; padding:12px 20px; display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+    <div style="color:#ffd700; font-weight:bold;">👑 Demo Mode — Your progress won't be saved</div>
+    <div style="display:flex; gap:10px;">
+      <button onclick="login()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 18px; font-weight:bold; cursor:pointer;">Create Free Account</button>
+      <button onclick="document.getElementById('demo-banner').style.display='none'" style="background:transparent; border:1px solid #555; color:#888; border-radius:6px; padding:8px 12px; cursor:pointer;">✕ Dismiss</button>
+    </div>
   </div>
 
   <!-- ── Site Footer ─────────────────────────────── -->
   <footer class="site-footer">
     <div style="margin-bottom:10px;">
       <a href="/privacy-policy.html" target="_blank">Privacy Policy</a>
-      <a href="#" onclick="switchTab('payments'); return false;">Terms of Service</a>
+      <a href="/terms.html" target="_blank">Terms of Service</a>
       <a href="mailto:leobrown24725@yahoo.com">Contact Us</a>
       <a href="#" onclick="document.getElementById('onboarding-modal').classList.add('open'); return false;">How to Play</a>
     </div>
@@ -929,6 +998,7 @@
   <script>
     let sessionId = null;
     let currentUser = null;
+    let isDemo = false;
 
     function switchTab(tabName) {
       document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -962,7 +1032,7 @@
 
     function login() {
       const options = ['LOGIN', 'CREATE ACCOUNT', 'FORGOT PASSWORD'];
-      const choice = prompt('What would you like to do?\n\n1 — Login\n2 — Create New Account\n3 — Forgot Password\n\nType 1, 2, or 3:');
+      const choice = prompt('What would you like to do?\n\n1 — Login\n2 — Create New Account\n3 — Forgot Password\n4 — Try Demo (no account needed)\n\nType 1, 2, 3, or 4:');
 
       if (choice === '1') {
         const email = prompt('Enter your email:');
@@ -1015,10 +1085,44 @@
 
       } else if (choice === '3') {
         openForgotPassword();
+
+      } else if (choice === '4') {
+        enterDemoMode();
       }
     }
 
+    function enterDemoMode() {
+      isDemo = true;
+      currentUser = 'demo';
+      document.getElementById('user-info').textContent = '👤 Demo User';
+      document.getElementById('logout-btn').style.display = 'block';
+      document.getElementById('demo-banner').style.display = 'flex';
+
+      // Populate dashboard with demo data
+      document.getElementById('portfolio-value').textContent = '$12,450.00';
+      document.getElementById('portfolio-gains').textContent = '+$2,450.00 (+24.50%)';
+      document.getElementById('portfolio-gains').style.color = '#00ff88';
+
+      const rankEl = document.getElementById('leaderboard-rank');
+      if (rankEl) rankEl.textContent = '#42 (Demo)';
+
+      const shareBar = document.getElementById('share-rank-bar');
+      if (shareBar) shareBar.style.display = 'block';
+
+      renderBadges({ badges: [], earned: 0, total: 18 });
+
+      alert('👑 Demo Mode active! Explore the platform — create an account to save your progress and compete on the leaderboard.');
+    }
+
     function logout() {
+      if (isDemo) {
+        isDemo = false;
+        currentUser = null;
+        document.getElementById('user-info').textContent = 'Not Logged In';
+        document.getElementById('logout-btn').style.display = 'none';
+        document.getElementById('demo-banner').style.display = 'none';
+        return;
+      }
       apiCall('/api/auth/logout', 'POST')
         .then(() => {
           sessionId = null;
@@ -1570,6 +1674,72 @@
 
     function escapeHtml(str) {
       return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Referral Program ────────────────────────────────────────────────
+    function loadReferrals() {
+      if (isDemo) {
+        document.getElementById('referral-link-input').value = 'https://selfmadelegends.app/?ref=DEMO123';
+        document.getElementById('ref-clicks').textContent = '0';
+        document.getElementById('ref-signups').textContent = '0';
+        document.getElementById('ref-converted').textContent = '0';
+        return;
+      }
+      if (!getSessionId()) {
+        document.getElementById('referral-link-input').placeholder = 'Log in to get your referral link';
+        return;
+      }
+      fetch('/api/referrals/my-link', {
+        headers: { 'X-Session-Id': getSessionId() }
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.referralLink || data.link) {
+            document.getElementById('referral-link-input').value = data.referralLink || data.link;
+          }
+        })
+        .catch(() => {});
+
+      fetch('/api/referrals/stats', {
+        headers: { 'X-Session-Id': getSessionId() }
+      })
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('ref-clicks').textContent = data.clicks ?? data.totalClicks ?? 0;
+          document.getElementById('ref-signups').textContent = data.signups ?? data.totalSignups ?? 0;
+          document.getElementById('ref-converted').textContent = data.converted ?? data.totalConverted ?? 0;
+        })
+        .catch(() => {});
+    }
+
+    function copyReferralLink() {
+      const input = document.getElementById('referral-link-input');
+      if (!input.value || input.value === input.placeholder) return;
+      navigator.clipboard.writeText(input.value).then(() => {
+        const notice = document.getElementById('referral-copy-notice');
+        notice.style.display = 'block';
+        setTimeout(() => notice.style.display = 'none', 2000);
+      });
+    }
+
+    function shareReferralLink() {
+      const link = document.getElementById('referral-link-input').value;
+      if (!link) return;
+      const shareData = {
+        title: 'Join Self-Made Legends',
+        text: 'I\'m competing on the AI trading leaderboard! Join me on Self-Made Legends 👑',
+        url: link
+      };
+      if (navigator.share) {
+        navigator.share(shareData).catch(() => copyReferralLink());
+      } else {
+        copyReferralLink();
+      }
+    }
+
+    // ── Service Worker registration ─────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
   </script>
 </body>
