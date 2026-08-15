@@ -878,69 +878,119 @@
 
     <!-- Payments Section -->
     <section class="section" id="payments">
-      <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="color: #00d4ff; font-size: 1.6em;">💰 Self Made Legends Payment Hub</h2>
-        <p style="color: #00ff88; font-size: 0.95em;">Fast & Secure Deposits & Withdrawals | $10/month Creator Subscription</p>
-      </div>
-      <div class="grid">
-        <div class="card">
-          <h2>💳 Deposit Funds</h2>
-          <div class="form-group">
-            <label>Amount (USD)</label>
-            <input type="number" id="deposit-amount" placeholder="Enter amount">
-          </div>
-          <div class="form-group">
-            <label>Payment Method</label>
-            <select id="deposit-method">
-              <option value="card">Credit/Debit Card</option>
-              <option value="bank">Bank Transfer</option>
-              <option value="crypto">Crypto Wallet</option>
-              <option value="paypal">PayPal</option>
-            </select>
-          </div>
-          <button class="btn btn-success" onclick="deposit()" style="width:100%;">Deposit</button>
-        </div>
-
-        <div class="card">
-          <h2>💸 Withdraw Funds</h2>
-          <div class="form-group">
-            <label>Amount (USD)</label>
-            <input type="number" id="withdraw-amount" placeholder="Enter amount">
-          </div>
-          <div class="form-group">
-            <label>Withdrawal Method</label>
-            <select id="withdraw-method">
-              <option value="card">Credit/Debit Card</option>
-              <option value="bank">Bank Transfer</option>
-              <option value="crypto">Crypto Wallet</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Destination Address</label>
-            <input type="text" id="withdraw-destination" placeholder="Enter destination">
-          </div>
-          <button class="btn btn-danger" onclick="withdraw()" style="width:100%;">Withdraw</button>
-        </div>
+      <div style="text-align:center; margin-bottom:24px;">
+        <h2 style="color:#ffd700; font-size:1.8em; margin-bottom:6px;">🏆 SML Monetization Hub</h2>
+        <p style="color:#888; font-size:0.9em;">Season Passes · Credits · Coach Pro · Tournament Entry · Creator Membership</p>
       </div>
 
-      <div class="card" style="border: 2px solid #00d4ff; margin-top: 20px;">
-        <h2 style="color: #00d4ff;">⭐ Creator Membership — $10 / Month</h2>
-        <p style="color: #aaa; margin-bottom: 8px;">
+      <!-- Credits Balance Banner -->
+      <div style="background:linear-gradient(135deg,#0d2d1f,#1a1a3e); border:1px solid #00ff88; border-radius:12px; padding:18px 24px; display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div style="color:#00ff88; font-size:0.72em; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px;">💎 SML Credits Balance</div>
+          <div id="credits-balance-display" style="color:#fff; font-size:2.1em; font-weight:bold; font-variant-numeric:tabular-nums;">— Credits</div>
+        </div>
+        <div style="color:#555; font-size:0.8em; text-align:right; max-width:220px; line-height:1.5;">Spend on cosmetics, emote packs &amp; special features. Credits never expire.</div>
+      </div>
+
+      <!-- Legend of the Season -->
+      <div class="card" style="border:2px solid #ffd700; background:linear-gradient(135deg,#1a1200,#2a1800); margin-bottom:24px; text-align:center; padding:28px 24px; position:relative; overflow:hidden;">
+        <div style="position:absolute;top:-25px;right:-15px;font-size:7em;opacity:0.06;pointer-events:none;user-select:none;">👑</div>
+        <div style="font-size:0.72em; color:#ffd700; text-transform:uppercase; letter-spacing:2px; margin-bottom:10px;">👑 Legend of the Season</div>
+        <div id="legend-holder-name" style="font-size:1.9em; color:#fff; font-weight:bold; margin-bottom:6px;">—</div>
+        <div id="legend-holder-detail" style="color:#777; font-size:0.88em; line-height:1.6;">Loading champion status...</div>
+        <div style="color:#ffd700; font-size:0.72em; margin-top:14px; opacity:0.6; letter-spacing:0.5px;">Earned by the Season Championship winner · Held for 90 days until the next champion is crowned · NOT purchasable</div>
+      </div>
+
+      <!-- Products Grid -->
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(268px,1fr)); gap:20px; margin-bottom:24px;">
+
+        <!-- Season Pass -->
+        <div class="card" style="border:1px solid #00d4ff; position:relative; overflow:hidden;">
+          <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">🎫</div>
+          <div style="color:#00d4ff; font-weight:bold; font-size:1.05em; margin-bottom:4px;">🎫 Season Pass</div>
+          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$9.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/season</span></div>
+          <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
+            <li>✨ Premium badge frames</li>
+            <li>⚡ 1.5× XP Multiplier all season</li>
+            <li>🥇 Private leaderboard tier</li>
+            <li>📊 Advanced analytics view</li>
+          </ul>
+          <div id="season-pass-status" style="color:#555; font-size:0.78em; min-height:18px; margin-bottom:8px;"></div>
+          <button class="btn btn-success" id="season-pass-btn" onclick="buySeasonPass()" style="width:100%;">🎫 Get Season Pass</button>
+        </div>
+
+        <!-- SML Credits -->
+        <div class="card" style="border:1px solid #9b59b6;">
+          <div style="color:#d4a7f5; font-weight:bold; font-size:1.05em; margin-bottom:8px;">💎 SML Credits</div>
+          <p style="color:#777; font-size:0.83em; margin-bottom:16px; line-height:1.5;">Spend on cosmetics, emote packs &amp; special features. Credits never expire.</p>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="buySMLCredits('starter')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
+              <span>⚡ Starter Pack</span><strong style="color:#9b59b6;">500 Credits · $5</strong>
+            </button>
+            <button onclick="buySMLCredits('legends')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
+              <span>🌟 Legends Pack</span><strong style="color:#9b59b6;">2,500 Credits · $20</strong>
+            </button>
+            <button onclick="buySMLCredits('champion')" style="background:#1a1000; border:2px solid #ffd700; color:#ffd700; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#251700'" onmouseout="this.style.background='#1a1000'">
+              <span>👑 Champion Pack</span><strong>7,000 Credits · $50</strong>
+            </button>
+          </div>
+        </div>
+
+        <!-- Premium Coach -->
+        <div class="card" style="border:1px solid #00cc66; position:relative; overflow:hidden;">
+          <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">🧠</div>
+          <div style="color:#00cc66; font-weight:bold; font-size:1.05em; margin-bottom:4px;">🧠 Premium AI Coach</div>
+          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$4.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/month</span></div>
+          <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
+            <li>🎯 Deeper AI coaching responses</li>
+            <li>📈 Weekly personalized reports</li>
+            <li>🔍 Portfolio risk analysis</li>
+            <li>💬 Priority coach access</li>
+          </ul>
+          <div id="coach-pro-status" style="color:#555; font-size:0.78em; min-height:18px; margin-bottom:8px;"></div>
+          <button class="btn btn-success" id="coach-pro-btn" onclick="buyCoachPro()" style="width:100%; background:rgba(0,100,50,0.35); border-color:#00cc66;">🧠 Subscribe to Coach Pro</button>
+        </div>
+
+        <!-- Tournament Entry -->
+        <div class="card" style="border:1px solid #ff6b6b; position:relative; overflow:hidden;">
+          <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">⚔️</div>
+          <div style="color:#ff6b6b; font-weight:bold; font-size:1.05em; margin-bottom:4px;">⚔️ Tournament Entry</div>
+          <div style="color:#ff6b6b; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$5 <span style="font-size:0.42em; color:#555; font-weight:normal;">/tournament</span></div>
+          <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 12px; line-height:2.1;">
+            <li>🏆 Compete for real cash prizes</li>
+            <li>💰 80% of pool pays top 3 players</li>
+            <li>📣 National platform recognition</li>
+          </ul>
+          <div style="background:#1a0000; border:1px solid rgba(255,107,107,0.35); border-radius:8px; padding:12px; text-align:center; margin-bottom:14px;">
+            <div style="color:#666; font-size:0.68em; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Current Prize Pool (80%)</div>
+            <div id="prize-pool-amount" style="color:#ff6b6b; font-size:1.7em; font-weight:bold; font-variant-numeric:tabular-nums;">—</div>
+          </div>
+          <button class="btn btn-danger" id="tournament-entry-btn" onclick="enterTournament()" style="width:100%;">⚔️ Enter Tournament — $5</button>
+          <div id="tournament-entry-status" style="color:#777; font-size:0.78em; margin-top:8px; text-align:center; min-height:18px;"></div>
+        </div>
+
+      </div>
+
+      <!-- Creator Membership (existing) -->
+      <div class="card" style="border:1px solid #00d4ff; margin-bottom:20px;">
+        <h2 style="color:#00d4ff; margin-bottom:6px;">⭐ Creator Membership — $10 / Month</h2>
+        <p style="color:#888; margin-bottom:8px; font-size:0.9em;">
           Subscribe for <strong style="color:#00ff88;">$10/month</strong> to unlock token creation,
           premium leaderboard recognition, and creator-only features.
         </p>
-        <p style="color: #888; font-size: 0.88em; margin-bottom: 16px;">
+        <p style="color:#666; font-size:0.82em; margin-bottom:16px;">
           Billed on the <strong>1st of every month</strong> · Cancel anytime · Powered by Stripe
         </p>
-        <button class="btn btn-success" onclick="payCreatorFee()" id="creator-fee-btn" style="width:100%; font-size:1.1em;">
+        <button class="btn btn-success" onclick="payCreatorFee()" id="creator-fee-btn" style="width:100%;">
           💳 Subscribe — $10/month
         </button>
         <div id="creator-fee-status" style="margin-top:12px; color:#00ff88; display:none;"></div>
       </div>
 
+      <!-- Transaction History -->
       <div class="card">
         <h2>📜 Transaction History</h2>
-        <div id="transaction-history"></div>
+        <div id="transaction-history" style="color:#777; font-size:0.88em;">No transactions yet.</div>
       </div>
     </section>
 
@@ -1643,6 +1693,135 @@
         });
     }
 
+    // ===== MONETIZATION HUB =====
+
+    async function loadMonetizationHub() {
+      if (!sessionId) return;
+      try {
+        // Credits balance
+        const credits = await apiCall('/api/credits/balance');
+        if (credits && credits.balance !== undefined) {
+          document.getElementById('credits-balance-display').textContent =
+            Number(credits.balance).toLocaleString() + ' Credits';
+        }
+
+        // Legend status
+        const legend = await apiCall('/api/legend/status');
+        if (legend && legend.active) {
+          document.getElementById('legend-holder-name').textContent = legend.fullName || 'Champion';
+          const expiry = legend.expiresAt
+            ? new Date(legend.expiresAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+            : 'next season';
+          document.getElementById('legend-holder-detail').textContent =
+            (legend.seasonName || 'Season Champion') + ' · Status expires ' + expiry;
+        } else {
+          document.getElementById('legend-holder-name').textContent = 'No Champion Yet';
+          document.getElementById('legend-holder-detail').textContent =
+            'The first season championship winner will hold Legend Status for 90 days';
+        }
+
+        // Tournament prize pool
+        const tourney = await apiCall('/api/tournament/status');
+        if (tourney && tourney.active && tourney.prizePool !== undefined) {
+          const usd = (tourney.prizePool / 100).toFixed(2);
+          document.getElementById('prize-pool-amount').textContent = '$' + usd;
+          document.getElementById('tournament-entry-status').textContent =
+            (tourney.entryCount || 0) + ' players entered';
+        } else {
+          document.getElementById('prize-pool-amount').textContent = 'No active tournament';
+          document.getElementById('tournament-entry-btn').disabled = true;
+          document.getElementById('tournament-entry-btn').style.opacity = '0.5';
+          document.getElementById('tournament-entry-status').textContent = 'Check back when the next tournament opens';
+        }
+      } catch (e) {
+        console.error('loadMonetizationHub:', e);
+      }
+    }
+
+    function buySeasonPass() {
+      if (!sessionId) { alert('Please log in first.'); return; }
+      const btn = document.getElementById('season-pass-btn');
+      btn.disabled = true; btn.textContent = '⏳ Setting up...';
+      apiCall('/api/stripe/season-pass', 'POST', {})
+        .then(data => {
+          if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            btn.disabled = false; btn.textContent = '🎫 Get Season Pass';
+            alert(data.error || 'Could not create payment session');
+          }
+        })
+        .catch(() => {
+          btn.disabled = false; btn.textContent = '🎫 Get Season Pass';
+          alert('Payment setup failed. Please try again.');
+        });
+    }
+
+    function buySMLCredits(pkg) {
+      if (!sessionId) { alert('Please log in first.'); return; }
+      const labels = {
+        starter:  'Starter Pack (500 Credits) — $5',
+        legends:  'Legends Pack (2,500 Credits) — $20',
+        champion: 'Champion Pack (7,000 Credits) — $50',
+      };
+      if (!confirm('Purchase ' + (labels[pkg] || pkg) + '?\n\nYou\'ll be taken to Stripe secure checkout.')) return;
+      apiCall('/api/stripe/credits/topup', 'POST', { package: pkg })
+        .then(data => {
+          if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            alert(data.error || 'Could not create payment session');
+          }
+        })
+        .catch(() => alert('Payment setup failed. Please try again.'));
+    }
+
+    function buyCoachPro() {
+      if (!sessionId) { alert('Please log in first.'); return; }
+      const btn = document.getElementById('coach-pro-btn');
+      btn.disabled = true; btn.textContent = '⏳ Setting up...';
+      apiCall('/api/stripe/coach-pro', 'POST', {})
+        .then(data => {
+          if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            btn.disabled = false; btn.textContent = '🧠 Subscribe to Coach Pro';
+            alert(data.error || 'Could not create payment session');
+          }
+        })
+        .catch(() => {
+          btn.disabled = false; btn.textContent = '🧠 Subscribe to Coach Pro';
+          alert('Payment setup failed. Please try again.');
+        });
+    }
+
+    function enterTournament() {
+      if (!sessionId) { alert('Please log in first.'); return; }
+      const btn = document.getElementById('tournament-entry-btn');
+      const statusEl = document.getElementById('tournament-entry-status');
+      btn.disabled = true; btn.textContent = '⏳ Setting up...';
+      statusEl.textContent = '';
+      apiCall('/api/stripe/tournament-entry', 'POST', {})
+        .then(data => {
+          if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else if (data.alreadyEntered) {
+            btn.textContent = '✅ Already Entered';
+            statusEl.textContent = "You're already in this tournament!";
+          } else if (data.noTournament) {
+            btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — $5';
+            statusEl.textContent = 'No active tournament right now. Check back soon!';
+          } else {
+            btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — $5';
+            alert(data.error || 'Could not create payment session');
+          }
+        })
+        .catch(() => {
+          btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — $5';
+          alert('Payment setup failed. Please try again.');
+        });
+    }
+
     function deposit() {
       const amount = parseFloat(document.getElementById('deposit-amount').value);
       const method = document.getElementById('deposit-method').value;
@@ -1779,7 +1958,17 @@
         document.getElementById('reset-modal').classList.add('open');
       }
       if (params.get('payment') === 'success') {
-        setTimeout(() => alert('✅ Payment successful! Your Creator Membership is now active.'), 500);
+        const payType = params.get('pay_type');
+        const msgs = {
+          season_pass:      '🎫 Season Pass activated! Enjoy 1.5× XP and premium badge frames.',
+          credits_starter:  '💎 500 SML Credits added to your balance!',
+          credits_legends:  '💎 2,500 SML Credits added to your balance!',
+          credits_champion: '💎 7,000 SML Credits added to your balance!',
+          coach_pro:        '🧠 Premium Coach Pro activated! Enjoy deeper insights and weekly reports.',
+          tournament:       '⚔️ Tournament entry confirmed! May the best legend win.',
+        };
+        const msg = msgs[payType] || '✅ Payment successful! Thank you for supporting Self-Made Legends.';
+        setTimeout(() => showToast('✅', 'Payment Complete!', msg, '#00ff88'), 600);
       }
     }
 
@@ -3811,6 +4000,20 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
         }
       }
     });
+
+    socket.on('purchase_complete', ({ type, message, amount, balance }) => {
+      const icons = { season_pass: '🎫', credits: '💎', coach_pro: '🧠', tournament_entry: '⚔️' };
+      showToast(icons[type] || '✅', 'Purchase Complete!', message, '#00ff88');
+      // Refresh credit balance display if on payments tab
+      if (balance !== undefined) {
+        const el = document.getElementById('credits-balance-display');
+        if (el) el.textContent = Number(balance).toLocaleString() + ' Credits';
+      }
+    });
+
+    socket.on('legend_status', ({ message }) => {
+      showToast('👑', 'LEGEND STATUS!', message, '#ffd700');
+    });
   }
 
   // Initialize after DOM ready
@@ -3874,7 +4077,7 @@ window.loadCommunityStats = async function() {
   } catch(_) {}
 };
 
-// Auto-load community stats when community tab opens
+// Auto-load data when specific tabs open
 const _origSwitchTab = window.switchTab;
 if (typeof _origSwitchTab === 'function') {
   window.switchTab = function(tab) {
@@ -3882,6 +4085,9 @@ if (typeof _origSwitchTab === 'function') {
     if (tab === 'community') {
       window.loadCommunityFeed();
       window.loadCommunityStats();
+    }
+    if (tab === 'payments') {
+      loadMonetizationHub();
     }
   };
 }

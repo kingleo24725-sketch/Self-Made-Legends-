@@ -170,6 +170,74 @@ class DB {
         generated_at INTEGER,
         completed    INTEGER DEFAULT 0
       )`,
+
+      // ── Monetization tables ───────────────────────────────────────────────
+
+      // SML Credits balance (one row per user)
+      `CREATE TABLE IF NOT EXISTS sml_credits (
+        user_id    TEXT PRIMARY KEY,
+        balance    INTEGER DEFAULT 0,
+        updated_at INTEGER
+      )`,
+
+      // Credit transaction history
+      `CREATE TABLE IF NOT EXISTS credit_transactions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     TEXT NOT NULL,
+        amount      INTEGER NOT NULL,
+        type        TEXT NOT NULL,
+        description TEXT,
+        created_at  INTEGER
+      )`,
+
+      // Season Pass per user
+      `CREATE TABLE IF NOT EXISTS season_passes (
+        user_id       TEXT PRIMARY KEY,
+        stripe_sub_id TEXT,
+        season_id     TEXT DEFAULT '',
+        active        INTEGER DEFAULT 0,
+        activated_at  INTEGER
+      )`,
+
+      // Premium Coach Pro subscription
+      `CREATE TABLE IF NOT EXISTS premium_coach_subs (
+        user_id       TEXT PRIMARY KEY,
+        stripe_sub_id TEXT,
+        active        INTEGER DEFAULT 0,
+        activated_at  INTEGER
+      )`,
+
+      // Paid tournament entries
+      `CREATE TABLE IF NOT EXISTS tournament_entries (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        tournament_id  TEXT NOT NULL,
+        user_id        TEXT NOT NULL,
+        stripe_session TEXT,
+        paid           INTEGER DEFAULT 0,
+        created_at     INTEGER,
+        UNIQUE(tournament_id, user_id)
+      )`,
+
+      // Tournament prize pool tracking (80% of $5 entry = $4 to pool)
+      `CREATE TABLE IF NOT EXISTS tournament_prize_pools (
+        tournament_id TEXT PRIMARY KEY,
+        entry_count   INTEGER DEFAULT 0,
+        total_cents   INTEGER DEFAULT 0,
+        distributed   INTEGER DEFAULT 0,
+        updated_at    INTEGER
+      )`,
+
+      // Legend Status — seasonal champion (NOT purchasable)
+      `CREATE TABLE IF NOT EXISTS legend_status (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     TEXT NOT NULL,
+        full_name   TEXT,
+        season_id   TEXT,
+        season_name TEXT,
+        awarded_at  INTEGER,
+        expires_at  INTEGER,
+        active      INTEGER DEFAULT 1
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
   }

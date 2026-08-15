@@ -342,27 +342,219 @@ app.post("/api/stripe/cancel-subscription", authenticateUser, async (req, res) =
   }
 });
 
+// Helper: add SML credits to a user's balance
+async function _addCredits(userId, amount, type, description) {
+  const row = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [userId]);
+  const newBalance = (row ? row.balance : 0) + amount;
+  await db.run(
+    'INSERT INTO sml_credits (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = ?, updated_at = ?',
+    [userId, newBalance, Date.now(), newBalance, Date.now()]
+  );
+  await db.run(
+    'INSERT INTO credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?)',
+    [userId, amount, type, description, Date.now()]
+  );
+  return newBalance;
+}
+
 // Stripe webhook — raw body needed for signature verification
-app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (req, res) => {
+app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async (req, res) => {
   if (!stripeProcessor) return res.sendStatus(503);
   const sig = req.headers["stripe-signature"];
   try {
     const event = stripeProcessor.constructWebhookEvent(req.body, sig);
     const obj = event.data.object;
-    if (event.type === "customer.subscription.created") {
-      const userId = obj.metadata?.userId;
-      console.log(`Creator subscription STARTED — user ${userId}`);
+    const meta = obj.metadata || {};
+
+    if (event.type === "checkout.session.completed") {
+      const userId = meta.userId;
+      const type   = meta.type;
+      if (!userId || !type) { return res.sendStatus(200); }
+
+      if (type === 'season_pass') {
+        const now = Date.now();
+        const seasonId = String(seasonManager.getCurrentSeason().id);
+        await db.run(
+          'INSERT INTO season_passes (user_id, stripe_sub_id, season_id, active, activated_at) VALUES (?, ?, ?, 1, ?) ON CONFLICT(user_id) DO UPDATE SET active = 1, season_id = ?, activated_at = ?',
+          [userId, obj.id, seasonId, now, seasonId, now]
+        );
+        emitToUser(userId, 'purchase_complete', { type: 'season_pass', message: '🎫 Season Pass activated! Enjoy 1.5× XP.' });
+        console.log(`Season Pass activated — user ${userId}`);
+
+      } else if (type === 'credit_topup_starter') {
+        const bal = await _addCredits(userId, 500, 'topup', 'Starter Pack purchase');
+        emitToUser(userId, 'purchase_complete', { type: 'credits', amount: 500, balance: bal, message: '💎 500 SML Credits added!' });
+
+      } else if (type === 'credit_topup_legends') {
+        const bal = await _addCredits(userId, 2500, 'topup', 'Legends Pack purchase');
+        emitToUser(userId, 'purchase_complete', { type: 'credits', amount: 2500, balance: bal, message: '💎 2,500 SML Credits added!' });
+
+      } else if (type === 'credit_topup_champion') {
+        const bal = await _addCredits(userId, 7000, 'topup', 'Champion Pack purchase');
+        emitToUser(userId, 'purchase_complete', { type: 'credits', amount: 7000, balance: bal, message: '💎 7,000 SML Credits added!' });
+
+      } else if (type === 'coach_pro') {
+        const now = Date.now();
+        await db.run(
+          'INSERT INTO premium_coach_subs (user_id, stripe_sub_id, active, activated_at) VALUES (?, ?, 1, ?) ON CONFLICT(user_id) DO UPDATE SET active = 1, activated_at = ?, stripe_sub_id = ?',
+          [userId, obj.subscription || obj.id, now, now, obj.subscription || obj.id]
+        );
+        emitToUser(userId, 'purchase_complete', { type: 'coach_pro', message: '🧠 Premium Coach Pro activated!' });
+        console.log(`Coach Pro activated — user ${userId}`);
+
+      } else if (type === 'tournament_entry') {
+        const tournamentId = meta.tournamentId || 'current';
+        await db.run('UPDATE tournament_entries SET paid = 1, stripe_session = ? WHERE tournament_id = ? AND user_id = ?',
+          [obj.id, tournamentId, userId]);
+        // $4 (80%) goes to prize pool per entry
+        await db.run(
+          'INSERT INTO tournament_prize_pools (tournament_id, entry_count, total_cents, distributed, updated_at) VALUES (?, 1, 400, 0, ?) ON CONFLICT(tournament_id) DO UPDATE SET entry_count = entry_count + 1, total_cents = total_cents + 400, updated_at = ?',
+          [tournamentId, Date.now(), Date.now()]
+        );
+        emitToUser(userId, 'purchase_complete', { type: 'tournament_entry', message: '⚔️ Tournament entry confirmed! Good luck!' });
+        console.log(`Tournament entry paid — user ${userId}, tournament ${tournamentId}`);
+
+      } else if (type === 'creator_subscription') {
+        console.log(`Creator subscription started — user ${userId}`);
+      }
+
+    } else if (event.type === "customer.subscription.deleted") {
+      const userId = meta.userId || obj.metadata?.userId;
+      const type   = meta.type   || obj.metadata?.type;
+      if (type === 'coach_pro' && userId) {
+        await db.run('UPDATE premium_coach_subs SET active = 0 WHERE user_id = ?', [userId]);
+        emitToUser(userId, 'subscription_cancelled', { type: 'coach_pro', message: 'Coach Pro cancelled' });
+        console.log(`Coach Pro CANCELLED — user ${userId}`);
+      } else if (userId) {
+        console.log(`Subscription CANCELLED — user ${userId}, type ${type}`);
+      }
+
     } else if (event.type === "invoice.paid") {
       const userId = obj.subscription_details?.metadata?.userId || obj.metadata?.userId;
-      console.log(`Creator subscription RENEWED — user ${userId} — $${obj.amount_paid / 100}`);
-    } else if (event.type === "customer.subscription.deleted") {
-      const userId = obj.metadata?.userId;
-      console.log(`Creator subscription CANCELLED — user ${userId}`);
+      console.log(`Invoice paid — user ${userId} — $${(obj.amount_paid / 100).toFixed(2)}`);
     }
+
     res.sendStatus(200);
   } catch (err) {
     console.error("Webhook error:", err.message);
     res.status(400).send("Webhook Error: " + err.message);
+  }
+});
+
+// ===== SML CREDITS ENDPOINTS =====
+
+app.get("/api/credits/balance", authenticateUser, async (req, res) => {
+  const row = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [req.user.userId]);
+  res.json({ balance: row ? row.balance : 0 });
+});
+
+app.post("/api/credits/spend", authenticateUser, async (req, res) => {
+  const { amount, description } = req.body;
+  if (!amount || amount <= 0) return res.status(400).json({ error: 'amount required' });
+  const row = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [req.user.userId]);
+  const current = row ? row.balance : 0;
+  if (current < amount) return res.status(400).json({ error: 'Insufficient credits', balance: current });
+  const newBalance = current - amount;
+  await db.run(
+    'INSERT INTO sml_credits (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = ?, updated_at = ?',
+    [req.user.userId, newBalance, Date.now(), newBalance, Date.now()]
+  );
+  await db.run(
+    'INSERT INTO credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?)',
+    [req.user.userId, -amount, 'spend', description || 'Credits spent', Date.now()]
+  );
+  res.json({ success: true, balance: newBalance });
+});
+
+// ===== LEGEND STATUS ENDPOINT =====
+
+app.get("/api/legend/status", async (req, res) => {
+  const row = await db.get('SELECT * FROM legend_status WHERE active = 1 ORDER BY awarded_at DESC LIMIT 1');
+  if (!row) return res.json({ active: false });
+  res.json({
+    active: true,
+    userId:     row.user_id,
+    fullName:   row.full_name,
+    seasonId:   row.season_id,
+    seasonName: row.season_name,
+    awardedAt:  row.awarded_at,
+    expiresAt:  row.expires_at,
+  });
+});
+
+// ===== STRIPE — SEASON PASS =====
+
+app.post("/api/stripe/season-pass", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  try {
+    const account = accountManager.getAccountById(req.user.userId);
+    const userEmail = account?.email || '';
+    const result = await stripeProcessor.createSeasonPassCheckout(req.user.userId, userEmail);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Season pass checkout error:", err.message);
+    res.status(500).json({ error: 'Season pass checkout failed: ' + err.message });
+  }
+});
+
+// ===== STRIPE — SML CREDITS TOPUP =====
+
+app.post("/api/stripe/credits/topup", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const { package: pkg } = req.body;
+  if (!pkg) return res.status(400).json({ error: 'package required (starter|legends|champion)' });
+  try {
+    const account = accountManager.getAccountById(req.user.userId);
+    const userEmail = account?.email || '';
+    const result = await stripeProcessor.createCreditTopupCheckout(req.user.userId, userEmail, pkg);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Credit topup checkout error:", err.message);
+    res.status(500).json({ error: 'Credit topup checkout failed: ' + err.message });
+  }
+});
+
+// ===== STRIPE — PREMIUM COACH PRO =====
+
+app.post("/api/stripe/coach-pro", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  try {
+    const account = accountManager.getAccountById(req.user.userId);
+    const userEmail = account?.email || '';
+    const result = await stripeProcessor.createCoachProCheckout(req.user.userId, userEmail);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Coach Pro checkout error:", err.message);
+    res.status(500).json({ error: 'Coach Pro checkout failed: ' + err.message });
+  }
+});
+
+// ===== STRIPE — TOURNAMENT ENTRY =====
+
+app.post("/api/stripe/tournament-entry", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const tourneyStatus = tournamentManager.getStatus();
+  if (!tourneyStatus || !tourneyStatus.active) {
+    return res.json({ success: false, noTournament: true });
+  }
+  const tournamentId = String(tourneyStatus.id || 'current');
+  const existing = await db.get(
+    'SELECT id FROM tournament_entries WHERE tournament_id = ? AND user_id = ? AND paid = 1',
+    [tournamentId, req.user.userId]
+  );
+  if (existing) return res.json({ success: false, alreadyEntered: true });
+  try {
+    const account = accountManager.getAccountById(req.user.userId);
+    const userEmail = account?.email || '';
+    const result = await stripeProcessor.createTournamentEntryCheckout(req.user.userId, userEmail, tournamentId);
+    await db.run(
+      'INSERT OR IGNORE INTO tournament_entries (tournament_id, user_id, stripe_session, paid, created_at) VALUES (?, ?, ?, 0, ?)',
+      [tournamentId, req.user.userId, result.sessionId, Date.now()]
+    );
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Tournament entry checkout error:", err.message);
+    res.status(500).json({ error: 'Tournament entry checkout failed: ' + err.message });
   }
 });
 
@@ -1472,8 +1664,15 @@ app.get("/api/account/gender", authenticateUser, (req, res) => {
 });
 
 // ── Tournament ────────────────────────────────────────────────────────────
-app.get("/api/tournament/status", (req, res) => {
-  res.json(tournamentManager.getStatus());
+app.get("/api/tournament/status", async (req, res) => {
+  const status = tournamentManager.getStatus();
+  // Attach prize pool if tournament is active
+  if (status && status.active && status.id) {
+    const pool = await db.get('SELECT entry_count, total_cents FROM tournament_prize_pools WHERE tournament_id = ?', [String(status.id)]);
+    status.entryCount = pool ? pool.entry_count : 0;
+    status.prizePool  = pool ? pool.total_cents  : 0;
+  }
+  res.json(status);
 });
 
 app.get("/api/tournament/history", (req, res) => {
@@ -1718,13 +1917,30 @@ app.get("/api/season/hall-of-fame", (req, res) => {
   res.json({ hallOfFame: seasonManager.getHallOfFame() });
 });
 
-app.post("/api/admin/end-season", requireAdmin, (req, res) => {
+app.post("/api/admin/end-season", requireAdmin, async (req, res) => {
   const lb = leaderboardManager.getLeaderboard(3);
   const winners = lb.map((p, i) => ({ rank: i + 1, userId: p.userId, email: p.email, score: p.score }));
   // Award Hall of Famer diamond badge to top-3 season finishers
   winners.forEach(w => { if (w.userId) badgeSystem.onHallOfFame(w.userId); });
   const closed = seasonManager.endSeason(winners);
-  res.json({ success: true, closedSeason: closed, newSeason: seasonManager.getCurrentSeason() });
+
+  // Award Legend Status to the #1 champion (lasts 90 days or until next champion)
+  const champion = winners.find(w => w.rank === 1);
+  if (champion && champion.userId) {
+    await db.run('UPDATE legend_status SET active = 0 WHERE active = 1');
+    const acct = accountManager.getAccountById(champion.userId);
+    const fullName = acct ? (acct.fullName || acct.email) : 'Champion';
+    const now = Date.now();
+    const expires = now + (90 * 24 * 60 * 60 * 1000);
+    await db.run(
+      'INSERT INTO legend_status (user_id, full_name, season_id, season_name, awarded_at, expires_at, active) VALUES (?, ?, ?, ?, ?, ?, 1)',
+      [champion.userId, fullName, String(closed.id), closed.name, now, expires]
+    );
+    emitToUser(champion.userId, 'legend_status', { message: '👑 You are the Legend of the Season!' });
+    console.log(`Legend Status awarded to ${fullName} (${champion.userId}) for ${closed.name}`);
+  }
+
+  res.json({ success: true, closedSeason: closed, newSeason: seasonManager.getCurrentSeason(), legendAwarded: champion || null });
 });
 
 // ── Activity Feed (public, uses SocialFeed with 15-min delay) ─────────────
