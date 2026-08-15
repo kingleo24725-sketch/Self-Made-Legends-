@@ -230,6 +230,171 @@ class CoachSystem {
     );
   }
 
+  // ── Agentic Learning Path: Plan → Execute → Learn ─────────────────────────
+
+  async generateLearningPath(userId, userCtx = {}, trainingProgress = null) {
+    const level = this._detectLevel(userCtx);
+    const state = this._getState(userId);
+
+    // Identify weak topics (neg feedback) and top topics
+    const weakTopics = Object.entries(state.negFeedback)
+      .filter(([, c]) => c >= 1)
+      .sort((a, b) => b[1] - a[1])
+      .map(([t]) => t);
+
+    const topTopics = Object.entries(state.topicCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 2)
+      .map(([t]) => t);
+
+    const completedLessons = trainingProgress ? trainingProgress.completedLessons || [] : [];
+    const graduated        = trainingProgress ? !!trainingProgress.graduated : false;
+    const badgeCount       = userCtx.badgeCount || 0;
+    const rank             = userCtx.rank;
+
+    const steps = this._planSteps(level, { weakTopics, topTopics, completedLessons, graduated, badgeCount, rank });
+
+    await db.run(
+      `INSERT INTO coach_learning_paths (user_id, steps, level, generated_at, completed)
+       VALUES (?, ?, ?, ?, 0)
+       ON CONFLICT(user_id) DO UPDATE SET
+         steps=excluded.steps,
+         level=excluded.level,
+         generated_at=excluded.generated_at,
+         completed=0`,
+      [userId, JSON.stringify(steps), level, Date.now()]
+    );
+
+    return { steps, level };
+  }
+
+  async getLearningPath(userId) {
+    const row = await db.get('SELECT * FROM coach_learning_paths WHERE user_id=?', [userId]);
+    if (!row) return null;
+    try {
+      return { steps: JSON.parse(row.steps), level: row.level, generatedAt: row.generated_at, completed: !!row.completed };
+    } catch (_) { return null; }
+  }
+
+  async completeLearningStep(userId, stepId) {
+    const path = await this.getLearningPath(userId);
+    if (!path) return { ok: false, error: 'No active learning path' };
+
+    const steps = path.steps.map(s =>
+      s.id === stepId ? { ...s, completed: true, completedAt: Date.now() } : s
+    );
+    const allDone = steps.every(s => s.completed);
+
+    await db.run(
+      `UPDATE coach_learning_paths SET steps=?, completed=? WHERE user_id=?`,
+      [JSON.stringify(steps), allDone ? 1 : 0, userId]
+    );
+
+    return { ok: true, steps, allDone };
+  }
+
+  _planSteps(level, ctx) {
+    const { weakTopics, completedLessons, graduated, badgeCount, rank } = ctx;
+    const nextLesson = [1, 2, 3, 4, 5, 6].find(n => !completedLessons.includes(n));
+    const lessonNames = ['', 'What is a Stock', 'Buying & Selling Basics', 'Reading Charts', 'Risk Management', 'Fundamental vs Technical Analysis', 'Building Your First Strategy'];
+
+    if (level === 'beginner') {
+      return [
+        {
+          id: 'step_1',
+          icon: '🎓',
+          title: nextLesson ? `Complete Boot Camp: ${lessonNames[nextLesson]}` : 'Review Boot Camp',
+          description: nextLesson
+            ? `Lesson ${nextLesson} of 6 — unlock the Grad badge and level up to Intermediate`
+            : 'You graduated! Start Boot Camp again to reinforce the fundamentals.',
+          action: 'training',
+          completed: false,
+        },
+        {
+          id: 'step_2',
+          icon: '🛡️',
+          title: weakTopics.includes('risk') ? 'Dive Deeper into Risk Management' : 'Ask About Stop Losses',
+          description: weakTopics.includes('risk')
+            ? 'You\'ve asked about risk multiple times — let\'s break it down step by step'
+            : 'Ask the coach "what is a stop loss?" — it\'s the #1 skill beginners need',
+          action: 'coach_ask:what is a stop loss',
+          completed: false,
+        },
+        {
+          id: 'step_3',
+          icon: '📊',
+          title: 'Make Your First 5 Trades',
+          description: 'Paper trading is risk-free. Make 5 trades to unlock the Getting Warmed Up badge.',
+          action: 'trade',
+          completed: false,
+        },
+      ];
+    }
+
+    if (level === 'advanced') {
+      return [
+        {
+          id: 'step_1',
+          icon: '🏆',
+          title: rank && rank <= 10 ? `Hold Your #${rank} Rank for 3 Days` : 'Break Into the Top 10',
+          description: rank && rank <= 10
+            ? 'Consistency at the top is the real test — stay disciplined and protect your lead'
+            : 'Top-10 unlocks the Advanced badge track. Focus on your win rate and trade frequency.',
+          action: 'leaderboard',
+          completed: false,
+        },
+        {
+          id: 'step_2',
+          icon: '⚔️',
+          title: 'Qualify for the Sweet Sixteen Tournament',
+          description: 'Tournament qualification is leaderboard-based. A strong weekly rank is your ticket in.',
+          action: 'compete',
+          completed: false,
+        },
+        {
+          id: 'step_3',
+          icon: '🔬',
+          title: 'Master Position Sizing',
+          description: 'Ask the coach about Kelly Criterion — the advanced method for sizing positions precisely.',
+          action: 'coach_ask:Kelly Criterion position sizing',
+          completed: false,
+        },
+      ];
+    }
+
+    // Intermediate
+    return [
+      {
+        id: 'step_1',
+        icon: '📈',
+        title: weakTopics.length > 0 ? `Master ${weakTopics[0].charAt(0).toUpperCase() + weakTopics[0].slice(1)}` : 'Study Your Weak Spots',
+        description: weakTopics.length > 0
+          ? `You\'ve had trouble with ${weakTopics[0]} questions — ask the coach for a deep dive`
+          : 'Check your coach history and identify what you ask about most. Focus there.',
+        action: weakTopics.length > 0 ? `coach_ask:explain ${weakTopics[0]} in detail` : 'coach',
+        completed: false,
+      },
+      {
+        id: 'step_2',
+        icon: '🎯',
+        title: 'Complete All Daily Missions',
+        description: 'Missions give you XP and keep your leaderboard score climbing. Check the 🎯 Missions tab.',
+        action: 'missions',
+        completed: false,
+      },
+      {
+        id: 'step_3',
+        icon: '💎',
+        title: badgeCount < 10 ? `Earn ${10 - badgeCount} More Badges` : 'Reach Gold Tier Badges',
+        description: badgeCount < 10
+          ? `You have ${badgeCount} badges. Reach 10 to unlock Intermediate badge rewards.`
+          : 'Gold badges require consistent performance. Review the badge list in the 🎖️ Badges tab.',
+        action: 'badges',
+        completed: false,
+      },
+    ];
+  }
+
   // ── Content ────────────────────────────────────────────────────────────────
   _buildAdvancedTips() {
     return [

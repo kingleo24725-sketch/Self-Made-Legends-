@@ -161,7 +161,9 @@ app.post("/api/auth/login", (req, res) => {
       loginResult.newBadges.forEach(badge => {
         if (acct) notifier.sendBadgeEarned(acct.email, acct.fullName, badge).catch(() => {});
         socialFeed.addAchievement(result.userId, displayName, badge.name, badge.icon);
+        emitToUser(result.userId, 'badge_earned', badge);
       });
+      broadcastFeedUpdate();
     }
   }
   res.json(result);
@@ -1314,11 +1316,15 @@ app.post("/api/leaderboard/update-portfolio", authenticateUser, (req, res) => {
     rankBadges.forEach(badge => {
       if (acct) notifier.sendBadgeEarned(acct.email, acct.fullName, badge).catch(() => {});
       socialFeed.addAchievement(req.user.userId, displayName, badge.name, badge.icon);
+      emitToUser(req.user.userId, 'badge_earned', badge);
     });
+    broadcastFeedUpdate();
   }
   if (result.rank <= 10) {
     const acct = accountManager.getAccountById(req.user.userId);
     socialFeed.addRankChange(req.user.userId, acct ? (acct.fullName || acct.email) : 'A Legend', result.rank);
+    emitToUser(req.user.userId, 'rank_update', { rank: result.rank });
+    broadcastFeedUpdate();
   }
 
   securityManager.logAudit("PORTFOLIO_UPDATE", req.user.userId, { gains: portfolioData.gains });
@@ -1552,6 +1558,51 @@ app.post("/api/coach/feedback", async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Coach Learning Path (Agentic Plan → Execute → Learn) ─────────────────
+app.get("/api/coach/learning-path", authenticateUser, async (req, res) => {
+  const path = await coachSystem.getLearningPath(req.user.userId);
+  res.json({ path });
+});
+
+app.post("/api/coach/learning-path/generate", authenticateUser, async (req, res) => {
+  const ctx = buildCoachContext(req);
+  const training = trainingCamp.getProgress(req.user.userId);
+  const path = await coachSystem.generateLearningPath(req.user.userId, ctx, training);
+  res.json({ path });
+});
+
+app.post("/api/coach/learning-path/step/:stepId/complete", authenticateUser, async (req, res) => {
+  const result = await coachSystem.completeLearningStep(req.user.userId, req.params.stepId);
+  if (result.ok) {
+    missionSystem.completeAction(req.user.userId, 'coach_step');
+    if (result.allDone) {
+      const acct = accountManager.getAccountById(req.user.userId);
+      const name = acct ? (acct.fullName || acct.email) : 'A Legend';
+      emitToUser(req.user.userId, 'path_completed', { message: 'You completed your Learning Path! 🎓' });
+    }
+  }
+  res.json(result);
+});
+
+// ── Live Prices (initial snapshot for Socket.io late-joiners) ─────────────
+app.get("/api/live/prices", async (req, res) => {
+  if (_lastPricePayload) return res.json({ prices: _lastPricePayload });
+  try {
+    const coins = await cryptoFetcher.getTopCoins(6);
+    const prices = (coins || []).map(c => ({
+      id: c.id,
+      symbol: (c.symbol || '').toUpperCase(),
+      name: c.name,
+      price: c.current_price,
+      change24h: c.price_change_percentage_24h || 0,
+    }));
+    _lastPricePayload = prices;
+    res.json({ prices });
+  } catch (_) {
+    res.json({ prices: [] });
+  }
+});
+
 // ── Training Camp ─────────────────────────────────────────────────────────
 app.get("/api/training/lessons", (req, res) => {
   res.json({ lessons: trainingCamp.getLessons() });
@@ -1737,6 +1788,7 @@ app.post("/api/trades/generate-card", authenticateUser, (req, res) => {
   // Add to social feed if notable
   if (Math.abs(gainPct) >= 3) {
     socialFeed.addTrade(req.user.userId, displayName, { symbol, gainPct, tradeType: gainPct >= 0 ? 'SELL' : 'LOSS' });
+    broadcastFeedUpdate();
   }
 
   missionSystem.completeAction(req.user.userId, 'make_3_trades');
@@ -1757,9 +1809,49 @@ app.post("/api/trades/generate-card", authenticateUser, (req, res) => {
   });
 });
 
+// ── Socket.io: live prices, badge toasts, community feed ──────────────────
+const userSockets = new Map(); // userId → socketId
+
 io.on("connection", (socket) => {
-  console.log("Client connected:", socket.id);
+  socket.on("auth", (sessionId) => {
+    const session = accountManager.verifySession(sessionId);
+    if (session.valid) {
+      userSockets.set(session.userId, socket.id);
+      socket.userId = session.userId;
+    }
+  });
+  socket.on("disconnect", () => {
+    if (socket.userId) userSockets.delete(socket.userId);
+  });
 });
+
+function emitToUser(userId, event, data) {
+  const sid = userSockets.get(userId);
+  if (sid) io.to(sid).emit(event, data);
+}
+
+function broadcastFeedUpdate() {
+  const feed = socialFeed.getFeed(15);
+  io.emit("feed_update", feed);
+}
+
+// Broadcast live crypto prices every 60 seconds
+let _lastPricePayload = null;
+setInterval(async () => {
+  try {
+    const coins = await cryptoFetcher.getTopCoins(6);
+    if (coins && coins.length) {
+      _lastPricePayload = coins.map(c => ({
+        id: c.id,
+        symbol: (c.symbol || '').toUpperCase(),
+        name: c.name,
+        price: c.current_price,
+        change24h: c.price_change_percentage_24h || 0,
+      }));
+      io.emit("price_update", _lastPricePayload);
+    }
+  } catch (_) {}
+}, 60000);
 
 setInterval(runAnalysis, 60000);
 

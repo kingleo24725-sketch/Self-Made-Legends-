@@ -161,6 +161,15 @@ class DB {
         total_asks   INTEGER DEFAULT 0,
         updated_at   INTEGER
       )`,
+
+      // Coach learning paths — personalized 3-step agentic plans
+      `CREATE TABLE IF NOT EXISTS coach_learning_paths (
+        user_id      TEXT PRIMARY KEY,
+        steps        TEXT NOT NULL DEFAULT '[]',
+        level        TEXT,
+        generated_at INTEGER,
+        completed    INTEGER DEFAULT 0
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
   }

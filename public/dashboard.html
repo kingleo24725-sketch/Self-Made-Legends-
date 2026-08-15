@@ -619,6 +619,7 @@
       <button class="nav-tab" onclick="switchTab('compete')">⚔️ Compete</button>
       <button class="nav-tab" onclick="switchTab('marketing')">📣 Marketing</button>
       <button class="nav-tab" onclick="switchTab('referrals'); loadReferrals()">🔗 Refer</button>
+      <button class="nav-tab" onclick="switchTab('community'); loadCommunityFeed()">🌐 Community</button>
     </div>
     <div class="nav-right">
       <div style="display:flex; align-items:center; gap:10px;">
@@ -631,6 +632,36 @@
       <button class="btn btn-danger" id="logout-btn" style="display:none;" onclick="logout()">Logout</button>
     </div>
   </nav>
+
+  <!-- ── Live Price Ticker ─────────────────────────────────────────────── -->
+  <div id="live-ticker" style="background:#080d14;border-bottom:1px solid rgba(0,212,255,.18);overflow:hidden;white-space:nowrap;padding:0;height:30px;display:flex;align-items:center;">
+    <div style="background:rgba(0,212,255,.12);color:#00d4ff;font-size:10px;font-weight:700;letter-spacing:.08em;padding:0 12px;height:100%;display:flex;align-items:center;flex-shrink:0;border-right:1px solid rgba(0,212,255,.18);">⚡ LIVE</div>
+    <div id="ticker-scroll" style="display:flex;gap:0;flex:1;overflow:hidden;position:relative;">
+      <div id="ticker-track" style="display:flex;gap:24px;padding:0 20px;animation:ticker-move 30s linear infinite;white-space:nowrap;"></div>
+    </div>
+  </div>
+  <style>
+    @keyframes ticker-move { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .tick-item{font-size:11px;color:#aaa;display:inline-flex;align-items:center;gap:5px;flex-shrink:0;}
+    .tick-sym{font-weight:700;color:#e0e0e0;}
+    .tick-price{color:#e0e0e0;font-variant-numeric:tabular-nums;}
+    .tick-up{color:#00ff88;}
+    .tick-dn{color:#ff6b6b;}
+    .tick-sep{color:#2a3050;margin:0 8px;}
+  </style>
+
+  <!-- ── Toast Notification Container ─────────────────────────────────── -->
+  <div id="toast-root" style="position:fixed;top:76px;right:16px;z-index:9997;display:flex;flex-direction:column;gap:8px;pointer-events:none;"></div>
+  <style>
+    .sml-toast{background:#1a1f2e;border:1px solid #2a3050;border-radius:14px;padding:12px 16px;display:flex;align-items:flex-start;gap:10px;min-width:240px;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.6);pointer-events:auto;animation:toast-in .25s ease;position:relative;overflow:hidden;}
+    .sml-toast::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--toast-accent,#00d4ff);}
+    .sml-toast-icon{font-size:20px;flex-shrink:0;margin-top:1px;}
+    .sml-toast-title{font-size:12px;font-weight:700;color:#e0e0e0;margin-bottom:2px;}
+    .sml-toast-body{font-size:11px;color:#888;line-height:1.4;}
+    @keyframes toast-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes toast-out{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(20px)}}
+    .toast-leaving{animation:toast-out .2s ease forwards;}
+  </style>
 
   <div class="container">
     <!-- Dashboard Section -->
@@ -1066,6 +1097,59 @@
             <li>Top referrers are featured on the monthly honor board</li>
             <li>Future rewards (badges, bonuses) will unlock as the platform grows</li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Community Section -->
+    <section class="section" id="community">
+      <div style="max-width:820px;margin:0 auto;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+          <h2 style="color:#00d4ff;font-size:1.6em;margin:0;">🌐 Community</h2>
+          <div class="live-dot"></div>
+          <span style="color:#00ff88;font-size:.78em;font-weight:700;">LIVE</span>
+        </div>
+        <p style="color:#aaa;margin-bottom:24px;">Real-time activity from legends across the platform. Every trade, badge, and rank move — happening now.</p>
+
+        <!-- Live Stats Bar -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:24px;">
+          <div style="background:#1a1f2e;border:1px solid #2a3050;border-radius:12px;padding:16px;text-align:center;">
+            <div id="comm-stat-players" style="font-size:1.6em;font-weight:800;color:#00d4ff;">—</div>
+            <div style="color:#555;font-size:.75em;margin-top:4px;">Players Online</div>
+          </div>
+          <div style="background:#1a1f2e;border:1px solid #2a3050;border-radius:12px;padding:16px;text-align:center;">
+            <div id="comm-stat-trades" style="font-size:1.6em;font-weight:800;color:#00ff88;">—</div>
+            <div style="color:#555;font-size:.75em;margin-top:4px;">Trades Today</div>
+          </div>
+          <div style="background:#1a1f2e;border:1px solid #2a3050;border-radius:12px;padding:16px;text-align:center;">
+            <div id="comm-stat-badges" style="font-size:1.6em;font-weight:800;color:#ffd700;">—</div>
+            <div style="color:#555;font-size:.75em;margin-top:4px;">Badges Earned</div>
+          </div>
+          <div style="background:#1a1f2e;border:1px solid #2a3050;border-radius:12px;padding:16px;text-align:center;">
+            <div id="comm-stat-top" style="font-size:1.1em;font-weight:800;color:#ff6b6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
+            <div style="color:#555;font-size:.75em;margin-top:4px;">🏆 #1 Legend</div>
+          </div>
+        </div>
+
+        <!-- Live Feed -->
+        <div style="background:#13161f;border:1px solid #2a3050;border-radius:16px;overflow:hidden;">
+          <div style="padding:14px 18px;border-bottom:1px solid #2a3050;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;color:#e0e0e0;font-size:.95em;">Recent Activity</span>
+            <button onclick="loadCommunityFeed()" style="background:none;border:1px solid #2a3050;color:#aaa;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:.78em;transition:.15s;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#aaa'">🔄 Refresh</button>
+          </div>
+          <div id="community-feed" style="padding:12px;display:flex;flex-direction:column;gap:8px;max-height:520px;overflow-y:auto;">
+            <div style="color:#555;text-align:center;padding:32px;">Loading community…</div>
+          </div>
+        </div>
+
+        <!-- Leaderboard Snapshot -->
+        <div style="margin-top:20px;background:#1a1f2e;border:1px solid #2a3050;border-radius:16px;overflow:hidden;">
+          <div style="padding:14px 18px;border-bottom:1px solid #2a3050;">
+            <span style="font-weight:700;color:#e0e0e0;font-size:.95em;">🏆 Top 5 This Week</span>
+          </div>
+          <div id="community-lb" style="padding:12px;display:flex;flex-direction:column;gap:6px;">
+            <div style="color:#555;text-align:center;padding:20px;font-size:.88em;">Loading leaderboard…</div>
+          </div>
         </div>
       </div>
     </section>
@@ -2878,6 +2962,81 @@
   function esc3(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   </script>
 
+<!-- ── Community Tab Section ─────────────────────────────────────────── -->
+<style>
+  .comm-card{background:#1a1f2e;border:1px solid #2a3050;border-radius:14px;padding:16px;display:flex;align-items:flex-start;gap:12px;transition:.15s;}
+  .comm-card:hover{border-color:#3a4060;background:#1e2438;}
+  .comm-icon{font-size:1.6em;flex-shrink:0;}
+  .comm-name{font-weight:700;color:#e0e0e0;font-size:.93em;}
+  .comm-body{color:#aaa;font-size:.85em;line-height:1.4;margin-top:2px;}
+  .comm-time{color:#555;font-size:.75em;white-space:nowrap;margin-left:auto;flex-shrink:0;}
+  .comm-tag{display:inline-block;font-size:.7em;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:6px;}
+  .tag-trade-up{background:rgba(0,255,136,.12);color:#00ff88;}
+  .tag-trade-dn{background:rgba(255,68,68,.12);color:#ff4444;}
+  .tag-badge{background:rgba(255,215,0,.12);color:#ffd700;}
+  .tag-rank{background:rgba(0,212,255,.12);color:#00d4ff;}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:#00ff88;animation:pulse-dot 1.4s ease infinite;flex-shrink:0;}
+  @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+</style>
+
+<script>
+// ── Community Feed ────────────────────────────────────────────────────────
+function renderFeedItems(feed, el) {
+  if (!feed || !feed.length) {
+    el.innerHTML = '<div style="color:#555;text-align:center;padding:32px;font-size:.9em;">No activity yet — make a trade and start the feed! 🚀</div>';
+    return;
+  }
+  function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  el.innerHTML = feed.map(e => {
+    if (e.type === 'trade') {
+      const up = parseFloat(e.gainPct) >= 0;
+      return `<div class="comm-card">
+        <span class="comm-icon">${up?'📈':'📉'}</span>
+        <div style="flex:1;min-width:0;">
+          <div><span class="comm-name">${esc(e.displayName)}</span><span class="comm-tag ${up?'tag-trade-up':'tag-trade-dn'}">${up?'+':''}${esc(e.gainPct)}%</span></div>
+          <div class="comm-body">Closed <strong style="color:#fff">$${esc(e.symbol)}</strong> — ${up?'nice profit 🎉':'took the loss, lived to trade again 💪'}</div>
+        </div>
+        <span class="comm-time">${esc(e.timeAgo)}</span>
+      </div>`;
+    }
+    if (e.type === 'badge') {
+      return `<div class="comm-card">
+        <span class="comm-icon">${esc(e.badgeIcon||'🎖️')}</span>
+        <div style="flex:1;min-width:0;">
+          <div><span class="comm-name">${esc(e.displayName)}</span><span class="comm-tag tag-badge">Badge</span></div>
+          <div class="comm-body">Earned <strong style="color:#ffd700">${esc(e.badgeName)}</strong> — legend growing ⭐</div>
+        </div>
+        <span class="comm-time">${esc(e.timeAgo)}</span>
+      </div>`;
+    }
+    if (e.type === 'rank') {
+      return `<div class="comm-card">
+        <span class="comm-icon">🏆</span>
+        <div style="flex:1;min-width:0;">
+          <div><span class="comm-name">${esc(e.displayName)}</span><span class="comm-tag tag-rank">#${esc(e.newRank)}</span></div>
+          <div class="comm-body">Climbed to <strong style="color:#00d4ff">#${esc(e.newRank)}</strong> on the national leaderboard 🔥</div>
+        </div>
+        <span class="comm-time">${esc(e.timeAgo)}</span>
+      </div>`;
+    }
+    return '';
+  }).join('');
+}
+
+window.loadCommunityFeed = async function() {
+  const el = document.getElementById('community-feed');
+  if (!el) return;
+  try {
+    el.innerHTML = '<div style="color:#555;text-align:center;padding:32px;">Loading community…</div>';
+    const res = await fetch('/api/activity-feed?limit=20');
+    const { feed } = await res.json();
+    renderFeedItems(feed, el);
+  } catch(_) {
+    el.innerHTML = '<div style="color:#555;text-align:center;padding:32px;">Feed unavailable</div>';
+  }
+};
+</script>
+
 <!-- ── AI Coach Chat Bubble ───────────────────────────────────────────── -->
 <style>
   #coach-bubble{position:fixed;bottom:24px;right:24px;z-index:9999;}
@@ -2929,6 +3088,17 @@
       <button class="sml-mute-btn" style="background:none;border:none;cursor:pointer;font-size:17px;color:rgba(255,255,255,.7);padding:4px 6px;border-radius:8px;" onclick="SMLSounds.toggleMute()" title="Toggle sounds">🔊</button>
     </div>
     <div class="cp-tip" id="cp-daily-tip"><span>Tip:</span> Loading today's tip…</div>
+    <!-- Learning Path panel (collapsed by default, shown when path exists) -->
+    <div id="cp-path" style="display:none;border-bottom:1px solid #2a3050;padding:10px 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:700;color:#00d4ff;letter-spacing:.05em;">🗺️ YOUR LEARNING PATH</span>
+        <button id="cp-path-gen" onclick="generateLearningPath()" style="background:none;border:1px solid #2a3050;color:#888;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;" title="Generate new plan">↻ New</button>
+      </div>
+      <div id="cp-path-steps" style="display:flex;flex-direction:column;gap:5px;"></div>
+      <div id="cp-path-bar-wrap" style="margin-top:8px;height:3px;background:#2a3050;border-radius:2px;">
+        <div id="cp-path-bar" style="height:100%;background:linear-gradient(90deg,#4a148c,#7c43bd);border-radius:2px;transition:width .4s ease;width:0%;"></div>
+      </div>
+    </div>
     <div class="cp-msgs" id="cp-msgs">
       <div class="cp-msg-wrap"><div class="cp-msg bot">Hey! I'm your SML Trading Coach 🤖 Ask me anything about stocks, trading strategies, or how to use this platform. I adapt to your skill level — the more you interact, the smarter I get! 💡</div></div>
     </div>
@@ -3094,7 +3264,239 @@
   document.getElementById('coach-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') coachSend();
   });
+
+  // ── Learning Path ─────────────────────────────────────────────────────────
+  async function loadLearningPath() {
+    try {
+      const headers = getSessionHeaders();
+      if (!headers['x-session-id']) return;
+      const r = await fetch('/api/coach/learning-path', { headers });
+      const { path } = await r.json();
+      if (path && path.steps && path.steps.length) renderLearningPath(path);
+    } catch(_) {}
+  }
+
+  window.generateLearningPath = async function() {
+    try {
+      const headers = getSessionHeaders();
+      if (!headers['x-session-id']) {
+        addMsg('Sign in to generate your personalized learning path!', 'bot');
+        return;
+      }
+      document.getElementById('cp-path-gen').textContent = '…';
+      const r = await fetch('/api/coach/learning-path/generate', { method:'POST', headers });
+      const { path } = await r.json();
+      if (path) renderLearningPath(path);
+      document.getElementById('cp-path-gen').textContent = '↻ New';
+    } catch(_) {
+      document.getElementById('cp-path-gen').textContent = '↻ New';
+    }
+  };
+
+  function renderLearningPath(path) {
+    const panel = document.getElementById('cp-path');
+    const stepsEl = document.getElementById('cp-path-steps');
+    if (!panel || !stepsEl) return;
+    panel.style.display = 'block';
+    const steps = path.steps || [];
+    const done = steps.filter(s => s.completed).length;
+    stepsEl.innerHTML = steps.map((s, i) => `
+      <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:8px;background:${s.completed ? 'rgba(0,255,136,.06)' : 'rgba(255,255,255,.03)'};border:1px solid ${s.completed ? 'rgba(0,255,136,.2)' : '#2a3050'};">
+        <span style="font-size:1.1em;flex-shrink:0;margin-top:1px;">${s.completed ? '✅' : s.icon || '⬜'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;font-weight:700;color:${s.completed ? '#00ff88' : '#e0e0e0'};text-decoration:${s.completed ? 'line-through' : 'none'};opacity:${s.completed ? '.7' : '1'}">${s.title}</div>
+          ${!s.completed ? `<div style="font-size:10px;color:#666;margin-top:2px;line-height:1.3;">${s.description}</div>` : ''}
+        </div>
+        ${!s.completed ? `<button onclick="completePathStep('${s.id}','${(s.action||'').replace(/'/g,'\\\'')}')" style="background:rgba(156,39,176,.2);border:1px solid rgba(156,39,176,.4);color:#ce93d8;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;" title="Mark done">Done ✓</button>` : ''}
+      </div>
+    `).join('');
+    const pct = steps.length ? (done / steps.length) * 100 : 0;
+    const bar = document.getElementById('cp-path-bar');
+    if (bar) bar.style.width = pct + '%';
+    if (done === steps.length && steps.length > 0) {
+      addBotResponse('🎓 Incredible! You completed your entire Learning Path. Let me generate a new one with a bigger challenge…', null);
+      setTimeout(() => generateLearningPath(), 1500);
+    }
+  }
+
+  window.completePathStep = async function(stepId, action) {
+    try {
+      const headers = getSessionHeaders();
+      const r = await fetch(`/api/coach/learning-path/step/${stepId}/complete`, { method:'POST', headers });
+      const result = await r.json();
+      if (result.ok) {
+        showToast('✅', 'Step Complete!', 'Keep going — your legend is growing.', '#00ff88');
+        renderLearningPath({ steps: result.steps });
+        if (action && action !== 'coach') {
+          if (action.startsWith('coach_ask:')) {
+            const q = action.replace('coach_ask:', '');
+            setTimeout(() => { document.getElementById('coach-input').value = q; coachSend(); }, 400);
+          } else if (['training','missions','badges','compete','leaderboard'].includes(action)) {
+            setTimeout(() => switchTab(action), 600);
+          }
+        }
+      }
+    } catch(_) {}
+  };
+
+  loadLearningPath();
 })();
+
+// ── Toast Notification System ───────────────────────────────────────────────
+function showToast(icon, title, body, accent) {
+  const root = document.getElementById('toast-root');
+  if (!root) return;
+  const el = document.createElement('div');
+  el.className = 'sml-toast';
+  el.style.setProperty('--toast-accent', accent || '#00d4ff');
+  el.innerHTML = `<div class="sml-toast-icon">${icon}</div><div><div class="sml-toast-title">${title}</div><div class="sml-toast-body">${body}</div></div>`;
+  root.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('toast-leaving');
+    setTimeout(() => el.remove(), 220);
+  }, 4200);
+}
+
+// ── Live Ticker ───────────────────────────────────────────────────────────────
+function updateTicker(prices) {
+  const track = document.getElementById('ticker-track');
+  if (!track || !prices || !prices.length) return;
+  const items = prices.map(c => {
+    const up = c.change24h >= 0;
+    const chg = (up ? '+' : '') + c.change24h.toFixed(2) + '%';
+    return `<span class="tick-item"><span class="tick-sym">${c.symbol}</span><span class="tick-price">$${c.price >= 1000 ? c.price.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) : c.price >= 1 ? c.price.toFixed(2) : c.price.toFixed(4)}</span><span class="${up?'tick-up':'tick-dn'}">${chg}</span></span><span class="tick-sep">|</span>`;
+  }).join('');
+  // Duplicate for seamless loop
+  track.innerHTML = items + items;
+}
+
+// Fetch initial prices on load
+fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).catch(()=>{});
+
+// ── Socket.io Client ──────────────────────────────────────────────────────────
+(function(){
+  let socket;
+  function getSession() {
+    try { return JSON.parse(localStorage.getItem('sml_session') || 'null'); } catch(_){ return null; }
+  }
+
+  function initSocket() {
+    if (socket) return;
+    try { socket = io(); } catch(_){ return; }
+
+    socket.on('connect', () => {
+      const s = getSession();
+      if (s && s.sessionId) socket.emit('auth', s.sessionId);
+    });
+
+    socket.on('price_update', (prices) => {
+      updateTicker(prices);
+    });
+
+    socket.on('badge_earned', (badge) => {
+      showToast(badge.icon || '🎖️', 'Badge Earned!', `You unlocked <strong>${badge.name}</strong>`, '#ffd700');
+      if (window.SMLSounds) SMLSounds.notification();
+    });
+
+    socket.on('rank_update', ({ rank }) => {
+      showToast('🏆', `You're #${rank}!`, 'You broke into the national top 10. Legend status confirmed.', '#00d4ff');
+    });
+
+    socket.on('path_completed', ({ message }) => {
+      showToast('🎓', 'Learning Path Complete!', message, '#9c27b0');
+    });
+
+    socket.on('feed_update', (feed) => {
+      // Update community tab if open
+      const commEl = document.getElementById('community-feed');
+      if (commEl && document.getElementById('community').classList.contains('active')) {
+        renderFeedItems(feed, commEl);
+      }
+      // Show a toast for the latest event
+      const latest = feed && feed[0];
+      if (latest) {
+        if (latest.type === 'badge') {
+          showToast(latest.badgeIcon || '🎖️', `${latest.displayName} earned ${latest.badgeName}`, 'A legend levels up 🌟', '#ffd700');
+        } else if (latest.type === 'trade' && Math.abs(parseFloat(latest.gainPct)) >= 5) {
+          const up = parseFloat(latest.gainPct) >= 0;
+          showToast(up ? '📈' : '📉', `${latest.displayName}`, `${up?'+':''}${latest.gainPct}% on $${latest.symbol} ${up?'🔥':'💪'}`, up ? '#00ff88' : '#ff6b6b');
+        }
+      }
+    });
+  }
+
+  // Initialize after DOM ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSocket);
+  } else {
+    initSocket();
+  }
+
+  // Re-auth socket after login
+  const _origLogin = window.login;
+  if (typeof _origLogin === 'function') {
+    window.login = async function() {
+      const result = await _origLogin.apply(this, arguments);
+      if (socket) {
+        const s = getSession();
+        if (s && s.sessionId) socket.emit('auth', s.sessionId);
+      }
+      return result;
+    };
+  }
+})();
+
+// ── Community section stats loader ───────────────────────────────────────────
+window.loadCommunityStats = async function() {
+  try {
+    const [lbRes, feedRes] = await Promise.all([
+      fetch('/api/leaderboard/public?limit=5').then(r=>r.json()),
+      fetch('/api/activity-feed?limit=50').then(r=>r.json()),
+    ]);
+
+    // Top 1 legend
+    const lb = lbRes.leaderboard || lbRes.players || [];
+    if (lb[0]) {
+      document.getElementById('comm-stat-top').textContent = lb[0].displayName || lb[0].fullName || lb[0].name || '—';
+    }
+    document.getElementById('comm-stat-players').textContent = lb.length || '—';
+
+    // Count events
+    const feed = feedRes.feed || [];
+    const badges = feed.filter(e => e.type === 'badge').length;
+    const trades = feed.filter(e => e.type === 'trade').length;
+    document.getElementById('comm-stat-badges').textContent = badges || '—';
+    document.getElementById('comm-stat-trades').textContent = trades || '—';
+
+    // Mini leaderboard
+    const lbEl = document.getElementById('community-lb');
+    if (lbEl && lb.length) {
+      function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+      const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+      lbEl.innerHTML = lb.slice(0,5).map((p, i) => {
+        const gain = p.gainPercentage || p.gainPct || p.gain_pct || 0;
+        const up = gain >= 0;
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);">
+          <span style="font-size:1.3em;width:28px;text-align:center;">${medals[i]}</span>
+          <span style="flex:1;font-weight:600;color:#e0e0e0;font-size:.9em;">${esc(p.displayName||p.fullName||p.name||'Legend')}</span>
+          <span style="font-weight:700;color:${up?'#00ff88':'#ff6b6b'};font-size:.88em;">${up?'+':''}${parseFloat(gain).toFixed(1)}%</span>
+        </div>`;
+      }).join('');
+    }
+  } catch(_) {}
+};
+
+// Auto-load community stats when community tab opens
+const _origSwitchTab = window.switchTab;
+if (typeof _origSwitchTab === 'function') {
+  window.switchTab = function(tab) {
+    _origSwitchTab(tab);
+    if (tab === 'community') {
+      window.loadCommunityFeed();
+      window.loadCommunityStats();
+    }
+  };
+}
 </script>
 </body>
 </html>
