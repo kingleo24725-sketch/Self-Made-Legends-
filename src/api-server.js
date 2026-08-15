@@ -25,6 +25,7 @@ const SecurityManager = require("./security/SecurityManager");
 const TokenCreator = require("./crypto/TokenCreator");
 const LeaderboardManager = require("./leaderboard/LeaderboardManager");
 const StripeProcessor = require("./payments/StripeProcessor");
+const MarketingAgent = require("./marketing/MarketingAgent");
 
 const app = express();
 const server = http.createServer(app);
@@ -53,6 +54,7 @@ const securityManager = new SecurityManager();
 const tokenCreator = new TokenCreator();
 const leaderboardManager = new LeaderboardManager();
 const stripeProcessor = process.env.STRIPE_SECRET_KEY ? new StripeProcessor() : null;
+const marketingAgent = new MarketingAgent();
 const portfolio = new Portfolio(Math.max(1, parseInt(process.env.INITIAL_CAPITAL) || 1));
 const riskManager = new RiskManager({
   maxPositionSize: parseFloat(process.env.MAX_POSITION_SIZE) || 0.2,
@@ -287,6 +289,66 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), (req,
     console.error("Webhook error:", err.message);
     res.status(400).send("Webhook Error: " + err.message);
   }
+});
+
+// ===== MARKETING AGENT ENDPOINTS =====
+
+// Stats overview
+app.get("/api/marketing/stats", (req, res) => {
+  res.json(marketingAgent.getStats());
+});
+
+// Generate a campaign for a specific city
+app.post("/api/marketing/campaign/city", (req, res) => {
+  const { city, state, platforms } = req.body;
+  if (!city) return res.status(400).json({ error: "city is required" });
+  const campaign = marketingAgent.generateCampaign(city, state || "US", platforms);
+  res.json({ success: true, campaign });
+});
+
+// Generate a full national campaign across all major US cities
+app.post("/api/marketing/campaign/national", (req, res) => {
+  const { platforms } = req.body;
+  const campaign = marketingAgent.generateNationalCampaign(platforms);
+  res.json({ success: true, campaign });
+});
+
+// Get pre-built content library (filter by platform or region)
+app.get("/api/marketing/content", (req, res) => {
+  const { platform, region } = req.query;
+  const content = marketingAgent.getContentLibrary(platform, region);
+  res.json({ success: true, count: content.length, content });
+});
+
+// Get email campaigns for all 50 states
+app.get("/api/marketing/emails/all-states", (req, res) => {
+  const emails = marketingAgent.generateEmailCampaignForAllStates();
+  res.json({ success: true, count: emails.length, emails });
+});
+
+// Get platform-specific posting guide
+app.get("/api/marketing/guide", (req, res) => {
+  res.json({ success: true, guide: marketingAgent.getPostingGuide() });
+});
+
+// Generate influencer outreach message
+app.post("/api/marketing/influencer-outreach", (req, res) => {
+  const { influencerName, platform, followerCount } = req.body;
+  if (!influencerName || !platform) {
+    return res.status(400).json({ error: "influencerName and platform are required" });
+  }
+  const outreach = marketingAgent.generateInfluencerOutreach(
+    influencerName,
+    platform,
+    followerCount || 10000
+  );
+  res.json({ success: true, outreach });
+});
+
+// List all generated campaigns
+app.get("/api/marketing/campaigns", (req, res) => {
+  const campaigns = marketingAgent.getCampaigns();
+  res.json({ success: true, count: campaigns.length, campaigns });
 });
 
 app.get("/api/crypto/prices", async (req, res) => {

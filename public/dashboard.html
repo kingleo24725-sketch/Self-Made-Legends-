@@ -432,6 +432,7 @@
       <button class="nav-tab" onclick="switchTab('nft')">NFTs</button>
       <button class="nav-tab" onclick="switchTab('account')">Account</button>
       <button class="nav-tab" onclick="switchTab('payments')">Payments</button>
+      <button class="nav-tab" onclick="switchTab('marketing')">📣 Marketing</button>
     </div>
     <div class="nav-right">
       <div class="user-info" id="user-info">Not Logged In</div>
@@ -663,6 +664,82 @@
       <div class="card">
         <h2>📜 Transaction History</h2>
         <div id="transaction-history"></div>
+      </div>
+    </section>
+
+    <!-- Marketing Section -->
+    <section class="section" id="marketing">
+      <div style="text-align: center; margin-bottom: 30px;">
+        <h2 style="color: #00d4ff; font-size: 1.6em;">📣 AI Marketing Agents</h2>
+        <p style="color: #00ff88; font-size: 0.95em;">Promote Self-Made Legends across the entire country — AI-generated content for every platform & city</p>
+      </div>
+
+      <!-- Stats Bar -->
+      <div class="grid" id="marketing-stats" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px;">
+        <div class="card" style="text-align:center; padding:16px;">
+          <div style="font-size:2em; color:#00d4ff;" id="stat-cities">—</div>
+          <div style="color:#aaa; font-size:0.85em;">Cities Covered</div>
+        </div>
+        <div class="card" style="text-align:center; padding:16px;">
+          <div style="font-size:2em; color:#00ff88;" id="stat-states">50</div>
+          <div style="color:#aaa; font-size:0.85em;">States Covered</div>
+        </div>
+        <div class="card" style="text-align:center; padding:16px;">
+          <div style="font-size:2em; color:#ffd700;" id="stat-content">—</div>
+          <div style="color:#aaa; font-size:0.85em;">Content Pieces Ready</div>
+        </div>
+        <div class="card" style="text-align:center; padding:16px;">
+          <div style="font-size:2em; color:#ff6b6b;" id="stat-reach">—</div>
+          <div style="color:#aaa; font-size:0.85em;">Estimated Reach</div>
+        </div>
+      </div>
+
+      <!-- City Campaign Generator -->
+      <div class="card" style="margin-bottom: 20px;">
+        <h2>🏙️ Generate City Campaign</h2>
+        <p style="color:#aaa; margin-bottom:16px;">Generate ready-to-post content for any US city across all platforms — just copy & paste.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+          <input type="text" id="campaign-city" placeholder="City (e.g. Atlanta)" style="flex:1; min-width:160px; background:#1a1a2e; border:1px solid #333; color:#fff; padding:10px; border-radius:6px;">
+          <input type="text" id="campaign-state" placeholder="State (e.g. Georgia)" style="flex:1; min-width:160px; background:#1a1a2e; border:1px solid #333; color:#fff; padding:10px; border-radius:6px;">
+          <button class="btn btn-success" onclick="generateCityCampaign()" style="white-space:nowrap;">⚡ Generate Campaign</button>
+        </div>
+        <div id="city-campaign-result" style="display:none;"></div>
+      </div>
+
+      <!-- National Campaign -->
+      <div class="card" style="margin-bottom: 20px;">
+        <h2>🇺🇸 Launch National Campaign</h2>
+        <p style="color:#aaa; margin-bottom:16px;">Generate content for every major US city simultaneously — Twitter, Instagram & Facebook.</p>
+        <button class="btn btn-success" onclick="generateNationalCampaign()" id="national-btn" style="width:100%;">
+          🚀 Generate National Campaign (All Major US Cities)
+        </button>
+        <div id="national-campaign-result" style="margin-top:16px; display:none;"></div>
+      </div>
+
+      <!-- Influencer Outreach -->
+      <div class="card" style="margin-bottom: 20px;">
+        <h2>🤝 Influencer Outreach Generator</h2>
+        <p style="color:#aaa; margin-bottom:16px;">Generate a personalized outreach message to send to influencers on any platform.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px;">
+          <input type="text" id="influencer-name" placeholder="Influencer name / handle" style="flex:1; min-width:160px; background:#1a1a2e; border:1px solid #333; color:#fff; padding:10px; border-radius:6px;">
+          <select id="influencer-platform" style="flex:1; min-width:140px; background:#1a1a2e; border:1px solid #333; color:#fff; padding:10px; border-radius:6px;">
+            <option value="instagram">Instagram</option>
+            <option value="tiktok">TikTok</option>
+            <option value="twitter">Twitter/X</option>
+            <option value="youtube">YouTube</option>
+            <option value="facebook">Facebook</option>
+          </select>
+          <input type="number" id="influencer-followers" placeholder="Followers (e.g. 50000)" style="flex:1; min-width:160px; background:#1a1a2e; border:1px solid #333; color:#fff; padding:10px; border-radius:6px;">
+          <button class="btn btn-success" onclick="generateInfluencerOutreach()" style="white-space:nowrap;">✍️ Generate Message</button>
+        </div>
+        <div id="influencer-result" style="display:none;"></div>
+      </div>
+
+      <!-- Posting Guide -->
+      <div class="card">
+        <h2>📋 Platform Posting Guide</h2>
+        <p style="color:#aaa; margin-bottom:16px;">Best practices for posting on each platform to maximize reach.</p>
+        <div id="posting-guide"></div>
       </div>
     </section>
   </div>
@@ -949,6 +1026,173 @@
     }, 30000);
 
     loadMarketData();
+    loadMarketingStats();
+    loadPostingGuide();
+
+    // ===== MARKETING FUNCTIONS =====
+
+    function loadMarketingStats() {
+      fetch('/api/marketing/stats')
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('stat-cities').textContent = data.citiesCovered || '—';
+          document.getElementById('stat-states').textContent = data.statesCovered || '50';
+          document.getElementById('stat-content').textContent = data.totalContentPieces || '—';
+          const reach = data.estimatedTotalReach;
+          document.getElementById('stat-reach').textContent = reach >= 1000000
+            ? (reach / 1000000).toFixed(1) + 'M'
+            : reach >= 1000 ? (reach / 1000).toFixed(0) + 'K' : reach || '—';
+        })
+        .catch(() => {});
+    }
+
+    function loadPostingGuide() {
+      fetch('/api/marketing/guide')
+        .then(r => r.json())
+        .then(data => {
+          if (!data.guide) return;
+          const icons = { twitter: '🐦', instagram: '📸', facebook: '👤', tiktok: '🎵', reddit: '🟠', discord: '💬' };
+          const html = data.guide.map(p => `
+            <div style="background:#0d1b2a; border-radius:8px; padding:16px; margin-bottom:12px;">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                <span style="font-size:1.5em;">${icons[p.platform] || '📱'}</span>
+                <strong style="color:#00d4ff; text-transform:capitalize; font-size:1.05em;">${p.platform}</strong>
+                <span style="margin-left:auto; color:#aaa; font-size:0.8em;">${p.characterLimit.toLocaleString()} chars · ${p.maxHashtags} hashtags</span>
+              </div>
+              <div style="color:#888; font-size:0.85em; margin-bottom:8px;">⏰ Best time: ${p.bestTimes}</div>
+              <ul style="margin:0; padding-left:18px; color:#aaa; font-size:0.85em;">
+                ${p.tips.map(t => `<li style="margin-bottom:4px;">${t}</li>`).join('')}
+              </ul>
+            </div>
+          `).join('');
+          document.getElementById('posting-guide').innerHTML = html;
+        })
+        .catch(() => {});
+    }
+
+    function generateCityCampaign() {
+      const city = document.getElementById('campaign-city').value.trim();
+      const state = document.getElementById('campaign-state').value.trim();
+      if (!city) { alert('Enter a city name'); return; }
+
+      const resultDiv = document.getElementById('city-campaign-result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '<p style="color:#aaa;">⏳ Generating campaign...</p>';
+
+      fetch('/api/marketing/campaign/city', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city, state })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) { resultDiv.innerHTML = `<p style="color:#ff6b6b;">Error: ${data.error}</p>`; return; }
+          const c = data.campaign;
+          const platformIcons = { twitter: '🐦', instagram: '📸', facebook: '👤', tiktok: '🎵', reddit: '🟠', discord: '💬' };
+          let html = `<h3 style="color:#00ff88; margin-bottom:16px;">✅ Campaign for ${c.city}, ${c.state}</h3>`;
+          html += `<p style="color:#888; margin-bottom:16px;">📧 Email Subject: <strong style="color:#fff;">${c.emailCampaign.subject}</strong></p>`;
+          for (const [platform, post] of Object.entries(c.platforms)) {
+            html += `
+              <div style="background:#0d1b2a; border-radius:8px; padding:14px; margin-bottom:12px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                  <strong style="color:#00d4ff;">${platformIcons[platform] || '📱'} ${platform.charAt(0).toUpperCase() + platform.slice(1)}</strong>
+                  <button onclick="copyText('post-${platform}')" style="background:#333; border:none; color:#00ff88; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8em;">📋 Copy</button>
+                </div>
+                <pre id="post-${platform}" style="white-space:pre-wrap; word-break:break-word; color:#ccc; font-size:0.82em; margin:0; font-family:inherit;">${escapeHtml(post.content)}</pre>
+                <div style="color:#888; font-size:0.75em; margin-top:8px;">⏰ Best time: ${post.bestPostTime}</div>
+              </div>
+            `;
+          }
+          resultDiv.innerHTML = html;
+        })
+        .catch(() => { resultDiv.innerHTML = '<p style="color:#ff6b6b;">Failed to generate campaign.</p>'; });
+    }
+
+    function generateNationalCampaign() {
+      const btn = document.getElementById('national-btn');
+      const resultDiv = document.getElementById('national-campaign-result');
+      btn.disabled = true;
+      btn.textContent = '⏳ Generating national campaign...';
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '<p style="color:#aaa;">Building campaigns for all major US cities...</p>';
+
+      fetch('/api/marketing/campaign/national', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platforms: ['twitter', 'instagram', 'facebook'] })
+      })
+        .then(r => r.json())
+        .then(data => {
+          btn.disabled = false;
+          btn.textContent = '🚀 Generate National Campaign (All Major US Cities)';
+          if (!data.success) { resultDiv.innerHTML = `<p style="color:#ff6b6b;">Error: ${data.error}</p>`; return; }
+          const c = data.campaign;
+          resultDiv.innerHTML = `
+            <div style="background:#0d1b2a; border-radius:8px; padding:16px;">
+              <h3 style="color:#00ff88; margin-bottom:12px;">🇺🇸 National Campaign Generated!</h3>
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap:10px; margin-bottom:16px;">
+                <div style="text-align:center;"><div style="font-size:1.8em; color:#00d4ff;">${c.totalCities}</div><div style="color:#aaa; font-size:0.8em;">Cities</div></div>
+                <div style="text-align:center;"><div style="font-size:1.8em; color:#00ff88;">${c.totalStates}</div><div style="color:#aaa; font-size:0.8em;">States</div></div>
+                <div style="text-align:center;"><div style="font-size:1.8em; color:#ffd700;">${c.platforms.length}</div><div style="color:#aaa; font-size:0.8em;">Platforms</div></div>
+                <div style="text-align:center;"><div style="font-size:1.8em; color:#ff6b6b;">${(c.estimatedReach/1000).toFixed(0)}K+</div><div style="color:#aaa; font-size:0.8em;">Est. Reach</div></div>
+              </div>
+              <p style="color:#aaa; font-size:0.9em;">All ${c.totalCities} city campaigns are ready. Use the City Campaign tool above to view and copy content for any specific city.</p>
+            </div>
+          `;
+        })
+        .catch(() => {
+          btn.disabled = false;
+          btn.textContent = '🚀 Generate National Campaign (All Major US Cities)';
+          resultDiv.innerHTML = '<p style="color:#ff6b6b;">Failed to generate campaign.</p>';
+        });
+    }
+
+    function generateInfluencerOutreach() {
+      const name = document.getElementById('influencer-name').value.trim();
+      const platform = document.getElementById('influencer-platform').value;
+      const followers = parseInt(document.getElementById('influencer-followers').value) || 10000;
+      if (!name) { alert('Enter the influencer name or handle'); return; }
+
+      const resultDiv = document.getElementById('influencer-result');
+      resultDiv.style.display = 'block';
+      resultDiv.innerHTML = '<p style="color:#aaa;">⏳ Generating outreach message...</p>';
+
+      fetch('/api/marketing/influencer-outreach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ influencerName: name, platform, followerCount: followers })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (!data.success) { resultDiv.innerHTML = `<p style="color:#ff6b6b;">Error: ${data.error}</p>`; return; }
+          const o = data.outreach;
+          resultDiv.innerHTML = `
+            <div style="background:#0d1b2a; border-radius:8px; padding:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <strong style="color:#00d4ff;">${name} — ${o.tier.toUpperCase()} tier · ${platform}</strong>
+                <button onclick="copyText('influencer-msg')" style="background:#333; border:none; color:#00ff88; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8em;">📋 Copy</button>
+              </div>
+              <div style="color:#ffd700; font-size:0.85em; margin-bottom:10px;">💰 Offer: ${o.offer}</div>
+              <pre id="influencer-msg" style="white-space:pre-wrap; word-break:break-word; color:#ccc; font-size:0.83em; margin:0; font-family:inherit;">${escapeHtml(o.message)}</pre>
+            </div>
+          `;
+        })
+        .catch(() => { resultDiv.innerHTML = '<p style="color:#ff6b6b;">Failed to generate message.</p>'; });
+    }
+
+    function copyText(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      navigator.clipboard.writeText(el.textContent).then(() => {
+        const btn = el.previousElementSibling?.querySelector('button') || el.parentElement?.querySelector('button');
+        const original = btn?.textContent;
+        if (btn) { btn.textContent = '✅ Copied!'; setTimeout(() => btn.textContent = original, 1500); }
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
   </script>
 </body>
 </html>
