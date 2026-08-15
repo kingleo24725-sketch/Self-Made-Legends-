@@ -1,4 +1,4 @@
-const CACHE = 'sml-v7';
+const CACHE = 'sml-v8';
 const STATIC = [
   '/dashboard.html',
   '/manifest.json',
@@ -14,6 +14,7 @@ const STATIC = [
   '/404.html',
   '/js/avatar-builder.js',
   '/js/sounds.js',
+  '/js/music.js',
 ];
 
 self.addEventListener('install', e => {
