@@ -124,7 +124,7 @@ class MarketingAgent {
         this._pick(HASHTAG_POOL.hustle),
         this._pick(HASHTAG_POOL.gaming),
       ].join(" ");
-      return `${hook}\n\nSelf-Made Legends is the AI trading game where ${city} players compete on a live leaderboard — #1 wins $10 every week.\n\n${cta}: ${url}\n\n${tags}`;
+      return `${hook}\n\nSelf-Made Legends is the AI trading game where ${city} players compete on a live national leaderboard. Top 10 recognized every week.\n\n${cta}: ${url}\n\n${tags}`;
     }
 
     if (platform === "instagram") {
@@ -136,23 +136,23 @@ class MarketingAgent {
         ...(HASHTAG_POOL.regional[region] || []),
         `#${city.replace(/\s/g, "")}`,
       ].join(" ");
-      return `${hook} 🏆\n\n${city}, this one's for you.\n\nSelf-Made Legends is the AI-powered stock trading game where you compete against real players nationwide. Our AI trades for you — you just watch the wins stack up.\n\n✅ Start with just $1\n✅ Weekly leaderboard — #1 wins $10\n✅ Create your own crypto tokens\n✅ 100% free to join\n\n${cta} → link in bio 👆\n\n.\n.\n.\n${tags}`;
+      return `${hook} 🏆\n\n${city}, this one's for you.\n\nSelf-Made Legends is the AI-powered stock trading game where you compete against real players nationwide. Our AI trades for you — you just watch the wins stack up.\n\n✅ Start with just $1\n✅ Weekly leaderboard — Top 10 recognized\n✅ Create your own crypto tokens\n✅ 100% free to join\n\n${cta} → link in bio 👆\n\n.\n.\n.\n${tags}`;
     }
 
     if (platform === "facebook") {
-      return `🏆 ATTENTION ${city.toUpperCase()} — Self-Made Legends is HERE!\n\n${hook}\n\nSelf-Made Legends is the brand-new AI stock trading platform built for everyday people — no Wall Street experience needed. Our AI engine analyzes the market 24/7 and makes smart trades on your behalf.\n\n🎯 What you get:\n• AI-powered trading — set it and forget it\n• Weekly competitions with REAL cash prizes ($10 to the #1 player)\n• Create and trade your own crypto tokens\n• Live leaderboard — compete against players nationwide\n• Start with as little as $1\n\n💬 ${city} players are already signing up. Don't get left behind.\n\n👉 ${cta}: ${url}\n\nShare this with someone in ${city} who needs to level up their money game! 💰`;
+      return `🏆 ATTENTION ${city.toUpperCase()} — Self-Made Legends is HERE!\n\n${hook}\n\nSelf-Made Legends is the brand-new AI stock trading platform built for everyday people — no Wall Street experience needed. Our AI engine analyzes the market 24/7 and makes smart trades on your behalf.\n\n🎯 What you get:\n• AI-powered trading — set it and forget it\n• Weekly leaderboard competitions — Top 10 get recognized nationally\n• Create and trade your own crypto tokens\n• Live leaderboard — compete against players nationwide\n• Start with as little as $1\n\n💬 ${city} players are already signing up. Don't get left behind.\n\n👉 ${cta}: ${url}\n\nShare this with someone in ${city} who needs to level up their money game! 💰`;
     }
 
     if (platform === "tiktok") {
-      return `POV: You just found the AI trading game that's taking ${city} by storm 📈\n\n${hook}\n\nSelf-Made Legends gives you:\n🤖 AI that trades stocks FOR YOU\n🏆 Weekly $10 prize for #1 on the leaderboard\n💎 Your own custom crypto tokens\n💵 Start with just $1\n\nThis is NOT your grandpa's stock market.\n\n${cta} → ${url}\n\n#SelfMadeLegends #AITrading #${city.replace(/\s/g, "")} #StockMarket #MoneyTok #FinanceTok #HustleTok`;
+      return `POV: You just found the AI trading game that's taking ${city} by storm 📈\n\n${hook}\n\nSelf-Made Legends gives you:\n🤖 AI that trades stocks FOR YOU\n🏆 Weekly leaderboard — Top 10 recognized nationwide\n💎 Your own custom crypto tokens\n💵 Start with just $1\n\nThis is NOT your grandpa's stock market.\n\n${cta} → ${url}\n\n#SelfMadeLegends #AITrading #${city.replace(/\s/g, "")} #StockMarket #MoneyTok #FinanceTok #HustleTok`;
     }
 
     if (platform === "reddit") {
-      return `**[Promotion] Self-Made Legends — AI Stock Trading Game with Weekly Cash Prizes | Now in ${city}**\n\nHey r/entrepreneur (and anyone grinding in ${city}),\n\nWe just launched Self-Made Legends — an AI-powered stock trading platform designed for everyday people, not Wall Street suits.\n\n**What it does:**\n- Our AI engine analyzes market data 24/7 and executes trades automatically\n- You start with paper money ($1 minimum) and compete on a live national leaderboard\n- Every week, the #1 ranked player wins $10 in real money\n- You can create and trade your own custom crypto tokens\n- Full risk management built in — the AI won't let you blow up your account\n\n**Why we built it:**\nWe wanted to make smart investing accessible to everyone, especially self-made hustlers who don't have time to watch charts all day.\n\n**It's free to start:** ${url}\n\nHappy to answer any questions. We're a small team and love feedback from the community.\n\n*— Self-Made Legends LLC*`;
+      return `**[Promotion] Self-Made Legends — AI Stock Trading Game | Now in ${city}**\n\nHey r/entrepreneur (and anyone grinding in ${city}),\n\nWe just launched Self-Made Legends — an AI-powered stock trading platform designed for everyday people, not Wall Street suits.\n\n**What it does:**\n- Our AI engine analyzes market data 24/7 and executes trades automatically\n- You start with virtual money ($1 minimum) and compete on a live national leaderboard\n- Every week, the Top 10 players get recognized on the national leaderboard\n- You can create and trade your own custom crypto tokens\n- Full risk management built in — the AI won't let you blow up your account\n\n**Why we built it:**\nWe wanted to make smart investing accessible to everyone, especially self-made hustlers who don't have time to watch charts all day.\n\n**It's free to start:** ${url}\n\nHappy to answer any questions. We're a small team and love feedback from the community.\n\n*— Self-Made Legends LLC*`;
     }
 
     if (platform === "discord") {
-      return `🚨 **Self-Made Legends is LIVE** 🚨\n\n${hook}\n\n📍 Shoutout to all the ${city} players — this one's built for you.\n\n**Self-Made Legends** is the AI trading game where you compete on a LIVE national leaderboard. Our bot trades stocks for you — you just enjoy the results.\n\n🏆 **Top 10 recognized every week**\n💰 **#1 player wins $10 every week**\n🪙 **Create your own crypto tokens**\n📈 **AI-powered — no experience needed**\n\n▶️ **Join free:** ${url}\n\nDrop your username after you sign up so we can cheer you on! 🔥`;
+      return `🚨 **Self-Made Legends is LIVE** 🚨\n\n${hook}\n\n📍 Shoutout to all the ${city} players — this one's built for you.\n\n**Self-Made Legends** is the AI trading game where you compete on a LIVE national leaderboard. Our bot trades stocks for you — you just enjoy the results.\n\n🏆 **Top 10 recognized every week**\n🪙 **Create your own crypto tokens**\n📈 **AI-powered — no experience needed**\n💵 **Start with just $1**\n\n▶️ **Join free:** ${url}\n\nDrop your username after you sign up so we can cheer you on! 🔥`;
     }
 
     return `${hook} — Self-Made Legends | ${cta}: ${url}`;
@@ -265,7 +265,7 @@ Here's what makes us different:
 
 🤖 AI DOES THE WORK — Our AI engine analyzes market data 24/7 and makes smart trades on your behalf. No expertise needed.
 
-🏆 WIN REAL MONEY — Every week, the #1 player on our national leaderboard wins $10. The top 10 get recognized publicly.
+🏆 LEADERBOARD RECOGNITION — Every week, the Top 10 players are recognized on our national leaderboard. Prizes coming soon.
 
 🪙 CREATE YOUR OWN CRYPTO — Launch your own token, set the price, and let others trade it. You keep 100% of the initial supply.
 
@@ -393,7 +393,7 @@ This is a promotional email. Self-Made Legends is a paper trading platform. See 
       influencer: influencerName,
       tier,
       offer: offers[tier],
-      message: `Hi ${influencerName}! 👋\n\nI'm Jason from Self-Made Legends LLC. We just launched an AI-powered stock trading game where players compete for real weekly cash prizes.\n\nI think your audience would love it — and I'd love to partner with you.\n\nHere's what we're offering ${tier}-tier creators like you:\n💰 ${offers[tier]}\n🔗 Custom referral link tracked to your account\n🏆 Your username featured on our leaderboard\n\nThe platform is live: https://web-production-576d9.up.railway.app/dashboard.html\n\nInterested? Just reply and I'll send you a free creator account to try it out.\n\n— Jason Brown, Self-Made Legends LLC`,
+      message: `Hi ${influencerName}! 👋\n\nI'm Jason from Self-Made Legends LLC. We just launched an AI-powered stock trading game where players compete on a live national leaderboard.\n\nI think your audience would love it — and I'd love to partner with you.\n\nHere's what we're offering ${tier}-tier creators like you:\n💰 ${offers[tier]}\n🔗 Custom referral link tracked to your account\n🏆 Your username featured on our leaderboard\n\nThe platform is live: https://web-production-576d9.up.railway.app/dashboard.html\n\nInterested? Just reply and I'll send you a free creator account to try it out.\n\n— Jason Brown, Self-Made Legends LLC`,
     };
   }
 

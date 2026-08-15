@@ -147,7 +147,7 @@ class LeaderboardManager {
     return this.leaderboardHistory.slice(-weeks);
   }
 
-  // Distribute weekly rewards
+  // Archive weekly leaderboard and reset for next week (no cash prizes currently)
   distributeWeeklyRewards() {
     const leaderboard = this.getWeeklyLeaderboard(10);
 
@@ -155,31 +155,11 @@ class LeaderboardManager {
       return { success: false, error: "No players on leaderboard" };
     }
 
-    const rewards = [];
-
-    // #1 gets $5.00 bonus
+    // Update all-time stats for top player (recognition only — no cash prize)
     if (leaderboard.length > 0) {
       const topPlayer = leaderboard[0];
-      const rewardAmount = 5.0;
-
-      const reward = {
-        id: crypto.randomBytes(16).toString("hex"),
-        userId: topPlayer.userId,
-        rank: 1,
-        amount: rewardAmount,
-        type: "weekly_top_1",
-        week: this.currentWeek,
-        timestamp: new Date().toISOString(),
-        status: "awarded",
-      };
-
-      this.weeklyRewards.set(topPlayer.userId, rewardAmount);
-      rewards.push(reward);
-
-      // Update all-time stats
       const allTime = this.allTimeStats.get(topPlayer.userId) || {};
       allTime.topRank = Math.min(allTime.topRank || 999, 1);
-      allTime.totalRewards = (allTime.totalRewards || 0) + rewardAmount;
       allTime.totalWeeks = (allTime.totalWeeks || 0) + 1;
       this.allTimeStats.set(topPlayer.userId, allTime);
     }
@@ -200,8 +180,8 @@ class LeaderboardManager {
     return {
       success: true,
       week: this.leaderboardHistory[this.leaderboardHistory.length - 1].week,
-      rewards: rewards,
-      totalRewardsDistributed: rewards.reduce((sum, r) => sum + r.amount, 0),
+      topPlayer: leaderboard[0] || null,
+      prizesEnabled: false,
     };
   }
 
