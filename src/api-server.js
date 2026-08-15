@@ -1411,6 +1411,8 @@ app.get("/api/season/hall-of-fame", (req, res) => {
 app.post("/api/admin/end-season", requireAdmin, (req, res) => {
   const lb = leaderboardManager.getLeaderboard(3);
   const winners = lb.map((p, i) => ({ rank: i + 1, userId: p.userId, email: p.email, score: p.score }));
+  // Award Hall of Famer diamond badge to top-3 season finishers
+  winners.forEach(w => { if (w.userId) badgeSystem.onHallOfFame(w.userId); });
   const closed = seasonManager.endSeason(winners);
   res.json({ success: true, closedSeason: closed, newSeason: seasonManager.getCurrentSeason() });
 });

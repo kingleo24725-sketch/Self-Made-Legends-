@@ -444,6 +444,10 @@
 
     /* ── Badge cards ── */
     .badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .badge-card.tier-platinum { border-color: rgba(168,200,232,0.5) !important; background: rgba(168,200,232,0.07) !important; }
+    .badge-card.tier-diamond  { border-color: rgba(0,229,255,0.55) !important; background: rgba(0,229,255,0.07) !important; box-shadow: 0 0 14px rgba(0,229,255,0.18); }
+    .badge-card.tier-diamond.earned { animation: diamond-pulse 3s ease-in-out infinite; }
+    @keyframes diamond-pulse { 0%,100%{ box-shadow:0 0 14px rgba(0,229,255,0.18); } 50%{ box-shadow:0 0 28px rgba(0,229,255,0.4); } }
     .badge-card {
       background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 10px; padding: 14px; text-align: center; transition: all 0.3s;
@@ -1307,7 +1311,7 @@
       const shareBar = document.getElementById('share-rank-bar');
       if (shareBar) shareBar.style.display = 'block';
 
-      renderBadges({ badges: [], earned: 0, total: 18 });
+      renderBadges({ badges: [], earned: 0, total: 34 });
 
       alert('👑 Demo Mode active! Explore the platform — create an account to save your progress and compete on the leaderboard.');
     }
@@ -1681,14 +1685,14 @@
       }
       const gallery = document.getElementById('badge-gallery');
       if (!gallery || !data.badges) return;
-      const tierOrder = { gold: 0, silver: 1, bronze: 2 };
+      const tierOrder = { diamond: 0, platinum: 1, gold: 2, silver: 3, bronze: 4 };
       const sorted = [...data.badges].sort((a, b) => {
         if (a.earned && !b.earned) return -1;
         if (!a.earned && b.earned) return 1;
         return (tierOrder[a.tier] || 3) - (tierOrder[b.tier] || 3);
       });
       gallery.innerHTML = sorted.map(b => `
-        <div class="badge-card ${b.earned ? 'earned' : 'locked'}">
+        <div class="badge-card ${b.earned ? 'earned' : 'locked'} tier-${b.tier || 'bronze'}">
           <span class="badge-icon">${b.icon}</span>
           <div class="badge-name">${b.name}</div>
           <div class="badge-desc">${b.description}</div>

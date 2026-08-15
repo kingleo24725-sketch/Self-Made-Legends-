@@ -1,48 +1,58 @@
 const BADGES = {
   // Trading milestones
-  first_trade:    { id: "first_trade",    name: "First Blood",       icon: "⚡", description: "Made your first trade",                 tier: "bronze" },
-  ten_trades:     { id: "ten_trades",     name: "Getting Warmed Up", icon: "🔥", description: "Completed 10 trades",                   tier: "bronze" },
-  fifty_trades:   { id: "fifty_trades",   name: "Trade Machine",     icon: "🤖", description: "Completed 50 trades",                   tier: "silver" },
-  winner:         { id: "winner",         name: "Winner",            icon: "✅", description: "Closed a profitable trade",             tier: "bronze" },
-  big_gain:       { id: "big_gain",       name: "Big Mover",         icon: "📈", description: "Single trade returned 10%+",            tier: "silver" },
+  first_trade:       { id: "first_trade",       name: "First Blood",        icon: "⚡", description: "Made your first trade",                    tier: "bronze"   },
+  ten_trades:        { id: "ten_trades",         name: "Getting Warmed Up",  icon: "🔥", description: "Completed 10 trades",                      tier: "bronze"   },
+  fifty_trades:      { id: "fifty_trades",       name: "Trade Machine",      icon: "🤖", description: "Completed 50 trades",                      tier: "silver"   },
+  century_trades:    { id: "century_trades",     name: "Centurion",          icon: "⚔️", description: "Completed 100 trades",                     tier: "platinum" },
+  five_hundred_trades: { id: "five_hundred_trades", name: "Trade God",       icon: "⚡", description: "Completed 500 trades",                     tier: "diamond"  },
+  winner:            { id: "winner",             name: "Winner",             icon: "✅", description: "Closed a profitable trade",                tier: "bronze"   },
+  big_gain:          { id: "big_gain",           name: "Big Mover",          icon: "📈", description: "Single trade returned 10%+",               tier: "silver"   },
 
-  // Trading streaks — cold → mild → hot → on fire → unstoppable
-  cold_streak:    { id: "cold_streak",    name: "Cold Streak",       icon: "🧊", description: "3 losing trades in a row — shake it off", tier: "bronze" },
-  mild_streak:    { id: "mild_streak",    name: "Warming Up",        icon: "🌤️", description: "3 winning trades in a row",              tier: "bronze" },
-  hot_streak:     { id: "hot_streak",     name: "Hot Streak",        icon: "🌶️", description: "5 winning trades in a row",              tier: "silver" },
-  on_fire:        { id: "on_fire",        name: "On Fire",           icon: "🔥", description: "10 winning trades in a row",             tier: "gold"   },
-  unstoppable:    { id: "unstoppable",    name: "Unstoppable",       icon: "⚡", description: "20 winning trades in a row",             tier: "gold"   },
+  // Trading streaks — cold → mild → hot → on fire → unstoppable → diamond hands
+  cold_streak:       { id: "cold_streak",        name: "Cold Streak",        icon: "🧊", description: "3 losing trades in a row — shake it off",  tier: "bronze"   },
+  mild_streak:       { id: "mild_streak",        name: "Warming Up",         icon: "🌤️", description: "3 winning trades in a row",                tier: "bronze"   },
+  hot_streak:        { id: "hot_streak",         name: "Hot Streak",         icon: "🌶️", description: "5 winning trades in a row",                tier: "silver"   },
+  on_fire:           { id: "on_fire",            name: "On Fire",            icon: "🔥", description: "10 winning trades in a row",               tier: "gold"     },
+  unstoppable:       { id: "unstoppable",        name: "Unstoppable",        icon: "⚡", description: "20 winning trades in a row",               tier: "gold"     },
+  diamond_hands:     { id: "diamond_hands",      name: "Diamond Hands",      icon: "💎", description: "30 winning trades in a row",               tier: "diamond"  },
 
   // Portfolio milestones
-  first_profit:   { id: "first_profit",   name: "In The Green",      icon: "💚", description: "Portfolio turned profitable",           tier: "bronze" },
-  double_up:      { id: "double_up",      name: "Doubled Up",        icon: "💰", description: "Doubled your starting capital",         tier: "gold"   },
-  risk_manager:   { id: "risk_manager",   name: "Risk Manager",      icon: "🛡️", description: "Ran 7 days with no stop-loss hit",      tier: "silver" },
+  first_profit:      { id: "first_profit",       name: "In The Green",       icon: "💚", description: "Portfolio turned profitable",              tier: "bronze"   },
+  double_up:         { id: "double_up",          name: "Doubled Up",         icon: "💰", description: "Doubled your starting capital",            tier: "gold"     },
+  triple_up:         { id: "triple_up",          name: "Triple Threat",      icon: "🚀", description: "Tripled your starting capital",            tier: "platinum" },
+  ten_x:             { id: "ten_x",              name: "10X Legend",         icon: "💎", description: "10x'd your starting capital",              tier: "diamond"  },
+  risk_manager:      { id: "risk_manager",       name: "Risk Manager",       icon: "🛡️", description: "Ran 7 days with no stop-loss hit",         tier: "silver"   },
 
   // Leaderboard milestones
-  top_10:         { id: "top_10",         name: "Top 10",            icon: "🏅", description: "Reached the top 10 leaderboard",       tier: "silver" },
-  top_3:          { id: "top_3",          name: "Podium Finish",     icon: "🥉", description: "Reached the top 3 leaderboard",        tier: "gold"   },
-  number_one:     { id: "number_one",     name: "Legend",            icon: "👑", description: "Reached #1 on the leaderboard",        tier: "gold"   },
+  top_10:            { id: "top_10",             name: "Top 10",             icon: "🏅", description: "Reached the top 10 leaderboard",          tier: "silver"   },
+  top_3:             { id: "top_3",              name: "Podium Finish",      icon: "🥉", description: "Reached the top 3 leaderboard",           tier: "gold"     },
+  number_one:        { id: "number_one",         name: "Legend",             icon: "👑", description: "Reached #1 on the leaderboard",           tier: "gold"     },
+  hall_of_famer:     { id: "hall_of_famer",      name: "Hall of Famer",      icon: "🎖️", description: "Finished top 3 in a completed season",    tier: "diamond"  },
 
   // Crypto / token milestones
-  token_creator:  { id: "token_creator",  name: "Token Creator",     icon: "🪙", description: "Created your first crypto token",      tier: "silver" },
-  market_maker:   { id: "market_maker",   name: "Market Maker",      icon: "💎", description: "Your token was traded 10 times",       tier: "gold"   },
+  token_creator:     { id: "token_creator",      name: "Token Creator",      icon: "🪙", description: "Created your first crypto token",         tier: "silver"   },
+  market_maker:      { id: "market_maker",       name: "Market Maker",       icon: "💎", description: "Your token was traded 10 times",          tier: "gold"     },
 
   // Login streak milestones
-  login_3:        { id: "login_3",        name: "3-Day Streak",      icon: "📆", description: "Logged in 3 days in a row",            tier: "bronze" },
-  login_7:        { id: "login_7",        name: "Weekly Warrior",    icon: "🗓️", description: "Logged in 7 days in a row",            tier: "silver" },
-  login_30:       { id: "login_30",       name: "Monthly Grind",     icon: "🏆", description: "Logged in 30 days in a row",           tier: "gold"   },
+  login_3:           { id: "login_3",            name: "3-Day Streak",       icon: "📆", description: "Logged in 3 days in a row",               tier: "bronze"   },
+  login_7:           { id: "login_7",            name: "Weekly Warrior",     icon: "🗓️", description: "Logged in 7 days in a row",               tier: "silver"   },
+  login_30:          { id: "login_30",           name: "Monthly Grind",      icon: "🏆", description: "Logged in 30 days in a row",              tier: "gold"     },
+  login_60:          { id: "login_60",           name: "60-Day Legend",      icon: "🗓️", description: "Logged in 60 days in a row",              tier: "platinum" },
+  login_90:          { id: "login_90",           name: "Relentless",         icon: "🔱", description: "Logged in 90 days in a row",              tier: "diamond"  },
 
   // Community milestones
-  day_1:          { id: "day_1",          name: "Day One",           icon: "🌅", description: "Joined Self-Made Legends",             tier: "bronze" },
-  week_1:         { id: "week_1",         name: "One Week Strong",   icon: "📅", description: "Member for 7 days",                   tier: "bronze" },
-  month_1:        { id: "month_1",        name: "Dedicated",         icon: "🌟", description: "Member for 30 days",                  tier: "silver" },
-  creator_member: { id: "creator_member", name: "Creator Member",    icon: "⭐", description: "Subscribed as a Creator Member",      tier: "gold"   },
+  day_1:             { id: "day_1",              name: "Day One",            icon: "🌅", description: "Joined Self-Made Legends",                tier: "bronze"   },
+  week_1:            { id: "week_1",             name: "One Week Strong",    icon: "📅", description: "Member for 7 days",                      tier: "bronze"   },
+  month_1:           { id: "month_1",            name: "Dedicated",          icon: "🌟", description: "Member for 30 days",                     tier: "silver"   },
+  creator_member:    { id: "creator_member",     name: "Creator Member",     icon: "⭐", description: "Subscribed as a Creator Member",         tier: "gold"     },
 };
 
 const TIER_COLORS = {
-  bronze: "#cd7f32",
-  silver: "#aaa",
-  gold:   "#ffd700",
+  bronze:   "#cd7f32",
+  silver:   "#aaa",
+  gold:     "#ffd700",
+  platinum: "#a8c8e8",
+  diamond:  "#00e5ff",
 };
 
 class BadgeSystem {
@@ -91,6 +101,8 @@ class BadgeSystem {
         if (stats.loginStreak === 3)  bonusXP += 50;
         if (stats.loginStreak === 7)  bonusXP += 200;
         if (stats.loginStreak === 30) bonusXP += 1000;
+        if (stats.loginStreak === 60) bonusXP += 2500;
+        if (stats.loginStreak === 90) bonusXP += 5000;
       } else {
         stats.loginStreak = 1; // streak broken
       }
@@ -101,6 +113,8 @@ class BadgeSystem {
     if (stats.loginStreak >= 3)  { const b = this._award(userId, "login_3");  if (b) newBadges.push(b); }
     if (stats.loginStreak >= 7)  { const b = this._award(userId, "login_7");  if (b) newBadges.push(b); }
     if (stats.loginStreak >= 30) { const b = this._award(userId, "login_30"); if (b) newBadges.push(b); }
+    if (stats.loginStreak >= 60) { const b = this._award(userId, "login_60"); if (b) newBadges.push(b); }
+    if (stats.loginStreak >= 90) { const b = this._award(userId, "login_90"); if (b) newBadges.push(b); }
 
     return { newBadges, bonusXP, loginStreak: stats.loginStreak, maxLoginStreak: stats.maxLoginStreak };
   }
@@ -159,18 +173,21 @@ class BadgeSystem {
     stats.maxWinStreak = Math.max(stats.maxWinStreak, stats.currentWinStreak);
 
     // Trade count milestones
-    if (stats.tradeCount === 1)  { const b = this._award(userId, "first_trade");  if (b) newBadges.push(b); }
-    if (stats.tradeCount >= 10)  { const b = this._award(userId, "ten_trades");   if (b) newBadges.push(b); }
-    if (stats.tradeCount >= 50)  { const b = this._award(userId, "fifty_trades"); if (b) newBadges.push(b); }
-    if (profitable)              { const b = this._award(userId, "winner");        if (b) newBadges.push(b); }
-    if (returnPct >= 10)         { const b = this._award(userId, "big_gain");     if (b) newBadges.push(b); }
+    if (stats.tradeCount === 1)   { const b = this._award(userId, "first_trade");        if (b) newBadges.push(b); }
+    if (stats.tradeCount >= 10)   { const b = this._award(userId, "ten_trades");         if (b) newBadges.push(b); }
+    if (stats.tradeCount >= 50)   { const b = this._award(userId, "fifty_trades");       if (b) newBadges.push(b); }
+    if (stats.tradeCount >= 100)  { const b = this._award(userId, "century_trades");     if (b) newBadges.push(b); }
+    if (stats.tradeCount >= 500)  { const b = this._award(userId, "five_hundred_trades"); if (b) newBadges.push(b); }
+    if (profitable)               { const b = this._award(userId, "winner");             if (b) newBadges.push(b); }
+    if (returnPct >= 10)          { const b = this._award(userId, "big_gain");           if (b) newBadges.push(b); }
 
-    // Trading streak badges — cold → mild → hot → on fire → unstoppable
-    if (stats.currentLossStreak >= 3) { const b = this._award(userId, "cold_streak");  if (b) newBadges.push(b); }
-    if (stats.currentWinStreak >= 3)  { const b = this._award(userId, "mild_streak");  if (b) newBadges.push(b); }
-    if (stats.currentWinStreak >= 5)  { const b = this._award(userId, "hot_streak");   if (b) newBadges.push(b); }
-    if (stats.currentWinStreak >= 10) { const b = this._award(userId, "on_fire");      if (b) newBadges.push(b); }
-    if (stats.currentWinStreak >= 20) { const b = this._award(userId, "unstoppable");  if (b) newBadges.push(b); }
+    // Trading streak badges — cold → mild → hot → on fire → unstoppable → diamond hands
+    if (stats.currentLossStreak >= 3) { const b = this._award(userId, "cold_streak");    if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 3)  { const b = this._award(userId, "mild_streak");    if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 5)  { const b = this._award(userId, "hot_streak");     if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 10) { const b = this._award(userId, "on_fire");        if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 20) { const b = this._award(userId, "unstoppable");    if (b) newBadges.push(b); }
+    if (stats.currentWinStreak >= 30) { const b = this._award(userId, "diamond_hands");  if (b) newBadges.push(b); }
 
     // Reset cold streak badge so it can be re-earned after breaking out
     if (profitable && stats.currentLossStreak === 0) {
@@ -183,9 +200,17 @@ class BadgeSystem {
   // Called when portfolio value updates
   onPortfolioUpdate(userId, { profitable, returnPct }) {
     const newBadges = [];
-    if (profitable)    { const b = this._award(userId, "first_profit"); if (b) newBadges.push(b); }
-    if (returnPct >= 100) { const b = this._award(userId, "double_up"); if (b) newBadges.push(b); }
+    if (profitable)         { const b = this._award(userId, "first_profit"); if (b) newBadges.push(b); }
+    if (returnPct >= 100)   { const b = this._award(userId, "double_up");    if (b) newBadges.push(b); }
+    if (returnPct >= 200)   { const b = this._award(userId, "triple_up");    if (b) newBadges.push(b); }
+    if (returnPct >= 900)   { const b = this._award(userId, "ten_x");        if (b) newBadges.push(b); }
     return newBadges;
+  }
+
+  // Called when a user finishes top 3 in a completed season
+  onHallOfFame(userId) {
+    const b = this._award(userId, "hall_of_famer");
+    return b ? [b] : [];
   }
 
   // Called when leaderboard rank updates
