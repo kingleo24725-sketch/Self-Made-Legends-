@@ -1823,14 +1823,12 @@
     }
 
     function deposit() {
-      const amount = parseFloat(document.getElementById('deposit-amount').value);
-      const method = document.getElementById('deposit-method').value;
-
-      if (!amount || amount <= 0) {
-        alert('Enter a valid amount');
-        return;
-      }
-
+      const amtEl = document.getElementById('deposit-amount');
+      const methodEl = document.getElementById('deposit-method');
+      if (!amtEl || !methodEl) { alert('Deposit form not available here.'); return; }
+      const amount = parseFloat(amtEl.value);
+      const method = methodEl.value;
+      if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
       apiCall('/api/payments/deposit', 'POST', { amount, currency: 'USD', method })
         .then(data => {
           if (data.success) {
@@ -1843,15 +1841,14 @@
     }
 
     function withdraw() {
-      const amount = parseFloat(document.getElementById('withdraw-amount').value);
-      const method = document.getElementById('withdraw-method').value;
-      const destination = document.getElementById('withdraw-destination').value;
-
-      if (!amount || amount <= 0 || !destination) {
-        alert('Fill all fields');
-        return;
-      }
-
+      const amtEl = document.getElementById('withdraw-amount');
+      const methodEl = document.getElementById('withdraw-method');
+      const destEl = document.getElementById('withdraw-destination');
+      if (!amtEl || !methodEl || !destEl) { alert('Withdrawal form not available here.'); return; }
+      const amount = parseFloat(amtEl.value);
+      const method = methodEl.value;
+      const destination = destEl.value;
+      if (!amount || amount <= 0 || !destination) { alert('Fill all fields'); return; }
       apiCall('/api/payments/withdraw', 'POST', { amount, currency: 'USD', method, destination })
         .then(data => {
           if (data.success) {
@@ -4067,9 +4064,12 @@ window.loadCommunityStats = async function() {
       lbEl.innerHTML = lb.slice(0,5).map((p, i) => {
         const gain = p.gainPercentage || p.gainPct || p.gain_pct || 0;
         const up = gain >= 0;
-        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:8px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);">
+        const legendBadge = p.isLegend ? ' <span title="Legend of the Season" style="font-size:.85em;">👑</span>' : '';
+        const rowBorder = p.isLegend ? '1px solid rgba(255,215,0,.35)' : '1px solid rgba(255,255,255,.04)';
+        const rowBg = p.isLegend ? 'rgba(255,215,0,.06)' : 'rgba(255,255,255,.02)';
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 8px;border-radius:8px;background:${rowBg};border:${rowBorder};">
           <span style="font-size:1.3em;width:28px;text-align:center;">${medals[i]}</span>
-          <span style="flex:1;font-weight:600;color:#e0e0e0;font-size:.9em;">${esc(p.displayName||p.fullName||p.name||'Legend')}</span>
+          <span style="flex:1;font-weight:600;color:#e0e0e0;font-size:.9em;">${esc(p.displayName||p.fullName||p.name||'Legend')}${legendBadge}</span>
           <span style="font-weight:700;color:${up?'#00ff88':'#ff6b6b'};font-size:.88em;">${up?'+':''}${parseFloat(gain).toFixed(1)}%</span>
         </div>`;
       }).join('');

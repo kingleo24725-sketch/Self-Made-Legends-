@@ -152,7 +152,7 @@ app.post("/api/auth/login", (req, res) => {
     result.newBadges = loginResult.newBadges;
     result.bonusXP = loginResult.bonusXP;
     if (loginResult.bonusXP > 0) {
-      missionSystem.completeAction(result.userId, "login_streak");
+      awardMissionXP(result.userId, "login_streak").catch(() => {});
     }
     // Email + feed for newly earned badges
     if (loginResult.newBadges && loginResult.newBadges.length > 0) {
@@ -341,6 +341,13 @@ app.post("/api/stripe/cancel-subscription", authenticateUser, async (req, res) =
     res.status(500).json({ error: "Cancellation failed: " + err.message });
   }
 });
+
+// Helper: complete a mission action with Season Pass 1.5× XP bonus if active
+async function awardMissionXP(userId, actionId) {
+  const row = await db.get('SELECT active FROM season_passes WHERE user_id = ? AND active = 1', [userId]);
+  const mult = row ? 1.5 : 1;
+  return missionSystem.completeAction(userId, actionId, mult);
+}
 
 // Helper: add SML credits to a user's balance
 async function _addCredits(userId, amount, type, description) {
@@ -537,7 +544,7 @@ app.post("/api/stripe/tournament-entry", authenticateUser, async (req, res) => {
   if (!tourneyStatus || !tourneyStatus.active) {
     return res.json({ success: false, noTournament: true });
   }
-  const tournamentId = String(tourneyStatus.id || 'current');
+  const tournamentId = String(tourneyStatus.tournament?.id || 'current');
   const existing = await db.get(
     'SELECT id FROM tournament_entries WHERE tournament_id = ? AND user_id = ? AND paid = 1',
     [tournamentId, req.user.userId]
@@ -1621,11 +1628,16 @@ app.post("/api/admin/ban-user", requireAdmin, (req, res) => {
 });
 
 // ── Public Leaderboard (no auth required) ─────────────────────────────────
-app.get("/api/leaderboard/public", (req, res) => {
+app.get("/api/leaderboard/public", async (req, res) => {
   let lb = leaderboardManager.getLeaderboard(50);
   const { gender } = req.query;
   if (gender === 'male' || gender === 'female') {
     lb = lb.filter(p => accountManager.getGender(p.userId) === gender);
+  }
+  // Attach legend crown to the active champion
+  const legend = await db.get('SELECT user_id FROM legend_status WHERE active = 1 LIMIT 1');
+  if (legend) {
+    lb = lb.map(p => p.userId === legend.user_id ? { ...p, isLegend: true } : p);
   }
   res.json({ leaderboard: lb, updatedAt: new Date().toISOString(), gender: gender || 'all' });
 });
@@ -1666,9 +1678,10 @@ app.get("/api/account/gender", authenticateUser, (req, res) => {
 // ── Tournament ────────────────────────────────────────────────────────────
 app.get("/api/tournament/status", async (req, res) => {
   const status = tournamentManager.getStatus();
-  // Attach prize pool if tournament is active
-  if (status && status.active && status.id) {
-    const pool = await db.get('SELECT entry_count, total_cents FROM tournament_prize_pools WHERE tournament_id = ?', [String(status.id)]);
+  // Attach prize pool if tournament is active (id lives at status.tournament.id)
+  const tid = status && status.active ? status.tournament?.id : null;
+  if (tid) {
+    const pool = await db.get('SELECT entry_count, total_cents FROM tournament_prize_pools WHERE tournament_id = ?', [String(tid)]);
     status.entryCount = pool ? pool.entry_count : 0;
     status.prizePool  = pool ? pool.total_cents  : 0;
   }
@@ -1791,7 +1804,7 @@ app.post("/api/coach/learning-path/generate", authenticateUser, async (req, res)
 app.post("/api/coach/learning-path/step/:stepId/complete", authenticateUser, async (req, res) => {
   const result = await coachSystem.completeLearningStep(req.user.userId, req.params.stepId);
   if (result.ok) {
-    missionSystem.completeAction(req.user.userId, 'coach_step');
+    awardMissionXP(req.user.userId, 'coach_step').catch(() => {});
     if (result.allDone) {
       const acct = accountManager.getAccountById(req.user.userId);
       const name = acct ? (acct.fullName || acct.email) : 'A Legend';
@@ -1841,7 +1854,7 @@ app.post("/api/training/quiz", authenticateUser, (req, res) => {
   const result = trainingCamp.submitQuiz(req.user.userId, parseInt(lessonId, 10), parseInt(answer, 10));
   if (result.success && result.graduated) {
     badgeSystem.checkAndAward(req.user.userId, 'training_graduate');
-    missionSystem.completeAction(req.user.userId, 'training_graduate');
+    awardMissionXP(req.user.userId, 'training_graduate').catch(() => {});
   }
   res.json(result);
 });
@@ -1897,10 +1910,10 @@ app.get("/api/missions/today", authenticateUser, (req, res) => {
   res.json(stats);
 });
 
-app.post("/api/missions/complete", authenticateUser, (req, res) => {
+app.post("/api/missions/complete", authenticateUser, async (req, res) => {
   const { actionId } = req.body;
   if (!actionId) return res.status(400).json({ error: "actionId required" });
-  const result = missionSystem.completeAction(req.user.userId, actionId);
+  const result = await awardMissionXP(req.user.userId, actionId);
   res.json({ success: true, ...result });
 });
 
@@ -1996,11 +2009,11 @@ app.get("/api/ai-challenge/status", (req, res) => {
   });
 });
 
-app.get("/api/ai-challenge/my-status", authenticateUser, (req, res) => {
+app.get("/api/ai-challenge/my-status", authenticateUser, async (req, res) => {
   const account = accountManager.getAccount(req.user.userId);
   const userGainPct = account && account.portfolioGainPct != null ? account.portfolioGainPct : 0;
   const beating = userGainPct > aiBot.gainPct;
-  if (beating) missionSystem.completeAction(req.user.userId, 'beat_ai');
+  if (beating) awardMissionXP(req.user.userId, 'beat_ai').catch(() => {});
   res.json({
     userGainPct,
     aiGainPct: aiBot.gainPct,
@@ -2025,7 +2038,7 @@ app.post("/api/trades/generate-card", authenticateUser, (req, res) => {
     broadcastFeedUpdate();
   }
 
-  missionSystem.completeAction(req.user.userId, 'make_3_trades');
+  awardMissionXP(req.user.userId, 'make_3_trades').catch(() => {});
 
   res.json({
     success: true,

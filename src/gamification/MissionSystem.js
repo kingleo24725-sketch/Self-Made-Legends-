@@ -71,7 +71,8 @@ class MissionSystem {
     return missions;
   }
 
-  completeAction(userId, actionId) {
+  // xpMultiplier: 1.5 if user has an active Season Pass, 1 otherwise
+  completeAction(userId, actionId, xpMultiplier = 1) {
     const missions = this.getDailyMissions(userId);
     let xpEarned = 0;
     missions.forEach(m => {
@@ -79,9 +80,10 @@ class MissionSystem {
         m.progress = Math.min(m.progress + 1, m.target);
         if (m.progress >= m.target) {
           m.completed = true;
-          xpEarned += m.xp;
+          const awarded = Math.round(m.xp * xpMultiplier);
+          xpEarned += awarded;
           const cur = this.userXP.get(userId) || 0;
-          this.userXP.set(userId, cur + m.xp);
+          this.userXP.set(userId, cur + awarded);
           this._persistXP(userId);
         }
       }
