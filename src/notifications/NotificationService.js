@@ -60,7 +60,7 @@ class NotificationService {
 
   // ── Password reset email ───────────────────────────────────────────────────
   async sendPasswordReset(email, name, resetToken) {
-    const resetUrl = `${APP_URL}/dashboard.html?reset=${resetToken}`;
+    const resetUrl = `${APP_URL}/reset-password.html?token=${resetToken}`;
     return this.send(
       email,
       `Reset Your ${APP_NAME} Password`,

@@ -154,6 +154,15 @@ app.post("/api/auth/login", (req, res) => {
     if (loginResult.bonusXP > 0) {
       missionSystem.completeAction(result.userId, "login_streak");
     }
+    // Email + feed for newly earned badges
+    if (loginResult.newBadges && loginResult.newBadges.length > 0) {
+      const acct = accountManager.getAccount(result.email);
+      const displayName = acct ? (acct.fullName || acct.email) : 'A Legend';
+      loginResult.newBadges.forEach(badge => {
+        if (acct) notifier.sendBadgeEarned(acct.email, acct.fullName, badge).catch(() => {});
+        socialFeed.addAchievement(result.userId, displayName, badge.name, badge.icon);
+      });
+    }
   }
   res.json(result);
 });
@@ -1297,6 +1306,21 @@ app.post("/api/leaderboard/update-portfolio", authenticateUser, (req, res) => {
 
   const result = leaderboardManager.updatePortfolioStats(req.user.userId, portfolioData);
 
+  // Badge + feed events for rank milestones
+  const rankBadges = badgeSystem.onRankUpdate(req.user.userId, result.rank);
+  if (rankBadges.length > 0) {
+    const acct = accountManager.getAccountById(req.user.userId);
+    const displayName = acct ? (acct.fullName || acct.email) : 'A Legend';
+    rankBadges.forEach(badge => {
+      if (acct) notifier.sendBadgeEarned(acct.email, acct.fullName, badge).catch(() => {});
+      socialFeed.addAchievement(req.user.userId, displayName, badge.name, badge.icon);
+    });
+  }
+  if (result.rank <= 10) {
+    const acct = accountManager.getAccountById(req.user.userId);
+    socialFeed.addRankChange(req.user.userId, acct ? (acct.fullName || acct.email) : 'A Legend', result.rank);
+  }
+
   securityManager.logAudit("PORTFOLIO_UPDATE", req.user.userId, { gains: portfolioData.gains });
 
   res.json({
@@ -1585,10 +1609,48 @@ app.post("/api/admin/end-season", requireAdmin, (req, res) => {
   res.json({ success: true, closedSeason: closed, newSeason: seasonManager.getCurrentSeason() });
 });
 
-// ── Social Feed ───────────────────────────────────────────────────────────
-app.get("/api/social/feed", (req, res) => {
+// ── Activity Feed (public, uses SocialFeed with 15-min delay) ─────────────
+app.get("/api/activity-feed", (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 20, 50);
   res.json({ feed: socialFeed.getFeed(limit) });
+});
+
+// ── User Profile ──────────────────────────────────────────────────────────
+app.get("/api/profile/me", authenticateUser, (req, res) => {
+  const uid = req.user.userId;
+  const account = accountManager.getAccountById(uid);
+  if (!account) return res.status(404).json({ error: "Not found" });
+  const badges = badgeSystem.getEarnedBadges(uid);
+  const allBadges = badgeSystem.getUserBadges(uid);
+  const streak = badgeSystem.getStreakInfo(uid);
+  const training = trainingCamp.getProgress(uid);
+  const missions = missionSystem.getUserStats(uid);
+  const team = teamManager.getUserTeam(uid);
+  const rank = leaderboardManager.getPlayerRank(uid);
+  const lbEntry = leaderboardManager.weeklyScores.find(s => s.userId === uid);
+  res.json({
+    userId: uid,
+    fullName: account.fullName,
+    email: account.email,
+    avatarName: account.avatarName || "",
+    tagline: account.tagline || "",
+    gender: account.gender || null,
+    tier: account.tier || "free",
+    isCreatorMember: account.isCreatorMember || false,
+    createdAt: account.createdAt,
+    hasAvatar: !!account.avatar,
+    badges,
+    allBadges,
+    badgeCount: badges.length,
+    totalBadges: allBadges.length,
+    streak,
+    training,
+    totalXP: missions.totalXP,
+    team: team ? { id: team.id, name: team.name, code: team.code, memberCount: team.memberIds.length, captainId: team.captainId } : null,
+    lbRank: rank > 0 ? rank : null,
+    gainPct: lbEntry ? lbEntry.gainPercentage : 0,
+    trades: lbEntry ? lbEntry.trades : 0,
+  });
 });
 
 // ── AI Challenge ──────────────────────────────────────────────────────────

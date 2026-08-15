@@ -627,6 +627,7 @@
         </div>
         <div class="user-info" id="user-info">Not Logged In</div>
       </div>
+      <a href="/profile.html" id="profile-link" style="display:none;color:#aaa;text-decoration:none;font-size:0.8em;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.07);">👤 Profile</a>
       <button class="btn btn-danger" id="logout-btn" style="display:none;" onclick="logout()">Logout</button>
     </div>
   </nav>
@@ -1294,6 +1295,7 @@
               currentUser = email;
               document.getElementById('user-info').textContent = `👤 ${email}`;
               document.getElementById('logout-btn').style.display = 'block';
+              document.getElementById('profile-link').style.display = 'inline-block';
               if (window.SMLSounds) SMLSounds.coin();
               if (data.loginStreak > 1) {
                 const streakMsg = data.bonusXP > 0
@@ -1384,6 +1386,7 @@
         currentUser = null;
         document.getElementById('user-info').textContent = 'Not Logged In';
         document.getElementById('logout-btn').style.display = 'none';
+        document.getElementById('profile-link').style.display = 'none';
         document.getElementById('demo-banner').style.display = 'none';
         return;
       }
@@ -2819,6 +2822,60 @@
 
   loadBootCampProgress();
   loadMyTeamCard();
+  loadActivityFeed();
+
+  // ── Activity Feed ────────────────────────────────────────────────────────
+  async function loadActivityFeed() {
+    const el = document.getElementById('social-feed');
+    if (!el) return;
+    try {
+      const res = await fetch('/api/activity-feed?limit=12');
+      const data = await res.json();
+      const feed = data.feed || [];
+      if (!feed.length) {
+        el.innerHTML = '<div style="color:#555;text-align:center;padding:20px;font-size:0.9em;">No activity yet — be the first to make a move!</div>';
+        return;
+      }
+      el.innerHTML = feed.map(e => {
+        if (e.type === 'trade') {
+          const pos = parseFloat(e.gainPct) >= 0;
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(${pos?'0,255,136':'255,68,68'},.05);border:1px solid rgba(${pos?'0,255,136':'255,68,68'},.12);border-radius:8px;">
+            <span style="font-size:1.3em">${pos?'📈':'📉'}</span>
+            <div style="flex:1;min-width:0;">
+              <span style="font-weight:600;color:#e0e0e0">${esc3(e.displayName)}</span>
+              <span style="color:#888"> closed </span><strong style="color:#fff">$${esc3(e.symbol)}</strong>
+              <span style="color:${pos?'#00ff88':'#ff4444'};font-weight:700"> ${pos?'+':''}${e.gainPct}%</span>
+            </div>
+            <span style="color:#555;font-size:0.75em;white-space:nowrap">${e.timeAgo}</span>
+          </div>`;
+        }
+        if (e.type === 'badge') {
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,215,0,.05);border:1px solid rgba(255,215,0,.12);border-radius:8px;">
+            <span style="font-size:1.5em">${esc3(e.badgeIcon||'🎖️')}</span>
+            <div style="flex:1;min-width:0;">
+              <span style="font-weight:600;color:#e0e0e0">${esc3(e.displayName)}</span>
+              <span style="color:#888"> earned </span><span style="color:#ffd700">${esc3(e.badgeName)}</span>
+            </div>
+            <span style="color:#555;font-size:0.75em;white-space:nowrap">${e.timeAgo}</span>
+          </div>`;
+        }
+        if (e.type === 'rank') {
+          return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.12);border-radius:8px;">
+            <span style="font-size:1.3em">🏆</span>
+            <div style="flex:1;min-width:0;">
+              <span style="font-weight:600;color:#e0e0e0">${esc3(e.displayName)}</span>
+              <span style="color:#888"> reached </span><span style="color:#00d4ff;font-weight:700">#${e.newRank}</span><span style="color:#888"> on the leaderboard</span>
+            </div>
+            <span style="color:#555;font-size:0.75em;white-space:nowrap">${e.timeAgo}</span>
+          </div>`;
+        }
+        return '';
+      }).join('');
+    } catch(_) {
+      document.getElementById('social-feed').innerHTML = '<div style="color:#555;text-align:center;padding:16px;font-size:0.88em;">Feed unavailable</div>';
+    }
+  }
+  function esc3(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
   </script>
 
 <!-- ── AI Coach Chat Bubble ───────────────────────────────────────────── -->

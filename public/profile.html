@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Profile — Self-Made Legends</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:#0f1419; color:#e0e0e0; min-height:100vh; }
+
+    /* ── Nav ── */
+    .header { background:rgba(15,20,25,0.97); border-bottom:1px solid rgba(0,212,255,0.15); padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; position:sticky; top:0; z-index:50; }
+    .header .brand { color:#00d4ff; font-weight:700; font-size:1.05em; text-decoration:none; display:flex; align-items:center; gap:8px; }
+    .header nav a { color:#aaa; text-decoration:none; font-size:0.85em; padding:6px 10px; border-radius:6px; transition:all .2s; }
+    .header nav a:hover { color:#00d4ff; background:rgba(0,212,255,0.08); }
+    .header nav { display:flex; gap:4px; flex-wrap:wrap; }
+
+    /* ── Layout ── */
+    .page { max-width:960px; margin:0 auto; padding:32px 18px 80px; }
+
+    /* ── Hero ── */
+    .hero { display:flex; gap:24px; align-items:flex-start; flex-wrap:wrap; margin-bottom:32px; }
+    .avatar-wrap { flex-shrink:0; }
+    .avatar-circle { width:100px; height:100px; border-radius:50%; border:3px solid #00d4ff; object-fit:cover; background:#1a1f2e; display:flex; align-items:center; justify-content:center; font-size:2.5em; overflow:hidden; }
+    .avatar-circle img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+    .hero-info { flex:1; min-width:200px; }
+    .hero-name { font-size:1.7em; font-weight:700; color:#fff; margin-bottom:4px; }
+    .hero-handle { color:#00d4ff; font-size:0.9em; margin-bottom:8px; }
+    .hero-tagline { color:#888; font-size:0.92em; line-height:1.6; max-width:480px; margin-bottom:12px; }
+    .tier-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.25); color:#ffd700; border-radius:20px; padding:4px 12px; font-size:0.78em; font-weight:600; }
+
+    /* ── Stats row ── */
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:14px; margin-bottom:32px; }
+    .stat-card { background:#1a1f2e; border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px 14px; text-align:center; }
+    .stat-icon { font-size:1.6em; display:block; margin-bottom:6px; }
+    .stat-val { font-size:1.5em; font-weight:700; color:#00d4ff; display:block; }
+    .stat-label { color:#666; font-size:0.75em; margin-top:2px; }
+
+    /* ── Section headers ── */
+    .section { margin-bottom:32px; }
+    .section-title { color:#aaa; font-size:0.78em; text-transform:uppercase; letter-spacing:1.5px; margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.06); }
+
+    /* ── Badges ── */
+    .badges-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:12px; }
+    .badge-card { background:#1a1f2e; border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:14px 10px; text-align:center; transition:transform .2s; }
+    .badge-card.earned { border-color:rgba(255,215,0,0.25); }
+    .badge-card.locked { opacity:.4; filter:grayscale(1); }
+    .badge-card:hover { transform:translateY(-2px); }
+    .badge-icon { font-size:1.9em; display:block; margin-bottom:6px; }
+    .badge-name { font-size:0.72em; color:#ccc; font-weight:600; line-height:1.3; }
+    .badge-tier { font-size:0.65em; margin-top:4px; font-weight:600; }
+
+    /* ── Training ── */
+    .training-card { background:#1a1f2e; border:1px solid rgba(0,212,255,0.1); border-radius:12px; padding:20px; }
+    .progress-bar { height:8px; background:#0f1419; border-radius:4px; overflow:hidden; margin:10px 0 6px; }
+    .progress-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,#00d4ff,#00ff88); transition:width .6s; }
+    .lesson-chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .lesson-chip { padding:5px 12px; border-radius:20px; font-size:0.78em; border:1px solid rgba(255,255,255,0.08); color:#888; }
+    .lesson-chip.done { background:rgba(0,255,136,0.1); border-color:rgba(0,255,136,0.3); color:#00ff88; }
+    .grad-banner { background:linear-gradient(90deg,rgba(255,215,0,0.1),rgba(0,212,255,0.1)); border:1px solid rgba(255,215,0,0.3); border-radius:8px; padding:12px 16px; margin-top:14px; color:#ffd700; font-size:0.9em; text-align:center; display:none; }
+
+    /* ── Team card ── */
+    .team-card { background:linear-gradient(135deg,rgba(0,212,255,0.05),rgba(0,0,0,0.3)); border:1px solid rgba(0,212,255,0.15); border-radius:12px; padding:20px; display:flex; align-items:center; gap:16px; }
+    .team-icon { font-size:2.5em; }
+    .team-name { font-size:1.1em; font-weight:700; color:#00d4ff; }
+    .team-meta { color:#888; font-size:0.85em; margin-top:3px; }
+    .no-team { color:#555; font-size:0.9em; padding:12px 0; }
+    .no-team a { color:#00d4ff; text-decoration:none; }
+
+    /* ── Streak ── */
+    .streak-row { display:flex; gap:10px; flex-wrap:wrap; }
+    .streak-pill { background:#1a1f2e; border:1px solid rgba(255,255,255,0.07); border-radius:20px; padding:8px 16px; font-size:0.85em; display:flex; align-items:center; gap:6px; }
+    .streak-pill .val { color:#00d4ff; font-weight:700; }
+    .trade-streak-banner { margin-top:14px; padding:10px 16px; border-radius:8px; font-size:0.9em; text-align:center; display:none; }
+
+    /* ── Loading ── */
+    .skeleton { background:linear-gradient(90deg,#1a1f2e 25%,#20283a 50%,#1a1f2e 75%); background-size:400px 100%; animation:shimmer 1.5s infinite; border-radius:8px; }
+    @keyframes shimmer { 0%{background-position:-400px 0} 100%{background-position:400px 0} }
+
+    .not-logged-in { text-align:center; padding:80px 20px; }
+    .not-logged-in h2 { color:#00d4ff; margin-bottom:12px; }
+    .not-logged-in p { color:#888; margin-bottom:24px; }
+    .not-logged-in a { background:#00d4ff; color:#000; padding:12px 28px; border-radius:8px; text-decoration:none; font-weight:700; }
+
+    @media(max-width:480px) {
+      .hero { flex-direction:column; align-items:center; text-align:center; }
+      .hero-tagline { text-align:center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <a class="brand" href="/dashboard.html">👑 Self-Made Legends</a>
+  <nav>
+    <a href="/dashboard.html">Dashboard</a>
+    <a href="/leaderboard.html">Leaderboard</a>
+    <a href="/training.html">Boot Camp</a>
+    <a href="/teams.html">Teams</a>
+    <a href="/tournament.html">Tournament</a>
+    <a href="/hall-of-fame.html">Hall of Fame</a>
+  </nav>
+</div>
+
+<div class="page" id="app">
+  <div id="not-logged-in" class="not-logged-in" style="display:none">
+    <h2>Sign in to view your profile</h2>
+    <p>Track your badges, streaks, and trading journey.</p>
+    <a href="/dashboard.html">Go to Login</a>
+  </div>
+
+  <div id="profile-content" style="display:none">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="avatar-wrap">
+        <div class="avatar-circle" id="avatar-circle">👤</div>
+      </div>
+      <div class="hero-info">
+        <div class="hero-name" id="hero-name">Loading…</div>
+        <div class="hero-handle" id="hero-handle"></div>
+        <div class="hero-tagline" id="hero-tagline"></div>
+        <div id="tier-wrap"></div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <span class="stat-icon">⭐</span>
+        <span class="stat-val" id="stat-xp">—</span>
+        <span class="stat-label">Total XP</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🎖️</span>
+        <span class="stat-val" id="stat-badges">—</span>
+        <span class="stat-label">Badges Earned</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📆</span>
+        <span class="stat-val" id="stat-streak">—</span>
+        <span class="stat-label">Login Streak</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🏆</span>
+        <span class="stat-val" id="stat-rank">—</span>
+        <span class="stat-label">Leaderboard Rank</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">📈</span>
+        <span class="stat-val" id="stat-gain">—</span>
+        <span class="stat-label">Total Gain %</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🔄</span>
+        <span class="stat-val" id="stat-trades">—</span>
+        <span class="stat-label">Total Trades</span>
+      </div>
+    </div>
+
+    <!-- Trade Streak -->
+    <div class="section">
+      <div class="section-title">Trade Streak</div>
+      <div class="streak-row">
+        <div class="streak-pill">🏆 Best Win Streak: <span class="val" id="best-streak">—</span></div>
+        <div class="streak-pill">✅ Current Win Streak: <span class="val" id="cur-win">—</span></div>
+        <div class="streak-pill">❌ Current Loss Streak: <span class="val" id="cur-loss">—</span></div>
+      </div>
+      <div class="trade-streak-banner" id="streak-banner"></div>
+    </div>
+
+    <!-- Team -->
+    <div class="section">
+      <div class="section-title">Team</div>
+      <div id="team-section"></div>
+    </div>
+
+    <!-- Boot Camp -->
+    <div class="section">
+      <div class="section-title">Boot Camp Progress</div>
+      <div class="training-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <span id="training-label" style="color:#aaa;font-size:0.9em">Loading…</span>
+          <span id="training-pct" style="color:#00d4ff;font-weight:700"></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="training-fill" style="width:0%"></div></div>
+        <div class="lesson-chips" id="lesson-chips"></div>
+        <div class="grad-banner" id="grad-banner">🎓 Boot Camp Graduate! You've completed all 6 lessons.</div>
+      </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="section">
+      <div class="section-title">Badges (<span id="badge-count">0</span> / <span id="badge-total">0</span> earned)</div>
+      <div class="badges-grid" id="badges-grid"></div>
+    </div>
+
+  </div><!-- /profile-content -->
+</div>
+
+<script>
+  const SESSION_KEY = 'sml_session';
+  const session = (() => {
+    try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+  })();
+
+  if (!session || !session.sessionId) {
+    document.getElementById('not-logged-in').style.display = 'block';
+  } else {
+    loadProfile();
+  }
+
+  async function api(url) {
+    const r = await fetch(url, { headers: { 'x-session-id': session.sessionId } });
+    return r.json();
+  }
+
+  const TIER_COLORS = { bronze:'#cd7f32', silver:'#aaa', gold:'#ffd700', platinum:'#a8c8e8', diamond:'#00e5ff' };
+  const LESSONS = [
+    { id:1, title:'What Is a Stock?' },
+    { id:2, title:'Buying & Selling Basics' },
+    { id:3, title:'Reading a Stock Chart' },
+    { id:4, title:'Risk Management' },
+    { id:5, title:'Fundamental vs Technical' },
+    { id:6, title:'Building Your Strategy' },
+  ];
+
+  async function loadProfile() {
+    document.getElementById('profile-content').style.display = 'block';
+
+    const [profile, avatarData] = await Promise.all([
+      api('/api/profile/me'),
+      api('/api/account/avatar'),
+    ]);
+
+    // Avatar
+    const circle = document.getElementById('avatar-circle');
+    if (avatarData.avatar) {
+      circle.innerHTML = `<img src="${avatarData.avatar}" alt="avatar">`;
+    }
+
+    // Hero
+    document.getElementById('hero-name').textContent = profile.fullName || 'Legend';
+    document.getElementById('hero-handle').textContent = profile.avatarName ? `"${profile.avatarName}"` : '';
+    document.getElementById('hero-tagline').textContent = profile.tagline || '';
+
+    if (profile.isCreatorMember) {
+      document.getElementById('tier-wrap').innerHTML = `<span class="tier-badge">⭐ Creator Member</span>`;
+    }
+
+    // Stats
+    document.getElementById('stat-xp').textContent = (profile.totalXP || 0).toLocaleString();
+    document.getElementById('stat-badges').textContent = profile.badgeCount || 0;
+    document.getElementById('stat-streak').textContent = (profile.streak && profile.streak.loginStreak) || 1;
+    document.getElementById('stat-rank').textContent = profile.lbRank ? `#${profile.lbRank}` : '—';
+    const gp = parseFloat(profile.gainPct || 0);
+    document.getElementById('stat-gain').textContent = (gp >= 0 ? '+' : '') + gp.toFixed(2) + '%';
+    document.getElementById('stat-gain').style.color = gp >= 0 ? '#00ff88' : '#ff4444';
+    document.getElementById('stat-trades').textContent = profile.trades || 0;
+
+    // Trade streak
+    const s = profile.streak || {};
+    document.getElementById('best-streak').textContent = s.maxWinStreak || 0;
+    document.getElementById('cur-win').textContent = s.currentWinStreak || 0;
+    document.getElementById('cur-loss').textContent = s.currentLossStreak || 0;
+    if (s.tradeStreakLabel) {
+      const banner = document.getElementById('streak-banner');
+      banner.textContent = s.tradeStreakLabel;
+      banner.style.display = 'block';
+      const colors = { hot:'rgba(255,107,0,0.15)', on_fire:'rgba(255,60,0,0.2)', unstoppable:'rgba(255,30,0,0.25)', cold:'rgba(0,180,255,0.1)', neutral:'transparent', mild:'rgba(255,200,0,0.1)' };
+      banner.style.background = colors[s.tradeStreakType] || 'rgba(255,255,255,0.05)';
+      banner.style.border = '1px solid rgba(255,255,255,0.08)';
+    }
+
+    // Team
+    const teamSection = document.getElementById('team-section');
+    if (profile.team) {
+      const t = profile.team;
+      const isCaptain = t.captainId === profile.userId;
+      teamSection.innerHTML = `
+        <div class="team-card">
+          <div class="team-icon">🛡️</div>
+          <div>
+            <div class="team-name">${escHtml(t.name)}</div>
+            <div class="team-meta">${t.memberCount} member${t.memberCount !== 1 ? 's' : ''} · Code: <strong>${t.code}</strong>${isCaptain ? ' · Captain 👑' : ''}</div>
+          </div>
+        </div>`;
+    } else {
+      teamSection.innerHTML = `<p class="no-team">You're not in a team yet. <a href="/teams.html">Create or join one →</a></p>`;
+    }
+
+    // Training
+    const tr = profile.training || {};
+    const done = (tr.completedLessons || []).length;
+    const total = tr.totalLessons || 6;
+    const pct = Math.round((done / total) * 100);
+    document.getElementById('training-label').textContent = `${done} of ${total} lessons completed`;
+    document.getElementById('training-pct').textContent = pct + '%';
+    document.getElementById('training-fill').style.width = pct + '%';
+    if (tr.graduated) document.getElementById('grad-banner').style.display = 'block';
+    const chips = document.getElementById('lesson-chips');
+    LESSONS.forEach(l => {
+      const completed = (tr.completedLessons || []).includes(l.id);
+      const chip = document.createElement('span');
+      chip.className = 'lesson-chip' + (completed ? ' done' : '');
+      chip.textContent = (completed ? '✅ ' : '') + l.title;
+      chips.appendChild(chip);
+    });
+
+    // Badges
+    const allBadges = profile.allBadges || [];
+    const earnedIds = new Set((profile.badges || []).map(b => b.id));
+    document.getElementById('badge-count').textContent = profile.badgeCount || 0;
+    document.getElementById('badge-total').textContent = allBadges.length;
+
+    const grid = document.getElementById('badges-grid');
+    // earned first, then locked
+    const sorted = [...allBadges].sort((a, b) => {
+      if (a.earned === b.earned) return 0;
+      return a.earned ? -1 : 1;
+    });
+    sorted.forEach(b => {
+      const card = document.createElement('div');
+      card.className = 'badge-card' + (b.earned ? ' earned' : ' locked');
+      card.title = b.description || b.name;
+      card.innerHTML = `
+        <span class="badge-icon">${b.icon || '🎖️'}</span>
+        <div class="badge-name">${escHtml(b.name)}</div>
+        <div class="badge-tier" style="color:${TIER_COLORS[b.tier] || '#aaa'}">${b.tier}</div>`;
+      grid.appendChild(card);
+    });
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
+</body>
+</html>

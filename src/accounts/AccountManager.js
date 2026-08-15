@@ -226,6 +226,17 @@ class AccountManager {
     return { success: true };
   }
 
+  // Alias used by password reset flow
+  getAccountByEmail(email) { return this.getAccount(email); }
+
+  updatePassword(userId, newPassword) {
+    const account = this.getAccountById(userId);
+    if (!account) return { success: false, error: 'Account not found' };
+    account.passwordHash = this.hashPassword(newPassword);
+    this._persist(account);
+    return { success: true };
+  }
+
   banAccount(userId, reason) {
     const account = this.getAccountById(userId);
     if (!account) return { success: false, error: 'Account not found' };
