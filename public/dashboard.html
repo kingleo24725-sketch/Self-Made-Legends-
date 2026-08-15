@@ -2889,12 +2889,23 @@
   .cp-head-icon{font-size:22px;}
   .cp-head-title{font-weight:800;font-size:15px;color:#fff;}
   .cp-head-sub{font-size:11px;color:rgba(255,255,255,.6);}
+  .cp-level-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;margin-left:6px;vertical-align:middle;}
+  .cp-level-badge.beginner{background:rgba(0,212,255,.15);color:#00d4ff;}
+  .cp-level-badge.intermediate{background:rgba(255,215,0,.15);color:#ffd700;}
+  .cp-level-badge.advanced{background:rgba(0,255,136,.15);color:#00ff88;}
   .cp-tip{background:rgba(0,212,255,.07);border-bottom:1px solid #2a3050;padding:10px 14px;font-size:12px;color:rgba(255,255,255,.7);line-height:1.5;}
   .cp-tip span{color:#00d4ff;font-weight:700;}
-  .cp-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:120px;}
-  .cp-msg{max-width:86%;padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.55;}
-  .cp-msg.bot{background:#253058;color:#e8eaf6;align-self:flex-start;border-bottom-left-radius:4px;}
-  .cp-msg.user{background:linear-gradient(135deg,#1a237e,#4a148c);color:#fff;align-self:flex-end;border-bottom-right-radius:4px;}
+  .cp-msgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;min-height:120px;}
+  .cp-msg-wrap{display:flex;flex-direction:column;align-self:flex-start;max-width:88%;}
+  .cp-msg-wrap.user-wrap{align-self:flex-end;}
+  .cp-msg{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.55;white-space:pre-wrap;}
+  .cp-msg.bot{background:#253058;color:#e8eaf6;border-bottom-left-radius:4px;}
+  .cp-msg.user{background:linear-gradient(135deg,#1a237e,#4a148c);color:#fff;border-bottom-right-radius:4px;}
+  .cp-fb{display:flex;gap:5px;margin-top:4px;padding-left:2px;}
+  .cp-fb-btn{background:none;border:1px solid #2a3050;border-radius:999px;color:#666;font-size:12px;padding:2px 8px;cursor:pointer;transition:.15s;}
+  .cp-fb-btn:hover{border-color:#555;color:#ccc;}
+  .cp-fb-btn.sent-pos{border-color:#00ff88;color:#00ff88;}
+  .cp-fb-btn.sent-neg{border-color:#ff6b6b;color:#ff6b6b;}
   .cp-qs{padding:8px 12px;border-top:1px solid #2a3050;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;}
   .cp-qs::-webkit-scrollbar{display:none;}
   .cp-q{background:#253058;border:none;color:#00d4ff;border-radius:999px;padding:5px 11px;font-size:11px;cursor:pointer;white-space:nowrap;transition:.15s;}
@@ -2912,14 +2923,14 @@
     <div class="cp-head">
       <div class="cp-head-icon">🤖</div>
       <div style="flex:1">
-        <div class="cp-head-title">SML Trading Coach</div>
-        <div class="cp-head-sub">AI assistant for beginners</div>
+        <div class="cp-head-title">SML Trading Coach <span id="cp-level-badge" class="cp-level-badge" style="display:none"></span></div>
+        <div class="cp-head-sub" id="cp-head-sub">Adaptive AI · learns from your feedback</div>
       </div>
       <button class="sml-mute-btn" style="background:none;border:none;cursor:pointer;font-size:17px;color:rgba(255,255,255,.7);padding:4px 6px;border-radius:8px;" onclick="SMLSounds.toggleMute()" title="Toggle sounds">🔊</button>
     </div>
     <div class="cp-tip" id="cp-daily-tip"><span>Tip:</span> Loading today's tip…</div>
     <div class="cp-msgs" id="cp-msgs">
-      <div class="cp-msg bot">Hey! I'm your SML Trading Coach 🤖 Ask me anything about stocks, trading strategies, or how to use this platform. I'm here to help beginners get started!</div>
+      <div class="cp-msg-wrap"><div class="cp-msg bot">Hey! I'm your SML Trading Coach 🤖 Ask me anything about stocks, trading strategies, or how to use this platform. I adapt to your skill level — the more you interact, the smarter I get! 💡</div></div>
     </div>
     <div class="cp-qs" id="cp-qs"></div>
     <div class="cp-input-row">
@@ -2933,6 +2944,16 @@
 <script>
 (function(){
   let coachOpen = false;
+  // Stores {query, answer} for each bot response so feedback can reference them
+  const coachHistory = [];
+
+  function getSessionHeaders() {
+    try {
+      const s = JSON.parse(localStorage.getItem('sml_session') || 'null');
+      if (s && s.sessionId) return { 'Content-Type': 'application/json', 'x-session-id': s.sessionId };
+    } catch(_) {}
+    return { 'Content-Type': 'application/json' };
+  }
 
   window.toggleCoach = function() {
     coachOpen = !coachOpen;
@@ -2949,9 +2970,10 @@
     if (coachInitDone) return;
     coachInitDone = true;
     try {
+      const headers = getSessionHeaders();
       const [tipRes, qsRes] = await Promise.all([
-        fetch('/api/coach/tip').then(r => r.json()),
-        fetch('/api/coach/questions').then(r => r.json()),
+        fetch('/api/coach/tip', { headers }).then(r => r.json()),
+        fetch('/api/coach/questions', { headers }).then(r => r.json()),
       ]);
       if (tipRes.tip) {
         document.getElementById('cp-daily-tip').innerHTML = `<span>Tip of the day:</span> ${tipRes.tip}`;
@@ -2960,7 +2982,19 @@
         document.getElementById('cp-qs').innerHTML = qsRes.questions
           .map(q => `<button class="cp-q" onclick="coachAsk(${JSON.stringify(q)})">${q}</button>`).join('');
       }
+      if (qsRes.level) setLevelBadge(qsRes.level);
     } catch(e) {}
+  }
+
+  function setLevelBadge(level) {
+    const badge = document.getElementById('cp-level-badge');
+    if (!badge || !level) return;
+    const labels = { beginner: '🌱 Beginner', intermediate: '📈 Intermediate', advanced: '🏆 Advanced' };
+    badge.textContent = labels[level] || '';
+    badge.className   = 'cp-level-badge ' + level;
+    badge.style.display = 'inline';
+    const sub = document.getElementById('cp-head-sub');
+    if (sub) sub.textContent = 'Adaptive AI · tuned to your ' + level + ' level';
   }
 
   window.coachAsk = function(q) {
@@ -2978,13 +3012,15 @@
     try {
       const r = await fetch('/api/coach/ask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getSessionHeaders(),
         body: JSON.stringify({ query }),
       });
       const data = await r.json();
       const typing = document.getElementById('coach-typing');
       if (typing) typing.remove();
-      addMsg(data.answer || 'Sorry, I couldn\'t understand that. Try asking about stocks, trading, or the leaderboard!', 'bot');
+      const answer = data.answer || "Sorry, I couldn't understand that. Try asking about stocks, trading, or the leaderboard!";
+      addBotResponse(answer, query);
+      if (data.level) setLevelBadge(data.level);
       if (window.SMLSounds) SMLSounds.notification();
     } catch(e) {
       const typing = document.getElementById('coach-typing');
@@ -2993,15 +3029,67 @@
     }
   };
 
+  // Add a bot response with 👍/👎 feedback buttons
+  function addBotResponse(text, query) {
+    const msgs    = document.getElementById('cp-msgs');
+    const wrap    = document.createElement('div');
+    wrap.className = 'cp-msg-wrap';
+
+    const bubble  = document.createElement('div');
+    bubble.className = 'cp-msg bot';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+
+    // Feedback row (only when user is logged in — session exists)
+    const idx = coachHistory.length;
+    coachHistory.push({ query, answer: text, sent: false });
+
+    const fb = document.createElement('div');
+    fb.className = 'cp-fb';
+    fb.id = 'cp-fb-' + idx;
+    fb.innerHTML =
+      `<button class="cp-fb-btn" id="cp-fb-up-${idx}" onclick="sendCoachFeedback(${idx},1)" title="Helpful">👍</button>` +
+      `<button class="cp-fb-btn" id="cp-fb-dn-${idx}" onclick="sendCoachFeedback(${idx},0)" title="Not helpful">👎</button>`;
+    wrap.appendChild(fb);
+
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  // Plain message (used for user bubbles and typing indicator)
   function addMsg(text, side, id) {
     const msgs = document.getElementById('cp-msgs');
+    const wrap = document.createElement('div');
+    wrap.className = 'cp-msg-wrap' + (side === 'user' ? ' user-wrap' : '');
     const div = document.createElement('div');
     div.className = 'cp-msg ' + side;
     div.textContent = text;
     if (id) div.id = id;
-    msgs.appendChild(div);
+    wrap.appendChild(div);
+    msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
   }
+
+  window.sendCoachFeedback = async function(idx, thumb) {
+    const item = coachHistory[idx];
+    if (!item || item.sent) return;
+    item.sent = true;
+
+    const upBtn = document.getElementById('cp-fb-up-' + idx);
+    const dnBtn = document.getElementById('cp-fb-dn-' + idx);
+    if (upBtn) upBtn.className = 'cp-fb-btn' + (thumb === 1 ? ' sent-pos' : '');
+    if (dnBtn) dnBtn.className = 'cp-fb-btn' + (thumb === 0 ? ' sent-neg' : '');
+    if (upBtn) upBtn.disabled = true;
+    if (dnBtn) dnBtn.disabled = true;
+
+    try {
+      await fetch('/api/coach/feedback', {
+        method: 'POST',
+        headers: getSessionHeaders(),
+        body: JSON.stringify({ query: item.query, answer: item.answer, thumb }),
+      });
+    } catch(_) {}
+  };
 
   document.getElementById('coach-input').addEventListener('keydown', e => {
     if (e.key === 'Enter') coachSend();

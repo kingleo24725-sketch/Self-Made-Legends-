@@ -1488,19 +1488,68 @@ app.post("/api/admin/tournament/championship", requireAdmin, (req, res) => {
 });
 
 // ── AI Coach ─────────────────────────────────────────────────────────────
+
+// Helper: build userContext from optional session header
+function buildCoachContext(req) {
+  const sessionId = req.headers['x-session-id'];
+  if (!sessionId) return {};
+  const session = accountManager.verifySession(sessionId);
+  if (!session.valid) return {};
+  const userId = session.userId;
+
+  const training   = trainingCamp.getProgress(userId);
+  const badgeCount = badgeSystem.getBadgeCount(userId);
+  const lb         = leaderboardManager.getWeeklyLeaderboard(500);
+  const lbEntry   = lb.find(e => e.userId === userId);
+  const rank      = lbEntry ? lbEntry.rank : null;
+
+  // Derive top topics from coach user state (exposed via public accessor)
+  const state      = coachSystem._userState ? coachSystem._userState.get(userId) : null;
+  const topTopics  = state
+    ? Object.entries(state.topicCounts).sort((a, b) => b[1] - a[1]).slice(0, 2).map(e => e[0])
+    : [];
+
+  return {
+    userId,
+    graduated:  training ? training.graduated : false,
+    badgeCount: badgeCount || 0,
+    rank,
+    topTopics,
+  };
+}
+
 app.post("/api/coach/ask", (req, res) => {
   const { query } = req.body;
   if (!query || typeof query !== 'string') return res.status(400).json({ error: 'query required' });
-  const answer = coachSystem.getResponse(query.slice(0, 400));
-  res.json({ answer });
+  const ctx    = buildCoachContext(req);
+  const answer = coachSystem.getResponse(query.slice(0, 400), ctx);
+  res.json({ answer, level: coachSystem._detectLevel(ctx) });
 });
 
 app.get("/api/coach/tip", (req, res) => {
-  res.json({ tip: coachSystem.getDailyTip() });
+  const ctx   = buildCoachContext(req);
+  const level = coachSystem._detectLevel(ctx);
+  res.json({ tip: coachSystem.getAdaptedTip(level, ctx.topTopics) });
 });
 
 app.get("/api/coach/questions", (req, res) => {
-  res.json({ questions: coachSystem.getQuickQuestions() });
+  const ctx   = buildCoachContext(req);
+  const level = coachSystem._detectLevel(ctx);
+  res.json({ questions: coachSystem.getAdaptedQuestions(level), level });
+});
+
+app.post("/api/coach/feedback", async (req, res) => {
+  const sessionId = req.headers['x-session-id'];
+  if (!sessionId) return res.status(401).json({ error: 'Session required' });
+  const session = accountManager.verifySession(sessionId);
+  if (!session.valid) return res.status(401).json({ error: 'Invalid session' });
+
+  const { query, answer, thumb } = req.body;
+  if (typeof thumb !== 'number' && typeof thumb !== 'boolean') {
+    return res.status(400).json({ error: 'thumb required (1/0 or true/false)' });
+  }
+  await coachSystem.submitFeedback(session.userId, query, answer, thumb === 1 || thumb === true);
+  res.json({ ok: true });
 });
 
 // ── Training Camp ─────────────────────────────────────────────────────────
@@ -1726,6 +1775,7 @@ async function startServer() {
     teamManager.restore(),
     leaderboardManager.restore(),
     tournamentManager.restore(),
+    coachSystem.restore(),
   ]);
   server.listen(PORT, () => {
     console.log(`🚀 Multi-Asset Trading Bot Server running on http://localhost:${PORT}`);

@@ -1,29 +1,150 @@
-// SML Trading Coach — rule-based Q&A for beginners
+'use strict';
+
+const db = require('../database/db');
+
 class CoachSystem {
   constructor() {
-    this.qa    = this._buildQA();
-    this.tips  = this._buildTips();
+    this.qa           = this._buildQA();
+    this.tips         = this._buildTips();
+    this.advancedTips = this._buildAdvancedTips();
+    // userId → { topicCounts:{}, negFeedback:{}, totalAsks:0 }
+    this._userState   = new Map();
   }
 
-  // Main entry point — returns a string answer
-  getResponse(query) {
-    const q = (query || '').toLowerCase().trim();
-    if (!q) return this.getDailyTip();
+  // ── Restore persisted context on startup ───────────────────────────────────
+  async restore() {
+    const rows = await db.all('SELECT * FROM coach_user_context');
+    for (const row of rows) {
+      try {
+        this._userState.set(row.user_id, {
+          topicCounts: JSON.parse(row.topic_counts || '{}'),
+          negFeedback: {},
+          totalAsks: row.total_asks || 0,
+        });
+      } catch (_) {}
+    }
+    // Replay last-7-days negative feedback into memory so adaptations survive restarts
+    const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const negRows = await db.all(
+      'SELECT user_id, query FROM coach_feedback WHERE thumb=0 AND created_at > ?',
+      [since]
+    );
+    for (const row of negRows) {
+      const state = this._getState(row.user_id);
+      const topic = this._topicFor(row.query);
+      if (topic) state.negFeedback[topic] = (state.negFeedback[topic] || 0) + 1;
+    }
+  }
 
-    // Find best matching entry (most keyword hits wins)
+  // ── Main entry: returns answer string adapted to user's level ──────────────
+  getResponse(query, userContext = {}) {
+    const q     = (query || '').toLowerCase().trim();
+    const level = this._detectLevel(userContext);
+    if (!q) return this.getAdaptedTip(level, userContext.topTopics);
+
     let best = null, bestScore = 0;
     for (const item of this.qa) {
       const score = item.keywords.filter(k => q.includes(k)).length;
       if (score > bestScore) { bestScore = score; best = item; }
     }
 
-    if (best && bestScore > 0) return best.answer;
+    const userId = userContext.userId;
+    if (userId && best) {
+      const state = this._getState(userId);
+      state.topicCounts[best.topic] = (state.topicCounts[best.topic] || 0) + 1;
+      state.totalAsks++;
+      this._persistContext(userId, state).catch(() => {});
+    }
 
-    return "That's a great question! My best advice for beginners: start with companies you know and use every day. If you understand the business, you have an edge. Keep asking — I'm here to help you become a legend. 💪";
+    if (best && bestScore > 0) {
+      const needsExtra = userId
+        ? (this._getState(userId).negFeedback[best.topic] || 0) >= 2
+        : false;
+      return this._adapt(best.answer, level, needsExtra, best.topic);
+    }
+
+    const fallbacks = {
+      beginner:     "Great question! My best advice for beginners: start with companies you know and use every day. If you understand the business, you have an edge. Keep asking — I'm here to help you become a legend. 💪",
+      intermediate: "Interesting question! That's where real edge comes from — asking what others don't. Study the leaderboard's top players for behavioral patterns, and keep refining your system. 📊",
+      advanced:     "Deep territory. At the top, it's all about edge, consistency, and risk-adjusted returns. Let the data drive the decision — not the narrative. 🏆",
+    };
+    return fallbacks[level] || fallbacks.beginner;
+  }
+
+  // ── Store feedback; adapt negFeedback map ──────────────────────────────────
+  async submitFeedback(userId, query, answer, isPositive) {
+    if (!userId) return;
+    const state = this._getState(userId);
+    const topic = this._topicFor(query);
+    if (topic) {
+      if (!isPositive) {
+        state.negFeedback[topic] = (state.negFeedback[topic] || 0) + 1;
+      } else if (state.negFeedback[topic] > 0) {
+        state.negFeedback[topic]--;
+      }
+    }
+    db.run(
+      `INSERT INTO coach_feedback (user_id, query, answer, thumb, created_at) VALUES (?, ?, ?, ?, ?)`,
+      [userId, (query || '').slice(0, 300), (answer || '').slice(0, 800), isPositive ? 1 : 0, Date.now()]
+    ).catch(e => console.error('coach_feedback persist:', e.message));
+    await this._persistContext(userId, state).catch(() => {});
+  }
+
+  // ── Level-adapted tip ──────────────────────────────────────────────────────
+  getAdaptedTip(level, topTopics) {
+    // Surface a topic-relevant tip if user has a clear focus area
+    const topicTips = {
+      risk:     "💡 Risk reminder: max 20% of capital per position, set a stop loss at -8% before you enter — always.",
+      strategy: "💡 Strategy: Research → Size position → Set stop loss → Set target → Execute. The plan is the edge.",
+      basics:   "💡 Fundamentals compound. Every expert still uses what they learned at the start — keep building.",
+      crypto:   "💡 Crypto trades 24/7 and swings hard. Keep crypto positions smaller and stop losses tighter.",
+      platform: "💡 Platform tip: leaderboard rank updates in real time. Check it right after a big trade to see your impact.",
+    };
+    if (topTopics && topTopics.length > 0 && topicTips[topTopics[0]]) {
+      return topicTips[topTopics[0]];
+    }
+    const idx = Math.floor(Date.now() / 86400000);
+    if (level === 'advanced') {
+      return this.advancedTips[idx % this.advancedTips.length];
+    }
+    const base = this.tips[idx % this.tips.length];
+    if (level === 'beginner') {
+      return base + ' 🎓 Visit /training.html to complete Boot Camp and level up faster!';
+    }
+    return base;
   }
 
   getDailyTip() {
     return this.tips[Math.floor(Date.now() / 86400000) % this.tips.length];
+  }
+
+  // ── Level-adapted quick questions ──────────────────────────────────────────
+  getAdaptedQuestions(level) {
+    if (level === 'advanced') {
+      return [
+        "What separates top-10 traders?",
+        "How does DCA work in volatility?",
+        "How do I approach the tournament bracket?",
+        "What is risk-adjusted return?",
+        "How do pros size positions?",
+        "What is the Kelly Criterion?",
+        "How do I read volume signals?",
+        "What is a Sharpe Ratio?",
+      ];
+    }
+    if (level === 'intermediate') {
+      return [
+        "What is my best trading strategy?",
+        "How do P/E ratios work?",
+        "When should I take profits?",
+        "How do I manage a losing trade?",
+        "Why use a stop loss?",
+        "How do dividends work?",
+        "How does dollar cost averaging help?",
+        "How do I beat the AI challenge?",
+      ];
+    }
+    return this.getQuickQuestions();
   }
 
   getQuickQuestions() {
@@ -36,6 +157,94 @@ class CoachSystem {
       "What are badges?",
       "How do I earn more XP?",
       "What is risk management?",
+    ];
+  }
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  _detectLevel(ctx = {}) {
+    if (!ctx) return 'beginner';
+    const { graduated, badgeCount, rank } = ctx;
+    if (rank != null && rank <= 10) return 'advanced';
+    if (graduated || (badgeCount != null && badgeCount >= 5)) return 'intermediate';
+    return 'beginner';
+  }
+
+  _getState(userId) {
+    if (!this._userState.has(userId)) {
+      this._userState.set(userId, { topicCounts: {}, negFeedback: {}, totalAsks: 0 });
+    }
+    return this._userState.get(userId);
+  }
+
+  _topicFor(query) {
+    const q = (query || '').toLowerCase();
+    let best = null, bestScore = 0;
+    for (const item of this.qa) {
+      const score = item.keywords.filter(k => q.includes(k)).length;
+      if (score > bestScore) { bestScore = score; best = item; }
+    }
+    return best ? best.topic : null;
+  }
+
+  _adapt(answer, level, needsExtra, topic) {
+    const extras = {
+      beginner: {
+        risk:     "\n\n💡 **Beginner note:** The stop loss rule is the #1 habit to build now — it saves beginners from their worst mistakes.",
+        strategy: "\n\n💡 **Beginner note:** Stick to 2–3 positions max while learning. Fewer positions = easier to track and learn from.",
+        basics:   "\n\n💡 **Beginner note:** Don't rush — paper trading on SML is risk-free. Use it to build confidence before any real money.",
+        default:  "\n\n💡 **Beginner note:** Take it one concept at a time. Small steps compound into big knowledge.",
+      },
+      advanced: {
+        risk:     "\n\n🔬 **Advanced:** Consider Kelly Criterion for position sizing and track max drawdown alongside gain % for a complete risk picture.",
+        strategy: "\n\n🔬 **Advanced:** At this level, edge comes from execution quality. Review your timing, not just your thesis.",
+        platform: "\n\n🔬 **Advanced:** In tournament play, seed is a weapon. Finishing #1 or #2 routes you away from the strongest opponents until finals.",
+        crypto:   "\n\n🔬 **Advanced:** Crypto/BTC correlation shifts in bear phases — pairs trading BTC vs. altcoin spreads can capture mean-reversion.",
+        default:  "\n\n🔬 **Advanced:** Precision and consistency separate legends from the pack. Keep sharpening your edge.",
+      },
+    };
+
+    let suffix = '';
+    if (level === 'beginner') {
+      suffix = (extras.beginner[topic] || extras.beginner.default);
+    } else if (level === 'advanced') {
+      suffix = (extras.advanced[topic] || extras.advanced.default);
+    }
+
+    // Extra depth when user gave repeated thumbs down on this topic
+    if (needsExtra) {
+      suffix += `\n\n📚 **More detail:** It looks like this topic needs a deeper dive. Try the Boot Camp at /training.html, or ask me a more specific follow-up question about ${topic}.`;
+    }
+
+    return answer + suffix;
+  }
+
+  async _persistContext(userId, state) {
+    await db.run(
+      `INSERT INTO coach_user_context (user_id, topic_counts, total_asks, updated_at)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         topic_counts=excluded.topic_counts,
+         total_asks=excluded.total_asks,
+         updated_at=excluded.updated_at`,
+      [userId, JSON.stringify(state.topicCounts), state.totalAsks, Date.now()]
+    );
+  }
+
+  // ── Content ────────────────────────────────────────────────────────────────
+  _buildAdvancedTips() {
+    return [
+      "📊 Advanced: Monitor your equity curve, not just total gain. A smooth curve with controlled drawdowns beats a volatile high return.",
+      "🎯 Advanced: The gap at the top of the leaderboard is execution, not insight. Position size discipline and timing precision are your edge.",
+      "💡 Advanced: Track your tournament bracket opponents' weekly gain trends — momentum heading into elimination rounds matters more than current rank.",
+      "⚡ Advanced: A 1% daily compounding edge turns a 90-day season into a dominant position. Small consistent edges accumulate into massive leads.",
+      "🧠 Advanced: Sectors rotate. When one sector leads for 3+ weeks, start watching the laggard — mean reversion is always coming.",
+      "🏆 Advanced: Legendary traders review losing trades 3× longer than winning ones. Your losses have more to teach than your wins.",
+      "📈 Advanced: In a strong trend, add to winners on pullbacks. In a choppy market, reduce exposure. Knowing which environment you're in is the skill.",
+      "🔬 Advanced: Volume confirmation is the #1 filter for false breakouts. Never chase a move without above-average volume — conviction shows up in the tape.",
+      "💎 Advanced: The Diamond tier separates those who play from those who study. Your trade journal — rationale in, rationale out — is your greatest edge.",
+      "🎖️ Advanced: In the Sweet Sixteen Tournament, seeding is strategy. Finish #1 or #2 to delay facing the toughest opponents until you're in the finals.",
+      "🛡️ Advanced: Max drawdown protection beats max gain seeking. A portfolio down 40% needs a 67% gain just to recover — protect capital first.",
+      "🚀 Advanced: The best entries are patient. Amateurs chase the move; legends wait for the setup to confirm. Waiting is a position.",
     ];
   }
 
@@ -58,8 +267,9 @@ class CoachSystem {
 
   _buildQA() {
     return [
-      // ── Stock Market Basics ─────────────────────────────────────────────
+      // ── Stock Market Basics ─────────────────────────────────────────────────
       {
+        topic: 'basics',
         keywords: ['what is a stock', 'what are stocks', 'define stock', 'stock mean'],
         answer: `📈 A stock (also called a share) is a tiny piece of ownership in a real company.
 
@@ -70,6 +280,7 @@ Companies sell stocks to raise money to grow their business. You buy stocks hopi
 On SML you practice this with paper money so you can learn without any real risk! 🎮`,
       },
       {
+        topic: 'basics',
         keywords: ['how does the market work', 'how stock market works', 'stock exchange', 'nyse', 'nasdaq'],
         answer: `🏛️ The stock market is basically a giant organized auction that runs Monday–Friday, 9:30am–4pm Eastern time.
 
@@ -83,6 +294,7 @@ Key exchanges:
 On SML you trade against real price data from these exchanges, so your paper trading experience mirrors exactly what real trading feels like! 🎯`,
       },
       {
+        topic: 'basics',
         keywords: ['buy', 'purchase', 'first trade', 'how to trade', 'how do i trade', 'make a trade'],
         answer: `🛒 Buying a stock (called "going long") means you think the price will go UP.
 
@@ -97,6 +309,7 @@ On SML — tap any stock in your trading panel, enter the amount you want to inv
 💡 Beginner rule: Never invest more than 20% of your total capital in a single stock. Spread the risk!`,
       },
       {
+        topic: 'basics',
         keywords: ['sell', 'when to sell', 'selling', 'exit', 'take profit'],
         answer: `📤 Selling means you close your position and lock in your gain (or cut your loss).
 
@@ -111,6 +324,7 @@ The hardest part of trading is NOT knowing when to buy — it's having the disci
 🏆 Pro tip: Set a target price WHEN you buy, not after. "I'll sell at +20%" is a plan. "I'll sell when it feels right" is gambling.`,
       },
       {
+        topic: 'basics',
         keywords: ['portfolio', 'what is portfolio', 'my portfolio'],
         answer: `💼 Your portfolio is your complete collection of investments — everything you currently own.
 
@@ -124,6 +338,7 @@ A healthy portfolio is DIVERSIFIED — meaning it has stocks across different se
 On SML your portfolio score drives your leaderboard rank. The higher your gain %, the higher you climb. 🚀`,
       },
       {
+        topic: 'basics',
         keywords: ['gain', 'loss', 'profit', 'return', 'gain percent', 'gain %', 'percentage'],
         answer: `📊 Gain % = (Current Value − Purchase Price) ÷ Purchase Price × 100
 
@@ -137,6 +352,7 @@ A loss works the same way in reverse — if the price drops to $80, that's -20%.
 On SML your **portfolio gain %** is what the leaderboard ranks you by. Focus on percentage return, not raw dollar amounts — that's how the pros measure performance. 📈`,
       },
       {
+        topic: 'basics',
         keywords: ['bull', 'bear', 'bull market', 'bear market', 'bullish', 'bearish'],
         answer: `🐂🐻 These are the two moods of the market:
 
@@ -151,6 +367,7 @@ Trader slang:
 On SML you can still win in a bear market by selling before the drop — or by staying patient while others panic. 🎯`,
       },
       {
+        topic: 'risk',
         keywords: ['diversif', 'spread risk', 'dont put all', "don't put all", 'multiple stocks'],
         answer: `🌐 Diversification = not putting all your eggs in one basket.
 
@@ -164,6 +381,7 @@ If you put 100% of your money in one stock and it drops 50%, you've lost half yo
 The goal isn't to hit home runs on every trade — it's to stay in the game long enough to compound your wins. 🧠`,
       },
       {
+        topic: 'basics',
         keywords: ['pe ratio', 'p/e', 'price to earnings', 'valuation'],
         answer: `📐 The P/E Ratio (Price-to-Earnings) tells you how expensive a stock is relative to its profits.
 
@@ -179,6 +397,7 @@ What it means:
 It's not magic — a high P/E stock can still be a great buy if the growth justifies it. Apple's P/E has been "expensive" for 20 years and still made people rich. Context is everything.`,
       },
       {
+        topic: 'basics',
         keywords: ['dividend', 'dividends', 'passive income', 'income investing'],
         answer: `💵 A dividend is a cash payment a company sends to its shareholders regularly (usually every quarter).
 
@@ -189,6 +408,7 @@ Not all companies pay dividends — fast-growing tech companies usually reinvest
 Dividend investing is a classic "slow and steady" wealth-building strategy. It's less exciting than chasing big gains, but it compounds powerfully over time. 🏦`,
       },
       {
+        topic: 'basics',
         keywords: ['volume', 'trading volume', 'what is volume'],
         answer: `📊 Volume = the number of shares traded in a given time period.
 
@@ -202,6 +422,7 @@ Think of it like a crowd at an auction. A bid that 1,000 people are responding t
 Watch volume when a stock makes a big move — it tells you if the move is real or just noise. 🔍`,
       },
       {
+        topic: 'risk',
         keywords: ['stop loss', 'stop-loss', 'cut losses', 'limit loss'],
         answer: `🛑 A stop loss is a pre-set rule: "If this stock drops X%, I will sell automatically."
 
@@ -215,7 +436,8 @@ The hardest thing in trading is admitting you're wrong. Stop losses force the di
 On SML practice this on every trade — decide your stop loss BEFORE you buy. Build the habit now so it's automatic when real money is on the line. 💪`,
       },
       {
-        keywords: ['strategy', 'strategies', 'beginner strategy', 'how to win', 'tips', 'advice', 'start'],
+        topic: 'strategy',
+        keywords: ['strategy', 'strategies', 'beginner strategy', 'how to win', 'tips', 'advice'],
         answer: `🎯 The best beginner strategy on SML (and in real life):
 
 **1. Research before you buy**
@@ -239,6 +461,7 @@ The habits you build here transfer directly to real investing. Take it seriously
 Ready to make your first trade? 🚀`,
       },
       {
+        topic: 'strategy',
         keywords: ['dollar cost averaging', 'dca', 'average down', 'average in'],
         answer: `📅 Dollar Cost Averaging (DCA) = investing a fixed amount at regular intervals regardless of price.
 
@@ -253,8 +476,9 @@ Warren Buffett calls this the best strategy for most investors. It removes emoti
 
 On SML you can practice this by adding to positions over multiple days instead of going all-in at once. 📆`,
       },
-      // ── SML Platform ────────────────────────────────────────────────────
+      // ── SML Platform ────────────────────────────────────────────────────────
       {
+        topic: 'platform',
         keywords: ['leaderboard', 'ranking', 'rank', 'how am i ranked', 'score', 'how does ranking work'],
         answer: `🏆 The SML Leaderboard ranks players by Portfolio Gain % — how much your paper portfolio has grown since you joined.
 
@@ -273,6 +497,7 @@ The **Top 16** in each division qualify for the **Sweet Sixteen Tournament** at 
 Focus on your gain %, not the dollar number — that's what separates true legends from the pack.`,
       },
       {
+        topic: 'platform',
         keywords: ['badge', 'badges', 'how to earn badges', 'what are badges', 'achievement'],
         answer: `🏅 Badges are achievement awards you earn by hitting milestones. There are 5 tiers:
 
@@ -287,6 +512,7 @@ Each badge also awards **XP** which powers the XP leaderboard. Badges display on
 The **Hall of Famer** diamond badge is the rarest — only the top 3 finishers each season earn it. 🎖️`,
       },
       {
+        topic: 'platform',
         keywords: ['xp', 'experience', 'level', 'points', 'how to get xp'],
         answer: `⚡ XP (Experience Points) powers your progress on SML. You earn XP by:
 
@@ -300,6 +526,7 @@ There's a separate **XP Leaderboard** alongside the Portfolio Leaderboard — so
 💡 **Beginner tip:** Log in every single day. A 90-day login streak alone earns you a Diamond badge and 5,000 XP. Consistency is a skill.`,
       },
       {
+        topic: 'platform',
         keywords: ['mission', 'missions', 'daily mission', 'task', 'quest', 'challenge'],
         answer: `📋 Daily missions are specific goals that refresh regularly and award XP when completed.
 
@@ -317,6 +544,7 @@ They keep you active on days when the market is slow. Even if your stocks are fl
 Check your missions daily under the Missions section on your dashboard. The more consistently you complete them, the faster you climb. 🎯`,
       },
       {
+        topic: 'platform',
         keywords: ['season', 'seasons', 'how long is a season', 'season end', 'when does season end'],
         answer: `📅 SML runs in 3-month seasons (about 90 days each).
 
@@ -331,6 +559,7 @@ After a season ends, a fresh new season begins. Your badges carry over forever. 
 🏆 The goal: finish top 3 in your division before the season clock hits zero.`,
       },
       {
+        topic: 'platform',
         keywords: ['tournament', 'sweet sixteen', 'bracket', 'championship', 'compete'],
         answer: `🏟️ The SML Tournament is a 16-player single-elimination bracket — like March Madness but for traders!
 
@@ -346,6 +575,7 @@ You qualify by ranking in the top 16 of your division when the season ends. The 
 View the live bracket at /tournament.html — it updates in real time as matches are decided! 👑`,
       },
       {
+        topic: 'platform',
         keywords: ['beat the ai', 'ai challenge', 'ai bot', 'vs ai', 'robot'],
         answer: `🤖 The "Beat the AI" challenge lets you compete directly against SML's AI trading bot.
 
@@ -358,6 +588,7 @@ If you beat the AI consistently, you complete missions, earn XP, and prove you c
 Check your AI challenge status on the dashboard. The gap between your gain % and the AI's is shown in real time. Stay above the line. 💪`,
       },
       {
+        topic: 'platform',
         keywords: ['team', 'squad', 'join team', 'create team', 'group'],
         answer: `👥 Teams (Squads) let you compete with friends as a group!
 
@@ -376,7 +607,8 @@ Check your AI challenge status on the dashboard. The gap between your gain % and
 Check the Teams page to create or join a squad. Being on a winning team builds your legend even faster. 🏆`,
       },
       {
-        keywords: ['training', 'boot camp', 'bootcamp', 'learn', 'beginner', 'new', 'tutorial', 'teach me', 'start'],
+        topic: 'platform',
+        keywords: ['training', 'boot camp', 'bootcamp', 'learn', 'beginner', 'new', 'tutorial', 'teach me'],
         answer: `🎓 New to trading? Our Training Camp is built exactly for you!
 
 **The Boot Camp has 6 lessons:**
@@ -391,7 +623,9 @@ Each lesson takes about 3 minutes to read. Complete all 6 and you graduate as a 
 
 👉 Visit /training.html to start Boot Camp right now. It's free and it'll save you from the most common beginner mistakes.`,
       },
+      // ── Crypto ──────────────────────────────────────────────────────────────
       {
+        topic: 'crypto',
         keywords: ['crypto', 'bitcoin', 'ethereum', 'cryptocurrency', 'crypto trade'],
         answer: `₿ Cryptocurrency is digital money that runs on blockchain technology — decentralized, not controlled by any government or bank.
 

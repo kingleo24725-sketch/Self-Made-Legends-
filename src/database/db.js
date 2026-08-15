@@ -143,6 +143,24 @@ class DB {
         data       TEXT NOT NULL,
         closed_at  INTEGER
       )`,
+
+      // Coach feedback (thumbs up/down on responses)
+      `CREATE TABLE IF NOT EXISTS coach_feedback (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        query      TEXT,
+        answer     TEXT,
+        thumb      INTEGER NOT NULL,
+        created_at INTEGER
+      )`,
+
+      // Coach per-user context (topic frequency, ask count)
+      `CREATE TABLE IF NOT EXISTS coach_user_context (
+        user_id      TEXT PRIMARY KEY,
+        topic_counts TEXT DEFAULT '{}',
+        total_asks   INTEGER DEFAULT 0,
+        updated_at   INTEGER
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
   }
