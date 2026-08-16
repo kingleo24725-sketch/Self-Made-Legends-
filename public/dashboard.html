@@ -1541,6 +1541,91 @@
     <canvas id="cel-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
   </div>
 
+  <!-- Bankruptcy Modal -->
+  <div id="bankruptcy-modal" style="display:none; position:fixed; inset:0; z-index:8888; background:rgba(0,0,0,.9); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg,#1a0a0a,#200d0d); border:2px solid #ff4444; border-radius:20px; padding:32px; max-width:560px; width:100%; box-shadow:0 0 60px rgba(255,68,68,.25);">
+      <div style="text-align:center; margin-bottom:24px;">
+        <div style="font-size:3em; margin-bottom:8px;">💸</div>
+        <h2 style="color:#ff4444; font-size:1.5em; font-weight:900; margin-bottom:8px;">You're Broke!</h2>
+        <p style="color:#888; font-size:0.9em; line-height:1.6;">Your portfolio hit $0. Every legend has a comeback story — pick your path:</p>
+        <div id="bk-total" style="color:#ff6666; font-size:0.85em; margin-top:6px;"></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <!-- Social Share Recovery -->
+        <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:14px; padding:20px; text-align:center;">
+          <div style="font-size:2em; margin-bottom:8px;">📣</div>
+          <h3 style="color:#00d4ff; font-size:1em; font-weight:700; margin-bottom:8px;">Shout Us Out</h3>
+          <p style="color:#888; font-size:0.82em; margin-bottom:16px; line-height:1.5;">Post about Self-Made Legends on X (Twitter) and claim <strong style="color:#00ff88;">$100 paper money</strong> back — once every 24 hours.</p>
+          <button id="bk-share-btn" onclick="initSocialClaim()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">📤 Share &amp; Claim $100</button>
+          <div id="bk-share-status" style="margin-top:8px; font-size:0.78em; color:#666;"></div>
+        </div>
+        <!-- Buy Paper Money -->
+        <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:14px; padding:20px; text-align:center;">
+          <div style="font-size:2em; margin-bottom:8px;">💰</div>
+          <h3 style="color:#ffd700; font-size:1em; font-weight:700; margin-bottom:8px;">Buy Paper Money</h3>
+          <p style="color:#888; font-size:0.82em; margin-bottom:16px; line-height:1.5;">Instantly restock your account with virtual cash — real money goes to the creator.</p>
+          <button onclick="closeBankruptcyModal(); openPaperMoneyStore();" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">🛒 Buy Paper Money</button>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:20px;">
+        <button onclick="closeBankruptcyModal()" style="background:transparent; border:1px solid #333; color:#555; border-radius:8px; padding:8px 24px; cursor:pointer; font-size:0.82em;">Maybe Later</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paper Money Store Modal -->
+  <div id="paper-money-modal" style="display:none; position:fixed; inset:0; z-index:8889; background:rgba(0,0,0,.88); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg,#0d1b2a,#1a1f2e); border:2px solid #ffd700; border-radius:20px; padding:32px; max-width:600px; width:100%; box-shadow:0 0 60px rgba(255,215,0,.2);">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+        <div>
+          <h2 style="color:#ffd700; font-size:1.4em; font-weight:900; margin:0;">💰 Paper Money Store</h2>
+          <p style="color:#888; font-size:0.82em; margin:4px 0 0;">Virtual trading cash — real payment to creator</p>
+        </div>
+        <button onclick="closePaperMoneyStore()" style="background:transparent; border:1px solid #333; color:#666; border-radius:8px; padding:6px 12px; cursor:pointer;">✕</button>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px;">
+        <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
+          <div style="font-size:1.5em; margin-bottom:6px;">💵</div>
+          <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$1,000</div>
+          <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Hustle Pack</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$4.99</div>
+          <button onclick="buyPaperMoney('hustle')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+        </div>
+        <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
+          <div style="font-size:1.5em; margin-bottom:6px;">💸</div>
+          <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$5,000</div>
+          <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Grind Pack</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$10.99</div>
+          <button onclick="buyPaperMoney('grind')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+        </div>
+        <div style="background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.4); border-radius:12px; padding:16px; text-align:center;">
+          <div style="font-size:1.5em; margin-bottom:6px;">📈</div>
+          <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$25,000</div>
+          <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Investor Pack</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$15.00</div>
+          <button onclick="buyPaperMoney('investor')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+        </div>
+        <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
+          <div style="font-size:1.5em; margin-bottom:6px;">🐋</div>
+          <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$50,000</div>
+          <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Whale Pack</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$20.00</div>
+          <button onclick="buyPaperMoney('whale')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,140,0,.08)); border:2px solid #ffd700; border-radius:12px; padding:16px; text-align:center;">
+          <div style="font-size:1.5em; margin-bottom:6px;">👑</div>
+          <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$200,000</div>
+          <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Ultimate Pack</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$75.00</div>
+          <button onclick="buyPaperMoney('ultimate')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:16px;">
+        <p style="color:#444; font-size:0.75em;">Virtual paper money only — not real currency. Real payment charged to your card.</p>
+      </div>
+    </div>
+  </div>
+
   <!-- Demo Banner (shown in guest/demo mode) -->
   <div id="demo-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:200; background:linear-gradient(90deg,#1a1f2e,#0d1b2a); border-top:2px solid #ffd700; padding:12px 20px; display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
     <div style="color:#ffd700; font-weight:bold;">👑 Demo Mode — Your progress won't be saved</div>
@@ -1578,10 +1663,24 @@
 
     // ─── Trade Tab ────────────────────────────────────────────────────────────
 
-    let _marketPrices = {};   // symbol -> { price, change }
+    let _marketPrices = {};   // symbol -> { price, change, type }
     let _selectedSym  = null;
     let _coachPayload = null;
     let _tradeTabInit = false;
+
+    // Smart price formatter — handles BTC ($97k) down to MATIC ($0.47) and DOGE ($0.00017)
+    function fmtPrice(price) {
+      if (price === null || price === undefined || isNaN(price)) return '$—';
+      if (price >= 1000)  return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      if (price >= 1)     return '$' + price.toFixed(2);
+      if (price >= 0.001) return '$' + price.toFixed(4);
+      return '$' + price.toFixed(6);
+    }
+
+    function isCryptoSym(sym) {
+      const CRYPTO = new Set(['BTC','ETH','SOL','BNB','ADA','DOGE','XRP','AVAX','MATIC','DOT','LINK','LTC','ATOM','BCH','NEAR']);
+      return CRYPTO.has(sym);
+    }
 
     function initTradeTab() {
       if (_tradeTabInit) {
@@ -1635,9 +1734,22 @@
         tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#555;padding:20px;">No data yet</td></tr>';
         return;
       }
-      for (const sym of symbols) {
-        const d = _marketPrices[sym];
-        tbody.appendChild(buildMWRow(sym, d));
+      const stocks = symbols.filter(s => !isCryptoSym(s));
+      const crypto = symbols.filter(s =>  isCryptoSym(s));
+
+      const makeHeader = (label, color) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td colspan="3" style="padding:6px 10px; font-size:0.72em; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:${color}; background:rgba(255,255,255,0.03); border-bottom:1px solid rgba(255,255,255,0.06);">${label}</td>`;
+        return tr;
+      };
+
+      if (stocks.length) {
+        tbody.appendChild(makeHeader('📈 Stocks', '#aaa'));
+        for (const sym of stocks) tbody.appendChild(buildMWRow(sym, _marketPrices[sym]));
+      }
+      if (crypto.length) {
+        tbody.appendChild(makeHeader('🪙 Crypto', '#ffd700'));
+        for (const sym of crypto) tbody.appendChild(buildMWRow(sym, _marketPrices[sym]));
       }
     }
 
@@ -1646,12 +1758,14 @@
       tr.className = 'mw-row';
       tr.id = `mw-${sym}`;
       tr.setAttribute('data-sym', sym);
+      const isCrypto    = d.type === 'crypto' || isCryptoSym(sym);
       const changeColor = d.change >= 0 ? '#00c853' : '#f44336';
       const changeSign  = d.change >= 0 ? '+' : '';
+      const symLabel    = isCrypto ? `<span style="margin-right:4px;font-size:0.75em;color:#ffd700;">🪙</span>${sym}` : sym;
       tr.innerHTML = `
-        <td style="padding:10px 12px; font-weight:bold; color:#e0e0e0;">${sym}</td>
-        <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums; color:#e0e0e0;" id="mw-price-${sym}">$${d.price.toFixed(2)}</td>
-        <td style="padding:10px 12px; text-align:right; color:${changeColor}; font-weight:bold;" id="mw-change-${sym}">${changeSign}${d.change.toFixed(2)}%</td>
+        <td style="padding:8px 10px; font-weight:bold; color:#e0e0e0;">${symLabel}</td>
+        <td style="padding:8px 10px; text-align:right; font-variant-numeric:tabular-nums; color:#e0e0e0; font-size:0.92em;" id="mw-price-${sym}">${fmtPrice(d.price)}</td>
+        <td style="padding:8px 10px; text-align:right; color:${changeColor}; font-weight:bold; font-size:0.88em;" id="mw-change-${sym}">${changeSign}${d.change.toFixed(2)}%</td>
       `;
       tr.onclick = () => selectTradeSymbol(sym);
       return tr;
@@ -1665,7 +1779,7 @@
       }
       const priceEl  = document.getElementById(`mw-price-${sym}`);
       const changeEl = document.getElementById(`mw-change-${sym}`);
-      if (priceEl) priceEl.textContent = `$${data.price.toFixed(2)}`;
+      if (priceEl) priceEl.textContent = fmtPrice(data.price);
       const changeColor = data.change >= 0 ? '#00c853' : '#f44336';
       if (changeEl) {
         changeEl.style.color = changeColor;
@@ -1687,14 +1801,24 @@
       const data = _marketPrices[sym] || {};
       updateTradePanelPrice(sym, data);
 
+      // Allow fractional quantities for crypto
+      const qtyInput = document.getElementById('trade-qty');
+      if (qtyInput) {
+        const crypto = isCryptoSym(sym);
+        qtyInput.step        = crypto ? '0.0001' : '1';
+        qtyInput.placeholder = crypto ? 'Qty (e.g. 0.001)' : 'Qty (shares)';
+        qtyInput.min         = crypto ? '0.0001' : '1';
+      }
+
       document.getElementById('trade-buy-btn').disabled  = false;
       document.getElementById('trade-sell-btn').disabled = false;
       updateTradeCost();
     }
 
     function updateTradePanelPrice(sym, data) {
-      document.getElementById('trade-symbol-label').textContent = sym;
-      document.getElementById('trade-price-display').textContent = data.price ? `$${data.price.toFixed(2)}` : '—';
+      const isCrypto = isCryptoSym(sym);
+      document.getElementById('trade-symbol-label').textContent = isCrypto ? `🪙 ${sym}` : sym;
+      document.getElementById('trade-price-display').textContent = data.price ? fmtPrice(data.price) : '—';
       const changeEl = document.getElementById('trade-change-display');
       if (data.change !== undefined) {
         const up = data.change >= 0;
@@ -1709,7 +1833,7 @@
       const price = _marketPrices[_selectedSym] ? _marketPrices[_selectedSym].price : 0;
       const qty   = parseFloat(document.getElementById('trade-qty').value) || 0;
       const total = price * qty;
-      document.getElementById('trade-est-cost').textContent = total ? `$${total.toFixed(2)}` : '—';
+      document.getElementById('trade-est-cost').textContent = total ? fmtPrice(total) : '—';
     }
 
     async function executeTrade(type) {
@@ -1734,9 +1858,10 @@
         const resultEl = document.getElementById('trade-result');
         if (d.success) {
           const color = type === 'BUY' ? '#00c853' : '#f44336';
+          const qtyStr = qty < 1 ? qty.toFixed(6).replace(/\.?0+$/, '') : qty;
           const msg   = type === 'BUY'
-            ? `Bought ${qty} × ${_selectedSym} @ $${d.price.toFixed(2)} — Cost $${d.cost.toFixed(2)}`
-            : `Sold ${qty} × ${_selectedSym} @ $${d.price.toFixed(2)} — Got $${d.proceeds.toFixed(2)}`;
+            ? `Bought ${qtyStr} ${_selectedSym} @ ${fmtPrice(d.price)} — Cost ${fmtPrice(d.cost)}`
+            : `Sold ${qtyStr} ${_selectedSym} @ ${fmtPrice(d.price)} — Got ${fmtPrice(d.proceeds)}`;
           resultEl.style.color = color;
           resultEl.textContent = msg;
           showToast(type === 'BUY' ? '📈' : '📉', `${type} Executed`, msg, color);
@@ -1762,8 +1887,10 @@
       try {
         const r = await fetch('/api/portfolio', { headers: { 'X-Session-Id': sid } });
         const d = await r.json();
-        document.getElementById('port-cash').textContent  = `$${(d.cash || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
-        document.getElementById('port-total').textContent = `$${(d.total_value || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
+        const cash = d.cash || 0;
+        const total = d.total_value || 0;
+        document.getElementById('port-cash').textContent  = fmtPrice(cash);
+        document.getElementById('port-total').textContent = fmtPrice(total);
         const gEl = document.getElementById('port-gain');
         const gp  = d.gain_pct || 0;
         gEl.textContent = `${gp >= 0 ? '+' : ''}${gp.toFixed(2)}%`;
@@ -1774,18 +1901,30 @@
           holdDiv.innerHTML = '<div style="color:#444; text-align:center; padding:12px;">No positions yet</div>';
         } else {
           holdDiv.innerHTML = d.holdings.map(h => {
-            const pnlColor = h.pnl >= 0 ? '#00c853' : '#f44336';
+            const pnlColor  = h.pnl >= 0 ? '#00c853' : '#f44336';
+            const crypto    = isCryptoSym(h.symbol);
+            const qtyLabel  = crypto ? h.quantity.toFixed(6).replace(/\.?0+$/, '') + ' units' : h.quantity + ' sh';
+            const icon      = crypto ? '🪙 ' : '';
             return `<div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
               <div>
-                <span style="font-weight:bold; color:#e0e0e0; cursor:pointer;" onclick="selectTradeSymbol('${h.symbol}')">${h.symbol}</span>
-                <span style="color:#555; margin-left:6px;">${h.quantity} sh @ $${h.avg_price.toFixed(2)}</span>
+                <span style="font-weight:bold; color:#e0e0e0; cursor:pointer;" onclick="selectTradeSymbol('${h.symbol}')">${icon}${h.symbol}</span>
+                <span style="color:#555; margin-left:6px;">${qtyLabel} @ ${fmtPrice(h.avg_price)}</span>
               </div>
               <div style="text-align:right;">
-                <div style="color:#aaa;">$${h.current_price.toFixed(2)}</div>
-                <div style="color:${pnlColor}; font-size:0.9em;">${h.pnl >= 0 ? '+' : ''}$${h.pnl.toFixed(2)}</div>
+                <div style="color:#aaa;">${fmtPrice(h.current_price)}</div>
+                <div style="color:${pnlColor}; font-size:0.9em;">${h.pnl >= 0 ? '+' : ''}${fmtPrice(Math.abs(h.pnl))}${h.pnl < 0 ? ' 📉' : ' 📈'}</div>
               </div>
             </div>`;
           }).join('');
+        }
+
+        // Bankruptcy check — show recovery modal when total value < $10
+        if (total < 10 && cash < 10) {
+          const now = Date.now();
+          if (!window._bankruptcyShown || (now - window._bankruptcyShown) > 300_000) {
+            window._bankruptcyShown = now;
+            showBankruptcyModal(total);
+          }
         }
       } catch (_) {}
     }
@@ -2582,7 +2721,12 @@
       if (params.get('payment') === 'success') {
         const payType = params.get('pay_type');
         const msgs = {
-          season_pass:      '🎫 Season Pass activated! Enjoy 1.5× XP and premium badge frames.',
+          season_pass:         '🎫 Season Pass activated! Enjoy 1.5× XP and premium badge frames.',
+          paper_money_hustle:  '💰 $1,000 paper money added to your account! Go make those moves.',
+          paper_money_grind:   '💰 $5,000 paper money added to your account! Grind season is here.',
+          paper_money_investor:'💰 $25,000 paper money added! Invest like a pro.',
+          paper_money_whale:   '💰 $50,000 paper money added! Whale status unlocked.',
+          paper_money_ultimate:'💰 $200,000 paper money added! Ultimate player mode activated.',
           credits_starter:  '💎 500 SML Credits added to your balance!',
           credits_legends:  '💎 2,500 SML Credits added to your balance!',
           credits_champion: '💎 7,000 SML Credits added to your balance!',
@@ -2596,6 +2740,97 @@
 
     function openForgotPassword() {
       document.getElementById('reset-modal').classList.add('open');
+    }
+
+    // ── Bankruptcy Recovery ───────────────────────────────────────────────
+    function showBankruptcyModal(total) {
+      const modal = document.getElementById('bankruptcy-modal');
+      modal.style.display = 'flex';
+      const totalEl = document.getElementById('bk-total');
+      if (totalEl) totalEl.textContent = `Portfolio value: ${fmtPrice(total || 0)}`;
+      document.getElementById('bk-share-status').textContent = '';
+      document.getElementById('bk-share-btn').disabled = false;
+      document.getElementById('bk-share-btn').textContent = '📤 Share & Claim $100';
+    }
+
+    function closeBankruptcyModal() {
+      document.getElementById('bankruptcy-modal').style.display = 'none';
+    }
+
+    function initSocialClaim() {
+      const shareText = encodeURIComponent('🚀 Just started playing Self-Made Legends — the ultimate stock & crypto trading game! Join me and build your legend! 👑 #SelfMadeLegends #Trading #Crypto');
+      const shareUrl  = encodeURIComponent('https://web-production-576d9.up.railway.app/');
+      window.open(`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`, '_blank');
+      const btn    = document.getElementById('bk-share-btn');
+      const status = document.getElementById('bk-share-status');
+      btn.textContent = '⏳ Verifying…';
+      btn.disabled    = true;
+      status.textContent = 'Tweet opened — click below to claim your $100!';
+      // Give user time to actually tweet, then enable claim
+      setTimeout(() => {
+        btn.textContent = '✅ Claim My $100';
+        btn.disabled    = false;
+        btn.onclick     = claimSocialBonus;
+      }, 4000);
+    }
+
+    async function claimSocialBonus() {
+      const btn    = document.getElementById('bk-share-btn');
+      const status = document.getElementById('bk-share-status');
+      btn.disabled = true;
+      btn.textContent = '⏳ Processing…';
+      try {
+        const res  = await fetch('/api/account/social-claim', { method: 'POST', headers: { 'x-session-id': sessionId } });
+        const data = await res.json();
+        if (data.success) {
+          status.style.color = '#00ff88';
+          status.textContent = '🎉 $100 added to your account!';
+          btn.textContent    = '✓ Claimed!';
+          setTimeout(() => {
+            closeBankruptcyModal();
+            refreshPortfolio();
+          }, 1800);
+        } else {
+          status.style.color = '#ff6666';
+          status.textContent = data.error || 'Could not claim. Try again later.';
+          btn.disabled    = false;
+          btn.textContent = '📤 Share & Claim $100';
+          btn.onclick     = initSocialClaim;
+        }
+      } catch (_) {
+        status.style.color  = '#ff6666';
+        status.textContent  = 'Network error — please try again.';
+        btn.disabled    = false;
+        btn.textContent = '📤 Share & Claim $100';
+        btn.onclick     = initSocialClaim;
+      }
+    }
+
+    // ── Paper Money Store ─────────────────────────────────────────────────
+    function openPaperMoneyStore() {
+      document.getElementById('paper-money-modal').style.display = 'flex';
+    }
+
+    function closePaperMoneyStore() {
+      document.getElementById('paper-money-modal').style.display = 'none';
+    }
+
+    async function buyPaperMoney(packageKey) {
+      try {
+        const res  = await fetch('/api/stripe/paper-money', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+          body: JSON.stringify({ package: packageKey }),
+        });
+        const data = await res.json();
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        } else {
+          showToast('❌', 'Error', data.error || 'Could not open checkout', '#ff4444');
+        }
+      } catch (_) {
+        showToast('❌', 'Error', 'Network error — please try again', '#ff4444');
+      }
     }
 
     // ── Global Milestone Celebration ──────────────────────────────────────
@@ -4732,12 +4967,16 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
     });
 
     socket.on('purchase_complete', ({ type, message, amount, balance }) => {
-      const icons = { season_pass: '🎫', credits: '💎', coach_pro: '🧠', tournament_entry: '⚔️' };
+      const icons = { season_pass: '🎫', credits: '💎', coach_pro: '🧠', tournament_entry: '⚔️', paper_money: '💰' };
       showToast(icons[type] || '✅', 'Purchase Complete!', message, '#00ff88');
       // Refresh credit balance display if on payments tab
       if (balance !== undefined) {
         const el = document.getElementById('credits-balance-display');
         if (el) el.textContent = Number(balance).toLocaleString() + ' Credits';
+      }
+      // Refresh portfolio after paper money purchase to clear bankruptcy state
+      if (type === 'paper_money' && typeof refreshPortfolio === 'function') {
+        refreshPortfolio();
       }
     });
 

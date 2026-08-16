@@ -270,6 +270,12 @@ class DB {
         total_invested REAL NOT NULL DEFAULT 1000,
         updated_at     INTEGER
       )`,
+
+      // Social share claim tracking (once per 24h for broke-player recovery)
+      `CREATE TABLE IF NOT EXISTS social_claims (
+        user_id    TEXT PRIMARY KEY,
+        claimed_at INTEGER NOT NULL
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add is_bot column to accounts for existing deployments (no-op if already exists)

@@ -8,6 +8,15 @@ const CREDIT_PACKAGES = {
   champion: { credits: 7000, amount_cents: 5000, label: 'SML Credits — Champion Pack (7,000 Credits)' },
 };
 
+// Paper money packages — real money → virtual paper trading capital
+const PAPER_MONEY_PACKAGES = {
+  hustle:   { paper: 1000,   amount_cents: 499,  label: 'Hustle Pack — $1,000 Paper Money' },
+  grind:    { paper: 5000,   amount_cents: 1099, label: 'Grind Pack — $5,000 Paper Money' },
+  investor: { paper: 25000,  amount_cents: 1500, label: 'Investor Pack — $25,000 Paper Money' },
+  whale:    { paper: 50000,  amount_cents: 2000, label: 'Whale Pack — $50,000 Paper Money' },
+  ultimate: { paper: 200000, amount_cents: 7500, label: 'Ultimate Pack — $200,000 Paper Money' },
+};
+
 // Returns Unix timestamp for midnight UTC on the 1st of next month
 function nextFirstOfMonth() {
   const now = new Date();
@@ -176,6 +185,30 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
+  // Create a Stripe Checkout Session for Paper Money top-up
+  async createPaperMoneyCheckout(userId, userEmail, packageKey) {
+    const pkg = PAPER_MONEY_PACKAGES[packageKey];
+    if (!pkg) throw new Error(`Unknown paper money package: ${packageKey}`);
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: pkg.label, description: `Add $${pkg.paper.toLocaleString()} paper money to your SML trading account` },
+          unit_amount: pkg.amount_cents,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=paper_money_${packageKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `paper_money_${packageKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
   // Create a Stripe Checkout Session for Tournament Entry ($5.00 one-time)
   async createTournamentEntryCheckout(userId, userEmail, tournamentId) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
@@ -208,3 +241,4 @@ class StripeProcessor {
 
 module.exports = StripeProcessor;
 module.exports.CREDIT_PACKAGES = CREDIT_PACKAGES;
+module.exports.PAPER_MONEY_PACKAGES = PAPER_MONEY_PACKAGES;

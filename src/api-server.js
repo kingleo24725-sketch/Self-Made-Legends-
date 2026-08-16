@@ -26,6 +26,7 @@ const SecurityManager = require("./security/SecurityManager");
 const TokenCreator = require("./crypto/TokenCreator");
 const LeaderboardManager = require("./leaderboard/LeaderboardManager");
 const StripeProcessor = require("./payments/StripeProcessor");
+const { PAPER_MONEY_PACKAGES } = StripeProcessor;
 const MarketingAgent = require("./marketing/MarketingAgent");
 const NotificationService = require("./notifications/NotificationService");
 const BadgeSystem = require("./achievements/BadgeSystem");
@@ -426,6 +427,25 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         emitToUser(userId, 'purchase_complete', { type: 'tournament_entry', message: '⚔️ Tournament entry confirmed! Good luck!' });
         console.log(`Tournament entry paid — user ${userId}, tournament ${tournamentId}`);
 
+      } else if (type.startsWith('paper_money_')) {
+        const packageKey = type.slice('paper_money_'.length);
+        const pkg = PAPER_MONEY_PACKAGES && PAPER_MONEY_PACKAGES[packageKey];
+        if (pkg && userId) {
+          const now = Date.now();
+          await db.run(
+            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at)
+             VALUES (?, ?, ?, ?)
+             ON CONFLICT(user_id) DO UPDATE SET
+               cash_balance   = cash_balance + ?,
+               total_invested = total_invested + ?,
+               updated_at     = ?`,
+            [userId, pkg.paper, pkg.paper, now, pkg.paper, pkg.paper, now]
+          );
+          await _syncLeaderboard(userId);
+          emitToUser(userId, 'purchase_complete', { type: 'paper_money', amount: pkg.paper, message: `💰 $${pkg.paper.toLocaleString()} paper money added to your account! Keep trading!` });
+          console.log(`Paper money ${packageKey} — user ${userId} +$${pkg.paper}`);
+        }
+
       } else if (type === 'creator_subscription') {
         console.log(`Creator subscription started — user ${userId}`);
       }
@@ -523,6 +543,56 @@ app.post("/api/stripe/credits/topup", authenticateUser, async (req, res) => {
   } catch (err) {
     console.error("Credit topup checkout error:", err.message);
     res.status(500).json({ error: 'Credit topup checkout failed: ' + err.message });
+  }
+});
+
+// ===== STRIPE — PAPER MONEY TOP-UP =====
+
+app.post("/api/stripe/paper-money", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const { package: pkgKey } = req.body;
+  if (!pkgKey || !PAPER_MONEY_PACKAGES[pkgKey]) {
+    return res.status(400).json({ error: 'package required (hustle|grind|investor|whale|ultimate)' });
+  }
+  try {
+    const account = accountManager.getAccountById(req.user.userId);
+    const userEmail = account?.email || '';
+    const result = await stripeProcessor.createPaperMoneyCheckout(req.user.userId, userEmail, pkgKey);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Paper money checkout error:", err.message);
+    res.status(500).json({ error: 'Paper money checkout failed: ' + err.message });
+  }
+});
+
+// ===== ACCOUNT — SOCIAL SHARE CLAIM ($100 paper money, once per 24h) =====
+
+app.post("/api/account/social-claim", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const claim = await db.get('SELECT claimed_at FROM social_claims WHERE user_id = ?', [uid]);
+    const TWENTY_FOUR_H = 86400_000;
+    if (claim && (Date.now() - claim.claimed_at) < TWENTY_FOUR_H) {
+      const nextClaimMs = claim.claimed_at + TWENTY_FOUR_H - Date.now();
+      const hrs = Math.ceil(nextClaimMs / 3600000);
+      return res.status(429).json({ error: `You already claimed today. Next claim available in ~${hrs}h.` });
+    }
+    const now = Date.now();
+    await db.run(
+      'INSERT INTO social_claims (user_id, claimed_at) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET claimed_at = ?',
+      [uid, now, now]
+    );
+    await db.run(
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at)
+       VALUES (?, 100, 1000, ?)
+       ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + 100, updated_at = ?`,
+      [uid, now, now]
+    );
+    await _syncLeaderboard(uid);
+    res.json({ success: true, amount: 100, message: '💰 $100 paper money added! Thank you for sharing SML!' });
+  } catch (e) {
+    console.error('[social-claim] error:', e.message);
+    res.status(500).json({ error: 'Claim failed — please try again' });
   }
 });
 
@@ -2354,10 +2424,32 @@ async function startServer() {
   tradeCoach.init(io);
   await botTrader.init(_syncLeaderboard);
 
-  // Broadcast stock price ticks to all clients
+  // Broadcast all price ticks (stocks + crypto) to all clients
   priceEngine.subscribe((updates) => {
     io.emit('market_prices', updates);
   });
+
+  // Sync real crypto prices from CoinGecko every 60s to anchor the random walk
+  const CRYPTO_COINGECKO_IDS = {
+    BTC: 'bitcoin', ETH: 'ethereum', SOL: 'solana', BNB: 'binancecoin', ADA: 'cardano',
+    DOGE: 'dogecoin', XRP: 'ripple', AVAX: 'avalanche-2', MATIC: 'matic-network', DOT: 'polkadot',
+    LINK: 'chainlink', LTC: 'litecoin', ATOM: 'cosmos', BCH: 'bitcoin-cash', NEAR: 'near',
+  };
+  const _syncCryptoPrices = async () => {
+    try {
+      const geckoIds = Object.values(CRYPTO_COINGECKO_IDS);
+      const data = await cryptoFetcher.fetchCryptoPrices(geckoIds);
+      for (const [sym, geckoId] of Object.entries(CRYPTO_COINGECKO_IDS)) {
+        if (data[geckoId] && data[geckoId].usd) {
+          priceEngine.updatePrice(sym, data[geckoId].usd);
+        }
+      }
+    } catch (e) {
+      console.error('[CryptoSync]', e.message);
+    }
+  };
+  _syncCryptoPrices();
+  setInterval(_syncCryptoPrices, 60_000);
 
   server.listen(PORT, () => {
     console.log(`🚀 Multi-Asset Trading Bot Server running on http://localhost:${PORT}`);
