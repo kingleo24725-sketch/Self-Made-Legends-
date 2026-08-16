@@ -109,7 +109,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Season Pass', description: 'Premium badge frames, 1.5× XP multiplier, private leaderboard tier' },
-          unit_amount: 299,
+          unit_amount: 100,
         },
         quantity: 1,
       }],

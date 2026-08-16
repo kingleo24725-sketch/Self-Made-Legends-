@@ -6,7 +6,7 @@ const priceEngine = require('../market/PriceEngine');
 const BOT_ID    = 'sml-bot';
 const BOT_EMAIL = 'bot@sml.gg';
 const BOT_NAME  = 'SML Bot';
-const STARTING_CASH = 10000;
+const STARTING_CASH = 1000;
 
 class BotTrader {
   constructor() {
@@ -22,13 +22,13 @@ class BotTrader {
     const existing = await db.get('SELECT user_id FROM accounts WHERE user_id = ?', [BOT_ID]);
     if (!existing) {
       await db.run(
-        `INSERT OR IGNORE INTO accounts (email, user_id, full_name, tier, is_bot, created_at)
-         VALUES (?, ?, ?, 'free', 1, ?)`,
+        `INSERT OR IGNORE INTO accounts (email, user_id, full_name, tier, is_bot, gender, created_at)
+         VALUES (?, ?, ?, 'free', 1, 'male', ?)`,
         [BOT_EMAIL, BOT_ID, BOT_NAME, Date.now()]
       );
     } else {
-      // Ensure is_bot flag is set on existing bot row
-      await db.run('UPDATE accounts SET is_bot = 1 WHERE user_id = ?', [BOT_ID]);
+      // Ensure is_bot flag and gender are set on existing bot row
+      await db.run('UPDATE accounts SET is_bot = 1, gender = COALESCE(NULLIF(gender,""), "male") WHERE user_id = ?', [BOT_ID]);
     }
 
     // Ensure bot portfolio

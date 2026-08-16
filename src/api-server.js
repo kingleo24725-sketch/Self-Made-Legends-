@@ -166,6 +166,7 @@ app.post("/api/auth/login", (req, res) => {
         if (acct) notifier.sendBadgeEarned(acct.email, acct.fullName, badge).catch(() => {});
         socialFeed.addAchievement(result.userId, displayName, badge.name, badge.icon);
         emitToUser(result.userId, 'badge_earned', badge);
+        _broadcastMilestone(badge, displayName);
       });
       broadcastFeedUpdate();
     }
@@ -1538,6 +1539,7 @@ app.post("/api/leaderboard/update-portfolio", authenticateUser, (req, res) => {
       if (acct) notifier.sendBadgeEarned(acct.email, acct.fullName, badge).catch(() => {});
       socialFeed.addAchievement(req.user.userId, displayName, badge.name, badge.icon);
       emitToUser(req.user.userId, 'badge_earned', badge);
+      _broadcastMilestone(badge, displayName);
     });
     broadcastFeedUpdate();
   }
@@ -1729,14 +1731,23 @@ app.get("/api/tournament/history", (req, res) => {
 
 app.post("/api/admin/tournament/create", requireAdmin, (req, res) => {
   const lb = leaderboardManager.getLeaderboard(200);
+  const BOT_ID_CONST = require('./bot/BotTrader').BOT_ID || 'sml-bot';
+
+  const toSeed = p => ({ userId: p.userId, email: p.email, score: p.score, gainPercentage: p.gainPercentage });
+  const botEntry = lb.find(p => p.userId === BOT_ID_CONST);
+  const botSeed  = botEntry ? toSeed(botEntry) : null;
+
   const maleSeeds = lb
-    .filter(p => accountManager.getGender(p.userId) === 'male')
-    .slice(0, 16)
-    .map(p => ({ userId: p.userId, email: p.email, score: p.score, gainPercentage: p.gainPercentage }));
+    .filter(p => p.userId !== BOT_ID_CONST && accountManager.getGender(p.userId) === 'male')
+    .slice(0, botSeed ? 15 : 16)
+    .map(toSeed);
+  if (botSeed) maleSeeds.push(botSeed); // bot competes in male bracket as wildcard
+
   const femaleSeeds = lb
-    .filter(p => accountManager.getGender(p.userId) === 'female')
+    .filter(p => p.userId !== BOT_ID_CONST && accountManager.getGender(p.userId) === 'female')
     .slice(0, 16)
-    .map(p => ({ userId: p.userId, email: p.email, score: p.score, gainPercentage: p.gainPercentage }));
+    .map(toSeed);
+
   const season = seasonManager.getCurrentSeason();
   const t = tournamentManager.createTournament(season.id || Date.now(), season.name || 'Season Tournament', maleSeeds, femaleSeeds);
   res.json({ success: true, tournament: t });
@@ -2078,8 +2089,8 @@ app.get("/api/portfolio", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
   let portfolio = await db.get('SELECT cash_balance, total_invested FROM user_portfolios WHERE user_id = ?', [uid]);
   if (!portfolio) {
-    await db.run('INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 10000, 10000, ?)', [uid, Date.now()]);
-    portfolio = { cash_balance: 10000, total_invested: 10000 };
+    await db.run('INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000, 1000, ?)', [uid, Date.now()]);
+    portfolio = { cash_balance: 1000, total_invested: 1000 };
   }
   const holdings = await db.all('SELECT symbol, quantity, avg_price FROM holdings WHERE user_id = ? AND quantity > 0', [uid]);
   const prices = priceEngine.getAllPrices();
@@ -2106,8 +2117,8 @@ app.post("/api/trade/buy", authenticateUser, async (req, res) => {
   // Ensure portfolio row
   let portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
   if (!portfolio) {
-    await db.run('INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 10000, 10000, ?)', [uid, Date.now()]);
-    portfolio = { cash_balance: 10000 };
+    await db.run('INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000, 1000, ?)', [uid, Date.now()]);
+    portfolio = { cash_balance: 1000 };
   }
   if (portfolio.cash_balance < cost) return res.status(400).json({ error: `Insufficient cash. Have $${portfolio.cash_balance.toFixed(2)}, need $${cost.toFixed(2)}` });
 
@@ -2127,6 +2138,13 @@ app.post("/api/trade/buy", authenticateUser, async (req, res) => {
   await _syncLeaderboard(uid);
   await awardMissionXP(uid, 'trade');
   await tradeCoach.onTrade(uid, { type: 'BUY', symbol: sym, quantity: qty, price });
+
+  // Award trade-count badges
+  const acct = accountManager.getAccountById(uid);
+  const displayName = acct ? (acct.fullName || acct.email) : 'A Legend';
+  const tradeBadges = badgeSystem.onTrade(uid, { profitable: false, returnPct: 0 });
+  tradeBadges.forEach(b => { emitToUser(uid, 'badge_earned', b); _broadcastMilestone(b, displayName); });
+
   emitToUser(uid, 'trade', { type: 'BUY', symbol: sym, quantity: qty, price, cost });
 
   res.json({ success: true, symbol: sym, quantity: qty, price, cost, remaining_cash: portfolio.cash_balance - cost });
@@ -2141,9 +2159,10 @@ app.post("/api/trade/sell", authenticateUser, async (req, res) => {
   if (!price) return res.status(400).json({ error: `Unknown symbol: ${sym}` });
   const qty = parseFloat(quantity);
 
-  const holding = await db.get('SELECT quantity FROM holdings WHERE user_id = ? AND symbol = ?', [uid, sym]);
+  const holding = await db.get('SELECT quantity, avg_price FROM holdings WHERE user_id = ? AND symbol = ?', [uid, sym]);
   if (!holding || holding.quantity < qty) return res.status(400).json({ error: `You only hold ${holding ? holding.quantity : 0} shares of ${sym}` });
 
+  const avgPrice = holding.avg_price || price;
   const proceeds = parseFloat((price * qty).toFixed(2));
   const now = Date.now();
   await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [proceeds, now, uid]);
@@ -2158,6 +2177,26 @@ app.post("/api/trade/sell", authenticateUser, async (req, res) => {
 
   await _syncLeaderboard(uid);
   await tradeCoach.onTrade(uid, { type: 'SELL', symbol: sym, quantity: qty, price });
+
+  // Determine if this sell was profitable and award badges
+  const profitable = price > avgPrice;
+  const returnPct  = avgPrice > 0 ? ((price - avgPrice) / avgPrice) * 100 : 0;
+  const acctSell = accountManager.getAccountById(uid);
+  const displayNameSell = acctSell ? (acctSell.fullName || acctSell.email) : 'A Legend';
+  const sellTradeBadges = badgeSystem.onTrade(uid, { profitable, returnPct });
+  sellTradeBadges.forEach(b => { emitToUser(uid, 'badge_earned', b); _broadcastMilestone(b, displayNameSell); });
+
+  // Portfolio milestone badges
+  const portSnap = await db.get('SELECT cash_balance, total_invested FROM user_portfolios WHERE user_id = ?', [uid]);
+  if (portSnap) {
+    const portHoldings = await db.all('SELECT symbol, quantity FROM holdings WHERE user_id = ? AND quantity > 0', [uid]);
+    let pVal = portSnap.cash_balance;
+    for (const ph of portHoldings) { const p = priceEngine.getPrice(ph.symbol); if (p) pVal += ph.quantity * p; }
+    const portPct = portSnap.total_invested > 0 ? ((pVal - portSnap.total_invested) / portSnap.total_invested) * 100 : 0;
+    const portBadges = badgeSystem.onPortfolioUpdate(uid, { profitable: pVal > portSnap.total_invested, returnPct: portPct });
+    portBadges.forEach(b => { emitToUser(uid, 'badge_earned', b); _broadcastMilestone(b, displayNameSell); });
+  }
+
   emitToUser(uid, 'trade', { type: 'SELL', symbol: sym, quantity: qty, price, proceeds });
 
   res.json({ success: true, symbol: sym, quantity: qty, price, proceeds });
@@ -2260,6 +2299,19 @@ function emitToUser(userId, event, data) {
 function broadcastFeedUpdate() {
   const feed = socialFeed.getFeed(15);
   io.emit("feed_update", feed);
+}
+
+const CELEBRATION_TIERS = new Set(['platinum', 'diamond']);
+function _broadcastMilestone(badge, displayName) {
+  if (!badge || !CELEBRATION_TIERS.has(badge.tier)) return;
+  io.emit('milestone_celebration', {
+    badgeId:     badge.id,
+    badgeName:   badge.name,
+    badgeIcon:   badge.icon,
+    badgeTier:   badge.tier,
+    displayName,
+    ts:          Date.now(),
+  });
 }
 
 // Broadcast live crypto prices every 60 seconds

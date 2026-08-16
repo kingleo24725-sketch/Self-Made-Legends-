@@ -1506,23 +1506,39 @@
       <div style="font-size:3.5em; margin-bottom:12px;">👑</div>
       <h1 style="color:#ffd700; font-size:1.9em; font-weight:900; letter-spacing:0.02em; margin-bottom:8px;">Self-Made Legends</h1>
       <p style="color:#888; font-size:0.95em; line-height:1.7; margin-bottom:8px;">The AI-powered stock trading game. Compete on the national leaderboard. Build your legend.</p>
-      <p style="color:#ffd700; font-size:0.88em; font-weight:600; margin-bottom:28px;">Season Pass required to play — $9.99/season</p>
+      <p style="color:#ffd700; font-size:0.88em; font-weight:600; margin-bottom:28px;">Season Pass required to play — $1.00/season</p>
 
       <!-- Not logged in state -->
       <div id="paywall-guest" style="display:flex; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
         <button onclick="paywallLogin()" style="background:#ffd700; color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Login</button>
         <button onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign Up &amp; Get Season Pass</button>
+        <button onclick="openForgotPassword()" style="background:transparent; border:none; color:#888; font-size:0.82em; cursor:pointer; text-decoration:underline; margin-top:2px;">Forgot Password?</button>
         <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard (Public) →</a>
       </div>
 
       <!-- Logged in, no access state -->
       <div id="paywall-member" style="display:none; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
         <p id="paywall-member-info" style="color:#aaa; font-size:0.88em; margin-bottom:4px;"></p>
-        <button onclick="buySeasonPassPaywall()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer;">Get Season Pass — $2.99</button>
+        <button onclick="buySeasonPassPaywall()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer;">Get Season Pass — $1.00</button>
         <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard →</a>
         <button onclick="paywallLogout()" style="background:transparent; border:none; color:#444; font-size:0.78em; cursor:pointer; margin-top:4px;">Logout</button>
       </div>
     </div>
+  </div>
+
+  <!-- Global Milestone Celebration Overlay -->
+  <div id="celebration-overlay" style="display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:hidden;">
+    <div id="celebration-card" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-60%) scale(0.8); opacity:0; transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s ease; background:linear-gradient(135deg,#1a1f2e,#0d1118); border:2px solid #ffd700; border-radius:20px; padding:32px 40px; text-align:center; max-width:380px; width:90%; box-shadow:0 0 60px rgba(255,215,0,.35), 0 20px 60px rgba(0,0,0,.7); pointer-events:auto;">
+      <div id="cel-icon" style="font-size:3.5em; margin-bottom:8px;"></div>
+      <div id="cel-tier-badge" style="display:inline-block; border-radius:20px; padding:4px 14px; font-size:0.75em; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:12px;"></div>
+      <div id="cel-name" style="color:#ffd700; font-size:1.05em; font-weight:700; margin-bottom:6px;"></div>
+      <div id="cel-badge" style="color:#fff; font-size:1.3em; font-weight:900; margin-bottom:4px;"></div>
+      <div id="cel-desc" style="color:#aaa; font-size:0.88em;"></div>
+      <div style="margin-top:18px; color:#555; font-size:0.75em;">Auto-closing in <span id="cel-countdown">5</span>s</div>
+      <button onclick="closeCelebration()" style="margin-top:10px; background:transparent; border:1px solid #333; color:#666; border-radius:8px; padding:6px 18px; cursor:pointer; font-size:0.8em;">Dismiss</button>
+    </div>
+    <!-- confetti canvas -->
+    <canvas id="cel-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
   </div>
 
   <!-- Demo Banner (shown in guest/demo mode) -->
@@ -1971,7 +1987,7 @@
           window.location.href = data.checkoutUrl;
         } else {
           alert(data.error || 'Payment setup failed. Please try again.');
-          btn.disabled = false; btn.textContent = 'Get Season Pass — $2.99';
+          btn.disabled = false; btn.textContent = 'Get Season Pass — $1.00';
         }
       }).catch(() => { btn.disabled = false; btn.textContent = 'Get Season Pass — $2.99'; });
     }
@@ -2580,6 +2596,110 @@
 
     function openForgotPassword() {
       document.getElementById('reset-modal').classList.add('open');
+    }
+
+    // ── Global Milestone Celebration ──────────────────────────────────────
+    let _celTimer = null;
+    let _celCountdownInterval = null;
+
+    const TIER_COLORS_CEL = {
+      platinum: { bg: 'rgba(168,200,232,.18)', border: '#a8c8e8', text: '#a8c8e8' },
+      diamond:  { bg: 'rgba(0,229,255,.15)',   border: '#00e5ff', text: '#00e5ff' },
+    };
+
+    function showCelebration(data) {
+      const { badgeName, badgeIcon, badgeTier, displayName } = data;
+      const colors = TIER_COLORS_CEL[badgeTier] || TIER_COLORS_CEL.platinum;
+
+      document.getElementById('cel-icon').textContent = badgeIcon;
+      document.getElementById('cel-name').textContent = `${displayName} just earned`;
+      document.getElementById('cel-badge').textContent = badgeName;
+      const tierBadge = document.getElementById('cel-tier-badge');
+      tierBadge.textContent = badgeTier.toUpperCase();
+      tierBadge.style.background = colors.bg;
+      tierBadge.style.border = `1px solid ${colors.border}`;
+      tierBadge.style.color = colors.text;
+
+      const overlay = document.getElementById('celebration-overlay');
+      const card    = document.getElementById('celebration-card');
+      overlay.style.display = 'block';
+      requestAnimationFrame(() => {
+        card.style.transform = 'translate(-50%,-50%) scale(1)';
+        card.style.opacity   = '1';
+      });
+
+      _launchConfetti(badgeTier === 'diamond');
+
+      let countdown = 5;
+      document.getElementById('cel-countdown').textContent = countdown;
+      _celCountdownInterval = setInterval(() => {
+        countdown--;
+        const el = document.getElementById('cel-countdown');
+        if (el) el.textContent = countdown;
+        if (countdown <= 0) closeCelebration();
+      }, 1000);
+    }
+
+    function closeCelebration() {
+      clearInterval(_celCountdownInterval);
+      const card    = document.getElementById('celebration-card');
+      const overlay = document.getElementById('celebration-overlay');
+      card.style.transform = 'translate(-50%,-60%) scale(0.8)';
+      card.style.opacity   = '0';
+      setTimeout(() => { overlay.style.display = 'none'; }, 350);
+    }
+
+    function _launchConfetti(diamond) {
+      const canvas  = document.getElementById('cel-canvas');
+      const ctx     = canvas.getContext('2d');
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      const colors  = diamond
+        ? ['#00e5ff','#ffffff','#a8c8e8','#ffd700','#00ffcc']
+        : ['#a8c8e8','#ffd700','#ffffff','#88ccee','#cceeff'];
+      const particles = Array.from({ length: 120 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -10,
+        r: Math.random() * 6 + 3,
+        d: Math.random() * 4 + 1,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        tilt: Math.random() * 10 - 5,
+        tiltAngle: 0,
+        tiltSpeed: Math.random() * 0.1 + 0.05,
+      }));
+      let frame = 0;
+      const MAX_FRAMES = 180;
+      function draw() {
+        if (frame++ > MAX_FRAMES) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach(p => {
+          p.tiltAngle += p.tiltSpeed;
+          p.y += p.d;
+          p.x += Math.sin(p.tiltAngle) * 1.5;
+          ctx.beginPath();
+          ctx.fillStyle = p.color;
+          ctx.ellipse(p.x, p.y, p.r, p.r * 0.4, p.tilt, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    // Listen for global milestone celebrations from server
+    if (window._socket) {
+      window._socket.on('milestone_celebration', showCelebration);
+    } else {
+      // Socket initialises async — hook in once it's ready
+      const _origSocket = Object.getOwnPropertyDescriptor(window, '_socket');
+      let _celHooked = false;
+      const _celSocketCheck = setInterval(() => {
+        if (window._socket && !_celHooked) {
+          window._socket.on('milestone_celebration', showCelebration);
+          _celHooked = true;
+          clearInterval(_celSocketCheck);
+        }
+      }, 500);
     }
 
     function closeResetModal() {

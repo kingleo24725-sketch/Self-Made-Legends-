@@ -266,8 +266,8 @@ class DB {
       // Per-user virtual cash + starting capital
       `CREATE TABLE IF NOT EXISTS user_portfolios (
         user_id        TEXT PRIMARY KEY,
-        cash_balance   REAL NOT NULL DEFAULT 10000,
-        total_invested REAL NOT NULL DEFAULT 10000,
+        cash_balance   REAL NOT NULL DEFAULT 1000,
+        total_invested REAL NOT NULL DEFAULT 1000,
         updated_at     INTEGER
       )`,
     ];
