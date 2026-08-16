@@ -276,10 +276,80 @@ class DB {
         user_id    TEXT PRIMARY KEY,
         claimed_at INTEGER NOT NULL
       )`,
+
+      // ── Underworld: Heist System ──────────────────────────────────────────
+
+      // Heist attempts (active + historical)
+      `CREATE TABLE IF NOT EXISTS heist_attempts (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        robber_id     TEXT NOT NULL,
+        team_id       TEXT,
+        target_id     TEXT NOT NULL,
+        heist_type    TEXT NOT NULL,
+        amount_stolen REAL DEFAULT 0,
+        status        TEXT DEFAULT 'pending',
+        charges       INTEGER DEFAULT 0,
+        caught        INTEGER DEFAULT 0,
+        created_at    INTEGER NOT NULL,
+        expires_at    INTEGER,
+        resolved_at   INTEGER
+      )`,
+
+      // Players currently in jail
+      `CREATE TABLE IF NOT EXISTS jail_status (
+        user_id     TEXT PRIMARY KEY,
+        heist_id    INTEGER,
+        victim_id   TEXT,
+        amount_owed REAL DEFAULT 0,
+        released    INTEGER DEFAULT 0,
+        jailed_at   INTEGER NOT NULL,
+        released_at INTEGER
+      )`,
+
+      // Persisted heist notifications (survives offline/reload)
+      `CREATE TABLE IF NOT EXISTS heist_notifications (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        type       TEXT NOT NULL,
+        data       TEXT NOT NULL,
+        read       INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )`,
+
+      // ── Underworld: PvP Challenge System ─────────────────────────────────
+
+      // PvP challenges between players
+      `CREATE TABLE IF NOT EXISTS challenges (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        challenger_id  TEXT NOT NULL,
+        opponent_id    TEXT NOT NULL,
+        type           TEXT NOT NULL,
+        duration_ms    INTEGER NOT NULL,
+        status         TEXT DEFAULT 'pending',
+        start_value_c  REAL,
+        start_value_o  REAL,
+        winner_id      TEXT,
+        prize_amount   REAL,
+        created_at     INTEGER NOT NULL,
+        accepted_at    INTEGER,
+        ends_at        INTEGER,
+        resolved_at    INTEGER
+      )`,
+
+      // Persisted challenge notifications
+      `CREATE TABLE IF NOT EXISTS challenge_notifications (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        type       TEXT NOT NULL,
+        data       TEXT NOT NULL,
+        read       INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
-    // Add is_bot column to accounts for existing deployments (no-op if already exists)
+    // Add columns for existing deployments (no-op if already exists)
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_bot INTEGER DEFAULT 0'); } catch (_) {}
+    try { await this.run('ALTER TABLE heist_attempts ADD COLUMN charges INTEGER DEFAULT 0'); } catch (_) {}
   }
 }
 

@@ -231,6 +231,28 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
+  // Create a Stripe Checkout Session for Jail Buyout ($5.00 one-time → release + $1k paper money)
+  async createJailBuyoutCheckout(userId, userEmail) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: { name: 'SML Jail Buyout', description: 'Pay your way out of jail + receive $1,000 paper money' },
+          unit_amount: 500,
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=jail_buyout`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: 'jail_buyout', platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
   // Handle Stripe webhook to confirm subscription events on the server
   constructWebhookEvent(rawBody, signature) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;

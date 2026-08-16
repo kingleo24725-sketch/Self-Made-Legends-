@@ -122,6 +122,26 @@ const authenticateUser = (req, res, next) => {
   next();
 };
 
+// ── Underworld constants ──────────────────────────────────────────────────────
+const HEIST_TYPES = {
+  pickpocket: { label: 'Pickpocket',    icon: '🥷', maxPct: 0.05,  baseChance: 0.55, cooldownMs: 3_600_000,  minTeam: 1 },
+  smash_grab: { label: 'Smash & Grab', icon: '💥', maxPct: 0.15,  baseChance: 0.40, cooldownMs: 14_400_000, minTeam: 1 },
+  bank_job:   { label: 'Bank Job',     icon: '🏦', maxPct: 0.30,  baseChance: 0.25, cooldownMs: 86_400_000, minTeam: 2 },
+};
+const CATCH_RATE       = 0.60;
+const VICTIM_FINE      = 10_000;
+const BAIL_AMOUNT      = 50_000;
+const MIN_TARGET_CASH  = 100;
+const CHARGE_WINDOW    = 86_400_000;
+
+const CHALLENGE_TYPES = {
+  profit_race: { label: 'Profit Race',  icon: '📈', desc: 'Highest % gain wins',           durations: [1_800_000, 3_600_000, 7_200_000] },
+  trade_blitz: { label: 'Trade Blitz',  icon: '⚡', desc: 'First to 10 profitable trades', durations: [3_600_000, 7_200_000] },
+  value_race:  { label: 'Value Race',   icon: '🏆', desc: 'Highest portfolio value wins',   durations: [3_600_000, 86_400_000] },
+};
+const CHALLENGE_PRIZE_PCT    = 0.20;
+const CHALLENGE_ACCEPT_WIN   = 3_600_000;
+
 app.post("/api/auth/register", (req, res) => {
   const { email, password, fullName, referralCode } = req.body;
 
@@ -446,6 +466,28 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           console.log(`Paper money ${packageKey} — user ${userId} +$${pkg.paper}`);
         }
 
+      } else if (type === 'jail_buyout') {
+        if (userId) {
+          const jail = await db.get('SELECT victim_id, amount_owed FROM jail_status WHERE user_id = ? AND released = 0', [userId]);
+          if (jail) {
+            const now = Date.now();
+            await db.run(
+              `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000, 1000, ?)
+               ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + 1000, updated_at = ?`,
+              [userId, now, now]
+            );
+            await db.run('UPDATE jail_status SET released = 1, released_at = ? WHERE user_id = ?', [now, userId]);
+            if (jail.victim_id) {
+              await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [jail.amount_owed, jail.victim_id]);
+              emitToUser(jail.victim_id, 'fine_collected', { amount: jail.amount_owed, source: 'jail_buyout' });
+            }
+            emitToUser(userId, 'jail_released', { amount: 1000 });
+            emitToUser(userId, 'purchase_complete', { type: 'jail_buyout', message: '🔓 Released from jail! +$1,000 paper money added.' });
+            await _syncLeaderboard(userId);
+            console.log(`Jail buyout — user ${userId} released`);
+          }
+        }
+
       } else if (type === 'creator_subscription') {
         console.log(`Creator subscription started — user ${userId}`);
       }
@@ -637,6 +679,487 @@ app.post("/api/stripe/tournament-entry", authenticateUser, async (req, res) => {
   } catch (err) {
     console.error("Tournament entry checkout error:", err.message);
     res.status(500).json({ error: 'Tournament entry checkout failed: ' + err.message });
+  }
+});
+
+// ===== STRIPE — JAIL BUYOUT =====
+
+app.post("/api/stripe/jail-buyout", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const uid = req.user.userId;
+  const jail = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+  if (!jail) return res.status(400).json({ error: 'You are not in jail' });
+  try {
+    const account = accountManager.getAccountById(uid);
+    const result = await stripeProcessor.createJailBuyoutCheckout(uid, account?.email || '');
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error("Jail buyout checkout error:", err.message);
+    res.status(500).json({ error: 'Checkout failed: ' + err.message });
+  }
+});
+
+// ===== UNDERWORLD — HEIST SYSTEM =====
+
+// Helper: compute portfolio value for a user
+async function _calcPortfolioValue(userId) {
+  const p = await db.get('SELECT cash_balance, total_invested FROM user_portfolios WHERE user_id = ?', [userId]);
+  if (!p) return 0;
+  const holdings = await db.all('SELECT symbol, quantity FROM holdings WHERE user_id = ? AND quantity > 0', [userId]);
+  let val = p.cash_balance;
+  for (const h of holdings) { const price = priceEngine.getPrice(h.symbol); if (price) val += h.quantity * price; }
+  return val;
+}
+
+// Helper: get display name
+function _displayName(userId) {
+  const acct = accountManager.getAccountById(userId);
+  return acct ? (acct.fullName || acct.email || 'A Legend') : 'A Legend';
+}
+
+// GET /api/heist/targets — list heiststable players
+app.get("/api/heist/targets", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const rows = await db.all(
+      `SELECT ls.user_id, ls.total_value, a.full_name, a.email, a.is_bot
+       FROM leaderboard_scores ls
+       JOIN accounts a ON a.user_id = ls.user_id
+       WHERE ls.user_id != ? AND ls.total_value >= ? AND (a.is_bot IS NULL OR a.is_bot = 0)`,
+      [uid, MIN_TARGET_CASH]
+    );
+    const jailed = new Set(
+      (await db.all('SELECT user_id FROM jail_status WHERE released = 0')).map(r => r.user_id)
+    );
+    const players = rows
+      .filter(r => !jailed.has(r.user_id))
+      .map(r => {
+        const v = r.total_value || 0;
+        const valueRange = v >= 10_000 ? '$10k+' : v >= 1_000 ? '$1k–$10k' : '$100–$1k';
+        return { userId: r.user_id, displayName: r.full_name || r.email || 'A Legend', valueRange };
+      });
+    res.json({ players });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/heist/initiate
+app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { targetUserId, heistType } = req.body;
+  try {
+    if (!targetUserId || !heistType) return res.status(400).json({ error: 'targetUserId and heistType required' });
+    if (targetUserId === uid) return res.status(400).json({ error: 'Cannot heist yourself' });
+    const config = HEIST_TYPES[heistType];
+    if (!config) return res.status(400).json({ error: 'Invalid heist type' });
+
+    // Jail check for robber
+    const jailRow = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+    if (jailRow) return res.status(403).json({ error: 'You are in jail! Pay bail first.', jailed: true });
+
+    // Cooldown check
+    const lastHeist = await db.get(
+      'SELECT created_at FROM heist_attempts WHERE robber_id = ? AND heist_type = ? ORDER BY created_at DESC LIMIT 1',
+      [uid, heistType]
+    );
+    if (lastHeist && (Date.now() - lastHeist.created_at) < config.cooldownMs) {
+      const remainMs = config.cooldownMs - (Date.now() - lastHeist.created_at);
+      const remainMin = Math.ceil(remainMs / 60_000);
+      return res.status(429).json({ error: `Cooldown active — try again in ${remainMin} min`, cooldownMin: remainMin });
+    }
+
+    // Bank job requires team of 2+
+    let teamId = null;
+    let teammates = [uid];
+    if (config.minTeam > 1) {
+      const memberRow = await db.get('SELECT team_id FROM team_members WHERE user_id = ?', [uid]);
+      if (!memberRow) return res.status(400).json({ error: 'Bank Job requires a team of 2+ members. Join a team first.' });
+      teamId = memberRow.team_id;
+      const allMembers = await db.all('SELECT user_id FROM team_members WHERE team_id = ?', [teamId]);
+      if (allMembers.length < config.minTeam) return res.status(400).json({ error: `Bank Job requires ${config.minTeam}+ team members` });
+      teammates = allMembers.map(m => m.user_id);
+    }
+
+    // Target must have cash
+    const targetPortfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [targetUserId]);
+    const targetCash = targetPortfolio ? targetPortfolio.cash_balance : 0;
+    if (targetCash < MIN_TARGET_CASH) return res.status(400).json({ error: 'Target doesn\'t have enough cash to heist' });
+
+    const now = Date.now();
+    const success = Math.random() < config.baseChance;
+
+    if (success) {
+      const rawAmount = Math.random() * config.maxPct * targetCash;
+      const amount = parseFloat(Math.max(1, rawAmount).toFixed(2));
+      const share  = parseFloat((amount / teammates.length).toFixed(2));
+
+      // Deduct from target
+      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [amount, now, targetUserId]);
+      // Credit each robber
+      for (const rid of teammates) {
+        await db.run(
+          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+           ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+          [rid, share, share, now, share, now]
+        );
+        await _syncLeaderboard(rid);
+      }
+      await _syncLeaderboard(targetUserId);
+
+      const heistRow = await db.run(
+        'INSERT INTO heist_attempts (robber_id, team_id, target_id, heist_type, amount_stolen, status, charges, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)',
+        [uid, teamId, targetUserId, heistType, amount, 'success', now, now + CHARGE_WINDOW]
+      );
+      const heistId = heistRow.lastID;
+
+      // Persist notification for victim
+      await db.run(
+        'INSERT INTO heist_notifications (user_id, type, data, read, created_at) VALUES (?, ?, ?, 0, ?)',
+        [targetUserId, 'robbed', JSON.stringify({ heistId, robberName: _displayName(uid), amount, heistType, config: config.label }), now]
+      );
+
+      emitToUser(targetUserId, 'heist_incoming', { heistId, robberName: _displayName(uid), amount, heistType: config.label, icon: config.icon });
+      emitToUser(uid, 'heist_result', { success: true, amountStolen: share, heistType: config.label, icon: config.icon });
+
+      res.json({ success: true, amountStolen: share, message: `${config.icon} ${config.label} succeeded! You stole $${share.toFixed(2)}` });
+    } else {
+      await db.run(
+        'INSERT INTO heist_attempts (robber_id, team_id, target_id, heist_type, amount_stolen, status, charges, created_at, expires_at) VALUES (?, ?, ?, ?, 0, ?, 0, ?, ?)',
+        [uid, teamId, targetUserId, heistType, 'failed', now, now]
+      );
+      emitToUser(uid, 'heist_result', { success: false, heistType: config.label, icon: config.icon });
+      res.json({ success: false, message: `${config.icon} ${config.label} failed — you got away clean but empty-handed` });
+    }
+  } catch (e) {
+    console.error('[heist/initiate]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/heist/press-charges
+app.post("/api/heist/press-charges", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { heistId } = req.body;
+  try {
+    const heist = await db.get('SELECT * FROM heist_attempts WHERE id = ?', [heistId]);
+    if (!heist) return res.status(404).json({ error: 'Heist not found' });
+    if (heist.target_id !== uid) return res.status(403).json({ error: 'Not your heist to press charges on' });
+    if (heist.status !== 'success') return res.status(400).json({ error: 'Can only press charges on a successful heist' });
+    if (heist.charges) return res.status(400).json({ error: 'Charges already pressed' });
+    if (Date.now() > heist.expires_at) return res.status(400).json({ error: 'Charge window expired (24h has passed)' });
+
+    await db.run('UPDATE heist_attempts SET charges = 1 WHERE id = ?', [heistId]);
+
+    const caught = Math.random() < CATCH_RATE;
+    const robberName = _displayName(heist.robber_id);
+
+    if (caught) {
+      await db.run('UPDATE heist_attempts SET status = ?, caught = 1 WHERE id = ?', ['caught', heistId]);
+      emitToUser(uid, 'investigation_result', { caught: true, heistId, robberName, amount: heist.amount_stolen });
+      res.json({ caught: true, robberName, amount: heist.amount_stolen });
+    } else {
+      await db.run('UPDATE heist_attempts SET status = ? WHERE id = ?', ['escaped', heistId]);
+      emitToUser(uid, 'investigation_result', { caught: false, robberName });
+      res.json({ caught: false, robberName });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/heist/choose-outcome
+app.post("/api/heist/choose-outcome", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { heistId, outcome } = req.body;
+  try {
+    const heist = await db.get('SELECT * FROM heist_attempts WHERE id = ?', [heistId]);
+    if (!heist) return res.status(404).json({ error: 'Heist not found' });
+    if (heist.target_id !== uid) return res.status(403).json({ error: 'Not your heist' });
+    if (heist.status !== 'caught') return res.status(400).json({ error: 'Robber has not been caught' });
+
+    const now = Date.now();
+    const robberId = heist.robber_id;
+
+    if (outcome === 'fine') {
+      // Deduct fine from robber, pay victim
+      const robberPort = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [robberId]);
+      const robberCash = robberPort ? robberPort.cash_balance : 0;
+      const actualFine = Math.min(VICTIM_FINE, robberCash);
+      if (actualFine > 0) {
+        await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [actualFine, now, robberId]);
+        await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [actualFine, now, uid]);
+      }
+      await db.run('UPDATE heist_attempts SET status = ?, resolved_at = ? WHERE id = ?', ['resolved', now, heistId]);
+      await _syncLeaderboard(robberId);
+      await _syncLeaderboard(uid);
+      emitToUser(robberId, 'fine_charged', { amount: actualFine });
+      emitToUser(uid, 'fine_collected', { amount: actualFine });
+      res.json({ success: true, outcome: 'fine', amount: actualFine });
+    } else if (outcome === 'jail') {
+      await db.run(
+        `INSERT INTO jail_status (user_id, heist_id, victim_id, amount_owed, released, jailed_at)
+         VALUES (?, ?, ?, ?, 0, ?)
+         ON CONFLICT(user_id) DO UPDATE SET heist_id=?, victim_id=?, amount_owed=?, released=0, jailed_at=?`,
+        [robberId, heistId, uid, heist.amount_stolen, now, heistId, uid, heist.amount_stolen, now]
+      );
+      await db.run('UPDATE heist_attempts SET status = ?, resolved_at = ? WHERE id = ?', ['resolved', now, heistId]);
+      await db.run(
+        'INSERT INTO heist_notifications (user_id, type, data, read, created_at) VALUES (?, ?, ?, 0, ?)',
+        [robberId, 'jailed', JSON.stringify({ victimName: _displayName(uid), bailAmount: BAIL_AMOUNT }), now]
+      );
+      emitToUser(robberId, 'sent_to_jail', { bailAmount: BAIL_AMOUNT, victimName: _displayName(uid) });
+      res.json({ success: true, outcome: 'jail' });
+    } else {
+      res.status(400).json({ error: 'outcome must be fine or jail' });
+    }
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/heist/pay-bail — pay $50k cash bail
+app.post("/api/heist/pay-bail", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const jail = await db.get('SELECT * FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+    if (!jail) return res.status(400).json({ error: 'You are not in jail' });
+
+    const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+    const cash = port ? port.cash_balance : 0;
+    if (cash < BAIL_AMOUNT) return res.status(400).json({ error: `Insufficient cash. Need $${BAIL_AMOUNT.toLocaleString()}, have $${cash.toFixed(2)}. Pay $5 real money instead.`, insufficient: true });
+
+    const now = Date.now();
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [BAIL_AMOUNT, now, uid]);
+    if (jail.victim_id) {
+      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [jail.amount_owed, now, jail.victim_id]);
+      emitToUser(jail.victim_id, 'fine_collected', { amount: jail.amount_owed, source: 'bail_paid' });
+    }
+    await db.run('UPDATE jail_status SET released = 1, released_at = ? WHERE user_id = ?', [now, uid]);
+    await _syncLeaderboard(uid);
+    emitToUser(uid, 'jail_released', { bailPaid: BAIL_AMOUNT });
+    res.json({ success: true, bailPaid: BAIL_AMOUNT });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/heist/log
+app.get("/api/heist/log", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const rows = await db.all(
+      `SELECT h.*, a1.full_name as robber_name, a1.email as robber_email,
+              a2.full_name as target_name, a2.email as target_email
+       FROM heist_attempts h
+       LEFT JOIN accounts a1 ON a1.user_id = h.robber_id
+       LEFT JOIN accounts a2 ON a2.user_id = h.target_id
+       WHERE h.robber_id = ? OR h.target_id = ?
+       ORDER BY h.created_at DESC LIMIT 20`,
+      [uid, uid]
+    );
+    const log = rows.map(r => ({
+      id: r.id,
+      role: r.robber_id === uid ? 'robber' : 'victim',
+      heistType: r.heist_type,
+      amount: r.amount_stolen,
+      status: r.status,
+      counterparty: r.robber_id === uid
+        ? (r.target_name || r.target_email || 'A Legend')
+        : (r.robber_name || r.robber_email || 'A Legend'),
+      createdAt: r.created_at,
+      expiresAt: r.expires_at,
+      charges: r.charges,
+    }));
+    res.json({ log });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/heist/notifications
+app.get("/api/heist/notifications", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const rows = await db.all('SELECT * FROM heist_notifications WHERE user_id = ? AND read = 0 ORDER BY created_at DESC', [uid]);
+    await db.run('UPDATE heist_notifications SET read = 1 WHERE user_id = ? AND read = 0', [uid]);
+    const jailRow = await db.get('SELECT * FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+    res.json({ notifications: rows.map(r => ({ ...r, data: JSON.parse(r.data) })), jailed: !!jailRow, jailInfo: jailRow || null });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ===== UNDERWORLD — CHALLENGE SYSTEM =====
+
+// Helper: resolve a challenge when timer expires
+async function _resolveChallenge(challengeId) {
+  try {
+    const ch = await db.get('SELECT * FROM challenges WHERE id = ?', [challengeId]);
+    if (!ch || ch.status !== 'active') return;
+
+    const now = Date.now();
+    let winnerId, loserId;
+
+    if (ch.type === 'profit_race') {
+      const valC = await _calcPortfolioValue(ch.challenger_id);
+      const valO = await _calcPortfolioValue(ch.opponent_id);
+      const gainC = ch.start_value_c > 0 ? (valC - ch.start_value_c) / ch.start_value_c : 0;
+      const gainO = ch.start_value_o > 0 ? (valO - ch.start_value_o) / ch.start_value_o : 0;
+      winnerId = gainC >= gainO ? ch.challenger_id : ch.opponent_id;
+      loserId  = winnerId === ch.challenger_id ? ch.opponent_id : ch.challenger_id;
+    } else if (ch.type === 'trade_blitz') {
+      const tradesC = await db.get(
+        "SELECT COUNT(*) as n FROM trades WHERE user_id = ? AND timestamp >= ? AND type = 'SELL'",
+        [ch.challenger_id, ch.accepted_at]
+      );
+      const tradesO = await db.get(
+        "SELECT COUNT(*) as n FROM trades WHERE user_id = ? AND timestamp >= ? AND type = 'SELL'",
+        [ch.opponent_id, ch.accepted_at]
+      );
+      winnerId = (tradesC.n || 0) >= (tradesO.n || 0) ? ch.challenger_id : ch.opponent_id;
+      loserId  = winnerId === ch.challenger_id ? ch.opponent_id : ch.challenger_id;
+    } else {
+      const valC = await _calcPortfolioValue(ch.challenger_id);
+      const valO = await _calcPortfolioValue(ch.opponent_id);
+      winnerId = valC >= valO ? ch.challenger_id : ch.opponent_id;
+      loserId  = winnerId === ch.challenger_id ? ch.opponent_id : ch.challenger_id;
+    }
+
+    const loserPort = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [loserId]);
+    const loserCash = loserPort ? loserPort.cash_balance : 0;
+    const prize = Math.floor(loserCash * CHALLENGE_PRIZE_PCT);
+
+    if (prize > 0) {
+      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [prize, now, loserId]);
+      await db.run(
+        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+        [winnerId, prize, prize, now, prize, now]
+      );
+    }
+
+    await db.run('UPDATE challenges SET status = ?, winner_id = ?, prize_amount = ?, resolved_at = ? WHERE id = ?',
+      ['completed', winnerId, prize, now, challengeId]);
+
+    await _syncLeaderboard(winnerId);
+    await _syncLeaderboard(loserId);
+
+    const winnerName = _displayName(winnerId);
+    const loserName  = _displayName(loserId);
+    emitToUser(winnerId, 'challenge_result', { won: true, prize, opponentName: loserName, challengeType: ch.type });
+    emitToUser(loserId,  'challenge_result', { won: false, prize, opponentName: winnerName, challengeType: ch.type });
+    console.log(`[challenge] ${ch.type} resolved — winner: ${winnerId}, prize: $${prize}`);
+  } catch (e) {
+    console.error('[challenge/resolve]', e.message);
+  }
+}
+
+// POST /api/challenge/send
+app.post("/api/challenge/send", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { opponentId, type, durationMs } = req.body;
+  try {
+    if (!opponentId || !type || !durationMs) return res.status(400).json({ error: 'opponentId, type, and durationMs required' });
+    if (opponentId === uid) return res.status(400).json({ error: 'Cannot challenge yourself' });
+    const config = CHALLENGE_TYPES[type];
+    if (!config) return res.status(400).json({ error: 'Invalid challenge type' });
+    if (!config.durations.includes(Number(durationMs))) return res.status(400).json({ error: 'Invalid duration for this challenge type' });
+
+    // Check no active challenge between these two
+    const existing = await db.get(
+      `SELECT id FROM challenges WHERE status IN ('pending','active')
+       AND ((challenger_id = ? AND opponent_id = ?) OR (challenger_id = ? AND opponent_id = ?))`,
+      [uid, opponentId, opponentId, uid]
+    );
+    if (existing) return res.status(400).json({ error: 'There is already an active challenge between you two' });
+
+    const now = Date.now();
+    const row = await db.run(
+      'INSERT INTO challenges (challenger_id, opponent_id, type, duration_ms, status, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [uid, opponentId, type, durationMs, 'pending', now]
+    );
+    const challengeId = row.lastID;
+
+    const durLabel = durationMs >= 3_600_000 ? `${durationMs / 3_600_000}h` : `${durationMs / 60_000}min`;
+    await db.run(
+      'INSERT INTO challenge_notifications (user_id, type, data, read, created_at) VALUES (?, ?, ?, 0, ?)',
+      [opponentId, 'received', JSON.stringify({ challengeId, challengerName: _displayName(uid), type, durationLabel: durLabel, config: config.label }), now]
+    );
+    emitToUser(opponentId, 'challenge_received', { challengeId, challengerName: _displayName(uid), type, typeLabel: config.label, icon: config.icon, durationLabel: durLabel });
+
+    res.json({ success: true, challengeId, message: `${config.icon} Challenge sent to ${_displayName(opponentId)}!` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/challenge/respond
+app.post("/api/challenge/respond", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { challengeId, accept } = req.body;
+  try {
+    const ch = await db.get('SELECT * FROM challenges WHERE id = ?', [challengeId]);
+    if (!ch) return res.status(404).json({ error: 'Challenge not found' });
+    if (ch.opponent_id !== uid) return res.status(403).json({ error: 'Not your challenge to respond to' });
+    if (ch.status !== 'pending') return res.status(400).json({ error: 'Challenge is no longer pending' });
+
+    const now = Date.now();
+    if (!accept) {
+      await db.run('UPDATE challenges SET status = ?, resolved_at = ? WHERE id = ?', ['declined', now, challengeId]);
+      emitToUser(ch.challenger_id, 'challenge_declined', { opponentName: _displayName(uid), type: ch.type });
+      return res.json({ success: true, accepted: false });
+    }
+
+    // Accept — snapshot portfolio values and start timer
+    const valC = await _calcPortfolioValue(ch.challenger_id);
+    const valO = await _calcPortfolioValue(uid);
+    const endsAt = now + ch.duration_ms;
+
+    await db.run(
+      'UPDATE challenges SET status = ?, accepted_at = ?, ends_at = ?, start_value_c = ?, start_value_o = ? WHERE id = ?',
+      ['active', now, endsAt, valC, valO, challengeId]
+    );
+
+    const config = CHALLENGE_TYPES[ch.type];
+    emitToUser(ch.challenger_id, 'challenge_accepted', { challengeId, opponentName: _displayName(uid), endsAt, typeLabel: config?.label });
+
+    // Schedule resolution
+    setTimeout(() => _resolveChallenge(challengeId), ch.duration_ms);
+
+    res.json({ success: true, accepted: true, endsAt, challengeId });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/challenge/active
+app.get("/api/challenge/active", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const active = await db.get(
+      `SELECT c.*, a.full_name as opp_name, a.email as opp_email
+       FROM challenges c
+       LEFT JOIN accounts a ON a.user_id = CASE WHEN c.challenger_id = ? THEN c.opponent_id ELSE c.challenger_id END
+       WHERE (c.challenger_id = ? OR c.opponent_id = ?) AND c.status IN ('active','pending')
+       ORDER BY c.created_at DESC LIMIT 1`,
+      [uid, uid, uid]
+    );
+    const pending = await db.all(
+      `SELECT cn.*, c.type, c.duration_ms
+       FROM challenge_notifications cn
+       LEFT JOIN challenges c ON c.id = CAST(json_extract(cn.data, '$.challengeId') AS INTEGER)
+       WHERE cn.user_id = ? AND cn.type = 'received' AND cn.read = 0`,
+      [uid]
+    );
+    await db.run('UPDATE challenge_notifications SET read = 1 WHERE user_id = ? AND type = ? AND read = 0', [uid, 'received']);
+
+    res.json({
+      active: active ? { ...active, opponentName: active.opp_name || active.opp_email || 'A Legend' } : null,
+      pending: pending.map(p => ({ ...p, data: JSON.parse(p.data) })),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
@@ -2176,6 +2699,9 @@ app.get("/api/portfolio", authenticateUser, async (req, res) => {
 
 app.post("/api/trade/buy", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
+  const jailCheckBuy = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+  if (jailCheckBuy) return res.status(403).json({ error: 'You are in jail! Pay bail to trade again.', jailed: true });
+
   const { symbol, quantity } = req.body;
   if (!symbol || !quantity || quantity <= 0) return res.status(400).json({ error: 'symbol and quantity required' });
   const sym = String(symbol).toUpperCase();
@@ -2222,6 +2748,9 @@ app.post("/api/trade/buy", authenticateUser, async (req, res) => {
 
 app.post("/api/trade/sell", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
+  const jailCheckSell = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+  if (jailCheckSell) return res.status(403).json({ error: 'You are in jail! Pay bail to trade again.', jailed: true });
+
   const { symbol, quantity } = req.body;
   if (!symbol || !quantity || quantity <= 0) return res.status(400).json({ error: 'symbol and quantity required' });
   const sym = String(symbol).toUpperCase();

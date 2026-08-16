@@ -644,6 +644,7 @@
       <button class="nav-tab" onclick="switchTab('marketing')">📣 Marketing</button>
       <button class="nav-tab" onclick="switchTab('referrals'); loadReferrals()">🔗 Refer</button>
       <button class="nav-tab" onclick="switchTab('community'); loadCommunityFeed()">🌐 Community</button>
+      <button class="nav-tab" onclick="switchTab('underworld'); initUnderworld()">🥷 Underworld</button>
     </div>
     <div class="nav-right">
       <div style="display:flex; align-items:center; gap:10px;">
@@ -1526,6 +1527,175 @@
     </div>
   </div>
 
+  <!-- ── Underworld Section ──────────────────────────────────────────────── -->
+  <section class="section" id="underworld">
+    <div style="max-width:860px; margin:0 auto;">
+      <h2 style="color:#ff4444; font-size:1.6em; margin-bottom:6px;">🥷 Underworld</h2>
+      <p style="color:#aaa; margin-bottom:24px;">Rob players, dodge jail, and duel rivals in the shadows. High risk. High reward.</p>
+
+      <!-- Card 1: Player Status -->
+      <div class="card" id="uw-status-card" style="margin-bottom:20px; border:1px solid #333;">
+        <h3 style="color:#ffd700; margin-bottom:14px;">🔒 Your Status</h3>
+        <!-- Free state -->
+        <div id="uw-free-state" style="display:flex; align-items:center; gap:10px;">
+          <span style="background:rgba(0,255,136,.12); border:1px solid #00ff88; border-radius:20px; padding:6px 16px; color:#00ff88; font-weight:700; font-size:0.9em;">✅ All Clear — You're Free</span>
+          <span style="color:#555; font-size:0.82em;">No outstanding warrants</span>
+        </div>
+        <!-- Jail state (hidden by default) -->
+        <div id="uw-jail-state" style="display:none;">
+          <div style="background:rgba(255,68,68,.1); border:1px solid #ff4444; border-radius:12px; padding:16px 20px; margin-bottom:16px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <span style="font-size:1.8em;">🚔</span>
+              <div>
+                <div style="color:#ff4444; font-weight:900; font-size:1.1em;">YOU ARE IN JAIL</div>
+                <div style="color:#888; font-size:0.82em;">You cannot trade until you pay bail or buy out.</div>
+              </div>
+            </div>
+            <div id="uw-bail-info" style="color:#aaa; font-size:0.85em; margin-bottom:14px;"></div>
+          </div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap;">
+            <button onclick="payBail('cash')" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; min-width:160px;">💰 Pay $50,000 Cash Bail</button>
+            <button onclick="payBail('stripe')" style="flex:1; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; min-width:160px;">💳 Pay $5 Real Money → +$1k Paper</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Heist Control Panel -->
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="color:#ff6b35; margin-bottom:4px;">🥷 Initiate a Heist</h3>
+        <p style="color:#888; font-size:0.82em; margin-bottom:16px;">Pick a target and heist type. Success steals paper money — failure can mean jail time.</p>
+
+        <!-- Target picker -->
+        <div style="margin-bottom:16px;">
+          <label style="color:#aaa; font-size:0.82em; display:block; margin-bottom:6px;">Select Target</label>
+          <select id="heist-target" style="width:100%; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none; cursor:pointer;">
+            <option value="">Loading players…</option>
+          </select>
+        </div>
+
+        <!-- Heist type cards -->
+        <div style="margin-bottom:16px;">
+          <label style="color:#aaa; font-size:0.82em; display:block; margin-bottom:8px;">Heist Type</label>
+          <div id="heist-type-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:10px;">
+            <label style="cursor:pointer;">
+              <input type="radio" name="heist_type" value="pickpocket" checked style="display:none;">
+              <div class="heist-type-card" data-type="pickpocket" style="background:#0d1b2a; border:2px solid #00d4ff; border-radius:12px; padding:14px; text-align:center; transition:border-color .2s;">
+                <div style="font-size:1.8em; margin-bottom:6px;">🥷</div>
+                <div style="color:#00d4ff; font-weight:700; margin-bottom:4px;">Pickpocket</div>
+                <div style="color:#555; font-size:0.75em; line-height:1.4;">Up to 5% cash · 55% success · 1hr cooldown · Solo</div>
+              </div>
+            </label>
+            <label style="cursor:pointer;">
+              <input type="radio" name="heist_type" value="smash_grab" style="display:none;">
+              <div class="heist-type-card" data-type="smash_grab" style="background:#0d1b2a; border:2px solid #333; border-radius:12px; padding:14px; text-align:center; transition:border-color .2s;">
+                <div style="font-size:1.8em; margin-bottom:6px;">💥</div>
+                <div style="color:#ff8c00; font-weight:700; margin-bottom:4px;">Smash &amp; Grab</div>
+                <div style="color:#555; font-size:0.75em; line-height:1.4;">Up to 15% cash · 40% success · 4hr cooldown · Solo</div>
+              </div>
+            </label>
+            <label style="cursor:pointer;">
+              <input type="radio" name="heist_type" value="bank_job" style="display:none;">
+              <div class="heist-type-card" data-type="bank_job" style="background:#0d1b2a; border:2px solid #333; border-radius:12px; padding:14px; text-align:center; transition:border-color .2s;">
+                <div style="font-size:1.8em; margin-bottom:6px;">🏦</div>
+                <div style="color:#ffd700; font-weight:700; margin-bottom:4px;">Bank Job</div>
+                <div style="color:#555; font-size:0.75em; line-height:1.4;">Up to 30% cash · 25% success · 24hr cooldown · Requires Team (2+)</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button onclick="initiateHeist()" style="background:linear-gradient(135deg,#ff4444,#cc2200); color:#fff; border:none; border-radius:8px; padding:12px 24px; font-weight:700; cursor:pointer; font-size:0.95em; width:100%;">🥷 Initiate Heist</button>
+      </div>
+
+      <!-- Card 3: PvP Challenge -->
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="color:#00d4ff; margin-bottom:4px;">⚔️ Challenge a Player</h3>
+        <p style="color:#888; font-size:0.82em; margin-bottom:16px;">Win the duel — claim 20% of their cash balance.</p>
+
+        <!-- Opponent picker -->
+        <div style="margin-bottom:16px;">
+          <label style="color:#aaa; font-size:0.82em; display:block; margin-bottom:6px;">Select Opponent</label>
+          <select id="challenge-target" style="width:100%; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none; cursor:pointer;">
+            <option value="">Loading players…</option>
+          </select>
+        </div>
+
+        <!-- Challenge type cards -->
+        <div style="margin-bottom:16px;">
+          <label style="color:#aaa; font-size:0.82em; display:block; margin-bottom:8px;">Challenge Type</label>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:10px;">
+            <label style="cursor:pointer;">
+              <input type="radio" name="challenge_type" value="profit_race" checked style="display:none;">
+              <div class="challenge-type-card" style="background:#0d1b2a; border:2px solid #00d4ff; border-radius:12px; padding:14px; text-align:center; transition:border-color .2s;">
+                <div style="font-size:1.6em; margin-bottom:6px;">📈</div>
+                <div style="color:#00d4ff; font-weight:700; margin-bottom:4px;">Profit Race</div>
+                <div style="color:#555; font-size:0.75em;">Highest % gain wins</div>
+              </div>
+            </label>
+            <label style="cursor:pointer;">
+              <input type="radio" name="challenge_type" value="trade_blitz" style="display:none;">
+              <div class="challenge-type-card" style="background:#0d1b2a; border:2px solid #333; border-radius:12px; padding:14px; text-align:center; transition:border-color .2s;">
+                <div style="font-size:1.6em; margin-bottom:6px;">⚡</div>
+                <div style="color:#ffd700; font-weight:700; margin-bottom:4px;">Trade Blitz</div>
+                <div style="color:#555; font-size:0.75em;">First to 10 profitable trades</div>
+              </div>
+            </label>
+            <label style="cursor:pointer;">
+              <input type="radio" name="challenge_type" value="value_race" style="display:none;">
+              <div class="challenge-type-card" style="background:#0d1b2a; border:2px solid #333; border-radius:12px; padding:14px; text-align:center; transition:border-color .2s;">
+                <div style="font-size:1.6em; margin-bottom:6px;">🏆</div>
+                <div style="color:#ff8c00; font-weight:700; margin-bottom:4px;">Value Race</div>
+                <div style="color:#555; font-size:0.75em;">Highest portfolio value wins</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Duration selector -->
+        <div style="margin-bottom:16px;">
+          <label style="color:#aaa; font-size:0.82em; display:block; margin-bottom:6px;">Duration</label>
+          <select id="challenge-duration" style="background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none; cursor:pointer; width:100%;">
+            <option value="1800000">30 Minutes</option>
+            <option value="3600000" selected>1 Hour</option>
+            <option value="7200000">2 Hours</option>
+            <option value="86400000">24 Hours</option>
+          </select>
+        </div>
+
+        <!-- Active challenge display -->
+        <div id="uw-active-challenge" style="display:none; background:rgba(0,212,255,.06); border:1px solid rgba(0,212,255,.3); border-radius:10px; padding:14px; margin-bottom:14px;">
+          <div style="color:#00d4ff; font-weight:700; margin-bottom:6px;">⚔️ Active Challenge</div>
+          <div id="uw-active-challenge-info" style="color:#aaa; font-size:0.85em;"></div>
+        </div>
+
+        <button onclick="sendChallenge()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:12px 24px; font-weight:700; cursor:pointer; font-size:0.95em; width:100%;">⚔️ Send Challenge</button>
+      </div>
+
+      <!-- Card 4: Pending Notifications -->
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <h3 style="color:#ff8c00; margin:0;">🔔 Pending Actions</h3>
+          <button onclick="loadHeistNotifications()" style="background:transparent; border:1px solid #333; color:#555; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:0.78em;">↻ Refresh</button>
+        </div>
+        <div id="uw-notifications" style="display:flex; flex-direction:column; gap:10px;">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Card 5: Heist Log -->
+      <div class="card">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+          <h3 style="color:#aaa; margin:0;">📋 Heist Log</h3>
+          <button onclick="loadHeistLog()" style="background:transparent; border:1px solid #333; color:#555; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:0.78em;">↻ Refresh</button>
+        </div>
+        <div id="uw-heist-log" style="overflow-x:auto;">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">No heist history yet.</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
   <!-- Global Milestone Celebration Overlay -->
   <div id="celebration-overlay" style="display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:hidden;">
     <div id="celebration-card" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-60%) scale(0.8); opacity:0; transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s ease; background:linear-gradient(135deg,#1a1f2e,#0d1118); border:2px solid #ffd700; border-radius:20px; padding:32px 40px; text-align:center; max-width:380px; width:90%; box-shadow:0 0 60px rgba(255,215,0,.35), 0 20px 60px rgba(0,0,0,.7); pointer-events:auto;">
@@ -1623,6 +1793,81 @@
       <div style="text-align:center; margin-top:16px;">
         <p style="color:#444; font-size:0.75em;">Virtual paper money only — not real currency. Real payment charged to your card.</p>
       </div>
+    </div>
+  </div>
+
+  <!-- Heist Incoming Modal (victim sees this when robbed) -->
+  <div id="heist-incoming-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg,#1a0808,#200a0a); border:2px solid #ff4444; border-radius:20px; padding:32px; max-width:480px; width:100%; box-shadow:0 0 60px rgba(255,68,68,.3);">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:3em; margin-bottom:8px;">💸</div>
+        <h2 style="color:#ff4444; font-weight:900; margin-bottom:6px;">You've Been Robbed!</h2>
+        <p id="hi-msg" style="color:#aaa; font-size:0.9em;"></p>
+      </div>
+      <div style="background:rgba(255,255,255,.04); border:1px solid #333; border-radius:12px; padding:16px; margin-bottom:20px; text-align:center;">
+        <div id="hi-robber" style="color:#ff8c00; font-weight:700; font-size:1.05em; margin-bottom:4px;"></div>
+        <div id="hi-amount" style="color:#ff4444; font-size:1.6em; font-weight:900; margin-bottom:4px;"></div>
+        <div style="color:#555; font-size:0.8em;">stolen from your cash balance</div>
+        <div style="color:#666; font-size:0.75em; margin-top:6px;">You have 24 hours to press charges</div>
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button id="hi-charges-btn" onclick="pressChargesFromModal()" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">🚔 Press Charges</button>
+        <button onclick="document.getElementById('heist-incoming-modal').style.display='none'" style="flex:1; background:#1a1f2e; border:1px solid #333; color:#888; border-radius:8px; padding:12px; cursor:pointer;">😤 Let It Go</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Investigation Result Modal (victim sees outcome of press charges) -->
+  <div id="investigation-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg,#0a1a0a,#0d200d); border:2px solid #00ff88; border-radius:20px; padding:32px; max-width:480px; width:100%; box-shadow:0 0 60px rgba(0,255,136,.2);">
+      <div id="invest-caught-state" style="display:none; text-align:center;">
+        <div style="font-size:3em; margin-bottom:10px;">🚔</div>
+        <h2 style="color:#00ff88; font-weight:900; margin-bottom:8px;">They've Been Caught!</h2>
+        <p id="invest-caught-msg" style="color:#aaa; font-size:0.9em; margin-bottom:20px;"></p>
+        <p style="color:#ffd700; font-size:0.88em; margin-bottom:20px;">Choose your sentence:</p>
+        <div style="display:flex; gap:12px;">
+          <button id="invest-fine-btn" onclick="chooseOutcome('fine')" style="flex:1; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">💰 Demand $10k Fine</button>
+          <button id="invest-jail-btn" onclick="chooseOutcome('jail')" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">🚔 Send to Jail</button>
+        </div>
+      </div>
+      <div id="invest-escaped-state" style="display:none; text-align:center;">
+        <div style="font-size:3em; margin-bottom:10px;">😤</div>
+        <h2 style="color:#ff8c00; font-weight:900; margin-bottom:8px;">They Got Away!</h2>
+        <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">The investigation came up empty. Better luck next time.</p>
+        <button onclick="document.getElementById('investigation-modal').style.display='none'" style="background:#1a1f2e; border:1px solid #333; color:#aaa; border-radius:8px; padding:10px 24px; cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Challenge Incoming Modal -->
+  <div id="challenge-incoming-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg,#0a0d1a,#0d1220); border:2px solid #00d4ff; border-radius:20px; padding:32px; max-width:460px; width:100%; box-shadow:0 0 60px rgba(0,212,255,.25);">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:3em; margin-bottom:8px;">⚔️</div>
+        <h2 style="color:#00d4ff; font-weight:900; margin-bottom:6px;">You've Been Challenged!</h2>
+        <p id="ci-msg" style="color:#aaa; font-size:0.9em;"></p>
+      </div>
+      <div style="background:rgba(255,255,255,.04); border:1px solid #222; border-radius:12px; padding:16px; margin-bottom:20px; text-align:center;">
+        <div id="ci-challenger" style="color:#ffd700; font-weight:700; font-size:1.05em; margin-bottom:4px;"></div>
+        <div id="ci-type" style="color:#00d4ff; font-size:1.1em; font-weight:700; margin-bottom:4px;"></div>
+        <div id="ci-duration" style="color:#888; font-size:0.85em;"></div>
+        <div style="color:#555; font-size:0.78em; margin-top:6px;">Winner takes 20% of loser's cash balance</div>
+      </div>
+      <div style="display:flex; gap:12px;">
+        <button id="ci-accept-btn" onclick="respondToChallenge(true)" style="flex:1; background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">✅ Accept</button>
+        <button onclick="respondToChallenge(false)" style="flex:1; background:#1a1f2e; border:1px solid #333; color:#888; border-radius:8px; padding:12px; cursor:pointer;">❌ Decline</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Challenge Result Modal -->
+  <div id="challenge-result-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg,#0d1220,#1a1f2e); border:2px solid #ffd700; border-radius:20px; padding:32px; max-width:460px; width:100%; text-align:center; box-shadow:0 0 60px rgba(255,215,0,.2);">
+      <div id="cr-icon" style="font-size:3.5em; margin-bottom:8px;"></div>
+      <h2 id="cr-title" style="font-weight:900; margin-bottom:8px;"></h2>
+      <p id="cr-body" style="color:#aaa; font-size:0.9em; margin-bottom:20px;"></p>
+      <div id="cr-prize" style="font-size:1.5em; font-weight:900; margin-bottom:20px;"></div>
+      <button onclick="document.getElementById('challenge-result-modal').style.display='none'; refreshPortfolio();" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 28px; font-weight:700; cursor:pointer;">OK</button>
     </div>
   </div>
 
@@ -5016,6 +5261,69 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
       if (m.totalTrades !== undefined)  set('total-trades',     m.totalTrades);
       if (portfolio.openPositions !== undefined) set('active-assets', portfolio.openPositions);
     });
+
+    // ── Underworld socket events ──────────────────────────────────────────────
+
+    socket.on('heist_incoming', (data) => {
+      showHeistIncomingModal(data);
+      if (window.SMLSounds) SMLSounds.notification();
+    });
+
+    socket.on('heist_result', (data) => {
+      if (data.success) {
+        showToast('🥷', 'Heist Successful!', `+$${Math.round(data.amountStolen).toLocaleString()} stolen`, '#00ff88');
+        if (typeof refreshPortfolio === 'function') refreshPortfolio();
+        if (typeof refreshUnderworldStatus === 'function') refreshUnderworldStatus();
+      } else {
+        showToast('❌', 'Heist Failed', `The ${data.heistType || 'heist'} didn't go as planned.`, '#ff4444');
+      }
+    });
+
+    socket.on('investigation_result', (data) => {
+      showInvestigationModal(data);
+    });
+
+    socket.on('sent_to_jail', () => {
+      showToast('🚔', 'Busted!', "You've been sent to jail! Pay bail to trade again.", '#ff4444');
+      if (typeof refreshUnderworldStatus === 'function') refreshUnderworldStatus();
+    });
+
+    socket.on('fine_charged', (data) => {
+      showToast('💸', 'Fine Charged', `$${(data.amount || 0).toLocaleString()} taken from your account`, '#ff8c00');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+
+    socket.on('fine_collected', (data) => {
+      showToast('💰', 'Fine Collected!', `+$${(data.amount || 0).toLocaleString()} added to your balance`, '#00ff88');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+
+    socket.on('jail_released', (data) => {
+      showToast('🔓', 'Released!', `You are free to trade again! +$${(data.amount || 1000).toLocaleString()} added.`, '#00ff88');
+      if (typeof refreshUnderworldStatus === 'function') refreshUnderworldStatus();
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+
+    socket.on('challenge_received', (data) => {
+      showChallengeIncomingModal(data);
+      if (window.SMLSounds) SMLSounds.notification();
+    });
+
+    socket.on('challenge_accepted', (data) => {
+      const ms = (data.endsAt || 0) - Date.now();
+      const dur = ms > 0 ? fmtDuration(ms) : '?';
+      showToast('⚔️', 'Challenge Accepted!', `Duel is on! Ends in ${dur}`, '#00d4ff');
+      if (typeof loadUnderworldStatus === 'function') loadUnderworldStatus();
+    });
+
+    socket.on('challenge_declined', (data) => {
+      showToast('❌', 'Challenge Declined', `${data.opponentName || 'Your opponent'} declined the challenge.`, '#888');
+    });
+
+    socket.on('challenge_result', (data) => {
+      showChallengeResultModal(data);
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
   }
 
   // Initialize after DOM ready
@@ -5102,6 +5410,417 @@ if (typeof _origSwitchTab === 'function') {
       loadMonetizationHub();
     }
   };
+}
+
+// ── Underworld JS ─────────────────────────────────────────────────────────────
+
+let _uwHeistId = null;   // heist ID pending investigation outcome
+let _uwChallengeId = null; // challenge ID pending response
+
+function fmtDuration(ms) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
+function fmtMoney(n) {
+  if (!n && n !== 0) return '$—';
+  return '$' + Math.round(n).toLocaleString();
+}
+
+// Sync radio card borders when user picks heist/challenge type
+document.querySelectorAll('input[name="heist_type"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.querySelectorAll('input[name="heist_type"]').forEach(r => {
+      const card = r.closest('label').querySelector('.heist-type-card');
+      if (card) card.style.borderColor = r.checked ? '#ff4444' : '#333';
+    });
+  });
+});
+
+document.querySelectorAll('input[name="challenge_type"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    document.querySelectorAll('input[name="challenge_type"]').forEach(r => {
+      const card = r.closest('label').querySelector('.challenge-type-card');
+      if (card) card.style.borderColor = r.checked ? '#00d4ff' : '#333';
+    });
+  });
+});
+
+async function initUnderworld() {
+  await Promise.all([
+    loadHeistTargets(),
+    loadUnderworldStatus(),
+    loadHeistNotifications(),
+    loadHeistLog(),
+  ]);
+}
+
+async function loadHeistTargets() {
+  try {
+    const res = await fetch('/api/heist/targets', { headers: { 'x-session-id': sessionId } });
+    const data = await res.json();
+    const players = data.players || [];
+    const sel1 = document.getElementById('heist-target');
+    const sel2 = document.getElementById('challenge-target');
+    const opts = players.length
+      ? players.map(p => `<option value="${p.userId}">${p.displayName} (${p.valueRange})</option>`).join('')
+      : '<option value="">No eligible targets</option>';
+    if (sel1) sel1.innerHTML = opts;
+    if (sel2) sel2.innerHTML = opts;
+  } catch (_) {}
+}
+
+async function loadUnderworldStatus() {
+  try {
+    const headers = { 'x-session-id': sessionId };
+    const jailRes = await fetch('/api/heist/notifications', { headers });
+    const jailData = await jailRes.json();
+    const jailInfo = jailData.jailInfo;
+    const freeEl = document.getElementById('uw-free-state');
+    const jailEl = document.getElementById('uw-jail-state');
+    if (!freeEl || !jailEl) return;
+    if (jailInfo && jailInfo.jailed) {
+      freeEl.style.display = 'none';
+      jailEl.style.display = 'block';
+      const infoEl = document.getElementById('uw-bail-info');
+      if (infoEl) infoEl.textContent = `Amount owed to victim: ${fmtMoney(jailInfo.amount_owed)} — Cash bail: $50,000 — Or pay $5 real money for instant release + $1,000 paper money`;
+    } else {
+      freeEl.style.display = 'flex';
+      jailEl.style.display = 'none';
+    }
+    // Load active challenges too
+    const chRes = await fetch('/api/challenge/active', { headers });
+    const chData = await chRes.json();
+    const activeEl = document.getElementById('uw-active-challenge');
+    const activeInfo = document.getElementById('uw-active-challenge-info');
+    if (chData.active && activeEl && activeInfo) {
+      const ch = chData.active;
+      const msLeft = ch.ends_at - Date.now();
+      activeEl.style.display = 'block';
+      activeInfo.textContent = `vs ${ch.opponentName || '?'} · ${ch.type} · ${msLeft > 0 ? fmtDuration(msLeft) + ' left' : 'Ending soon…'}`;
+    } else if (activeEl) {
+      activeEl.style.display = 'none';
+    }
+  } catch (_) {}
+}
+
+function refreshUnderworldStatus() {
+  loadUnderworldStatus();
+}
+
+async function initiateHeist() {
+  if (!sessionId) { showToast('⚠️', 'Not logged in', 'Please log in first.', '#ff4444'); return; }
+  const target = document.getElementById('heist-target').value;
+  const typeEl = document.querySelector('input[name="heist_type"]:checked');
+  const heistType = typeEl ? typeEl.value : 'pickpocket';
+  if (!target) { showToast('⚠️', 'No Target', 'Select a target player first.', '#ff8c00'); return; }
+  try {
+    const res = await fetch('/api/heist/initiate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ targetUserId: target, heistType }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast('❌', 'Heist Blocked', data.error || 'Cannot initiate heist', '#ff4444');
+      return;
+    }
+    if (data.success) {
+      showToast('🥷', 'Heist Successful!', `+${fmtMoney(data.amountStolen)} stolen!`, '#00ff88');
+      refreshPortfolio && refreshPortfolio();
+    } else {
+      showToast('💨', 'Heist Failed', data.message || 'Better luck next time.', '#888');
+    }
+  } catch (_) {
+    showToast('❌', 'Error', 'Network error — please retry', '#ff4444');
+  }
+}
+
+function showHeistIncomingModal(data) {
+  _uwHeistId = data.heistId;
+  const msgEl = document.getElementById('hi-msg');
+  const robberEl = document.getElementById('hi-robber');
+  const amtEl = document.getElementById('hi-amount');
+  if (msgEl) msgEl.textContent = `A ${data.heistType || 'heist'} was executed on your portfolio.`;
+  if (robberEl) robberEl.textContent = data.robberName || 'Unknown player';
+  if (amtEl) amtEl.textContent = fmtMoney(data.amount);
+  document.getElementById('heist-incoming-modal').style.display = 'flex';
+}
+
+async function pressChargesFromModal() {
+  if (!_uwHeistId) return;
+  document.getElementById('heist-incoming-modal').style.display = 'none';
+  await pressCharges(_uwHeistId);
+}
+
+async function pressCharges(heistId) {
+  try {
+    const res = await fetch('/api/heist/press-charges', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ heistId }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌', 'Error', data.error || 'Could not press charges', '#ff4444'); return; }
+    _uwHeistId = heistId;
+    showInvestigationModal({ caught: data.caught, heistId });
+  } catch (_) {
+    showToast('❌', 'Error', 'Network error', '#ff4444');
+  }
+}
+
+function showInvestigationModal(data) {
+  const modal = document.getElementById('investigation-modal');
+  const caughtEl = document.getElementById('invest-caught-state');
+  const escapedEl = document.getElementById('invest-escaped-state');
+  if (data.caught) {
+    if (caughtEl) {
+      caughtEl.style.display = 'block';
+      const msgEl = document.getElementById('invest-caught-msg');
+      if (msgEl) msgEl.textContent = 'The robber has been caught red-handed. What will you do?';
+    }
+    if (escapedEl) escapedEl.style.display = 'none';
+  } else {
+    if (escapedEl) escapedEl.style.display = 'block';
+    if (caughtEl) caughtEl.style.display = 'none';
+  }
+  if (modal) modal.style.display = 'flex';
+}
+
+async function chooseOutcome(outcome) {
+  if (!_uwHeistId) return;
+  try {
+    const res = await fetch('/api/heist/choose-outcome', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ heistId: _uwHeistId, outcome }),
+    });
+    const data = await res.json();
+    document.getElementById('investigation-modal').style.display = 'none';
+    if (!res.ok) { showToast('❌', 'Error', data.error || 'Failed', '#ff4444'); return; }
+    if (outcome === 'fine') {
+      showToast('💰', 'Fine Demanded!', '$10,000 fine charged to the robber.', '#ffd700');
+    } else {
+      showToast('🚔', 'Sent to Jail!', 'The robber has been jailed.', '#00d4ff');
+    }
+    refreshPortfolio && refreshPortfolio();
+  } catch (_) {
+    showToast('❌', 'Error', 'Network error', '#ff4444');
+  }
+}
+
+async function payBail(bailType) {
+  if (!sessionId) return;
+  if (bailType === 'stripe') {
+    try {
+      const res = await fetch('/api/stripe/jail-buyout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+      else showToast('❌', 'Error', data.error || 'Could not open checkout', '#ff4444');
+    } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+    return;
+  }
+  // cash bail
+  try {
+    const res = await fetch('/api/heist/pay-bail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ bailType: 'cash' }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌', 'Bail Failed', data.error || 'Insufficient funds', '#ff4444'); return; }
+    showToast('🔓', 'Bail Paid!', 'You are free to trade again.', '#00ff88');
+    refreshUnderworldStatus();
+    refreshPortfolio && refreshPortfolio();
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+async function sendChallenge() {
+  if (!sessionId) { showToast('⚠️', 'Not logged in', 'Please log in first.', '#ff4444'); return; }
+  const opponentId = document.getElementById('challenge-target').value;
+  const typeEl = document.querySelector('input[name="challenge_type"]:checked');
+  const type = typeEl ? typeEl.value : 'profit_race';
+  const durationMs = parseInt(document.getElementById('challenge-duration').value) || 3600000;
+  if (!opponentId) { showToast('⚠️', 'No Opponent', 'Select an opponent first.', '#ff8c00'); return; }
+  try {
+    const res = await fetch('/api/challenge/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ opponentId, type, durationMs }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌', 'Error', data.error || 'Could not send challenge', '#ff4444'); return; }
+    showToast('⚔️', 'Challenge Sent!', 'Waiting for your opponent to respond…', '#00d4ff');
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+function showChallengeIncomingModal(data) {
+  _uwChallengeId = data.challengeId;
+  const challenger = document.getElementById('ci-challenger');
+  const typeEl = document.getElementById('ci-type');
+  const durEl = document.getElementById('ci-duration');
+  const msgEl = document.getElementById('ci-msg');
+  if (msgEl) msgEl.textContent = 'A player wants to go head-to-head with you!';
+  if (challenger) challenger.textContent = data.challengerName || 'Unknown player';
+  if (typeEl) typeEl.textContent = data.type ? data.type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase()) : '—';
+  if (durEl) durEl.textContent = data.durationMs ? fmtDuration(data.durationMs) : '—';
+  document.getElementById('challenge-incoming-modal').style.display = 'flex';
+}
+
+async function respondToChallenge(accept) {
+  document.getElementById('challenge-incoming-modal').style.display = 'none';
+  if (!_uwChallengeId) return;
+  try {
+    const res = await fetch('/api/challenge/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ challengeId: _uwChallengeId, accept }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌', 'Error', data.error || 'Failed', '#ff4444'); return; }
+    if (accept) {
+      showToast('⚔️', 'Challenge Accepted!', 'May the best trader win!', '#00d4ff');
+      loadUnderworldStatus();
+    } else {
+      showToast('👋', 'Declined', 'You declined the challenge.', '#888');
+    }
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+function showChallengeResultModal(data) {
+  const iconEl = document.getElementById('cr-icon');
+  const titleEl = document.getElementById('cr-title');
+  const bodyEl = document.getElementById('cr-body');
+  const prizeEl = document.getElementById('cr-prize');
+  if (data.won) {
+    if (iconEl) iconEl.textContent = '🏆';
+    if (titleEl) { titleEl.textContent = 'You Won!'; titleEl.style.color = '#00ff88'; }
+    if (bodyEl) bodyEl.textContent = `You beat ${data.opponentName || 'your opponent'} in the duel.`;
+    if (prizeEl) { prizeEl.textContent = `+${fmtMoney(data.prize)}`; prizeEl.style.color = '#00ff88'; }
+  } else {
+    if (iconEl) iconEl.textContent = '💸';
+    if (titleEl) { titleEl.textContent = 'You Lost…'; titleEl.style.color = '#ff4444'; }
+    if (bodyEl) bodyEl.textContent = `${data.opponentName || 'Your opponent'} outtraded you this time.`;
+    if (prizeEl) { prizeEl.textContent = `-${fmtMoney(data.prize)}`; prizeEl.style.color = '#ff4444'; }
+  }
+  document.getElementById('challenge-result-modal').style.display = 'flex';
+}
+
+async function loadHeistNotifications() {
+  try {
+    const headers = { 'x-session-id': sessionId };
+    const [hRes, chRes] = await Promise.all([
+      fetch('/api/heist/notifications', { headers }),
+      fetch('/api/challenge/active', { headers }),
+    ]);
+    const hData = await hRes.json();
+    const chData = await chRes.json();
+
+    const container = document.getElementById('uw-notifications');
+    if (!container) return;
+
+    const items = [];
+
+    // Heist notifications
+    for (const n of hData.notifications || []) {
+      const d = typeof n.data === 'string' ? JSON.parse(n.data) : n.data;
+      if (n.type === 'robbed' && d.expires_at > Date.now()) {
+        items.push(`
+          <div style="background:rgba(255,68,68,.08); border:1px solid rgba(255,68,68,.25); border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div>
+              <div style="color:#ff4444; font-weight:700; margin-bottom:2px;">💸 You were robbed by ${d.robberName || '?'}</div>
+              <div style="color:#888; font-size:0.82em;">${fmtMoney(d.amount)} stolen · Expires in ${fmtDuration(d.expires_at - Date.now())}</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button onclick="pressCharges(${n.id})" style="background:#ff4444; color:#fff; border:none; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em; font-weight:700;">🚔 Press Charges</button>
+            </div>
+          </div>`);
+      }
+    }
+
+    // Pending challenge invites
+    for (const ch of chData.pending || []) {
+      items.push(`
+        <div style="background:rgba(0,212,255,.07); border:1px solid rgba(0,212,255,.25); border-radius:10px; padding:14px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div style="color:#00d4ff; font-weight:700; margin-bottom:2px;">⚔️ Challenge from ${ch.challengerName || '?'}</div>
+            <div style="color:#888; font-size:0.82em;">${(ch.type||'').replace('_',' ')} · ${fmtDuration(ch.duration_ms || 3600000)}</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button onclick="_uwChallengeId=${ch.id}; respondToChallenge(true)" style="background:#00d4ff; color:#000; border:none; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em; font-weight:700;">✅ Accept</button>
+            <button onclick="_uwChallengeId=${ch.id}; respondToChallenge(false)" style="background:#1a1f2e; border:1px solid #333; color:#888; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em;">❌ Decline</button>
+          </div>
+        </div>`);
+    }
+
+    if (items.length === 0) {
+      container.innerHTML = '<div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">No pending actions — you\'re all clear.</div>';
+    } else {
+      container.innerHTML = items.join('');
+    }
+
+    // Also update jail status
+    if (hData.jailInfo) {
+      const freeEl = document.getElementById('uw-free-state');
+      const jailEl = document.getElementById('uw-jail-state');
+      if (hData.jailInfo.jailed) {
+        if (freeEl) freeEl.style.display = 'none';
+        if (jailEl) jailEl.style.display = 'block';
+        const infoEl = document.getElementById('uw-bail-info');
+        if (infoEl) infoEl.textContent = `Amount owed: ${fmtMoney(hData.jailInfo.amount_owed)} — Pay $50k cash or $5 real money for +$1k paper money release`;
+      } else {
+        if (freeEl) freeEl.style.display = 'flex';
+        if (jailEl) jailEl.style.display = 'none';
+      }
+    }
+  } catch (_) {}
+}
+
+async function loadHeistLog() {
+  try {
+    const res = await fetch('/api/heist/log', { headers: { 'x-session-id': sessionId } });
+    const data = await res.json();
+    const container = document.getElementById('uw-heist-log');
+    if (!container) return;
+    const heists = data.heists || [];
+    if (!heists.length) {
+      container.innerHTML = '<div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">No heist history yet.</div>';
+      return;
+    }
+    const rows = heists.map(h => {
+      const role = h.role === 'robber' ? '🥷 Robber' : '😤 Victim';
+      const statusColors = { success:'#00ff88', failed:'#ff4444', caught:'#ff8c00', escaped:'#888', resolved:'#aaa' };
+      const col = statusColors[h.status] || '#aaa';
+      return `<tr>
+        <td style="padding:8px 10px; color:#aaa;">${role}</td>
+        <td style="padding:8px 10px; color:#e0e0e0;">${h.counterpartyName || '?'}</td>
+        <td style="padding:8px 10px; color:#888; font-size:0.82em;">${(h.heist_type||'').replace('_',' ')}</td>
+        <td style="padding:8px 10px; color:${col}; font-weight:700; text-transform:capitalize;">${h.status}</td>
+        <td style="padding:8px 10px; color:#ffd700;">${h.amount_stolen > 0 ? fmtMoney(h.amount_stolen) : '—'}</td>
+        <td style="padding:8px 10px; color:#555; font-size:0.78em;">${new Date(h.created_at).toLocaleDateString()}</td>
+      </tr>`;
+    }).join('');
+    container.innerHTML = `
+      <table style="width:100%; border-collapse:collapse; font-size:0.85em;">
+        <thead>
+          <tr style="border-bottom:1px solid #222;">
+            <th style="padding:8px 10px; color:#555; text-align:left; font-weight:600;">Role</th>
+            <th style="padding:8px 10px; color:#555; text-align:left; font-weight:600;">Player</th>
+            <th style="padding:8px 10px; color:#555; text-align:left; font-weight:600;">Type</th>
+            <th style="padding:8px 10px; color:#555; text-align:left; font-weight:600;">Status</th>
+            <th style="padding:8px 10px; color:#555; text-align:left; font-weight:600;">Amount</th>
+            <th style="padding:8px 10px; color:#555; text-align:left; font-weight:600;">Date</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  } catch (_) {}
 }
 </script>
 </body>
