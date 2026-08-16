@@ -1537,9 +1537,17 @@
       <div class="card" id="uw-status-card" style="margin-bottom:20px; border:1px solid #333;">
         <h3 style="color:#ffd700; margin-bottom:14px;">🔒 Your Status</h3>
         <!-- Free state -->
-        <div id="uw-free-state" style="display:flex; align-items:center; gap:10px;">
-          <span style="background:rgba(0,255,136,.12); border:1px solid #00ff88; border-radius:20px; padding:6px 16px; color:#00ff88; font-weight:700; font-size:0.9em;">✅ All Clear — You're Free</span>
-          <span style="color:#555; font-size:0.82em;">No outstanding warrants</span>
+        <div id="uw-free-state">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <span style="background:rgba(0,255,136,.12); border:1px solid #00ff88; border-radius:20px; padding:6px 16px; color:#00ff88; font-weight:700; font-size:0.9em;">✅ All Clear — You're Free</span>
+            <span style="color:#555; font-size:0.82em;">No outstanding warrants</span>
+          </div>
+          <!-- Active loadout badges -->
+          <div id="uw-loadout" style="display:none; display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+            <span id="uw-weapon-badge" style="font-size:0.8em; padding:4px 12px; border-radius:16px; background:rgba(255,68,68,.12); border:1px solid rgba(255,68,68,.3); color:#ff8888; display:none;"></span>
+            <span id="uw-dog-badge" style="font-size:0.8em; padding:4px 12px; border-radius:16px; background:rgba(0,255,136,.08); border:1px solid rgba(0,255,136,.25); color:#00cc6a; display:none;"></span>
+            <span id="uw-shield-badge" style="font-size:0.8em; padding:4px 12px; border-radius:16px; background:rgba(79,195,247,.1); border:1px solid rgba(79,195,247,.3); color:#4fc3f7; display:none;"></span>
+          </div>
         </div>
         <!-- Jail state (hidden by default) -->
         <div id="uw-jail-state" style="display:none;">
@@ -1683,13 +1691,71 @@
       </div>
 
       <!-- Card 5: Heist Log -->
-      <div class="card">
+      <div class="card" style="margin-bottom:20px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
           <h3 style="color:#aaa; margin:0;">📋 Heist Log</h3>
           <button onclick="loadHeistLog()" style="background:transparent; border:1px solid #333; color:#555; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:0.78em;">↻ Refresh</button>
         </div>
         <div id="uw-heist-log" style="overflow-x:auto;">
           <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">No heist history yet.</div>
+        </div>
+      </div>
+
+      <!-- Card 6: Weapon Shop -->
+      <div class="card" id="uw-weapon-shop-card" style="margin-bottom:20px;">
+        <h3 style="color:#ffd700; margin-bottom:4px;">⚔️ Weapon Shop</h3>
+        <p style="color:#888; font-size:0.82em; margin-bottom:16px;">Permanent upgrades — your highest-owned tier boosts every heist. All purchases are one-time.</p>
+        <div id="uw-weapons-store">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Card 7: Defense Shop -->
+      <div class="card" id="uw-defense-shop-card" style="margin-bottom:20px;">
+        <h3 style="color:#4fc3f7; margin-bottom:4px;">🛡️ Defense Shop</h3>
+        <p style="color:#888; font-size:0.82em; margin-bottom:16px;">Guard dogs permanently bite robbers. Shields degrade with each hit — repurchase when destroyed.</p>
+        <!-- Defense Shop tabs -->
+        <div style="display:flex; gap:8px; margin-bottom:16px;">
+          <button id="def-tab-dogs" onclick="switchDefTab('dogs')" style="background:rgba(0,255,136,.15); border:1px solid #00ff88; border-radius:20px; color:#00ff88; padding:6px 16px; font-size:0.82em; font-weight:700; cursor:pointer;">🐕 Guard Dogs</button>
+          <button id="def-tab-shields" onclick="switchDefTab('shields')" style="background:transparent; border:1px solid #333; border-radius:20px; color:#555; padding:6px 16px; font-size:0.82em; font-weight:700; cursor:pointer;">🛡️ Shields</button>
+        </div>
+        <div id="uw-dogs-store">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
+        <div id="uw-shields-store" style="display:none;">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
+      </div>
+
+      <!-- Card 8: Send Funds -->
+      <div class="card" id="uw-send-funds-card" style="margin-bottom:20px;">
+        <h3 style="color:#ffd700; margin-bottom:4px;">💸 Send Funds</h3>
+        <p style="color:#888; font-size:0.82em; margin-bottom:16px;">Send paper money directly, or buy a real-money gift for another player via Stripe.</p>
+
+        <!-- Direct paper money transfer -->
+        <div style="background:rgba(255,255,255,.04); border:1px solid #222; border-radius:10px; padding:16px; margin-bottom:16px;">
+          <div style="color:#aaa; font-size:0.85em; font-weight:700; margin-bottom:10px;">💵 Send Paper Money (Instant)</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input id="sf-recipient" placeholder="Recipient user ID or email" style="flex:2; min-width:180px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+            <input id="sf-amount" type="number" placeholder="Amount ($)" min="1" style="flex:1; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+            <button onclick="sendPaperMoney()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.88em;">Send</button>
+          </div>
+        </div>
+
+        <!-- Real money gift via Stripe -->
+        <div style="background:rgba(255,215,0,.05); border:1px solid rgba(255,215,0,.2); border-radius:10px; padding:16px;">
+          <div style="color:#ffd700; font-size:0.85em; font-weight:700; margin-bottom:10px;">🎁 Gift Real Money → Paper Money (Stripe)</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <input id="sf-gift-recipient" placeholder="Recipient user ID or email" style="flex:2; min-width:180px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+            <select id="sf-gift-pkg" style="flex:1; min-width:160px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; cursor:pointer;">
+              <option value="hustle">Hustle — $1,000 ($4.99)</option>
+              <option value="grind">Grind — $5,000 ($10.99)</option>
+              <option value="investor">Investor — $25,000 ($15)</option>
+              <option value="whale">Whale — $50,000 ($20)</option>
+              <option value="ultimate">Ultimate — $200,000 ($75)</option>
+            </select>
+            <button onclick="giftRealMoney()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.88em;">Buy Gift</button>
+          </div>
         </div>
       </div>
 
@@ -2977,6 +3043,39 @@
           credits_champion: '💎 7,000 SML Credits added to your balance!',
           coach_pro:        '🧠 Premium Coach Pro activated! Enjoy deeper insights and weekly reports.',
           tournament:       '⚔️ Tournament entry confirmed! May the best legend win.',
+          jail_buyout:      '🔓 Released from jail! +$1,000 paper money added.',
+          // Weapons
+          weapon_rusty_shiv:       '🔪 Rusty Shiv equipped! Your heists just got sharper.',
+          weapon_switchblade:      '⚔️ Switchblade equipped! Quick and deadly.',
+          weapon_baseball_bat:     '🏏 Baseball Bat equipped! Hit em where it hurts.',
+          weapon_crowbar:          '🪝 Crowbar equipped! Pry open those vaults.',
+          weapon_brass_knuckles:   '👊 Brass Knuckles equipped! Nobody sees you coming.',
+          weapon_taser:            '⚡ Taser equipped! Stun and run.',
+          weapon_smoke_grenade:    '💨 Smoke Grenade equipped! Disappear in plain sight.',
+          weapon_glock:            '🔫 Glock 19 equipped! The streets know your name.',
+          weapon_ak47:             '🪖 AK-47 equipped! Full auto heist mode.',
+          weapon_military_arsenal: '💣 Military Arsenal equipped! You are untouchable.',
+          // Guard Dogs
+          guard_dog_chihuahua:        '🐕 Chihuahua is now guarding you! Tiny but fierce.',
+          guard_dog_pomeranian:        '🐩 Pomeranian is now guarding you! Fluffier than expected.',
+          guard_dog_beagle:            '🦴 Beagle is now guarding you! Sniffs out danger.',
+          guard_dog_pit_bull:          '🐾 Pit Bull is now guarding you! No one is getting through.',
+          guard_dog_german_shepherd:   '🦮 German Shepherd is now guarding you! Law-grade loyalty.',
+          guard_dog_doberman:          '🐕 Doberman is now guarding you! Silent and lethal.',
+          guard_dog_rottweiler:        '🐕 Rottweiler is now guarding you! 200 lbs of protection.',
+          guard_dog_belgian_malinois:  '🐆 Belgian Malinois is now guarding you! Faster than your enemies.',
+          guard_dog_wolf_hybrid:       '🐺 Wolf Hybrid is now guarding you! Half wild, all deadly.',
+          guard_dog_hellhounds:        '🔥 Pack of Hellhounds deployed! Nobody dares rob you now.',
+          // Shields
+          shield_iron:     '🛡️ Iron Shield activated! 3 hits of free protection.',
+          shield_steel:    '⚡🛡️ Steel Shield activated! 7 hits of hardened defense.',
+          shield_titanium: '💎🛡️ Titanium Shield activated! 12 hits of elite protection.',
+          // Gifts
+          gift_paper_money_hustle:   '🎁 Gift sent! Your friend received $1,000 paper money.',
+          gift_paper_money_grind:    '🎁 Gift sent! Your friend received $5,000 paper money.',
+          gift_paper_money_investor: '🎁 Gift sent! Your friend received $25,000 paper money.',
+          gift_paper_money_whale:    '🎁 Gift sent! Your friend received $50,000 paper money.',
+          gift_paper_money_ultimate: '🎁 Gift sent! Your friend received $200,000 paper money.',
         };
         const msg = msgs[payType] || '✅ Payment successful! Thank you for supporting Self-Made Legends.';
         setTimeout(() => showToast('✅', 'Payment Complete!', msg, '#00ff88'), 600);
@@ -5324,6 +5423,32 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
       showChallengeResultModal(data);
       if (typeof refreshPortfolio === 'function') refreshPortfolio();
     });
+
+    // Armory / Defense events
+    socket.on('dog_bite', (data) => {
+      showToast(data.dogIcon || '🐕', 'Dog Bite!', `${data.dogName} bit you for ${fmtMoney(data.biteAmount)}`, '#ff8c00');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+    socket.on('dog_defended', (data) => {
+      showToast(data.dogIcon || '🐕', 'Your Dog Bit Back!', `${data.dogName} bit ${data.robberName} for ${fmtMoney(data.biteAmount)}`, '#00ff88');
+    });
+    socket.on('shield_hit', (data) => {
+      showToast(data.icon || '🛡️', 'Shield Absorbed Hit!', `${data.shieldName} — ${data.durabilityLeft} hit${data.durabilityLeft === 1 ? '' : 's'} remaining`, '#4fc3f7');
+      loadArmory && loadArmory();
+    });
+    socket.on('shield_broken', (data) => {
+      showToast(data.icon || '🛡️', 'Shield Destroyed!', `${data.shieldName} has been destroyed — visit the Defense Shop to get a new one`, '#ff5252');
+      loadArmory && loadArmory();
+    });
+    socket.on('heist_jailed', (data) => {
+      showToast('🚔', 'Busted!', `${data.message || 'You were caught during the team heist. You\'re in jail!'}`, '#ff4444');
+      loadUnderworldStatus && loadUnderworldStatus();
+    });
+    socket.on('transfer_received', (data) => {
+      showToast(data.isGift ? '🎁' : '💸', data.isGift ? 'Gift Received!' : 'Funds Received!', `+${fmtMoney(data.amount)} paper money from ${data.senderName}`, '#00ff88');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+    socket.on('inventory_updated', () => { loadArmory && loadArmory(); });
   }
 
   // Initialize after DOM ready
@@ -5454,6 +5579,7 @@ async function initUnderworld() {
     loadUnderworldStatus(),
     loadHeistNotifications(),
     loadHeistLog(),
+    loadArmory(),
   ]);
 }
 
@@ -5821,6 +5947,254 @@ async function loadHeistLog() {
         <tbody>${rows}</tbody>
       </table>`;
   } catch (_) {}
+}
+
+// ── Armory: load inventory and render shops ───────────────────────────────────
+async function loadArmory() {
+  if (!sessionId) return;
+  try {
+    const res = await fetch('/api/underworld/inventory', { headers: { 'x-session-id': sessionId } });
+    if (!res.ok) return;
+    const inv = await res.json();
+    renderWeaponStore(inv);
+    renderDogStore(inv);
+    renderShieldStore(inv);
+    updateLoadoutBadges(inv);
+  } catch (_) {}
+}
+
+function renderWeaponStore(inv) {
+  const el = document.getElementById('uw-weapons-store');
+  if (!el) return;
+  const WEAPONS = inv.WEAPONS || {};
+  const ownedWeapons = new Set(inv.weapons || []);
+  const bestTier = inv.bestWeapon ? inv.bestWeapon.tier : 0;
+  const cards = Object.entries(WEAPONS).map(([key, w]) => {
+    const owned = ownedWeapons.has(key);
+    const active = owned && w.tier === bestTier;
+    const price = (w.price_cents / 100).toFixed(2);
+    return `<div style="background:#0d1b2a; border:1px solid ${active ? '#ffd700' : owned ? '#333' : '#1a2a3a'}; border-radius:10px; padding:12px; display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <div style="font-size:1.8em; min-width:36px; text-align:center;">${w.icon}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="color:${active ? '#ffd700' : '#e0e0e0'}; font-weight:700; font-size:0.9em;">${w.label}${active ? ' <span style="color:#ffd700; font-size:0.75em;">ACTIVE</span>' : ''}</div>
+        <div style="color:#555; font-size:0.75em; margin-top:2px;">+${(w.successBonus*100).toFixed(0)}% success · +${(w.maxPctBonus*100).toFixed(0)}% steal · -${(w.catchReduction*100).toFixed(0)}% catch rate</div>
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        ${owned
+          ? `<span style="color:#00ff88; font-size:0.8em; font-weight:700;">✅ Owned</span>`
+          : `<button onclick="buyWeapon('${key}')" style="background:linear-gradient(135deg,#ff4444,#cc2200); color:#fff; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">$${price}</button>`
+        }
+      </div>
+    </div>`;
+  });
+  el.innerHTML = cards.join('');
+}
+
+function renderDogStore(inv) {
+  const el = document.getElementById('uw-dogs-store');
+  if (!el) return;
+  const GUARD_DOGS = inv.GUARD_DOGS || {};
+  const ownedDogs = new Set(inv.dogs || []);
+  const bestTier = inv.bestDog ? inv.bestDog.tier : 0;
+  const cards = Object.entries(GUARD_DOGS).map(([key, d]) => {
+    const owned = ownedDogs.has(key);
+    const active = owned && d.tier === bestTier;
+    const price = (d.price_cents / 100).toFixed(2);
+    return `<div style="background:#0d1b2a; border:1px solid ${active ? '#00ff88' : owned ? '#333' : '#1a2a3a'}; border-radius:10px; padding:12px; display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <div style="font-size:1.8em; min-width:36px; text-align:center;">${d.icon}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="color:${active ? '#00ff88' : '#e0e0e0'}; font-weight:700; font-size:0.9em;">${d.label}${active ? ' <span style="color:#00ff88; font-size:0.75em;">GUARDING</span>' : ''}</div>
+        <div style="color:#555; font-size:0.75em; margin-top:2px;">${(d.biteChance*100).toFixed(0)}% bite chance · bites ${(d.biteDamagePct*100).toFixed(0)}% of robber's cash</div>
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        ${owned
+          ? `<span style="color:#00ff88; font-size:0.8em; font-weight:700;">✅ Owned</span>`
+          : `<button onclick="buyGuardDog('${key}')" style="background:linear-gradient(135deg,#00cc6a,#009944); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">$${price}</button>`
+        }
+      </div>
+    </div>`;
+  });
+  el.innerHTML = cards.join('');
+}
+
+function renderShieldStore(inv) {
+  const el = document.getElementById('uw-shields-store');
+  if (!el) return;
+  const SHIELDS = inv.SHIELDS || {};
+  const activeShield = inv.shield;
+  const cards = Object.entries(SHIELDS).map(([key, s]) => {
+    const isActive = activeShield && activeShield.key === key;
+    const durLeft  = isActive ? activeShield.durability : 0;
+    const isFree   = s.price_cents === 0;
+    const price    = isFree ? 'Free' : `$${(s.price_cents / 100).toFixed(2)}`;
+    return `<div style="background:#0d1b2a; border:1px solid ${isActive ? '#4fc3f7' : '#1a2a3a'}; border-radius:10px; padding:12px; display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <div style="font-size:1.8em; min-width:36px; text-align:center;">${s.icon}</div>
+      <div style="flex:1; min-width:0;">
+        <div style="color:${isActive ? '#4fc3f7' : '#e0e0e0'}; font-weight:700; font-size:0.9em;">${s.label}</div>
+        <div style="color:#555; font-size:0.75em; margin-top:2px;">-${(s.successReduction*100).toFixed(0)}% heist success · -${(s.maxPctReduction*100).toFixed(0)}% steal cap · ${s.maxDurability} hits</div>
+        ${isActive ? `<div style="margin-top:4px;"><span style="color:#4fc3f7; font-size:0.75em; font-weight:700;">${durLeft}/${s.maxDurability} hits remaining</span></div>` : ''}
+      </div>
+      <div style="text-align:right; flex-shrink:0;">
+        ${isActive
+          ? `<span style="color:#4fc3f7; font-size:0.8em; font-weight:700;">🛡️ Active</span>`
+          : isFree
+            ? `<button onclick="claimFreeShield()" ${activeShield ? 'disabled style="opacity:.4; cursor:not-allowed;"' : ''} style="background:linear-gradient(135deg,#4fc3f7,#0288d1); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">Claim Free</button>`
+            : `<button onclick="buyShield('${key}')" ${activeShield ? 'disabled title="Destroy current shield first" style="opacity:.4; cursor:not-allowed;"' : ''} style="background:linear-gradient(135deg,#4fc3f7,#0288d1); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">${price}</button>`
+        }
+      </div>
+    </div>`;
+  });
+  el.innerHTML = cards.join('');
+}
+
+function updateLoadoutBadges(inv) {
+  const weaponBadge = document.getElementById('uw-weapon-badge');
+  const dogBadge    = document.getElementById('uw-dog-badge');
+  const shieldBadge = document.getElementById('uw-shield-badge');
+  const loadout     = document.getElementById('uw-loadout');
+  if (weaponBadge) {
+    if (inv.bestWeapon) {
+      weaponBadge.textContent = `${inv.bestWeapon.icon} ${inv.bestWeapon.label}`;
+      weaponBadge.style.display = '';
+    } else { weaponBadge.style.display = 'none'; }
+  }
+  if (dogBadge) {
+    if (inv.bestDog) {
+      dogBadge.textContent = `${inv.bestDog.icon} ${inv.bestDog.label}`;
+      dogBadge.style.display = '';
+    } else { dogBadge.style.display = 'none'; }
+  }
+  if (shieldBadge) {
+    if (inv.shield) {
+      shieldBadge.textContent = `${inv.shield.icon} ${inv.shield.label} (${inv.shield.durability} hits)`;
+      shieldBadge.style.display = '';
+    } else { shieldBadge.style.display = 'none'; }
+  }
+  if (loadout) {
+    const hasAny = inv.bestWeapon || inv.bestDog || inv.shield;
+    loadout.style.display = hasAny ? 'flex' : 'none';
+  }
+}
+
+function switchDefTab(tab) {
+  const dogsEl    = document.getElementById('uw-dogs-store');
+  const shieldsEl = document.getElementById('uw-shields-store');
+  const dogBtn    = document.getElementById('def-tab-dogs');
+  const shieldBtn = document.getElementById('def-tab-shields');
+  if (tab === 'dogs') {
+    if (dogsEl) dogsEl.style.display = '';
+    if (shieldsEl) shieldsEl.style.display = 'none';
+    if (dogBtn)    { dogBtn.style.background = 'rgba(0,255,136,.15)'; dogBtn.style.borderColor = '#00ff88'; dogBtn.style.color = '#00ff88'; }
+    if (shieldBtn) { shieldBtn.style.background = 'transparent'; shieldBtn.style.borderColor = '#333'; shieldBtn.style.color = '#555'; }
+  } else {
+    if (dogsEl)    dogsEl.style.display = 'none';
+    if (shieldsEl) shieldsEl.style.display = '';
+    if (shieldBtn) { shieldBtn.style.background = 'rgba(79,195,247,.15)'; shieldBtn.style.borderColor = '#4fc3f7'; shieldBtn.style.color = '#4fc3f7'; }
+    if (dogBtn)    { dogBtn.style.background = 'transparent'; dogBtn.style.borderColor = '#333'; dogBtn.style.color = '#555'; }
+  }
+}
+
+async function buyWeapon(key) {
+  if (!sessionId) return;
+  try {
+    const res = await fetch('/api/stripe/buy-weapon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ weaponKey: key }),
+    });
+    const data = await res.json();
+    if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+    else showToast('❌', 'Error', data.error || 'Could not open checkout', '#ff4444');
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+async function buyGuardDog(key) {
+  if (!sessionId) return;
+  try {
+    const res = await fetch('/api/stripe/buy-guard-dog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ dogKey: key }),
+    });
+    const data = await res.json();
+    if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+    else showToast('❌', 'Error', data.error || 'Could not open checkout', '#ff4444');
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+async function buyShield(key) {
+  if (!sessionId) return;
+  try {
+    const res = await fetch('/api/stripe/buy-shield', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ shieldKey: key }),
+    });
+    const data = await res.json();
+    if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+    else showToast('❌', 'Error', data.error || 'Could not open checkout', '#ff4444');
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+async function claimFreeShield() {
+  if (!sessionId) return;
+  try {
+    const res = await fetch('/api/shield/claim-free', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('🛡️', 'Iron Shield Claimed!', `${data.message}`, '#4fc3f7');
+      loadArmory();
+    } else {
+      showToast('❌', 'Error', data.error || 'Could not claim shield', '#ff4444');
+    }
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+async function sendPaperMoney() {
+  if (!sessionId) return;
+  const recipientEl = document.getElementById('sf-recipient');
+  const amountEl    = document.getElementById('sf-amount');
+  const recipientId = recipientEl ? recipientEl.value.trim() : '';
+  const amount      = parseFloat(amountEl ? amountEl.value : 0);
+  if (!recipientId) { showToast('⚠️', 'Missing Recipient', 'Enter the recipient\'s user ID or email.', '#ff8c00'); return; }
+  if (!amount || amount <= 0) { showToast('⚠️', 'Invalid Amount', 'Enter a positive amount.', '#ff8c00'); return; }
+  try {
+    const res = await fetch('/api/transfer/send-paper', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ recipientId, amount }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showToast('❌', 'Transfer Failed', data.error || 'Could not send funds', '#ff4444'); return; }
+    showToast('💸', 'Sent!', data.message, '#00ff88');
+    if (recipientEl) recipientEl.value = '';
+    if (amountEl) amountEl.value = '';
+    if (typeof refreshPortfolio === 'function') refreshPortfolio();
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+async function giftRealMoney() {
+  if (!sessionId) return;
+  const recipientEl = document.getElementById('sf-gift-recipient');
+  const pkgEl       = document.getElementById('sf-gift-pkg');
+  const recipientId = recipientEl ? recipientEl.value.trim() : '';
+  const packageKey  = pkgEl ? pkgEl.value : '';
+  if (!recipientId) { showToast('⚠️', 'Missing Recipient', 'Enter the recipient\'s user ID or email.', '#ff8c00'); return; }
+  if (!packageKey)  { showToast('⚠️', 'Select a Package', 'Choose a gift package.', '#ff8c00'); return; }
+  try {
+    const res = await fetch('/api/stripe/gift-paper-money', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-session-id': sessionId },
+      body: JSON.stringify({ recipientId, packageKey }),
+    });
+    const data = await res.json();
+    if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+    else showToast('❌', 'Error', data.error || 'Could not open checkout', '#ff4444');
+  } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
 }
 </script>
 </body>

@@ -253,6 +253,74 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
+  // Create a Stripe Checkout Session for a Weapon purchase (permanent)
+  async createWeaponCheckout(userId, userEmail, weaponKey, weaponLabel, priceCents) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Weapon — ${weaponLabel}`, description: 'Permanent heist weapon upgrade' },
+        unit_amount: priceCents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=weapon_${weaponKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `weapon_${weaponKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session for a Guard Dog purchase (permanent)
+  async createGuardDogCheckout(userId, userEmail, dogKey, dogLabel, priceCents) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Guard Dog — ${dogLabel}`, description: 'Permanent defensive guard dog' },
+        unit_amount: priceCents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=guard_dog_${dogKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `guard_dog_${dogKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session for a Defense Shield purchase (degradable)
+  async createShieldCheckout(userId, userEmail, shieldKey, shieldLabel, priceCents) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Defense Shield — ${shieldLabel}`, description: 'Degrading heist defense shield — must repurchase when destroyed' },
+        unit_amount: priceCents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=shield_${shieldKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `shield_${shieldKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session to gift paper money to another player
+  async createGiftPaperMoneyCheckout(senderId, senderEmail, recipientId, packageKey, pkg) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: senderEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Gift — ${pkg.label}`, description: `Send $${pkg.paper.toLocaleString()} paper money to a friend` },
+        unit_amount: pkg.amount_cents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=gift_paper_money_${packageKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(senderId), recipientId: String(recipientId), type: `gift_paper_money_${packageKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
   // Handle Stripe webhook to confirm subscription events on the server
   constructWebhookEvent(rawBody, signature) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;

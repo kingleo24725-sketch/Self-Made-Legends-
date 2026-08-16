@@ -345,6 +345,43 @@ class DB {
         read       INTEGER DEFAULT 0,
         created_at INTEGER NOT NULL
       )`,
+
+      // ── Armory: Weapons ───────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS player_weapons (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        weapon_key   TEXT NOT NULL,
+        purchased_at INTEGER,
+        UNIQUE(user_id, weapon_key)
+      )`,
+
+      // ── Armory: Guard Dogs ────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS player_guard_dogs (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        dog_key      TEXT NOT NULL,
+        purchased_at INTEGER,
+        UNIQUE(user_id, dog_key)
+      )`,
+
+      // ── Armory: Defense Shields (one active shield per player; deleted when durability hits 0)
+      `CREATE TABLE IF NOT EXISTS player_shields (
+        user_id      TEXT PRIMARY KEY,
+        shield_key   TEXT NOT NULL,
+        durability   INTEGER NOT NULL,
+        purchased_at INTEGER
+      )`,
+
+      // ── Player-to-Player Transfers ────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS paper_money_gifts (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_id      TEXT NOT NULL,
+        recipient_id   TEXT NOT NULL,
+        amount         REAL NOT NULL,
+        gift_type      TEXT DEFAULT 'paper',
+        stripe_session TEXT,
+        created_at     INTEGER NOT NULL
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)

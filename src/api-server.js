@@ -142,6 +142,40 @@ const CHALLENGE_TYPES = {
 const CHALLENGE_PRIZE_PCT    = 0.20;
 const CHALLENGE_ACCEPT_WIN   = 3_600_000;
 
+// ── Underworld Armory ─────────────────────────────────────────────────────────
+const WEAPONS = {
+  rusty_shiv:       { tier:1,  label:'Rusty Shiv',          icon:'🔪', price_cents:   99, successBonus:0.03, maxPctBonus:0.01, catchReduction:0.00 },
+  switchblade:      { tier:2,  label:'Switchblade',         icon:'⚔️', price_cents:  199, successBonus:0.05, maxPctBonus:0.02, catchReduction:0.00 },
+  baseball_bat:     { tier:3,  label:'Baseball Bat',        icon:'🏏', price_cents:  299, successBonus:0.08, maxPctBonus:0.03, catchReduction:0.00 },
+  crowbar:          { tier:4,  label:'Crowbar',             icon:'🪝', price_cents:  499, successBonus:0.10, maxPctBonus:0.05, catchReduction:0.03 },
+  brass_knuckles:   { tier:5,  label:'Brass Knuckles',      icon:'👊', price_cents:  799, successBonus:0.12, maxPctBonus:0.07, catchReduction:0.05 },
+  taser:            { tier:6,  label:'Taser',               icon:'⚡', price_cents:  999, successBonus:0.15, maxPctBonus:0.09, catchReduction:0.08 },
+  smoke_grenade:    { tier:7,  label:'Smoke Grenade',       icon:'💨', price_cents: 1499, successBonus:0.18, maxPctBonus:0.12, catchReduction:0.10 },
+  glock:            { tier:8,  label:'Glock 19',            icon:'🔫', price_cents: 1999, successBonus:0.22, maxPctBonus:0.15, catchReduction:0.13 },
+  ak47:             { tier:9,  label:'AK-47',               icon:'🪖', price_cents: 3499, successBonus:0.28, maxPctBonus:0.20, catchReduction:0.18 },
+  military_arsenal: { tier:10, label:'Military Arsenal',    icon:'💣', price_cents: 4999, successBonus:0.35, maxPctBonus:0.25, catchReduction:0.22 },
+};
+
+const GUARD_DOGS = {
+  chihuahua:        { tier:1,  label:'Chihuahua',           icon:'🐕', price_cents:   99, biteChance:0.15, biteDamagePct:0.03 },
+  pomeranian:       { tier:2,  label:'Pomeranian',          icon:'🐩', price_cents:  199, biteChance:0.20, biteDamagePct:0.05 },
+  beagle:           { tier:3,  label:'Beagle',              icon:'🦴', price_cents:  399, biteChance:0.25, biteDamagePct:0.07 },
+  pit_bull:         { tier:4,  label:'Pit Bull',            icon:'🐾', price_cents:  599, biteChance:0.30, biteDamagePct:0.10 },
+  german_shepherd:  { tier:5,  label:'German Shepherd',     icon:'🦮', price_cents:  999, biteChance:0.35, biteDamagePct:0.13 },
+  doberman:         { tier:6,  label:'Doberman',            icon:'🐕', price_cents: 1499, biteChance:0.40, biteDamagePct:0.16 },
+  rottweiler:       { tier:7,  label:'Rottweiler',          icon:'🐕', price_cents: 1999, biteChance:0.45, biteDamagePct:0.20 },
+  belgian_malinois: { tier:8,  label:'Belgian Malinois',    icon:'🐆', price_cents: 2999, biteChance:0.50, biteDamagePct:0.24 },
+  wolf_hybrid:      { tier:9,  label:'Wolf Hybrid',         icon:'🐺', price_cents: 3999, biteChance:0.55, biteDamagePct:0.28 },
+  hellhounds:       { tier:10, label:'Pack of Hellhounds',  icon:'🔥', price_cents: 5999, biteChance:0.65, biteDamagePct:0.35 },
+};
+
+// Durability decrements on every heist attempt against the owner; row deleted at 0
+const SHIELDS = {
+  iron:     { tier:1, label:'Iron Shield',     icon:'🛡️',   price_cents:   0, maxDurability:  3, successReduction:0.10, maxPctReduction:0.00 },
+  steel:    { tier:2, label:'Steel Shield',    icon:'⚡🛡️',  price_cents: 300, maxDurability:  7, successReduction:0.25, maxPctReduction:0.10 },
+  titanium: { tier:3, label:'Titanium Shield', icon:'💎🛡️',  price_cents: 600, maxDurability: 12, successReduction:0.40, maxPctReduction:0.20 },
+};
+
 app.post("/api/auth/register", (req, res) => {
   const { email, password, fullName, referralCode } = req.body;
 
@@ -488,6 +522,65 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           }
         }
 
+      } else if (type && type.startsWith('weapon_')) {
+        const weaponKey = type.slice('weapon_'.length);
+        if (userId && WEAPONS[weaponKey]) {
+          await db.run(
+            'INSERT OR IGNORE INTO player_weapons (user_id, weapon_key, purchased_at) VALUES (?, ?, ?)',
+            [userId, weaponKey, Date.now()]
+          );
+          const w = WEAPONS[weaponKey];
+          emitToUser(userId, 'purchase_complete', { type: 'weapon', message: `${w.icon} ${w.label} equipped permanently!` });
+          emitToUser(userId, 'inventory_updated', {});
+          console.log(`Weapon purchased — user ${userId} weapon ${weaponKey}`);
+        }
+
+      } else if (type && type.startsWith('guard_dog_')) {
+        const dogKey = type.slice('guard_dog_'.length);
+        if (userId && GUARD_DOGS[dogKey]) {
+          await db.run(
+            'INSERT OR IGNORE INTO player_guard_dogs (user_id, dog_key, purchased_at) VALUES (?, ?, ?)',
+            [userId, dogKey, Date.now()]
+          );
+          const d = GUARD_DOGS[dogKey];
+          emitToUser(userId, 'purchase_complete', { type: 'guard_dog', message: `${d.icon} ${d.label} is now guarding you!` });
+          emitToUser(userId, 'inventory_updated', {});
+          console.log(`Guard dog purchased — user ${userId} dog ${dogKey}`);
+        }
+
+      } else if (type && type.startsWith('shield_')) {
+        const shieldKey = type.slice('shield_'.length);
+        if (userId && SHIELDS[shieldKey]) {
+          const s = SHIELDS[shieldKey];
+          await db.run(
+            'INSERT OR REPLACE INTO player_shields (user_id, shield_key, durability, purchased_at) VALUES (?, ?, ?, ?)',
+            [userId, shieldKey, s.maxDurability, Date.now()]
+          );
+          emitToUser(userId, 'purchase_complete', { type: 'shield', message: `${s.icon} ${s.label} activated! (${s.maxDurability} hits)` });
+          emitToUser(userId, 'inventory_updated', {});
+          console.log(`Shield purchased — user ${userId} shield ${shieldKey}`);
+        }
+
+      } else if (type && type.startsWith('gift_paper_money_')) {
+        const packageKey = type.slice('gift_paper_money_'.length);
+        const pkg = PAPER_MONEY_PACKAGES[packageKey];
+        const recipientId = obj.metadata?.recipientId;
+        if (userId && recipientId && pkg) {
+          const now = Date.now();
+          await db.run(
+            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+             ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+            [recipientId, pkg.paper, pkg.paper, now, pkg.paper, now]
+          );
+          await db.run(
+            'INSERT INTO paper_money_gifts (sender_id, recipient_id, amount, gift_type, stripe_session, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+            [userId, recipientId, pkg.paper, 'real_money_gift', obj.id, now]
+          );
+          await _syncLeaderboard(recipientId);
+          emitToUser(recipientId, 'transfer_received', { amount: pkg.paper, senderName: _displayName(userId), isGift: true });
+          console.log(`Gift paper money — sender ${userId} → recipient ${recipientId} $${pkg.paper}`);
+        }
+
       } else if (type === 'creator_subscription') {
         console.log(`Creator subscription started — user ${userId}`);
       }
@@ -699,6 +792,155 @@ app.post("/api/stripe/jail-buyout", authenticateUser, async (req, res) => {
   }
 });
 
+// POST /api/stripe/buy-weapon
+app.post("/api/stripe/buy-weapon", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const uid = req.user.userId;
+  const { weaponKey } = req.body;
+  const weapon = WEAPONS[weaponKey];
+  if (!weapon) return res.status(400).json({ error: 'Unknown weapon' });
+  try {
+    const account = accountManager.getAccountById(uid);
+    const result = await stripeProcessor.createWeaponCheckout(uid, account?.email || '', weaponKey, weapon.label, weapon.price_cents);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[buy-weapon]', err.message);
+    res.status(500).json({ error: 'Checkout failed: ' + err.message });
+  }
+});
+
+// POST /api/stripe/buy-guard-dog
+app.post("/api/stripe/buy-guard-dog", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const uid = req.user.userId;
+  const { dogKey } = req.body;
+  const dog = GUARD_DOGS[dogKey];
+  if (!dog) return res.status(400).json({ error: 'Unknown guard dog' });
+  try {
+    const account = accountManager.getAccountById(uid);
+    const result = await stripeProcessor.createGuardDogCheckout(uid, account?.email || '', dogKey, dog.label, dog.price_cents);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[buy-guard-dog]', err.message);
+    res.status(500).json({ error: 'Checkout failed: ' + err.message });
+  }
+});
+
+// POST /api/stripe/buy-shield  (steel and titanium only — iron is free via claim endpoint)
+app.post("/api/stripe/buy-shield", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const uid = req.user.userId;
+  const { shieldKey } = req.body;
+  const shield = SHIELDS[shieldKey];
+  if (!shield) return res.status(400).json({ error: 'Unknown shield' });
+  if (shield.price_cents === 0) return res.status(400).json({ error: 'Iron Shield is free — use /api/shield/claim-free' });
+  try {
+    const account = accountManager.getAccountById(uid);
+    const result = await stripeProcessor.createShieldCheckout(uid, account?.email || '', shieldKey, shield.label, shield.price_cents);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[buy-shield]', err.message);
+    res.status(500).json({ error: 'Checkout failed: ' + err.message });
+  }
+});
+
+// POST /api/shield/claim-free  (claim Iron Shield — must actively claim from Defense Shop)
+app.post("/api/shield/claim-free", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const existing = await db.get('SELECT shield_key FROM player_shields WHERE user_id = ?', [uid]);
+    if (existing) return res.status(400).json({ error: `You already have a ${SHIELDS[existing.shield_key]?.label || 'shield'} active` });
+    const s = SHIELDS.iron;
+    await db.run(
+      'INSERT INTO player_shields (user_id, shield_key, durability, purchased_at) VALUES (?, ?, ?, ?)',
+      [uid, 'iron', s.maxDurability, Date.now()]
+    );
+    res.json({ success: true, shield: { key: 'iron', ...s, durability: s.maxDurability }, message: `${s.icon} ${s.label} claimed! (${s.maxDurability} hits)` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/transfer/send-paper  (direct paper money transfer between players)
+app.post("/api/transfer/send-paper", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { recipientId, amount } = req.body;
+  if (!recipientId || !amount || amount <= 0) return res.status(400).json({ error: 'recipientId and positive amount required' });
+  if (recipientId === uid) return res.status(400).json({ error: 'Cannot send to yourself' });
+  try {
+    const recipient = accountManager.getAccountById(recipientId);
+    if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
+    const senderPortfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+    const senderCash = senderPortfolio ? senderPortfolio.cash_balance : 0;
+    if (senderCash < amount) return res.status(400).json({ error: 'Insufficient paper money' });
+    const now = Date.now();
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [amount, now, uid]);
+    await db.run(
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+      [recipientId, amount, amount, now, amount, now]
+    );
+    await db.run(
+      'INSERT INTO paper_money_gifts (sender_id, recipient_id, amount, gift_type, created_at) VALUES (?, ?, ?, ?, ?)',
+      [uid, recipientId, amount, 'paper', now]
+    );
+    await _syncLeaderboard(uid);
+    await _syncLeaderboard(recipientId);
+    emitToUser(recipientId, 'transfer_received', { amount, senderName: _displayName(uid), isGift: false });
+    res.json({ success: true, message: `Sent $${amount.toFixed(2)} paper money to ${_displayName(recipientId)}` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/stripe/gift-paper-money  (buy paper money as a Stripe gift for another player)
+app.post("/api/stripe/gift-paper-money", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const uid = req.user.userId;
+  const { recipientId, packageKey } = req.body;
+  if (!recipientId || !packageKey) return res.status(400).json({ error: 'recipientId and packageKey required' });
+  if (recipientId === uid) return res.status(400).json({ error: 'Cannot gift to yourself' });
+  const pkg = PAPER_MONEY_PACKAGES[packageKey];
+  if (!pkg) return res.status(400).json({ error: 'Unknown package' });
+  const recipient = accountManager.getAccountById(recipientId);
+  if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
+  try {
+    const account = accountManager.getAccountById(uid);
+    const result = await stripeProcessor.createGiftPaperMoneyCheckout(uid, account?.email || '', recipientId, packageKey, pkg);
+    res.json({ success: true, ...result });
+  } catch (err) {
+    console.error('[gift-paper-money]', err.message);
+    res.status(500).json({ error: 'Checkout failed: ' + err.message });
+  }
+});
+
+// GET /api/underworld/inventory  (weapons, dogs, shield for requesting user)
+app.get("/api/underworld/inventory", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const weaponRows = await db.all('SELECT weapon_key FROM player_weapons WHERE user_id = ?', [uid]);
+    const dogRows    = await db.all('SELECT dog_key FROM player_guard_dogs WHERE user_id = ?', [uid]);
+    const shieldRow  = await db.get('SELECT shield_key, durability FROM player_shields WHERE user_id = ?', [uid]);
+
+    const weapons = weaponRows.map(r => r.weapon_key);
+    const dogs    = dogRows.map(r => r.dog_key);
+
+    const bestWeapon = weapons.length
+      ? weapons.map(k => ({ key: k, ...WEAPONS[k] })).filter(w => w.tier).sort((a, b) => b.tier - a.tier)[0]
+      : null;
+    const bestDog = dogs.length
+      ? dogs.map(k => ({ key: k, ...GUARD_DOGS[k] })).filter(d => d.tier).sort((a, b) => b.tier - a.tier)[0]
+      : null;
+    const shield = shieldRow && SHIELDS[shieldRow.shield_key]
+      ? { key: shieldRow.shield_key, ...SHIELDS[shieldRow.shield_key], durability: shieldRow.durability }
+      : null;
+
+    res.json({ weapons, dogs, shield, bestWeapon, bestDog, WEAPONS, GUARD_DOGS, SHIELDS });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ===== UNDERWORLD — HEIST SYSTEM =====
 
 // Helper: compute portfolio value for a user
@@ -715,6 +957,26 @@ async function _calcPortfolioValue(userId) {
 function _displayName(userId) {
   const acct = accountManager.getAccountById(userId);
   return acct ? (acct.fullName || acct.email || 'A Legend') : 'A Legend';
+}
+
+async function _getBestWeapon(userId) {
+  const rows = await db.all('SELECT weapon_key FROM player_weapons WHERE user_id = ?', [userId]);
+  if (!rows.length) return null;
+  return rows.map(r => WEAPONS[r.weapon_key]).filter(Boolean).sort((a, b) => b.tier - a.tier)[0] || null;
+}
+
+async function _getBestDog(userId) {
+  const rows = await db.all('SELECT dog_key FROM player_guard_dogs WHERE user_id = ?', [userId]);
+  if (!rows.length) return null;
+  return rows.map(r => GUARD_DOGS[r.dog_key]).filter(Boolean).sort((a, b) => b.tier - a.tier)[0] || null;
+}
+
+async function _getActiveShield(userId) {
+  const row = await db.get('SELECT shield_key, durability FROM player_shields WHERE user_id = ?', [userId]);
+  if (!row) return null;
+  const def = SHIELDS[row.shield_key];
+  if (!def) return null;
+  return { ...def, key: row.shield_key, durability: row.durability };
 }
 
 // GET /api/heist/targets — list heiststable players
@@ -786,17 +1048,31 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
     const targetCash = targetPortfolio ? targetPortfolio.cash_balance : 0;
     if (targetCash < MIN_TARGET_CASH) return res.status(400).json({ error: 'Target doesn\'t have enough cash to heist' });
 
+    // Armory modifiers — best weapon among all teammates for success roll
+    const teammateWeapons = await Promise.all(teammates.map(rid => _getBestWeapon(rid)));
+    const bestTeamWeapon  = teammateWeapons.filter(Boolean).sort((a, b) => b.tier - a.tier)[0] || null;
+    const targetShield    = await _getActiveShield(targetUserId);
+
+    const effectiveChance = Math.min(0.95, Math.max(0.01,
+      (bestTeamWeapon ? config.baseChance + bestTeamWeapon.successBonus : config.baseChance)
+      - (targetShield ? targetShield.successReduction : 0)
+    ));
+    const effectiveMaxPct = Math.min(0.50, Math.max(0.01,
+      (bestTeamWeapon ? config.maxPct + bestTeamWeapon.maxPctBonus : config.maxPct)
+      - (targetShield ? targetShield.maxPctReduction : 0)
+    ));
+
     const now = Date.now();
-    const success = Math.random() < config.baseChance;
+    const success = Math.random() < effectiveChance;
 
     if (success) {
-      const rawAmount = Math.random() * config.maxPct * targetCash;
+      const rawAmount = Math.random() * effectiveMaxPct * targetCash;
       const amount = parseFloat(Math.max(1, rawAmount).toFixed(2));
       const share  = parseFloat((amount / teammates.length).toFixed(2));
 
       // Deduct from target
       await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [amount, now, targetUserId]);
-      // Credit each robber
+      // Credit each teammate (even those who get individually caught still receive their share)
       for (const rid of teammates) {
         await db.run(
           `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
@@ -820,7 +1096,32 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
       );
 
       emitToUser(targetUserId, 'heist_incoming', { heistId, robberName: _displayName(uid), amount, heistType: config.label, icon: config.icon });
-      emitToUser(uid, 'heist_result', { success: true, amountStolen: share, heistType: config.label, icon: config.icon });
+
+      // Team heists: each member rolls their own individual catch check
+      if (teamId && teammates.length > 1) {
+        for (const rid of teammates) {
+          const memberWeapon = teammateWeapons[teammates.indexOf(rid)];
+          const memberCatchRate = memberWeapon ? Math.max(0.05, CATCH_RATE - memberWeapon.catchReduction) : CATCH_RATE;
+          if (Math.random() < memberCatchRate) {
+            const alreadyJailed = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [rid]);
+            if (!alreadyJailed) {
+              await db.run(
+                'INSERT OR REPLACE INTO jail_status (user_id, heist_id, victim_id, amount_owed, released, jailed_at) VALUES (?, ?, ?, ?, 0, ?)',
+                [rid, heistId, targetUserId, BAIL_AMOUNT, now]
+              );
+              await db.run(
+                'INSERT INTO heist_notifications (user_id, type, data, read, created_at) VALUES (?, ?, ?, 0, ?)',
+                [rid, 'jailed', JSON.stringify({ heistId, reason: 'Caught after team heist', bail: BAIL_AMOUNT }), now]
+              );
+              emitToUser(rid, 'heist_jailed', { heistId, bail: BAIL_AMOUNT, share, message: `Busted! You still got your $${share.toFixed(2)} cut but you\'re in jail.` });
+            }
+          } else {
+            emitToUser(rid, 'heist_result', { success: true, amountStolen: share, heistType: config.label, icon: config.icon });
+          }
+        }
+      } else {
+        emitToUser(uid, 'heist_result', { success: true, amountStolen: share, heistType: config.label, icon: config.icon });
+      }
 
       res.json({ success: true, amountStolen: share, message: `${config.icon} ${config.label} succeeded! You stole $${share.toFixed(2)}` });
     } else {
@@ -830,6 +1131,33 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
       );
       emitToUser(uid, 'heist_result', { success: false, heistType: config.label, icon: config.icon });
       res.json({ success: false, message: `${config.icon} ${config.label} failed — you got away clean but empty-handed` });
+    }
+
+    // Shield degradation — fires on every heist attempt against a shielded target
+    if (targetShield) {
+      const newDur = targetShield.durability - 1;
+      if (newDur <= 0) {
+        await db.run('DELETE FROM player_shields WHERE user_id = ?', [targetUserId]);
+        emitToUser(targetUserId, 'shield_broken', { shieldName: targetShield.label, icon: targetShield.icon });
+      } else {
+        await db.run('UPDATE player_shields SET durability = ? WHERE user_id = ?', [newDur, targetUserId]);
+        emitToUser(targetUserId, 'shield_hit', { shieldName: targetShield.label, icon: targetShield.icon, durabilityLeft: newDur });
+      }
+    }
+
+    // Guard dog bite — fires regardless of heist outcome
+    const dog = await _getBestDog(targetUserId);
+    if (dog && Math.random() < dog.biteChance) {
+      const robberPortfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+      const robberCash = robberPortfolio ? robberPortfolio.cash_balance : 0;
+      const biteAmount = parseFloat(Math.max(1, robberCash * dog.biteDamagePct).toFixed(2));
+      await db.run(
+        'UPDATE user_portfolios SET cash_balance = MAX(0, cash_balance - ?), updated_at = ? WHERE user_id = ?',
+        [biteAmount, Date.now(), uid]
+      );
+      await _syncLeaderboard(uid);
+      emitToUser(uid, 'dog_bite', { dogName: dog.label, dogIcon: dog.icon, biteAmount });
+      emitToUser(targetUserId, 'dog_defended', { dogName: dog.label, dogIcon: dog.icon, biteAmount, robberName: _displayName(uid) });
     }
   } catch (e) {
     console.error('[heist/initiate]', e.message);
@@ -851,7 +1179,9 @@ app.post("/api/heist/press-charges", authenticateUser, async (req, res) => {
 
     await db.run('UPDATE heist_attempts SET charges = 1 WHERE id = ?', [heistId]);
 
-    const caught = Math.random() < CATCH_RATE;
+    const robberWeapon = await _getBestWeapon(heist.robber_id);
+    const effectiveCatchRate = robberWeapon ? Math.max(0.05, CATCH_RATE - robberWeapon.catchReduction) : CATCH_RATE;
+    const caught = Math.random() < effectiveCatchRate;
     const robberName = _displayName(heist.robber_id);
 
     if (caught) {
