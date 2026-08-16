@@ -238,8 +238,42 @@ class DB {
         expires_at  INTEGER,
         active      INTEGER DEFAULT 1
       )`,
+
+      // ── Manual Trading tables ─────────────────────────────────────────────
+
+      // Per-user open positions
+      `CREATE TABLE IF NOT EXISTS holdings (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id   TEXT NOT NULL,
+        symbol    TEXT NOT NULL,
+        quantity  REAL NOT NULL DEFAULT 0,
+        avg_price REAL NOT NULL DEFAULT 0,
+        UNIQUE(user_id, symbol)
+      )`,
+
+      // Full trade log (persisted across restarts)
+      `CREATE TABLE IF NOT EXISTS trades (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id   TEXT NOT NULL,
+        symbol    TEXT NOT NULL,
+        type      TEXT NOT NULL,
+        quantity  REAL NOT NULL,
+        price     REAL NOT NULL,
+        source    TEXT DEFAULT 'manual',
+        timestamp INTEGER NOT NULL
+      )`,
+
+      // Per-user virtual cash + starting capital
+      `CREATE TABLE IF NOT EXISTS user_portfolios (
+        user_id        TEXT PRIMARY KEY,
+        cash_balance   REAL NOT NULL DEFAULT 10000,
+        total_invested REAL NOT NULL DEFAULT 10000,
+        updated_at     INTEGER
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
+    // Add is_bot column to accounts for existing deployments (no-op if already exists)
+    try { await this.run('ALTER TABLE accounts ADD COLUMN is_bot INTEGER DEFAULT 0'); } catch (_) {}
   }
 }
 

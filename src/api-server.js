@@ -37,6 +37,10 @@ const CoachSystem = require("./gamification/CoachSystem");
 const TrainingCamp = require("./gamification/TrainingCamp");
 const TeamManager = require("./social/TeamManager");
 
+const priceEngine = require('./market/PriceEngine');
+const tradeCoach  = require('./coach/TradeCoach');
+const botTrader   = require('./bot/BotTrader');
+
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
@@ -1629,11 +1633,42 @@ app.post("/api/admin/ban-user", requireAdmin, (req, res) => {
 
 // ── Public Leaderboard (no auth required) ─────────────────────────────────
 app.get("/api/leaderboard/public", async (req, res) => {
-  let lb = leaderboardManager.getLeaderboard(50);
+  // Pull from DB-backed leaderboard_scores (includes bot + real portfolio values)
+  let dbRows = await db.all(
+    `SELECT ls.user_id, ls.email, ls.gain_pct, ls.score, ls.trades, ls.win_rate, ls.total_value,
+            a.full_name, a.is_bot, a.gender
+     FROM leaderboard_scores ls
+     LEFT JOIN accounts a ON a.user_id = ls.user_id
+     ORDER BY ls.score DESC LIMIT 100`
+  );
+
   const { gender } = req.query;
   if (gender === 'male' || gender === 'female') {
-    lb = lb.filter(p => accountManager.getGender(p.userId) === gender);
+    dbRows = dbRows.filter(p => p.gender === gender);
   }
+
+  // If DB has rows, use them; otherwise fall back to in-memory
+  let lb;
+  if (dbRows.length > 0) {
+    lb = dbRows.map((r, i) => ({
+      rank: i + 1,
+      userId: r.user_id,
+      email: r.email,
+      displayName: r.full_name || r.email,
+      gainPct: r.gain_pct || 0,
+      score: r.score || 0,
+      trades: r.trades || 0,
+      winRate: r.win_rate || 0,
+      totalValue: r.total_value || 0,
+      isBot: !!r.is_bot,
+    }));
+  } else {
+    lb = leaderboardManager.getLeaderboard(50);
+    if (gender === 'male' || gender === 'female') {
+      lb = lb.filter(p => accountManager.getGender(p.userId) === gender);
+    }
+  }
+
   // Attach legend crown to the active champion
   const legend = await db.get('SELECT user_id FROM legend_status WHERE active = 1 LIMIT 1');
   if (legend) {
@@ -2000,6 +2035,140 @@ app.get("/api/profile/me", authenticateUser, (req, res) => {
   });
 });
 
+// ── Market Prices ─────────────────────────────────────────────────────────
+app.get("/api/market/prices", (req, res) => {
+  res.json({ prices: priceEngine.getAllPrices(), symbols: priceEngine.getSymbols() });
+});
+
+// ── Manual Trading ────────────────────────────────────────────────────────
+async function _syncLeaderboard(userId) {
+  try {
+    const portfolio = await db.get('SELECT cash_balance, total_invested FROM user_portfolios WHERE user_id = ?', [userId]);
+    if (!portfolio) return;
+    const holdings = await db.all('SELECT symbol, quantity FROM holdings WHERE user_id = ? AND quantity > 0', [userId]);
+    let holdingsValue = 0;
+    for (const h of holdings) {
+      const price = priceEngine.getPrice(h.symbol);
+      if (price) holdingsValue += h.quantity * price;
+    }
+    const totalValue  = portfolio.cash_balance + holdingsValue;
+    const gainPct     = ((totalValue - portfolio.total_invested) / portfolio.total_invested) * 100;
+    const tradeCount  = (await db.get('SELECT COUNT(*) as n FROM trades WHERE user_id = ?', [userId])).n;
+    const sellCount   = (await db.get("SELECT COUNT(*) as n FROM trades WHERE user_id = ? AND type = 'SELL'", [userId])).n;
+    const buyCount    = tradeCount - sellCount;
+    const winRate     = buyCount > 0 ? Math.min(100, (sellCount / buyCount) * 80) : 0; // approximation
+
+    const account = accountManager.getAccountById(userId);
+    const email   = account ? account.email : '';
+    await db.run(
+      `INSERT INTO leaderboard_scores (user_id, email, gain_pct, score, trades, win_rate, total_value, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET
+         email=excluded.email, gain_pct=excluded.gain_pct, score=excluded.score,
+         trades=excluded.trades, win_rate=excluded.win_rate, total_value=excluded.total_value, updated_at=excluded.updated_at`,
+      [userId, email, gainPct, gainPct, tradeCount, winRate, totalValue, Date.now()]
+    );
+    leaderboardManager.refreshFromDB && leaderboardManager.refreshFromDB();
+  } catch (e) {
+    console.error('[syncLeaderboard] error:', e.message);
+  }
+}
+
+app.get("/api/portfolio", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  let portfolio = await db.get('SELECT cash_balance, total_invested FROM user_portfolios WHERE user_id = ?', [uid]);
+  if (!portfolio) {
+    await db.run('INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 10000, 10000, ?)', [uid, Date.now()]);
+    portfolio = { cash_balance: 10000, total_invested: 10000 };
+  }
+  const holdings = await db.all('SELECT symbol, quantity, avg_price FROM holdings WHERE user_id = ? AND quantity > 0', [uid]);
+  const prices = priceEngine.getAllPrices();
+  const enriched = holdings.map(h => {
+    const cur = prices[h.symbol] ? prices[h.symbol].price : h.avg_price;
+    return { ...h, current_price: cur, pnl: (cur - h.avg_price) * h.quantity, pnl_pct: ((cur - h.avg_price) / h.avg_price) * 100 };
+  });
+  const holdingsValue = enriched.reduce((s, h) => s + h.current_price * h.quantity, 0);
+  const totalValue    = portfolio.cash_balance + holdingsValue;
+  const gainPct       = ((totalValue - portfolio.total_invested) / portfolio.total_invested) * 100;
+  res.json({ cash: portfolio.cash_balance, total_invested: portfolio.total_invested, holdings: enriched, total_value: totalValue, gain_pct: gainPct });
+});
+
+app.post("/api/trade/buy", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { symbol, quantity } = req.body;
+  if (!symbol || !quantity || quantity <= 0) return res.status(400).json({ error: 'symbol and quantity required' });
+  const sym = String(symbol).toUpperCase();
+  const price = priceEngine.getPrice(sym);
+  if (!price) return res.status(400).json({ error: `Unknown symbol: ${sym}` });
+  const qty  = parseFloat(quantity);
+  const cost = parseFloat((price * qty).toFixed(2));
+
+  // Ensure portfolio row
+  let portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+  if (!portfolio) {
+    await db.run('INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 10000, 10000, ?)', [uid, Date.now()]);
+    portfolio = { cash_balance: 10000 };
+  }
+  if (portfolio.cash_balance < cost) return res.status(400).json({ error: `Insufficient cash. Have $${portfolio.cash_balance.toFixed(2)}, need $${cost.toFixed(2)}` });
+
+  const now = Date.now();
+  await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [cost, now, uid]);
+  await db.run(
+    `INSERT INTO holdings (user_id, symbol, quantity, avg_price)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(user_id, symbol) DO UPDATE SET
+       avg_price = (avg_price * quantity + ? * ?) / (quantity + ?),
+       quantity  = quantity + ?`,
+    [uid, sym, qty, price, price, qty, qty, qty]
+  );
+  await db.run('INSERT INTO trades (user_id, symbol, type, quantity, price, source, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [uid, sym, 'BUY', qty, price, 'manual', now]);
+
+  await _syncLeaderboard(uid);
+  await awardMissionXP(uid, 'trade');
+  await tradeCoach.onTrade(uid, { type: 'BUY', symbol: sym, quantity: qty, price });
+  emitToUser(uid, 'trade', { type: 'BUY', symbol: sym, quantity: qty, price, cost });
+
+  res.json({ success: true, symbol: sym, quantity: qty, price, cost, remaining_cash: portfolio.cash_balance - cost });
+});
+
+app.post("/api/trade/sell", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { symbol, quantity } = req.body;
+  if (!symbol || !quantity || quantity <= 0) return res.status(400).json({ error: 'symbol and quantity required' });
+  const sym = String(symbol).toUpperCase();
+  const price = priceEngine.getPrice(sym);
+  if (!price) return res.status(400).json({ error: `Unknown symbol: ${sym}` });
+  const qty = parseFloat(quantity);
+
+  const holding = await db.get('SELECT quantity FROM holdings WHERE user_id = ? AND symbol = ?', [uid, sym]);
+  if (!holding || holding.quantity < qty) return res.status(400).json({ error: `You only hold ${holding ? holding.quantity : 0} shares of ${sym}` });
+
+  const proceeds = parseFloat((price * qty).toFixed(2));
+  const now = Date.now();
+  await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [proceeds, now, uid]);
+  const newQty = parseFloat((holding.quantity - qty).toFixed(6));
+  if (newQty <= 0.0001) {
+    await db.run('DELETE FROM holdings WHERE user_id = ? AND symbol = ?', [uid, sym]);
+  } else {
+    await db.run('UPDATE holdings SET quantity = ? WHERE user_id = ? AND symbol = ?', [newQty, uid, sym]);
+  }
+  await db.run('INSERT INTO trades (user_id, symbol, type, quantity, price, source, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [uid, sym, 'SELL', qty, price, 'manual', now]);
+
+  await _syncLeaderboard(uid);
+  await tradeCoach.onTrade(uid, { type: 'SELL', symbol: sym, quantity: qty, price });
+  emitToUser(uid, 'trade', { type: 'SELL', symbol: sym, quantity: qty, price, proceeds });
+
+  res.json({ success: true, symbol: sym, quantity: qty, price, proceeds });
+});
+
+app.get("/api/trade/history", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const rows = await db.all('SELECT * FROM trades WHERE user_id = ? ORDER BY timestamp DESC LIMIT 50', [uid]);
+  res.json({ trades: rows });
+});
+
 // ── Access Check ──────────────────────────────────────────────────────────
 app.get("/api/account/has-access", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
@@ -2075,6 +2244,7 @@ io.on("connection", (socket) => {
     if (session.valid) {
       userSockets.set(session.userId, socket.id);
       socket.userId = session.userId;
+      socket.join(`user:${session.userId}`); // for TradeCoach targeted events
     }
   });
   socket.on("disconnect", () => {
@@ -2126,6 +2296,17 @@ async function startServer() {
     tournamentManager.restore(),
     coachSystem.restore(),
   ]);
+
+  // Start market simulation and AI systems
+  priceEngine.start();
+  tradeCoach.init(io);
+  await botTrader.init(_syncLeaderboard);
+
+  // Broadcast stock price ticks to all clients
+  priceEngine.subscribe((updates) => {
+    io.emit('market_prices', updates);
+  });
+
   server.listen(PORT, () => {
     console.log(`🚀 Multi-Asset Trading Bot Server running on http://localhost:${PORT}`);
     console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard.html`);

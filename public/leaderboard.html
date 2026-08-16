@@ -252,15 +252,17 @@
       document.getElementById('podium').style.display = 'grid';
       document.getElementById('podium').innerHTML = spots.map((p, i) => {
         const tl = taglineCache[p.userId];
-        const displayName = (tl && tl.avatarName) ? tl.avatarName : maskName(p.email || p.userId || 'Legend');
+        const displayName = p.isBot ? 'SML Bot' : ((tl && tl.avatarName) ? tl.avatarName : maskName(p.email || p.userId || 'Legend'));
+        const gainVal = p.gainPct ?? p.gainPercentage ?? 0;
+        const botBadge = p.isBot ? ' 🤖' : (p.isLegend ? ' 👑' : '');
         return `
         <div class="podium-spot p${i+1}">
-          <div style="display:flex;justify-content:center;margin-bottom:8px;">${avatarEl(p.userId, 56)}</div>
+          <div style="display:flex;justify-content:center;margin-bottom:8px;">${p.isBot ? '<span style="font-size:2.5em;">🤖</span>' : avatarEl(p.userId, 56)}</div>
           <span class="podium-crown">${icons[i]}</span>
           <div class="podium-rank" style="color:${colors[i]}">#${i+1}</div>
-          <div class="podium-name">${escH(displayName)}</div>
-          ${tl && tl.tagline ? `<div style="font-size:0.72em;color:#666;margin-top:3px;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escH(tl.tagline)}</div>` : ''}
-          <div class="podium-gain ${(p.gainPercentage || 0) >= 0 ? 'gain-positive' : 'gain-negative'}">${fmt(p.gainPercentage)}</div>
+          <div class="podium-name">${escH(displayName)}${botBadge}</div>
+          ${(!p.isBot && tl && tl.tagline) ? `<div style="font-size:0.72em;color:#666;margin-top:3px;font-style:italic;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${escH(tl.tagline)}</div>` : ''}
+          <div class="podium-gain ${gainVal >= 0 ? 'gain-positive' : 'gain-negative'}">${fmt(gainVal)}</div>
         </div>`;
       }).join('');
     }
@@ -276,12 +278,13 @@
         <thead><tr><th>Rank</th><th>Trader</th><th>Gain %</th><th>Score</th><th>Trades</th></tr></thead>
         <tbody>${rest.map((p, i) => {
           const rank = i + 4;
-          const gain = p.gainPercentage || 0;
+          const gain = p.gainPct ?? p.gainPercentage ?? 0;
           const tl = taglineCache[p.userId];
-          const displayName = (tl && tl.avatarName) ? tl.avatarName : maskName(p.email || p.userId || 'Legend');
+          const displayName = p.isBot ? 'SML Bot' : ((tl && tl.avatarName) ? tl.avatarName : maskName(p.email || p.userId || 'Legend'));
+          const badge = p.isBot ? ' 🤖' : (p.isLegend ? ' 👑' : '');
           return `<tr>
             <td class="rank-num ${rank <= 10 ? 'top3' : ''}">#${rank}</td>
-            <td class="player-name"><div style="display:flex;align-items:center;gap:8px;">${avatarEl(p.userId, 28)}<span>${escH(displayName)}</span></div></td>
+            <td class="player-name"><div style="display:flex;align-items:center;gap:8px;">${p.isBot ? '🤖' : avatarEl(p.userId, 28)}<span>${escH(displayName)}${badge}</span></div></td>
             <td class="${gain >= 0 ? 'gain-positive' : 'gain-negative'}">${fmt(gain)}</td>
             <td class="score-col">${p.score != null ? Math.round(p.score).toLocaleString() : '—'}</td>
             <td style="color:#888;">${p.trades || 0}</td>

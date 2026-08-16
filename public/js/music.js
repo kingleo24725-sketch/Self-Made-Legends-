@@ -470,4 +470,6 @@
       });
     });
   });
+  // Expose so paywall functions can call before prompt() steals the gesture
+  SMLMusic.unlock = onAnyGesture;
 })();

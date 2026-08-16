@@ -191,6 +191,22 @@
       50% { transform: translateY(-10px); }
     }
 
+    @keyframes slideUp {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .price-flash-up   { animation: flashGreen .6s ease; }
+    .price-flash-down { animation: flashRed .6s ease; }
+    @keyframes flashGreen { 0%,100% { background:transparent; } 50% { background:rgba(0,200,83,0.18); } }
+    @keyframes flashRed   { 0%,100% { background:transparent; } 50% { background:rgba(244,67,54,0.18); } }
+
+    .mw-row { cursor:pointer; transition:background .15s; }
+    .mw-row:hover { background:rgba(0,212,255,0.07); }
+    .mw-row.selected { background:rgba(0,212,255,0.12) !important; }
+
+    #trade { padding-bottom: 80px; }
+
     @keyframes glow {
       0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); }
       50% { box-shadow: 0 0 40px rgba(0, 255, 136, 0.8); }
@@ -616,6 +632,7 @@
     </div>
     <div class="nav-center">
       <button class="nav-tab active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="nav-tab" onclick="switchTab('trade'); initTradeTab()">📈 Trade</button>
       <button class="nav-tab" onclick="switchTab('stocks')">Stocks</button>
       <button class="nav-tab" onclick="switchTab('crypto')">Crypto</button>
       <button class="nav-tab" onclick="switchTab('nft')">NFTs</button>
@@ -763,6 +780,124 @@
         </div>
       </div>
     </section>
+
+    <!-- ── Trade Section ────────────────────────────────────────────────── -->
+    <section class="section" id="trade">
+      <div style="display:grid; grid-template-columns:1fr 320px 300px; gap:16px; align-items:start;">
+
+        <!-- Left: Market Watch -->
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div style="padding:14px 18px; background:rgba(0,212,255,0.07); border-bottom:1px solid rgba(0,212,255,0.15);">
+            <h2 style="color:#00d4ff; font-size:1em; margin:0;">📊 Market Watch</h2>
+            <div style="color:#555; font-size:0.75em; margin-top:3px;">Updates every 30s — click a row to trade</div>
+          </div>
+          <div style="overflow-x:auto;">
+            <table style="margin:0;">
+              <thead>
+                <tr>
+                  <th style="color:#00d4ff; font-size:0.8em; padding:10px 12px;">Symbol</th>
+                  <th style="color:#00d4ff; font-size:0.8em; padding:10px 12px; text-align:right;">Price</th>
+                  <th style="color:#00d4ff; font-size:0.8em; padding:10px 12px; text-align:right;">Change</th>
+                </tr>
+              </thead>
+              <tbody id="market-watch-body">
+                <tr><td colspan="3" style="text-align:center; color:#555; padding:20px;">Loading market data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Center: Buy / Sell Panel -->
+        <div class="card" style="position:sticky; top:80px;">
+          <h2 style="font-size:1em; margin-bottom:14px; color:#00d4ff;">💹 Trade</h2>
+
+          <div style="background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.15); border-radius:8px; padding:12px; margin-bottom:14px;">
+            <div style="font-size:0.85em; color:#888; margin-bottom:2px;" id="trade-symbol-label">Select a stock →</div>
+            <div style="font-size:1.6em; font-weight:bold; color:#fff;" id="trade-price-display">—</div>
+            <div style="font-size:0.8em;" id="trade-change-display"></div>
+          </div>
+
+          <div style="margin-bottom:12px;">
+            <label style="font-size:0.82em; color:#888; display:block; margin-bottom:5px;">Shares</label>
+            <input type="number" id="trade-qty" min="1" step="1" value="1" style="font-size:1.1em; font-weight:bold; text-align:center;" oninput="updateTradeCost()">
+          </div>
+
+          <div style="display:flex; justify-content:space-between; font-size:0.82em; color:#666; margin-bottom:14px;">
+            <span>Est. Cost / Proceeds</span>
+            <span id="trade-est-cost" style="color:#e0e0e0; font-weight:bold;">—</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <button onclick="executeTrade('BUY')" id="trade-buy-btn" style="background:#00c853; color:#000; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:0.95em; cursor:pointer; transition:opacity .2s;" disabled>BUY</button>
+            <button onclick="executeTrade('SELL')" id="trade-sell-btn" style="background:#f44336; color:#fff; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:0.95em; cursor:pointer; transition:opacity .2s;" disabled>SELL</button>
+          </div>
+
+          <div id="trade-result" style="margin-top:12px; font-size:0.85em; text-align:center; min-height:20px; color:#00ff88;"></div>
+        </div>
+
+        <!-- Right: My Portfolio -->
+        <div class="card" style="position:sticky; top:80px;">
+          <h2 style="font-size:1em; margin-bottom:14px; color:#00d4ff;">📁 My Portfolio</h2>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="color:#888; font-size:0.82em;">Cash</span>
+            <span style="color:#00ff88; font-weight:bold; font-size:1.1em;" id="port-cash">$10,000.00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="color:#888; font-size:0.82em;">Total Value</span>
+            <span style="color:#00d4ff; font-weight:bold;" id="port-total">$10,000.00</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.06);">
+            <span style="color:#888; font-size:0.82em;">Gain / Loss</span>
+            <span style="font-weight:bold;" id="port-gain">0.00%</span>
+          </div>
+          <div id="port-holdings" style="font-size:0.82em; max-height:260px; overflow-y:auto;">
+            <div style="color:#444; text-align:center; padding:12px;">No positions yet</div>
+          </div>
+          <button onclick="refreshPortfolio()" style="margin-top:12px; width:100%; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:#00d4ff; border-radius:6px; padding:8px; cursor:pointer; font-size:0.8em;">↻ Refresh</button>
+        </div>
+      </div>
+
+      <!-- Trade History -->
+      <div class="card" style="margin-top:16px;">
+        <h2 style="font-size:1em; margin-bottom:14px; color:#00d4ff;">📋 Recent Trades</h2>
+        <div style="overflow-x:auto;">
+          <table style="margin:0;" id="trade-history-table">
+            <thead>
+              <tr>
+                <th style="font-size:0.8em;">Time</th>
+                <th style="font-size:0.8em;">Symbol</th>
+                <th style="font-size:0.8em;">Type</th>
+                <th style="font-size:0.8em; text-align:right;">Qty</th>
+                <th style="font-size:0.8em; text-align:right;">Price</th>
+                <th style="font-size:0.8em; text-align:right;">Total</th>
+              </tr>
+            </thead>
+            <tbody id="trade-history-body">
+              <tr><td colspan="6" style="color:#444; text-align:center; padding:16px;">No trades yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── AI Coach Chat Bubble (global, shown on Trade tab) ──────────── -->
+    <div id="coach-bubble" style="display:none; position:fixed; bottom:24px; right:24px; z-index:500; max-width:340px; animation:slideUp .3s ease;">
+      <div style="background:linear-gradient(135deg,#1a1f2e,#0d1420); border:1px solid rgba(0,212,255,0.3); border-radius:16px; padding:16px 18px; box-shadow:0 8px 32px rgba(0,0,0,0.6);">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+          <span style="font-size:1.4em;">🤖</span>
+          <span style="color:#00d4ff; font-weight:bold; font-size:0.9em;">AI Coach</span>
+          <button onclick="dismissCoach()" style="margin-left:auto; background:none; border:none; color:#444; cursor:pointer; font-size:1.1em; line-height:1;">✕</button>
+        </div>
+        <p id="coach-message" style="color:#ccc; font-size:0.88em; line-height:1.5; margin-bottom:14px;"></p>
+        <div id="coach-actions" style="display:flex; gap:8px;">
+          <button id="coach-yes-btn" onclick="coachAccept()" style="flex:1; background:#00c853; color:#000; border:none; border-radius:8px; padding:9px; font-weight:700; font-size:0.85em; cursor:pointer;">Yes, do it!</button>
+          <button onclick="dismissCoach()" style="flex:1; background:rgba(255,255,255,0.07); color:#aaa; border:1px solid #333; border-radius:8px; padding:9px; font-size:0.85em; cursor:pointer;">No thanks</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tiny coach icon when bubble is hidden -->
+    <div id="coach-icon" onclick="showCoachTip()" style="display:none; position:fixed; bottom:24px; right:24px; z-index:500; width:48px; height:48px; background:linear-gradient(135deg,#00d4ff,#7c3aed); border-radius:50%; cursor:pointer; box-shadow:0 4px 16px rgba(0,212,255,0.4); align-items:center; justify-content:center; font-size:1.4em; transition:transform .2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🤖</div>
 
     <!-- Stocks Section -->
     <section class="section" id="stocks">
@@ -1375,15 +1510,15 @@
 
       <!-- Not logged in state -->
       <div id="paywall-guest" style="display:flex; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
-        <button onclick="paywallLogin()" style="background:#ffd700; color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Login to My Account</button>
-        <button onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Create Account &amp; Get Season Pass</button>
+        <button onclick="paywallLogin()" style="background:#ffd700; color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Login</button>
+        <button onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign Up &amp; Get Season Pass</button>
         <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard (Public) →</a>
       </div>
 
       <!-- Logged in, no access state -->
       <div id="paywall-member" style="display:none; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
         <p id="paywall-member-info" style="color:#aaa; font-size:0.88em; margin-bottom:4px;"></p>
-        <button onclick="buySeasonPassPaywall()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer;">Get Season Pass — $9.99</button>
+        <button onclick="buySeasonPassPaywall()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer;">Get Season Pass — $2.99</button>
         <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard →</a>
         <button onclick="paywallLogout()" style="background:transparent; border:none; color:#444; font-size:0.78em; cursor:pointer; margin-top:4px;">Logout</button>
       </div>
@@ -1420,6 +1555,311 @@
       document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
       document.getElementById(tabName).classList.add('active');
       event.target.classList.add('active');
+      // Show/hide coach icon based on trade tab
+      const coachIcon = document.getElementById('coach-icon');
+      if (coachIcon) coachIcon.style.display = tabName === 'trade' ? 'flex' : 'none';
+    }
+
+    // ─── Trade Tab ────────────────────────────────────────────────────────────
+
+    let _marketPrices = {};   // symbol -> { price, change }
+    let _selectedSym  = null;
+    let _coachPayload = null;
+    let _tradeTabInit = false;
+
+    function initTradeTab() {
+      if (_tradeTabInit) {
+        refreshPortfolio();
+        loadTradeHistory();
+        return;
+      }
+      _tradeTabInit = true;
+
+      // Load initial snapshot
+      fetch('/api/market/prices').then(r => r.json()).then(d => {
+        if (!d.prices) return;
+        _marketPrices = d.prices;
+        renderMarketWatch();
+      });
+
+      refreshPortfolio();
+      loadTradeHistory();
+
+      // Listen for live price updates from PriceEngine
+      if (window._socket) {
+        window._socket.on('market_prices', (updates) => {
+          for (const [sym, data] of Object.entries(updates)) {
+            const prev = _marketPrices[sym] ? _marketPrices[sym].price : null;
+            _marketPrices[sym] = data;
+            updateMarketWatchRow(sym, data, prev);
+          }
+          // Update trade panel if this stock is selected
+          if (_selectedSym && _marketPrices[_selectedSym]) {
+            updateTradePanelPrice(_selectedSym, _marketPrices[_selectedSym]);
+          }
+        });
+
+        window._socket.on('coach_suggestion', (payload) => {
+          showCoachBubble(payload);
+        });
+
+        window._socket.on('coach_tip', (payload) => {
+          // Show tips briefly in the coach icon tooltip
+          _coachPayload = { message: payload.message, action: null };
+        });
+      }
+    }
+
+    function renderMarketWatch() {
+      const tbody = document.getElementById('market-watch-body');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      const symbols = Object.keys(_marketPrices);
+      if (!symbols.length) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#555;padding:20px;">No data yet</td></tr>';
+        return;
+      }
+      for (const sym of symbols) {
+        const d = _marketPrices[sym];
+        tbody.appendChild(buildMWRow(sym, d));
+      }
+    }
+
+    function buildMWRow(sym, d) {
+      const tr = document.createElement('tr');
+      tr.className = 'mw-row';
+      tr.id = `mw-${sym}`;
+      tr.setAttribute('data-sym', sym);
+      const changeColor = d.change >= 0 ? '#00c853' : '#f44336';
+      const changeSign  = d.change >= 0 ? '+' : '';
+      tr.innerHTML = `
+        <td style="padding:10px 12px; font-weight:bold; color:#e0e0e0;">${sym}</td>
+        <td style="padding:10px 12px; text-align:right; font-variant-numeric:tabular-nums; color:#e0e0e0;" id="mw-price-${sym}">$${d.price.toFixed(2)}</td>
+        <td style="padding:10px 12px; text-align:right; color:${changeColor}; font-weight:bold;" id="mw-change-${sym}">${changeSign}${d.change.toFixed(2)}%</td>
+      `;
+      tr.onclick = () => selectTradeSymbol(sym);
+      return tr;
+    }
+
+    function updateMarketWatchRow(sym, data, prevPrice) {
+      let tr = document.getElementById(`mw-${sym}`);
+      if (!tr) {
+        const tbody = document.getElementById('market-watch-body');
+        if (tbody) { tbody.appendChild(buildMWRow(sym, data)); return; }
+      }
+      const priceEl  = document.getElementById(`mw-price-${sym}`);
+      const changeEl = document.getElementById(`mw-change-${sym}`);
+      if (priceEl) priceEl.textContent = `$${data.price.toFixed(2)}`;
+      const changeColor = data.change >= 0 ? '#00c853' : '#f44336';
+      if (changeEl) {
+        changeEl.style.color = changeColor;
+        changeEl.textContent = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
+      }
+      if (tr && prevPrice !== null) {
+        tr.classList.remove('price-flash-up', 'price-flash-down');
+        void tr.offsetWidth; // force reflow
+        tr.classList.add(data.price >= prevPrice ? 'price-flash-up' : 'price-flash-down');
+      }
+    }
+
+    function selectTradeSymbol(sym) {
+      _selectedSym = sym;
+      document.querySelectorAll('.mw-row').forEach(r => r.classList.remove('selected'));
+      const row = document.getElementById(`mw-${sym}`);
+      if (row) row.classList.add('selected');
+
+      const data = _marketPrices[sym] || {};
+      updateTradePanelPrice(sym, data);
+
+      document.getElementById('trade-buy-btn').disabled  = false;
+      document.getElementById('trade-sell-btn').disabled = false;
+      updateTradeCost();
+    }
+
+    function updateTradePanelPrice(sym, data) {
+      document.getElementById('trade-symbol-label').textContent = sym;
+      document.getElementById('trade-price-display').textContent = data.price ? `$${data.price.toFixed(2)}` : '—';
+      const changeEl = document.getElementById('trade-change-display');
+      if (data.change !== undefined) {
+        const up = data.change >= 0;
+        changeEl.textContent = `${up ? '▲' : '▼'} ${Math.abs(data.change).toFixed(2)}% today`;
+        changeEl.style.color = up ? '#00c853' : '#f44336';
+      }
+      updateTradeCost();
+    }
+
+    function updateTradeCost() {
+      if (!_selectedSym) return;
+      const price = _marketPrices[_selectedSym] ? _marketPrices[_selectedSym].price : 0;
+      const qty   = parseFloat(document.getElementById('trade-qty').value) || 0;
+      const total = price * qty;
+      document.getElementById('trade-est-cost').textContent = total ? `$${total.toFixed(2)}` : '—';
+    }
+
+    async function executeTrade(type) {
+      if (!_selectedSym) return;
+      const sid = getSessionId();
+      if (!sid) { showToast('⚠️', 'Not logged in', 'Please log in first.', '#ff4444'); return; }
+      const qty = parseFloat(document.getElementById('trade-qty').value);
+      if (!qty || qty <= 0) { showToast('⚠️', 'Invalid Quantity', 'Enter a valid number of shares.', '#ff4444'); return; }
+
+      const btn     = type === 'BUY' ? document.getElementById('trade-buy-btn') : document.getElementById('trade-sell-btn');
+      const origTxt = btn.textContent;
+      btn.disabled  = true;
+      btn.textContent = '⏳';
+
+      try {
+        const r = await fetch(`/api/trade/${type.toLowerCase()}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Session-Id': sid },
+          body: JSON.stringify({ symbol: _selectedSym, quantity: qty }),
+        });
+        const d = await r.json();
+        const resultEl = document.getElementById('trade-result');
+        if (d.success) {
+          const color = type === 'BUY' ? '#00c853' : '#f44336';
+          const msg   = type === 'BUY'
+            ? `Bought ${qty} × ${_selectedSym} @ $${d.price.toFixed(2)} — Cost $${d.cost.toFixed(2)}`
+            : `Sold ${qty} × ${_selectedSym} @ $${d.price.toFixed(2)} — Got $${d.proceeds.toFixed(2)}`;
+          resultEl.style.color = color;
+          resultEl.textContent = msg;
+          showToast(type === 'BUY' ? '📈' : '📉', `${type} Executed`, msg, color);
+          refreshPortfolio();
+          loadTradeHistory();
+          setTimeout(() => { resultEl.textContent = ''; }, 6000);
+        } else {
+          document.getElementById('trade-result').style.color = '#f44336';
+          document.getElementById('trade-result').textContent = d.error || 'Trade failed';
+        }
+      } catch (e) {
+        document.getElementById('trade-result').style.color = '#f44336';
+        document.getElementById('trade-result').textContent = 'Network error — try again';
+      } finally {
+        btn.disabled  = false;
+        btn.textContent = origTxt;
+      }
+    }
+
+    async function refreshPortfolio() {
+      const sid = getSessionId();
+      if (!sid) return;
+      try {
+        const r = await fetch('/api/portfolio', { headers: { 'X-Session-Id': sid } });
+        const d = await r.json();
+        document.getElementById('port-cash').textContent  = `$${(d.cash || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
+        document.getElementById('port-total').textContent = `$${(d.total_value || 0).toLocaleString('en-US', { minimumFractionDigits:2, maximumFractionDigits:2 })}`;
+        const gEl = document.getElementById('port-gain');
+        const gp  = d.gain_pct || 0;
+        gEl.textContent = `${gp >= 0 ? '+' : ''}${gp.toFixed(2)}%`;
+        gEl.style.color = gp >= 0 ? '#00c853' : '#f44336';
+
+        const holdDiv = document.getElementById('port-holdings');
+        if (!d.holdings || !d.holdings.length) {
+          holdDiv.innerHTML = '<div style="color:#444; text-align:center; padding:12px;">No positions yet</div>';
+        } else {
+          holdDiv.innerHTML = d.holdings.map(h => {
+            const pnlColor = h.pnl >= 0 ? '#00c853' : '#f44336';
+            return `<div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+              <div>
+                <span style="font-weight:bold; color:#e0e0e0; cursor:pointer;" onclick="selectTradeSymbol('${h.symbol}')">${h.symbol}</span>
+                <span style="color:#555; margin-left:6px;">${h.quantity} sh @ $${h.avg_price.toFixed(2)}</span>
+              </div>
+              <div style="text-align:right;">
+                <div style="color:#aaa;">$${h.current_price.toFixed(2)}</div>
+                <div style="color:${pnlColor}; font-size:0.9em;">${h.pnl >= 0 ? '+' : ''}$${h.pnl.toFixed(2)}</div>
+              </div>
+            </div>`;
+          }).join('');
+        }
+      } catch (_) {}
+    }
+
+    async function loadTradeHistory() {
+      const sid = getSessionId();
+      if (!sid) return;
+      try {
+        const r = await fetch('/api/trade/history', { headers: { 'X-Session-Id': sid } });
+        const d = await r.json();
+        const tbody = document.getElementById('trade-history-body');
+        if (!tbody) return;
+        const trades = d.trades || [];
+        if (!trades.length) {
+          tbody.innerHTML = '<tr><td colspan="6" style="color:#444; text-align:center; padding:16px;">No trades yet</td></tr>';
+          return;
+        }
+        tbody.innerHTML = trades.slice(0, 20).map(t => {
+          const dt   = new Date(t.timestamp);
+          const time = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
+          const total = (t.price * t.quantity).toFixed(2);
+          const typeStyle = t.type === 'BUY' ? 'color:#00c853' : 'color:#f44336';
+          return `<tr>
+            <td style="font-size:0.78em; color:#666;">${time}</td>
+            <td style="font-weight:bold; color:#e0e0e0;">${t.symbol}</td>
+            <td style="${typeStyle}; font-weight:bold;">${t.type}</td>
+            <td style="text-align:right;">${t.quantity}</td>
+            <td style="text-align:right; font-variant-numeric:tabular-nums;">$${t.price.toFixed(2)}</td>
+            <td style="text-align:right; font-variant-numeric:tabular-nums;">$${total}</td>
+          </tr>`;
+        }).join('');
+      } catch (_) {}
+    }
+
+    // ─── AI Coach Bubble ─────────────────────────────────────────────────────
+
+    let _coachDismissTimer = null;
+
+    function showCoachBubble(payload) {
+      _coachPayload = payload;
+      document.getElementById('coach-message').textContent = payload.message;
+      const coachIcon   = document.getElementById('coach-icon');
+      const coachBubble = document.getElementById('coach-bubble');
+      if (coachIcon)   coachIcon.style.display   = 'none';
+      if (coachBubble) coachBubble.style.display = 'block';
+
+      // Auto-dismiss after 20 seconds
+      clearTimeout(_coachDismissTimer);
+      _coachDismissTimer = setTimeout(dismissCoach, 20000);
+    }
+
+    function showCoachTip() {
+      if (!_coachPayload) {
+        _coachPayload = { message: 'Your AI coach is watching your portfolio and will alert you when action is needed.', action: null };
+      }
+      showCoachBubble(_coachPayload);
+    }
+
+    function dismissCoach() {
+      clearTimeout(_coachDismissTimer);
+      document.getElementById('coach-bubble').style.display = 'none';
+      const coachIcon = document.getElementById('coach-icon');
+      // Only show icon when on trade tab
+      const tradeSection = document.getElementById('trade');
+      if (coachIcon && tradeSection && tradeSection.classList.contains('active')) {
+        coachIcon.style.display = 'flex';
+      }
+    }
+
+    async function coachAccept() {
+      if (!_coachPayload || !_coachPayload.action) { dismissCoach(); return; }
+      const sid = getSessionId();
+      if (!sid) { dismissCoach(); return; }
+      const { action, symbol, quantity } = _coachPayload;
+      dismissCoach();
+      try {
+        const r = await fetch(`/api/trade/${action}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Session-Id': sid },
+          body: JSON.stringify({ symbol, quantity }),
+        });
+        const d = await r.json();
+        if (d.success) {
+          showToast('🤖', 'Coach Executed Trade', `${action.toUpperCase()} ${quantity} × ${symbol}`, '#00d4ff');
+          refreshPortfolio();
+          loadTradeHistory();
+        } else {
+          showToast('⚠️', 'Coach Trade Failed', d.error || 'Trade could not execute', '#f44336');
+        }
+      } catch (_) {}
     }
 
     function setSessionId(id) {
@@ -1459,6 +1899,7 @@
     }
 
     function paywallLogin() {
+      if (window.SMLMusic) SMLMusic.unlock();
       const email = prompt('Enter your email:');
       const password = prompt('Enter your password:');
       if (!email || !password) return;
@@ -1471,6 +1912,7 @@
           setSessionId(data.sessionId);
           currentUser = email;
           if (window.SMLSounds) SMLSounds.coin();
+          if (window._reAuthSocket) _reAuthSocket();
           checkAndReveal();
         } else {
           alert('Login failed: ' + (data.error || 'Unknown error'));
@@ -1479,6 +1921,7 @@
     }
 
     function paywallRegister() {
+      if (window.SMLMusic) SMLMusic.unlock();
       const fullName = prompt('Enter your full name:');
       const email = prompt('Enter your email:');
       const password = prompt('Create a password (min 8 characters):');
@@ -1515,6 +1958,7 @@
     }
 
     function buySeasonPassPaywall() {
+      if (window.SMLMusic) SMLMusic.unlock();
       const sid = getSessionId();
       if (!sid) { paywallLogin(); return; }
       const btn = event.target;
@@ -1527,9 +1971,9 @@
           window.location.href = data.checkoutUrl;
         } else {
           alert(data.error || 'Payment setup failed. Please try again.');
-          btn.disabled = false; btn.textContent = 'Get Season Pass — $9.99';
+          btn.disabled = false; btn.textContent = 'Get Season Pass — $2.99';
         }
-      }).catch(() => { btn.disabled = false; btn.textContent = 'Get Season Pass — $9.99'; });
+      }).catch(() => { btn.disabled = false; btn.textContent = 'Get Season Pass — $2.99'; });
     }
 
     function paywallLogout() {
@@ -4117,10 +4561,12 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
   function initSocket() {
     if (socket) return;
     try { socket = io(); } catch(_){ return; }
+    window._socket = socket; // expose for trade tab
 
     socket.on('connect', () => {
-      const s = getSession();
-      if (s && s.sessionId) socket.emit('auth', s.sessionId);
+      // Auth with sessionId key (canonical key used everywhere)
+      const sid = localStorage.getItem('sessionId');
+      if (sid) socket.emit('auth', sid);
     });
 
     socket.on('price_update', (prices) => {
@@ -4180,6 +4626,14 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
     });
 
     socket.on('trade', (trade) => {
+      // Manual trades (cost/proceeds present) are handled by executeTrade() itself
+      // Only show AI engine toasts for old-style signal-based trades
+      if (trade.cost !== undefined || trade.proceeds !== undefined) {
+        // Manual trade — just refresh portfolio data silently
+        if (typeof refreshPortfolio === 'function') refreshPortfolio();
+        if (typeof loadTradeHistory === 'function') loadTradeHistory();
+        return;
+      }
       const isBuy = (trade.type || trade.signal || '').toUpperCase() === 'BUY';
       const symbol = trade.symbol || trade.asset || '';
       const price = trade.price ? `@ $${parseFloat(trade.price).toFixed(2)}` : '';
@@ -4190,7 +4644,6 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
         `${qty}${symbol} ${price}`,
         isBuy ? '#00ff88' : '#00d4ff'
       );
-      // Bump the trade counter
       const el = document.getElementById('total-trades');
       if (el) el.textContent = (parseInt(el.textContent) || 0) + 1;
     });
@@ -4219,10 +4672,17 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
     window.login = async function() {
       const result = await _origLogin.apply(this, arguments);
       if (socket) {
-        const s = getSession();
-        if (s && s.sessionId) socket.emit('auth', s.sessionId);
+        const sid = localStorage.getItem('sessionId');
+        if (sid) socket.emit('auth', sid);
       }
       return result;
+    };
+
+    // Also re-auth after paywall login (paywallLogin stores sessionId)
+    window._reAuthSocket = function() {
+      if (!socket) return;
+      const sid = localStorage.getItem('sessionId');
+      if (sid) socket.emit('auth', sid);
     };
   }
 })();
