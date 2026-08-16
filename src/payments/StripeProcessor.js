@@ -99,7 +99,7 @@ class StripeProcessor {
     return { cancelled: sub.status === "canceled", status: sub.status };
   }
 
-  // Create a Stripe Checkout Session for the Season Pass ($9.99 one-time)
+  // Create a Stripe Checkout Session for the Season Pass ($2.99 one-time)
   async createSeasonPassCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -109,7 +109,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Season Pass', description: 'Premium badge frames, 1.5× XP multiplier, private leaderboard tier' },
-          unit_amount: 999,
+          unit_amount: 299,
         },
         quantity: 1,
       }],
