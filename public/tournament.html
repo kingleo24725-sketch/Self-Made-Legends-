@@ -120,6 +120,16 @@
 </div>
 
 <script>
+  (async function gate() {
+    const sid = localStorage.getItem('sessionId');
+    if (!sid) { window.location.href = '/leaderboard.html?paywall=1'; return; }
+    try {
+      const r = await fetch('/api/account/has-access', { headers: { 'x-session-id': sid } });
+      const d = await r.json();
+      if (!d.hasAccess) { window.location.href = '/leaderboard.html?paywall=1'; }
+    } catch { /* allow through on error */ }
+  })();
+
   function escH(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   function maskName(str) {

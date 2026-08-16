@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Self-Made Legends — AI Trading Game</title>
-  <meta name="description" content="Self-Made Legends is the AI-powered stock trading game. Compete on a live national leaderboard, create your own crypto tokens, and build your legend. Free to join.">
+  <meta name="description" content="Self-Made Legends is the AI-powered stock trading game. Compete on a live national leaderboard, create your own crypto tokens, and build your legend.">
   <meta name="keywords" content="AI trading game, stock market game, leaderboard, crypto tokens, self-made legends">
   <meta name="author" content="Self-Made Legends LLC">
   <meta property="og:title" content="Self-Made Legends — AI Trading Game">
@@ -1365,11 +1365,36 @@
 
   </div>
 
+  <!-- ── Paywall Overlay ──────────────────────────────────────────────── -->
+  <div id="paywall-overlay" style="display:flex; position:fixed; inset:0; z-index:9999; background:radial-gradient(ellipse 80% 40% at 50% 110%,rgba(255,180,0,0.18) 0%,transparent 70%),linear-gradient(150deg,#0c1018 0%,#131820 40%,#0a0e16 100%); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
+    <div style="text-align:center; max-width:480px; width:100%;">
+      <div style="font-size:3.5em; margin-bottom:12px;">👑</div>
+      <h1 style="color:#ffd700; font-size:1.9em; font-weight:900; letter-spacing:0.02em; margin-bottom:8px;">Self-Made Legends</h1>
+      <p style="color:#888; font-size:0.95em; line-height:1.7; margin-bottom:8px;">The AI-powered stock trading game. Compete on the national leaderboard. Build your legend.</p>
+      <p style="color:#ffd700; font-size:0.88em; font-weight:600; margin-bottom:28px;">Season Pass required to play — $9.99/season</p>
+
+      <!-- Not logged in state -->
+      <div id="paywall-guest" style="display:flex; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
+        <button onclick="paywallLogin()" style="background:#ffd700; color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Login to My Account</button>
+        <button onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Create Account &amp; Get Season Pass</button>
+        <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard (Public) →</a>
+      </div>
+
+      <!-- Logged in, no access state -->
+      <div id="paywall-member" style="display:none; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
+        <p id="paywall-member-info" style="color:#aaa; font-size:0.88em; margin-bottom:4px;"></p>
+        <button onclick="buySeasonPassPaywall()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer;">Get Season Pass — $9.99</button>
+        <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard →</a>
+        <button onclick="paywallLogout()" style="background:transparent; border:none; color:#444; font-size:0.78em; cursor:pointer; margin-top:4px;">Logout</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Demo Banner (shown in guest/demo mode) -->
   <div id="demo-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:200; background:linear-gradient(90deg,#1a1f2e,#0d1b2a); border-top:2px solid #ffd700; padding:12px 20px; display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
     <div style="color:#ffd700; font-weight:bold;">👑 Demo Mode — Your progress won't be saved</div>
     <div style="display:flex; gap:10px;">
-      <button onclick="login()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 18px; font-weight:bold; cursor:pointer;">Create Free Account</button>
+      <button onclick="login()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 18px; font-weight:bold; cursor:pointer;">Create Account</button>
       <button onclick="document.getElementById('demo-banner').style.display='none'" style="background:transparent; border:1px solid #555; color:#888; border-radius:6px; padding:8px 12px; cursor:pointer;">✕ Dismiss</button>
     </div>
   </div>
@@ -1406,6 +1431,117 @@
       return sessionId || localStorage.getItem('sessionId');
     }
 
+    async function checkAndReveal() {
+      const sid = getSessionId();
+      if (!sid) return; // stay on paywall (guest state)
+      try {
+        const r = await fetch('/api/account/has-access', { headers: { 'X-Session-Id': sid } });
+        const d = await r.json();
+        if (d.hasAccess) {
+          document.getElementById('paywall-overlay').style.display = 'none';
+          loadAccountData();
+          loadBadges();
+          loadStreaks();
+          loadAvatarPreview();
+        } else {
+          // Logged in but no season pass
+          const profileR = await fetch('/api/profile/me', { headers: { 'X-Session-Id': sid } });
+          const profile = await profileR.json();
+          document.getElementById('paywall-guest').style.display = 'none';
+          document.getElementById('paywall-member').style.display = 'flex';
+          document.getElementById('paywall-member-info').textContent = `Logged in as ${profile.email || ''}. A Season Pass is required to play.`;
+        }
+      } catch {
+        // Network error — allow through
+        document.getElementById('paywall-overlay').style.display = 'none';
+        loadAccountData();
+      }
+    }
+
+    function paywallLogin() {
+      const email = prompt('Enter your email:');
+      const password = prompt('Enter your password:');
+      if (!email || !password) return;
+      fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      }).then(r => r.json()).then(data => {
+        if (data.success) {
+          setSessionId(data.sessionId);
+          currentUser = email;
+          if (window.SMLSounds) SMLSounds.coin();
+          checkAndReveal();
+        } else {
+          alert('Login failed: ' + (data.error || 'Unknown error'));
+        }
+      });
+    }
+
+    function paywallRegister() {
+      const fullName = prompt('Enter your full name:');
+      const email = prompt('Enter your email:');
+      const password = prompt('Create a password (min 8 characters):');
+      if (!fullName || !email || !password) return;
+      fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName, email, password })
+      }).then(r => r.json()).then(data => {
+        if (data.success) {
+          return fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          }).then(r => r.json()).then(loginData => {
+            if (loginData.success) {
+              setSessionId(loginData.sessionId);
+              currentUser = email;
+              const gChoice = prompt('Select your leaderboard division:\n1 = Male\n2 = Female\n3 = Prefer not to say\n\nEnter 1, 2, or 3:');
+              const gMap = { '1': 'male', '2': 'female', '3': 'other' };
+              if (gMap[gChoice]) {
+                fetch('/api/account/gender', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Id': loginData.sessionId }, body: JSON.stringify({ gender: gMap[gChoice] }) });
+              }
+              // Show paywall member state so they can buy season pass
+              document.getElementById('paywall-guest').style.display = 'none';
+              document.getElementById('paywall-member').style.display = 'flex';
+              document.getElementById('paywall-member-info').textContent = `Account created! Now get a Season Pass to start playing.`;
+            }
+          });
+        } else {
+          alert('Registration failed: ' + (data.error || 'Unknown error'));
+        }
+      });
+    }
+
+    function buySeasonPassPaywall() {
+      const sid = getSessionId();
+      if (!sid) { paywallLogin(); return; }
+      const btn = event.target;
+      btn.disabled = true; btn.textContent = '⏳ Setting up...';
+      fetch('/api/stripe/season-pass', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Id': sid }
+      }).then(r => r.json()).then(data => {
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        } else {
+          alert(data.error || 'Payment setup failed. Please try again.');
+          btn.disabled = false; btn.textContent = 'Get Season Pass — $9.99';
+        }
+      }).catch(() => { btn.disabled = false; btn.textContent = 'Get Season Pass — $9.99'; });
+    }
+
+    function paywallLogout() {
+      const sid = getSessionId();
+      if (sid) fetch('/api/auth/logout', { method: 'POST', headers: { 'X-Session-Id': sid } });
+      sessionId = null;
+      localStorage.removeItem('sessionId');
+      currentUser = null;
+      document.getElementById('paywall-member').style.display = 'none';
+      document.getElementById('paywall-guest').style.display = 'flex';
+    }
+
     function apiCall(endpoint, method = 'GET', body = null) {
       const options = {
         method,
@@ -1421,8 +1557,7 @@
     }
 
     function login() {
-      const options = ['LOGIN', 'CREATE ACCOUNT', 'FORGOT PASSWORD'];
-      const choice = prompt('What would you like to do?\n\n1 — Login\n2 — Create New Account\n3 — Forgot Password\n4 — Try Demo (no account needed)\n\nType 1, 2, 3, or 4:');
+      const choice = prompt('What would you like to do?\n\n1 — Login\n2 — Create New Account\n3 — Forgot Password\n\nType 1, 2, or 3:');
 
       if (choice === '1') {
         const email = prompt('Enter your email:');
@@ -1493,8 +1628,6 @@
       } else if (choice === '3') {
         openForgotPassword();
 
-      } else if (choice === '4') {
-        enterDemoMode();
       }
     }
 
@@ -1911,12 +2044,8 @@
       document.getElementById('market-overview').innerHTML = stocks || '<p>Loading market data...</p>';
     }
 
-    // Check if user is already logged in
-    if (getSessionId()) {
-      loadAccountData();
-    } else {
-      document.getElementById('user-info').innerHTML = '<button class="btn btn-primary" onclick="login()">Login/Register</button>';
-    }
+    // Access gate — check session and season pass on load
+    checkAndReveal();
 
     // Load data periodically
     setInterval(() => {

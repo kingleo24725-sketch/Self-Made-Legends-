@@ -129,16 +129,25 @@
   </div>
 
   <!-- CTA -->
+  <div id="paywall-banner" style="display:none; background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(0,212,255,0.06)); border:1px solid rgba(255,215,0,0.35); border-radius:12px; padding:18px 24px; margin-bottom:24px; text-align:center;">
+    <p style="color:#ffd700; font-weight:600; margin-bottom:6px;">Season Pass required to access the game.</p>
+    <p style="color:#aaa; font-size:0.88em;">Create an account and get a Season Pass ($9.99) to compete on this leaderboard.</p>
+  </div>
+
   <div class="cta">
     <h3>👑 Think you can top the board?</h3>
-    <p>Join Self-Made Legends — the AI-powered trading game. Free to play. Compete nationally. Build your legend.</p>
-    <a href="/dashboard.html">Start Playing Free →</a>
+    <p>Self-Made Legends — the AI-powered trading game. Get a Season Pass and compete nationally.</p>
+    <a href="/dashboard.html">Get Season Pass — Join Now →</a>
   </div>
 
 </div>
 
 <script>
   let _activeTab = 'all';
+
+  if (new URLSearchParams(location.search).get('paywall') === '1') {
+    document.getElementById('paywall-banner').style.display = 'block';
+  }
 
   function fmt(num, dec = 2) {
     if (num == null || isNaN(num)) return '—';

@@ -158,7 +158,16 @@
 <script src="/js/sounds.js"></script>
 <script>
 const API = '/api';
-const session = localStorage.getItem('sml_session');
+const session = localStorage.getItem('sessionId');
+
+(async function gate() {
+  if (!session) { window.location.href = '/leaderboard.html?paywall=1'; return; }
+  try {
+    const r = await fetch('/api/account/has-access', { headers: { 'x-session-id': session } });
+    const d = await r.json();
+    if (!d.hasAccess) { window.location.href = '/leaderboard.html?paywall=1'; return; }
+  } catch { /* allow through on error */ }
+})();
 
 async function apiCall(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };

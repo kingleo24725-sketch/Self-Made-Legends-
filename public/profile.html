@@ -199,19 +199,20 @@
 </div>
 
 <script>
-  const SESSION_KEY = 'sml_session';
-  const session = (() => {
-    try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+  const sessionId = localStorage.getItem('sessionId');
+
+  (async function gate() {
+    if (!sessionId) { window.location.href = '/leaderboard.html?paywall=1'; return; }
+    try {
+      const r = await fetch('/api/account/has-access', { headers: { 'x-session-id': sessionId } });
+      const d = await r.json();
+      if (!d.hasAccess) { window.location.href = '/leaderboard.html?paywall=1'; return; }
+    } catch { /* allow through on error */ }
+    loadProfile();
   })();
 
-  if (!session || !session.sessionId) {
-    document.getElementById('not-logged-in').style.display = 'block';
-  } else {
-    loadProfile();
-  }
-
   async function api(url) {
-    const r = await fetch(url, { headers: { 'x-session-id': session.sessionId } });
+    const r = await fetch(url, { headers: { 'x-session-id': sessionId } });
     return r.json();
   }
 

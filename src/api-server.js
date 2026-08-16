@@ -2000,6 +2000,16 @@ app.get("/api/profile/me", authenticateUser, (req, res) => {
   });
 });
 
+// ── Access Check ──────────────────────────────────────────────────────────
+app.get("/api/account/has-access", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const account = accountManager.getAccountById(uid);
+  if (!account) return res.json({ hasAccess: false });
+  if (account.isCreatorMember || account.tier === 'creator') return res.json({ hasAccess: true });
+  const sp = await db.get('SELECT active FROM season_passes WHERE user_id = ? AND active = 1', [uid]);
+  res.json({ hasAccess: !!sp });
+});
+
 // ── AI Challenge ──────────────────────────────────────────────────────────
 app.get("/api/ai-challenge/status", (req, res) => {
   res.json({
