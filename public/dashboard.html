@@ -648,6 +648,9 @@
       <button class="nav-tab" onclick="switchTab('games'); loadGamesTab()">🎰 Games</button>
       <button class="nav-tab" onclick="switchTab('realestate'); loadRealEstate()">🏘️ Real Estate</button>
       <button class="nav-tab" onclick="switchTab('battlepass'); loadBattlePass()">🎫 Battle Pass</button>
+      <button class="nav-tab" onclick="switchTab('cards'); loadCardsTab()">🃏 Cards</button>
+      <button class="nav-tab" onclick="switchTab('pets'); loadPetsTab()">🐾 Pets</button>
+      <button class="nav-tab" onclick="switchTab('garage'); loadGarageTab()">🚗 Garage</button>
       <button class="nav-tab" id="creator-hub-tab" style="display:none;" onclick="switchTab('creator-hub'); loadCreatorHub()">👑 Creator Hub</button>
     </div>
     <div class="nav-right">
@@ -657,6 +660,7 @@
         </div>
         <div class="user-info" id="user-info">Not Logged In</div>
       </div>
+      <button id="boxes-btn" onclick="switchTab('dashboard')" title="My Mystery Boxes" style="display:none; background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:0.9em; color:#ffd700; font-weight:700;">🎁 <span id="boxes-count">0</span></button>
       <a href="/profile.html" id="profile-link" style="display:none;color:#aaa;text-decoration:none;font-size:0.8em;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.07);">👤 Profile</a>
       <button id="notif-bell" onclick="toggleNotifPanel()" title="Notifications" style="display:none;position:relative;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;color:#e0e0e0;cursor:pointer;font-size:1em;">
         🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ff4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
@@ -713,6 +717,28 @@
         <h2 style="font-size: 1.8em; margin: 0;">Welcome to Self Made Legends Universe</h2>
         <p style="color: #00ff88; font-size: 1.1em;">Your AI-Powered Multi-Asset Trading Platform</p>
       </div>
+
+      <!-- Flash Challenge Banner -->
+      <div id="flash-challenge-banner" style="display:none; background:linear-gradient(135deg,rgba(255,100,0,0.15),rgba(255,215,0,0.08)); border:2px solid rgba(255,100,0,0.5); border-radius:12px; padding:14px 20px; margin-bottom:16px; animation:flash-pulse 2s ease-in-out infinite;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.6em;" id="flash-icon">⚡</span>
+            <div>
+              <div style="color:#ff6400; font-size:0.72em; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">⚡ FLASH CHALLENGE</div>
+              <div style="color:#ffd700; font-weight:700; font-size:1em;" id="flash-title">—</div>
+              <div style="color:#aaa; font-size:0.82em;" id="flash-desc">—</div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div id="flash-timer" style="color:#ff6400; font-weight:900; font-size:1.3em; font-variant-numeric:tabular-nums;">—</div>
+            <div style="color:#888; font-size:0.75em;">remaining</div>
+            <button id="flash-claim-btn" onclick="claimFlashChallenge()" style="margin-top:6px; background:#ff6400; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.82em; display:none;">Claim Reward</button>
+          </div>
+        </div>
+      </div>
+      <style>
+        @keyframes flash-pulse { 0%,100%{box-shadow:0 0 12px rgba(255,100,0,0.3)} 50%{box-shadow:0 0 24px rgba(255,100,0,0.6)} }
+      </style>
 
       <!-- Today's Checklist -->
       <div id="today-checklist" style="display:none; background:linear-gradient(135deg,#0a1628,#101c30); border:1px solid rgba(0,212,255,0.2); border-radius:12px; padding:16px 20px; margin-bottom:20px;">
@@ -1207,7 +1233,7 @@
         <div class="card" style="border:1px solid #00d4ff; position:relative; overflow:hidden;">
           <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">🎫</div>
           <div style="color:#00d4ff; font-weight:bold; font-size:1.05em; margin-bottom:4px;">🎫 Season Pass</div>
-          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:4px; font-variant-numeric:tabular-nums;">$9.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/season</span></div>
+          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:4px; font-variant-numeric:tabular-nums;">$14.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/season</span></div>
           <p style="color:#ffd700; font-size:0.78em; font-weight:600; margin:0 0 10px;">⚡ Competitive Edge — play free, or level up your game</p>
           <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 10px; line-height:2.1;">
             <li>✨ Premium badge frames</li>
@@ -1226,13 +1252,13 @@
           <p style="color:#777; font-size:0.83em; margin-bottom:16px; line-height:1.5;">Spend on cosmetics, emote packs &amp; special features. Credits never expire.</p>
           <div style="display:flex; flex-direction:column; gap:10px;">
             <button onclick="buySMLCredits('starter')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
-              <span>⚡ Starter Pack</span><strong style="color:#9b59b6;">500 Credits · $5</strong>
+              <span>⚡ Starter Pack</span><strong style="color:#9b59b6;">500 Credits · $10</strong>
             </button>
             <button onclick="buySMLCredits('legends')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
-              <span>🌟 Legends Pack</span><strong style="color:#9b59b6;">2,500 Credits · $20</strong>
+              <span>🌟 Legends Pack</span><strong style="color:#9b59b6;">2,500 Credits · $25</strong>
             </button>
             <button onclick="buySMLCredits('champion')" style="background:#1a1000; border:2px solid #ffd700; color:#ffd700; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#251700'" onmouseout="this.style.background='#1a1000'">
-              <span>👑 Champion Pack</span><strong>7,000 Credits · $50</strong>
+              <span>👑 Champion Pack</span><strong>7,000 Credits · $55</strong>
             </button>
           </div>
         </div>
@@ -1241,7 +1267,7 @@
         <div class="card" style="border:1px solid #00cc66; position:relative; overflow:hidden;">
           <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">🧠</div>
           <div style="color:#00cc66; font-weight:bold; font-size:1.05em; margin-bottom:4px;">🧠 Premium AI Coach</div>
-          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$4.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/month</span></div>
+          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$9.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/month</span></div>
           <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
             <li>🎯 Deeper AI coaching responses</li>
             <li>📈 Weekly personalized reports</li>
@@ -1256,7 +1282,7 @@
         <div class="card" style="border:1px solid #ff6b6b; position:relative; overflow:hidden;">
           <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">⚔️</div>
           <div style="color:#ff6b6b; font-weight:bold; font-size:1.05em; margin-bottom:4px;">⚔️ Tournament Entry</div>
-          <div style="color:#ff6b6b; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$5 <span style="font-size:0.42em; color:#555; font-weight:normal;">/tournament</span></div>
+          <div style="color:#ff6b6b; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$10 <span style="font-size:0.42em; color:#555; font-weight:normal;">/tournament</span></div>
           <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 12px; line-height:2.1;">
             <li>🏆 Compete for real cash prizes</li>
             <li>💰 80% of pool pays top 3 players</li>
@@ -1266,7 +1292,7 @@
             <div style="color:#666; font-size:0.68em; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Current Prize Pool (80%)</div>
             <div id="prize-pool-amount" style="color:#ff6b6b; font-size:1.7em; font-weight:bold; font-variant-numeric:tabular-nums;">—</div>
           </div>
-          <button class="btn btn-danger" id="tournament-entry-btn" onclick="enterTournament()" style="width:100%;">⚔️ Enter Tournament — $5</button>
+          <button class="btn btn-danger" id="tournament-entry-btn" onclick="enterTournament()" style="width:100%;">⚔️ Enter Tournament — $10</button>
           <div id="tournament-entry-status" style="color:#777; font-size:0.78em; margin-top:8px; text-align:center; min-height:18px;"></div>
         </div>
 
@@ -1277,21 +1303,21 @@
         <div style="position:absolute;top:8px;right:10px;background:#ffd700;color:#000;font-size:0.7em;font-weight:900;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;">Best Value</div>
         <div style="position:absolute;bottom:-20px;right:-12px;font-size:6em;opacity:0.05;pointer-events:none;">⚡</div>
         <div style="color:#ffd700; font-weight:bold; font-size:1.1em; margin-bottom:4px;">⚡ Legend Starter Pack — One-Time</div>
-        <div style="color:#00ff88; font-size:2em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$14.99 <span style="font-size:0.38em; color:#555; font-weight:normal;font-variant-numeric:normal;">one-time</span></div>
+        <div style="color:#00ff88; font-size:2em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$19.99 <span style="font-size:0.38em; color:#555; font-weight:normal;font-variant-numeric:normal;">one-time</span></div>
         <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
           <li>💎 2,500 SML Credits</li>
           <li>💰 $5,000 Paper Money</li>
           <li>🎫 1-Month Season Pass boost</li>
           <li>🖼️ Neon avatar frame cosmetic</li>
         </ul>
-        <button class="btn btn-success" onclick="buyLegendBundle()" style="width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000;">⚡ Grab the Bundle — $14.99</button>
+        <button class="btn btn-success" onclick="buyLegendBundle()" style="width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000;">⚡ Grab the Bundle — $19.99</button>
       </div>
 
       <!-- VIP Elite Membership -->
       <div class="card" style="border:1px solid #9b59b6; margin-bottom:20px; position:relative; overflow:hidden;">
         <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.08;pointer-events:none;">👑</div>
         <div style="color:#d4a7f5; font-weight:bold; font-size:1.1em; margin-bottom:4px;">👑 VIP Elite Membership</div>
-        <div style="color:#d4a7f5; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$24.99 <span style="font-size:0.38em; color:#555; font-weight:normal;">/month</span></div>
+        <div style="color:#d4a7f5; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$29.99 <span style="font-size:0.38em; color:#555; font-weight:normal;">/month</span></div>
         <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
           <li>🛡️ 3× safe capacity (less stolen in heists)</li>
           <li>⚡ Permanent 2× XP multiplier</li>
@@ -1300,21 +1326,21 @@
           <li>📊 Everything in Creator Membership</li>
         </ul>
         <div id="elite-status" style="color:#555; font-size:0.78em; min-height:18px; margin-bottom:8px;"></div>
-        <button class="btn" onclick="buyEliteMembership()" id="elite-btn" style="width:100%; background:linear-gradient(135deg,#6b21a8,#9b59b6); border-color:#9b59b6; color:#fff;">👑 Join Elite — $24.99/month</button>
+        <button class="btn" onclick="buyEliteMembership()" id="elite-btn" style="width:100%; background:linear-gradient(135deg,#6b21a8,#9b59b6); border-color:#9b59b6; color:#fff;">👑 Join Elite — $29.99/month</button>
       </div>
 
       <!-- Creator Membership (existing) -->
       <div class="card" style="border:1px solid #00d4ff; margin-bottom:20px;">
-        <h2 style="color:#00d4ff; margin-bottom:6px;">⭐ Creator Membership — $10 / Month</h2>
+        <h2 style="color:#00d4ff; margin-bottom:6px;">⭐ Creator Membership — $15 / Month</h2>
         <p style="color:#888; margin-bottom:8px; font-size:0.9em;">
-          Subscribe for <strong style="color:#00ff88;">$10/month</strong> to unlock token creation,
+          Subscribe for <strong style="color:#00ff88;">$15/month</strong> to unlock token creation,
           premium leaderboard recognition, and creator-only features. 2× safe cap + gold badge frame.
         </p>
         <p style="color:#666; font-size:0.82em; margin-bottom:16px;">
           Billed monthly · Cancel anytime · Powered by Stripe
         </p>
         <button class="btn btn-success" onclick="payCreatorFee()" id="creator-fee-btn" style="width:100%;">
-          💳 Subscribe — $10/month
+          💳 Subscribe — $15/month
         </button>
         <div id="creator-fee-status" style="margin-top:12px; color:#00ff88; display:none;"></div>
       </div>
@@ -1322,7 +1348,7 @@
       <!-- Battle Pass -->
       <div class="card" style="border:1px solid #ffd700; margin-bottom:20px; position:relative; overflow:hidden;">
         <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">🎫</div>
-        <div style="color:#ffd700; font-weight:bold; font-size:1.1em; margin-bottom:4px;">🎫 Battle Pass — $4.99</div>
+        <div style="color:#ffd700; font-weight:bold; font-size:1.1em; margin-bottom:4px;">🎫 Battle Pass — $9.99</div>
         <div style="color:#ffd700; font-size:1.4em; font-weight:bold; margin-bottom:8px;">10 Reward Tiers this Season</div>
         <p style="color:#888; font-size:0.84em; margin-bottom:14px;">Earn XP through trades and heists. Unlock rewards across all 10 tiers. Premium Pass unlocks bonus prizes at every tier.</p>
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
@@ -1330,7 +1356,7 @@
           <span style="background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.3); border-radius:20px; padding:3px 10px; font-size:0.78em; color:#00d4ff;">💎 SML Credits</span>
           <span style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); border-radius:20px; padding:3px 10px; font-size:0.78em; color:#00ff88;">🎖️ Exclusive Badges</span>
         </div>
-        <button class="btn" onclick="buyBattlePass()" style="width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-weight:700;">🎫 Unlock Premium Battle Pass — $4.99</button>
+        <button class="btn" onclick="buyBattlePass()" style="width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-weight:700;">🎫 Unlock Premium Battle Pass — $9.99</button>
         <div style="text-align:center; margin-top:8px;"><button onclick="switchTab('battlepass'); loadBattlePass()" style="background:none; border:none; color:#555; font-size:0.8em; cursor:pointer; text-decoration:underline;">View all tiers →</button></div>
       </div>
 
@@ -1798,6 +1824,23 @@
       <h2 style="color:#ff4444; font-size:1.6em; margin-bottom:6px;">🥷 Underworld</h2>
       <p style="color:#aaa; margin-bottom:24px;">Rob players, dodge jail, and duel rivals in the shadows. High risk. High reward.</p>
 
+      <!-- Heat Level Display -->
+      <div id="heat-level-bar" style="display:none; background:rgba(255,0,0,0.06); border:1px solid rgba(255,68,68,0.3); border-radius:12px; padding:14px 20px; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:1.4em;">🌡️</span>
+            <div>
+              <div style="color:#ff4444; font-size:0.72em; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">HEAT LEVEL</div>
+              <div id="heat-level-flames" style="font-size:1.3em; margin-top:2px;"></div>
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div id="heat-level-desc" style="color:#aaa; font-size:0.82em;"></div>
+            <button id="heat-bribe-btn" onclick="heatBribe()" style="margin-top:6px; background:rgba(255,68,68,0.15); border:1px solid rgba(255,68,68,0.3); color:#ff8888; border-radius:6px; padding:5px 12px; cursor:pointer; font-size:0.78em; display:none;">💸 Bribe (-500 Credits)</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Card 1: Player Status -->
       <div class="card" id="uw-status-card" style="margin-bottom:20px; border:1px solid #333;">
         <h3 style="color:#ffd700; margin-bottom:14px;">🔒 Your Status</h3>
@@ -2059,11 +2102,11 @@
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <input id="sf-gift-recipient" placeholder="Recipient user ID or email" style="flex:2; min-width:180px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
             <select id="sf-gift-pkg" style="flex:1; min-width:160px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; cursor:pointer;">
-              <option value="hustle">Hustle — $1,000 ($4.99)</option>
-              <option value="grind">Grind — $5,000 ($10.99)</option>
-              <option value="investor">Investor — $25,000 ($15)</option>
-              <option value="whale">Whale — $50,000 ($20)</option>
-              <option value="ultimate">Ultimate — $200,000 ($75)</option>
+              <option value="hustle">Hustle — $1,000 ($9.99)</option>
+              <option value="grind">Grind — $5,000 ($15.99)</option>
+              <option value="investor">Investor — $25,000 ($20)</option>
+              <option value="whale">Whale — $50,000 ($25)</option>
+              <option value="ultimate">Ultimate — $200,000 ($80)</option>
             </select>
             <button onclick="giftRealMoney()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.88em;">Buy Gift</button>
           </div>
@@ -2147,7 +2190,7 @@
       <p style="color:#aaa; margin-bottom:24px;">Earn XP through trades and heists to unlock rewards across 10 tiers. Upgrade to the Premium Pass for bonus prizes.</p>
       <div class="card" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div id="bp-pass-status" style="color:#aaa; font-size:0.95em;">Loading…</div>
-        <button id="bp-buy-btn" onclick="buyBattlePass()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Unlock Premium ($4.99)</button>
+        <button id="bp-buy-btn" onclick="buyBattlePass()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Unlock Premium ($9.99)</button>
       </div>
       <div id="bp-tiers" style="display:flex; flex-direction:column; gap:10px;">
         <div style="color:#555; font-size:0.88em; text-align:center; padding:20px;">Loading battle pass…</div>
@@ -2201,6 +2244,165 @@
       </div>
     </div>
   </section>
+
+  <!-- ── Cards Section ──────────────────────────────────────────────────── -->
+  <section class="section" id="cards">
+    <div style="max-width:900px; margin:0 auto;">
+      <h2 style="color:#ffd700; font-size:1.6em; margin-bottom:4px;">🃏 Card Collection</h2>
+      <p style="color:#aaa; margin-bottom:20px;">Collect legendary player cards, duel opponents, and trade on the market. Rare packs drop cards that change the game.</p>
+
+      <!-- Pack Opening -->
+      <div class="card" style="border:1px solid rgba(255,215,0,0.2); margin-bottom:20px;">
+        <h3 style="color:#ffd700; margin-bottom:14px;">🎴 Open a Pack</h3>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:16px;">
+          <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:16px; text-align:center;">
+            <div style="font-size:2em; margin-bottom:6px;">📦</div>
+            <div style="color:#e0e0e0; font-weight:700;">Common Pack</div>
+            <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · common/uncommon</div>
+            <div style="color:#00d4ff; font-weight:700; margin-bottom:8px;">100 Credits</div>
+            <button onclick="openCardPack('common')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack</button>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,0,0,0.3)); border:1px solid rgba(0,212,255,0.3); border-radius:10px; padding:16px; text-align:center;">
+            <div style="font-size:2em; margin-bottom:6px;">💫</div>
+            <div style="color:#00d4ff; font-weight:700;">Rare Pack</div>
+            <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · rare guaranteed</div>
+            <div style="color:#00d4ff; font-weight:700; margin-bottom:8px;">300 Credits or $9.99</div>
+            <button onclick="openCardPack('rare')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em; margin-bottom:6px;">Open (Credits)</button>
+            <button onclick="buyCardPackStripe('rare')" style="background:transparent; border:1px solid #00d4ff; color:#00d4ff; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy ($9.99)</button>
+          </div>
+          <div style="background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(0,0,0,0.3)); border:1px solid rgba(255,215,0,0.4); border-radius:10px; padding:16px; text-align:center;">
+            <div style="font-size:2em; margin-bottom:6px;">👑</div>
+            <div style="color:#ffd700; font-weight:700;">Legendary Pack</div>
+            <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · legendary+ pool</div>
+            <div style="color:#ffd700; font-weight:700; margin-bottom:8px;">1,000 Credits or $19.99</div>
+            <button onclick="openCardPack('legendary')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em; margin-bottom:6px;">Open (Credits)</button>
+            <button onclick="buyCardPackStripe('legendary')" style="background:transparent; border:1px solid #ffd700; color:#ffd700; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy ($19.99)</button>
+          </div>
+        </div>
+
+        <!-- Pack open animation / result -->
+        <div id="cards-pack-result" style="display:none; background:rgba(255,215,0,0.05); border:1px solid rgba(255,215,0,0.2); border-radius:10px; padding:20px;">
+          <div style="color:#ffd700; font-weight:700; text-align:center; margin-bottom:14px;">✨ Cards Revealed!</div>
+          <div id="cards-reveal-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;"></div>
+        </div>
+      </div>
+
+      <!-- My Collection -->
+      <div class="card" style="margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+          <h3 style="color:#00d4ff; margin:0;">📚 My Collection</h3>
+          <button onclick="loadCardsTab()" style="background:none; border:1px solid #333; color:#aaa; border-radius:6px; padding:4px 12px; cursor:pointer; font-size:0.8em;">↻ Refresh</button>
+        </div>
+        <div id="cards-collection" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;">
+          <div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">Loading your collection…</div>
+        </div>
+      </div>
+
+      <!-- Card Market -->
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="color:#00ff88; margin-bottom:14px;">🏪 Card Market</h3>
+        <div id="cards-market" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px;">
+          <div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">Loading market…</div>
+        </div>
+      </div>
+
+      <!-- Card Duels -->
+      <div class="card">
+        <h3 style="color:#ff6b6b; margin-bottom:14px;">⚔️ Card Duels</h3>
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">Challenge a player. Each picks 3 cards. Best 2-of-3 combined power wins paper money from the loser.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <input id="duel-opponent" type="text" placeholder="Opponent's User ID" style="flex:1; min-width:200px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#e0e0e0; padding:10px 14px; outline:none; font-size:0.88em;">
+          <input id="duel-bet" type="number" placeholder="Bet ($)" min="1000" style="width:120px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#e0e0e0; padding:10px 14px; outline:none; font-size:0.88em;">
+          <button onclick="sendCardDuel()" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer;">⚔️ Challenge</button>
+        </div>
+        <div id="cards-duels-list" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="color:#555; font-size:0.85em; text-align:center; padding:12px;">No pending duels.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Pets Section ──────────────────────────────────────────────────────── -->
+  <section class="section" id="pets">
+    <div style="max-width:900px; margin:0 auto;">
+      <h2 style="color:#00ff88; font-size:1.6em; margin-bottom:4px;">🐾 Pets</h2>
+      <p style="color:#aaa; margin-bottom:20px;">Raise your pets, feed them daily, and earn passive income. Higher-tier pets earn more — and protect your turf.</p>
+
+      <!-- My Pets -->
+      <div id="my-pets-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; margin-bottom:20px;">
+        <div style="color:#555; font-size:0.88em; padding:20px; text-align:center;">Loading your pets…</div>
+      </div>
+
+      <!-- Collect Button -->
+      <div style="text-align:center; margin-bottom:24px;">
+        <button onclick="collectPetIncome()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:10px; padding:12px 32px; font-weight:700; font-size:1em; cursor:pointer;">🐾 Collect All Pet Income</button>
+      </div>
+
+      <!-- Pet Shop -->
+      <div class="card" style="border:1px solid rgba(0,255,136,0.2);">
+        <h3 style="color:#00ff88; margin-bottom:14px;">🛒 Pet Shop</h3>
+        <div id="pets-catalog" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px;">
+          <div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">Loading shop…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Garage Section ──────────────────────────────────────────────────── -->
+  <section class="section" id="garage">
+    <div style="max-width:900px; margin:0 auto;">
+      <h2 style="color:#00d4ff; font-size:1.6em; margin-bottom:4px;">🚗 Garage &amp; Racing</h2>
+      <p style="color:#aaa; margin-bottom:20px;">Buy cars, enter street races, and climb the leaderboard. Faster cars win bigger prizes.</p>
+
+      <!-- Active Race -->
+      <div class="card" style="border:1px solid rgba(255,100,0,0.3); margin-bottom:20px;" id="race-panel">
+        <h3 style="color:#ff6400; margin-bottom:12px;">🏁 Street Race</h3>
+        <div id="race-status">Loading race info…</div>
+      </div>
+
+      <!-- My Cars -->
+      <div class="card" style="margin-bottom:20px;">
+        <h3 style="color:#00d4ff; margin-bottom:14px;">🚘 My Garage</h3>
+        <div id="my-cars-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:12px;">
+          <div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">Loading your cars…</div>
+        </div>
+      </div>
+
+      <!-- Car Dealership -->
+      <div class="card" style="border:1px solid rgba(0,212,255,0.2);">
+        <h3 style="color:#00d4ff; margin-bottom:14px;">🏎️ Car Dealership</h3>
+        <div id="cars-catalog" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px;">
+          <div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">Loading dealership…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loot Box Reveal Modal -->
+  <div id="lootbox-modal" style="display:none; position:fixed; inset:0; z-index:9900; background:rgba(0,0,0,0.9); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px; flex-direction:column;">
+    <div style="background:linear-gradient(135deg,#0d1421,#1a1200); border:2px solid rgba(255,215,0,0.4); border-radius:20px; padding:32px; max-width:460px; width:100%; text-align:center; position:relative;">
+      <button onclick="document.getElementById('lootbox-modal').style.display='none'" style="position:absolute; top:12px; right:14px; background:none; border:none; color:#555; font-size:1.2em; cursor:pointer;">✕</button>
+      <div style="font-size:4em; margin-bottom:12px; animation:float 2s ease-in-out infinite;">🎁</div>
+      <h2 style="color:#ffd700; margin-bottom:8px;">Opening Box…</h2>
+      <div id="lootbox-spinner" style="display:flex; gap:10px; justify-content:center; margin:20px 0; font-size:2.5em;">
+        <span class="spin-seg" id="ls1">❓</span>
+        <span class="spin-seg" id="ls2">❓</span>
+        <span class="spin-seg" id="ls3">❓</span>
+      </div>
+      <div id="lootbox-result" style="display:none;">
+        <div id="lootbox-icon" style="font-size:3em; margin-bottom:8px;"></div>
+        <div id="lootbox-title" style="color:#ffd700; font-size:1.3em; font-weight:700; margin-bottom:4px;"></div>
+        <div id="lootbox-subtitle" style="color:#aaa; font-size:0.9em; margin-bottom:16px;"></div>
+        <button onclick="openNextBox()" id="lootbox-next-btn" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; margin-right:8px;">Open Next</button>
+        <button onclick="document.getElementById('lootbox-modal').style.display='none'" style="background:none; border:1px solid #333; color:#888; border-radius:8px; padding:10px 18px; cursor:pointer;">Done</button>
+      </div>
+    </div>
+  </div>
+  <style>
+    .spin-seg { display:inline-block; transition:all 0.1s; }
+    .spin-seg.spinning { animation:spin-seg-anim 0.15s linear infinite; }
+    @keyframes spin-seg-anim { 0%{transform:rotateX(0)} 50%{transform:rotateX(90deg)} 100%{transform:rotateX(180deg)} }
+  </style>
 
   <!-- Profile Setup Modal (replaces prompt() for gender/division) -->
   <div id="profile-setup-modal" style="display:none; position:fixed; inset:0; z-index:9800; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
@@ -2287,35 +2489,35 @@
           <div style="font-size:1.5em; margin-bottom:6px;">💵</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$1,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Hustle Pack</div>
-          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$4.99</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$9.99</div>
           <button onclick="buyPaperMoney('hustle')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">💸</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$5,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Grind Pack</div>
-          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$10.99</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$15.99</div>
           <button onclick="buyPaperMoney('grind')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.4); border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">📈</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$25,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Investor Pack</div>
-          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$15.00</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$20.00</div>
           <button onclick="buyPaperMoney('investor')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">🐋</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$50,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Whale Pack</div>
-          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$20.00</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$25.00</div>
           <button onclick="buyPaperMoney('whale')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,140,0,.08)); border:2px solid #ffd700; border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">👑</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$200,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Ultimate Pack</div>
-          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$75.00</div>
+          <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$80.00</div>
           <button onclick="buyPaperMoney('ultimate')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
       </div>
@@ -7663,8 +7865,8 @@ window.loadSubscriptions = async function() {
     if (!container) return;
     const subs = [
       { key:'creator', label:'Creator Membership', price:'$10/mo', active: d.isCreator },
-      { key:'elite', label:'VIP Elite Membership', price:'$24.99/mo', active: d.isElite },
-      { key:'coach', label:'Coach Pro', price:'$4.99/mo', active: d.isCoach },
+      { key:'elite', label:'VIP Elite Membership', price:'$29.99/mo', active: d.isElite },
+      { key:'coach', label:'Coach Pro', price:'$9.99/mo', active: d.isCoach },
     ];
     container.innerHTML = subs.map(s => `
       <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
@@ -7975,6 +8177,7 @@ if (typeof _uwOrigSwitchTab === 'function') {
       if (typeof loadBounties === 'function') loadBounties();
       if (typeof loadProtection === 'function') loadProtection();
       if (typeof loadGetaway === 'function') loadGetaway();
+      loadHeatLevel();
     }
     if (tab === 'trade') {
       if (typeof loadAlerts === 'function') loadAlerts();
@@ -7982,6 +8185,524 @@ if (typeof _uwOrigSwitchTab === 'function') {
     }
   };
 }
+
+// ══════════════════════════════════════════════════════════
+// NEW FEATURES: Cards, Pets, Garage, Flash Challenges,
+//               Mystery Boxes, Heat Level
+// ══════════════════════════════════════════════════════════
+
+// ── Loot Box counter refresh ───────────────────────────────
+async function refreshBoxCount() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  try {
+    const r = await fetch('/api/boxes/my', { headers: { 'x-session-id': sid } });
+    const d = await r.json();
+    const count = (d.boxes || []).length;
+    const btn = document.getElementById('boxes-btn');
+    const ctr = document.getElementById('boxes-count');
+    if (btn && ctr) {
+      ctr.textContent = count;
+      btn.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  } catch (_) {}
+}
+setInterval(refreshBoxCount, 60_000);
+
+// ── Loot Box opening ──────────────────────────────────────
+let _pendingBoxes = [];
+async function openNextBox() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  if (_pendingBoxes.length === 0) {
+    const r = await fetch('/api/boxes/my', { headers: { 'x-session-id': sid } });
+    const d = await r.json();
+    _pendingBoxes = d.boxes || [];
+  }
+  if (_pendingBoxes.length === 0) {
+    document.getElementById('lootbox-modal').style.display = 'none';
+    return;
+  }
+  const box = _pendingBoxes.shift();
+  const modal = document.getElementById('lootbox-modal');
+  modal.style.display = 'flex';
+  document.getElementById('lootbox-result').style.display = 'none';
+  const segs = ['ls1','ls2','ls3'];
+  const emojis = ['💰','🃏','🚗','💎','🎁','⭐','🔫','🎲','📈','🏆'];
+  // spinning animation
+  const spinInterval = setInterval(() => {
+    segs.forEach(id => { document.getElementById(id).textContent = emojis[Math.floor(Math.random()*emojis.length)]; });
+  }, 100);
+  try {
+    const resp = await fetch('/api/boxes/open', {
+      method: 'POST',
+      headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+      body: JSON.stringify({ boxId: box.id })
+    });
+    const result = await resp.json();
+    await new Promise(res => setTimeout(res, 1800));
+    clearInterval(spinInterval);
+    if (result.drop) {
+      const d = result.drop;
+      document.getElementById('lootbox-icon').textContent = d.icon || '🎁';
+      document.getElementById('lootbox-title').textContent = d.label || 'Mystery Reward';
+      document.getElementById('lootbox-subtitle').textContent = d.description || '';
+      document.getElementById('lootbox-next-btn').style.display = _pendingBoxes.length > 0 ? 'inline-block' : 'none';
+      document.getElementById('lootbox-result').style.display = 'block';
+      segs.forEach((id, i) => { document.getElementById(id).textContent = i === 1 ? (d.icon || '🎁') : '✨'; });
+    }
+    refreshBoxCount();
+  } catch (e) {
+    clearInterval(spinInterval);
+    modal.style.display = 'none';
+  }
+}
+document.getElementById('boxes-btn').addEventListener('click', () => { _pendingBoxes = []; openNextBox(); });
+
+// ── Flash Challenge ────────────────────────────────────────
+let _flashChallenge = null;
+let _flashTimer = null;
+
+async function loadFlashChallenge() {
+  try {
+    const r = await fetch('/api/flash-challenge/current');
+    const d = await r.json();
+    _flashChallenge = d.challenge || null;
+    renderFlashChallenge();
+  } catch (_) {}
+}
+
+function renderFlashChallenge() {
+  const banner = document.getElementById('flash-challenge-banner');
+  if (!_flashChallenge || !banner) return;
+  const now = Date.now();
+  if (_flashChallenge.expires_at <= now) { banner.style.display = 'none'; return; }
+  document.getElementById('flash-title').textContent = _flashChallenge.title || _flashChallenge.label || '—';
+  document.getElementById('flash-desc').textContent = _flashChallenge.description || '';
+  banner.style.display = '';
+  if (_flashTimer) clearInterval(_flashTimer);
+  _flashTimer = setInterval(() => {
+    const remaining = Math.max(0, _flashChallenge.expires_at - Date.now());
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    const timerEl = document.getElementById('flash-timer');
+    if (timerEl) timerEl.textContent = `${mins}:${String(secs).padStart(2,'0')}`;
+    if (remaining <= 0) {
+      clearInterval(_flashTimer);
+      if (banner) banner.style.display = 'none';
+    }
+  }, 1000);
+}
+
+async function claimFlashChallenge() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid || !_flashChallenge) return;
+  try {
+    const r = await fetch('/api/flash-challenge/claim', {
+      method: 'POST',
+      headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+      body: JSON.stringify({ challengeId: _flashChallenge.id })
+    });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️', 'Challenge', d.error, '#ff6400'); return; }
+    showToast('⚡', 'Flash Challenge!', d.message || 'Reward claimed!', '#ff6400');
+  } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
+}
+
+// Listen for new flash challenges via socket (hooked in _hookSocket below)
+
+// ── Heat Level ────────────────────────────────────────────
+async function loadHeatLevel() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  try {
+    const r = await fetch('/api/heat/level', { headers: { 'x-session-id': sid } });
+    const d = await r.json();
+    const level = d.heatLevel || 0;
+    const bar = document.getElementById('heat-level-bar');
+    if (!bar) return;
+    if (level === 0) { bar.style.display = 'none'; return; }
+    bar.style.display = '';
+    const flames = ['🌡️','🔥','🔥🔥','🔥🔥🔥','🔥🔥🔥🔥','☠️🔥🔥🔥🔥🔥'];
+    const descs = ['','Enemies can identify you more easily.','Your username is visible in heist logs.','Anyone can collect your bounty. Heist rates down 15%.','FUGITIVE — no robbery cooldowns. Bounty auto-placed!',''];
+    const el = document.getElementById('heat-level-flames');
+    const descEl = document.getElementById('heat-level-desc');
+    const brBtn = document.getElementById('heat-bribe-btn');
+    if (el) el.textContent = flames[Math.min(level, 5)];
+    if (descEl) descEl.textContent = descs[Math.min(level, 5)];
+    if (brBtn) brBtn.style.display = level > 0 ? 'inline-block' : 'none';
+  } catch (_) {}
+}
+
+async function heatBribe() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  if (!confirm('Spend 500 Credits to reduce your Heat Level by 1?')) return;
+  try {
+    const r = await fetch('/api/heat/bribe', { method: 'POST', headers: { 'x-session-id': sid } });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️', 'Bribe Failed', d.error, '#ff4444'); return; }
+    showToast('💸', 'Heat Reduced', d.message || 'Bribe paid — heat level dropped!', '#00ff88');
+    loadHeatLevel();
+  } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
+}
+
+// ── Cards Tab ─────────────────────────────────────────────
+const CARD_RARITY_COLORS = { common:'#aaa', uncommon:'#00ff88', rare:'#00d4ff', epic:'#d4a7f5', legendary:'#ffd700' };
+function _cardHTML(card) {
+  const c = CARD_RARITY_COLORS[card.rarity] || '#aaa';
+  const power = (card.attack||0) + (card.defense||0) + (card.hustle||0) + (card.luck||0);
+  return `<div style="background:rgba(0,0,0,0.4); border:1px solid ${c}44; border-radius:10px; padding:12px; text-align:center; position:relative;">
+    <div style="position:absolute; top:6px; right:8px; font-size:0.68em; color:${c}; text-transform:uppercase; letter-spacing:0.05em;">${card.rarity}</div>
+    <div style="font-size:2em; margin:8px 0 4px;">${card.icon || '🃏'}</div>
+    <div style="color:#e0e0e0; font-weight:700; font-size:0.88em;">${card.name || card.card_key}</div>
+    <div style="color:${c}; font-size:0.75em; margin-top:4px; font-variant-numeric:tabular-nums;">PWR ${power}</div>
+    <div style="display:flex; gap:4px; justify-content:center; margin-top:6px; font-size:0.7em; color:#666;">
+      <span>ATK ${card.attack||0}</span><span>·</span><span>DEF ${card.defense||0}</span>
+    </div>
+    ${card.player_card_id ? `<button onclick="listCardForSale(${card.player_card_id}, '${card.card_key}')" style="margin-top:8px; background:transparent; border:1px solid #333; color:#888; border-radius:6px; padding:3px 8px; cursor:pointer; font-size:0.72em;">List for Sale</button>` : ''}
+  </div>`;
+}
+
+async function loadCardsTab() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  // Load collection
+  try {
+    const r = await fetch('/api/cards/collection', { headers: { 'x-session-id': sid } });
+    const d = await r.json();
+    const grid = document.getElementById('cards-collection');
+    if (grid) {
+      grid.innerHTML = d.cards && d.cards.length > 0
+        ? d.cards.map(_cardHTML).join('')
+        : '<div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">No cards yet — open a pack to start your collection!</div>';
+    }
+  } catch (_) {}
+  // Load market
+  try {
+    const r = await fetch('/api/cards/market');
+    const d = await r.json();
+    const market = document.getElementById('cards-market');
+    if (market) {
+      market.innerHTML = d.listings && d.listings.length > 0
+        ? d.listings.map(l => {
+            const c = CARD_RARITY_COLORS[l.rarity] || '#aaa';
+            return `<div style="background:rgba(0,0,0,0.4); border:1px solid ${c}33; border-radius:10px; padding:12px; text-align:center;">
+              <div style="font-size:1.8em;">${l.icon||'🃏'}</div>
+              <div style="color:#e0e0e0; font-weight:700; font-size:0.85em; margin:4px 0;">${l.name||l.card_key}</div>
+              <div style="color:${c}; font-size:0.75em; margin-bottom:8px;">${l.rarity}</div>
+              <div style="color:#ffd700; font-weight:700; margin-bottom:8px;">${Number(l.price).toLocaleString()} Credits</div>
+              <button onclick="buyMarketCard(${l.id})" style="background:#ffd700; color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em; width:100%;">Buy</button>
+            </div>`;
+          }).join('')
+        : '<div style="color:#555; font-size:0.85em; padding:16px; text-align:center; grid-column:1/-1;">No cards listed for sale.</div>';
+    }
+  } catch (_) {}
+  // Load duels
+  document.getElementById('cards-pack-result').style.display = 'none';
+}
+
+async function openCardPack(packType) {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  try {
+    const r = await fetch('/api/cards/pack/open', {
+      method: 'POST',
+      headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+      body: JSON.stringify({ packType })
+    });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️', 'Pack Open', d.error, '#ff4444'); return; }
+    const grid = document.getElementById('cards-reveal-grid');
+    const result = document.getElementById('cards-pack-result');
+    if (grid && d.cards) {
+      grid.innerHTML = d.cards.map(_cardHTML).join('');
+      result.style.display = '';
+      result.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    showToast('🃏', 'Pack Opened!', `Got ${d.cards?.length || 0} cards!`, '#ffd700');
+    setTimeout(loadCardsTab, 1500);
+  } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
+}
+
+async function buyCardPackStripe(packType) {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  try {
+    const r = await fetch('/api/stripe/card-pack', {
+      method: 'POST',
+      headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+      body: JSON.stringify({ packType })
+    });
+    const d = await r.json();
+    if (d.checkoutUrl) window.location.href = d.checkoutUrl;
+  } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
+}
+
+async function listCardForSale(playerCardId, cardKey) {
+  const price = prompt('List price in Credits:');
+  if (!price || isNaN(parseInt(price))) return;
+  const sid = localStorage.getItem('sml_session');
+  const r = await fetch('/api/cards/market/list', {
+    method: 'POST',
+    headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+    body: JSON.stringify({ playerCardId: parseInt(playerCardId), price: parseInt(price) })
+  });
+  const d = await r.json();
+  if (d.error) { showToast('⚠️', 'Market', d.error, '#ff4444'); return; }
+  showToast('🏪', 'Listed!', 'Card listed on the market.', '#00ff88');
+  loadCardsTab();
+}
+
+async function buyMarketCard(listingId) {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  const r = await fetch(`/api/cards/market/buy/${listingId}`, {
+    method: 'POST', headers: { 'x-session-id': sid }
+  });
+  const d = await r.json();
+  if (d.error) { showToast('⚠️', 'Market', d.error, '#ff4444'); return; }
+  showToast('🃏', 'Purchased!', d.message || 'Card added to your collection!', '#ffd700');
+  loadCardsTab();
+}
+
+async function sendCardDuel() {
+  const sid = localStorage.getItem('sml_session');
+  const opponentId = document.getElementById('duel-opponent').value.trim();
+  const bet = parseInt(document.getElementById('duel-bet').value || '1000');
+  if (!sid || !opponentId) { showToast('⚠️', 'Duel', 'Enter an opponent ID', '#ff4444'); return; }
+  const r = await fetch('/api/cards/duel/send', {
+    method: 'POST',
+    headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+    body: JSON.stringify({ opponentId, bet })
+  });
+  const d = await r.json();
+  if (d.error) { showToast('⚠️', 'Duel', d.error, '#ff4444'); return; }
+  showToast('⚔️', 'Duel Sent!', d.message || 'Challenge sent!', '#ff6b6b');
+}
+
+// ── Pets Tab ──────────────────────────────────────────────
+async function loadPetsTab() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  // My pets
+  try {
+    const r = await fetch('/api/pets/mine', { headers: { 'x-session-id': sid } });
+    const d = await r.json();
+    const grid = document.getElementById('my-pets-grid');
+    if (grid) {
+      if (!d.pets || d.pets.length === 0) {
+        grid.innerHTML = '<div style="color:#555; font-size:0.88em; text-align:center; padding:20px; grid-column:1/-1;">No pets yet — visit the Pet Shop below!</div>';
+      } else {
+        grid.innerHTML = d.pets.map(p => {
+          const now = Date.now();
+          const fed = p.last_fed && (now - p.last_fed) < 20 * 3600 * 1000;
+          const happyColor = p.happiness >= 70 ? '#00ff88' : p.happiness >= 40 ? '#ffd700' : '#ff4444';
+          return `<div style="background:rgba(0,255,136,0.05); border:1px solid rgba(0,255,136,${fed ? '0.3' : '0.1'}); border-radius:14px; padding:16px; text-align:center;">
+            <div style="font-size:2.5em; margin-bottom:8px;">${p.icon || '🐾'}</div>
+            <div style="color:#e0e0e0; font-weight:700; font-size:0.95em;">${p.pet_name}</div>
+            <div style="color:#888; font-size:0.75em; margin:2px 0 8px; text-transform:capitalize;">${p.pet_key} · Lv ${p.level}</div>
+            <div style="display:flex; gap:4px; justify-content:center; margin-bottom:8px;">
+              <span style="background:rgba(255,255,255,0.05); border-radius:20px; padding:3px 10px; font-size:0.72em; color:${happyColor};">😊 ${p.happiness}%</span>
+              ${fed ? '<span style="background:rgba(0,255,136,0.1); border-radius:20px; padding:3px 10px; font-size:0.72em; color:#00ff88;">✅ Fed</span>' : '<span style="background:rgba(255,68,68,0.1); border-radius:20px; padding:3px 10px; font-size:0.72em; color:#ff8888;">⚠️ Hungry</span>'}
+            </div>
+            <div style="color:#ffd700; font-size:0.78em; margin-bottom:10px;">💰 $${(p.daily_income_cached||0).toLocaleString()}/day</div>
+            <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
+              ${!fed ? `<button onclick="feedPet(${p.id})" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:6px 12px; font-weight:700; cursor:pointer; font-size:0.78em;">🍖 Feed</button>` : ''}
+              <button onclick="renamePet(${p.id})" style="background:transparent; border:1px solid #333; color:#888; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:0.78em;">✏️ Rename</button>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+  } catch (_) {}
+  // Pet shop
+  try {
+    const r = await fetch('/api/pets/catalog');
+    const d = await r.json();
+    const catalog = document.getElementById('pets-catalog');
+    if (catalog && d.pets) {
+      const rarityColor = { common:'#aaa', uncommon:'#00ff88', rare:'#00d4ff', legendary:'#ffd700' };
+      catalog.innerHTML = Object.values(d.pets).map(p => {
+        const c = rarityColor[p.rarity] || '#aaa';
+        return `<div style="background:rgba(0,0,0,0.3); border:1px solid ${c}33; border-radius:12px; padding:16px; text-align:center;">
+          <div style="font-size:2.5em; margin-bottom:6px;">${p.icon}</div>
+          <div style="color:#e0e0e0; font-weight:700; font-size:0.9em;">${p.label}</div>
+          <div style="color:${c}; font-size:0.72em; text-transform:uppercase; margin:3px 0 8px;">${p.rarity}</div>
+          <div style="color:#00ff88; font-size:0.82em; margin-bottom:10px;">$${p.daily_income.toLocaleString()}/day</div>
+          <div style="color:#ffd700; font-weight:700; margin-bottom:10px;">$${(p.price_cents/100).toFixed(2)}</div>
+          <button onclick="buyPet('${p.key}')" style="background:${c}; color:#000; border:none; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.82em; width:100%;">Buy</button>
+        </div>`;
+      }).join('');
+    }
+  } catch (_) {}
+}
+
+async function feedPet(petId) {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  const r = await fetch(`/api/pets/feed/${petId}`, { method: 'POST', headers: { 'x-session-id': sid } });
+  const d = await r.json();
+  if (d.error) { showToast('⚠️', 'Pet', d.error, '#ff4444'); return; }
+  showToast('🍖', 'Fed!', d.message || 'Your pet is happy!', '#00ff88');
+  loadPetsTab();
+}
+
+async function renamePet(petId) {
+  const name = prompt('New pet name (1–24 characters):');
+  if (!name) return;
+  const sid = localStorage.getItem('sml_session');
+  const r = await fetch(`/api/pets/name/${petId}`, {
+    method: 'POST', headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+    body: JSON.stringify({ name })
+  });
+  const d = await r.json();
+  if (d.error) { showToast('⚠️', 'Rename', d.error, '#ff4444'); return; }
+  showToast('✏️', 'Renamed!', d.message || 'Pet renamed.', '#00d4ff');
+  loadPetsTab();
+}
+
+async function buyPet(petKey) {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  try {
+    const r = await fetch('/api/stripe/buy-pet', {
+      method: 'POST', headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+      body: JSON.stringify({ petKey })
+    });
+    const d = await r.json();
+    if (d.checkoutUrl) window.location.href = d.checkoutUrl;
+    else if (d.error) showToast('⚠️', 'Pet Shop', d.error, '#ff4444');
+  } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
+}
+
+async function collectPetIncome() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  const r = await fetch('/api/pets/collect', { method: 'POST', headers: { 'x-session-id': sid } });
+  const d = await r.json();
+  if (d.error) { showToast('⚠️', 'Pets', d.error, '#ff4444'); return; }
+  showToast('💰', 'Income Collected!', d.message || `+$${(d.totalIncome||0).toLocaleString()} from pets!`, '#00ff88');
+  loadPetsTab();
+}
+
+// ── Garage Tab ─────────────────────────────────────────────
+async function loadGarageTab() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  // Load active race
+  try {
+    const r = await fetch('/api/races/current');
+    const d = await r.json();
+    const statusEl = document.getElementById('race-status');
+    if (statusEl) {
+      if (d.race) {
+        statusEl.innerHTML = `<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+          <div>
+            <div style="color:#ffd700; font-weight:700;">Race Open — ${d.race.entrants || 0} entrants</div>
+            <div style="color:#888; font-size:0.82em; margin-top:2px;">Entry fee: $${(d.race.entry_fee||10000).toLocaleString()} · Prize pool: $${(d.race.prize_pool||0).toLocaleString()}</div>
+          </div>
+          <button onclick="enterRace()" style="background:linear-gradient(135deg,#ff6400,#ffd700); color:#000; border:none; border-radius:8px; padding:10px 22px; font-weight:700; cursor:pointer; font-size:0.9em;">🏁 Enter Race</button>
+        </div>`;
+      } else {
+        statusEl.innerHTML = '<div style="color:#555; font-size:0.88em;">No race open right now. Check back in a few hours!</div>';
+      }
+    }
+  } catch (_) {}
+  // My cars
+  try {
+    const r = await fetch('/api/cars/mine', { headers: { 'x-session-id': sid } });
+    const d = await r.json();
+    const grid = document.getElementById('my-cars-grid');
+    if (grid) {
+      grid.innerHTML = d.cars && d.cars.length > 0
+        ? d.cars.map(c => `<div style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.2); border-radius:12px; padding:16px; text-align:center;">
+            <div style="font-size:2.5em; margin-bottom:8px;">${c.icon||'🚗'}</div>
+            <div style="color:#e0e0e0; font-weight:700; font-size:0.9em;">${c.car_name}</div>
+            <div style="color:#888; font-size:0.72em; text-transform:capitalize; margin:4px 0 8px;">${c.car_key}</div>
+            <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap; font-size:0.72em;">
+              <span style="color:#00ff88;">⚡${c.speed}</span>
+              <span style="color:#00d4ff;">🥷${c.stealth}</span>
+              <span style="color:#ffd700;">✨${c.style}</span>
+            </div>
+          </div>`).join('')
+        : '<div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">No cars in your garage yet — visit the dealership!</div>';
+    }
+  } catch (_) {}
+  // Catalog
+  try {
+    const r = await fetch('/api/cars/catalog');
+    const d = await r.json();
+    const catalog = document.getElementById('cars-catalog');
+    if (catalog && d.cars) {
+      catalog.innerHTML = Object.entries(d.cars).map(([key, c]) => `<div style="background:rgba(0,0,0,0.3); border:1px solid rgba(0,212,255,0.15); border-radius:12px; padding:16px; text-align:center;">
+        <div style="font-size:2.5em; margin-bottom:6px;">${c.icon}</div>
+        <div style="color:#00d4ff; font-weight:700;">${c.label}</div>
+        <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap; font-size:0.75em; margin:6px 0 10px; color:#888;">
+          <span>&#9889; Speed ${c.speed}</span><span>&#129399; Stealth ${c.stealth}</span><span>&#10024; Style ${c.style}</span>
+        </div>
+        <div style="color:#ffd700; font-weight:700; margin-bottom:10px;">$${(c.price_cents/100).toFixed(2)}</div>
+        <button onclick="buyCar('${key}')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; font-size:0.85em; width:100%;">Buy</button>
+      </div>`).join('');
+    }
+  } catch (_) {}
+}
+
+async function enterRace() {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  const r = await fetch('/api/races/enter', { method: 'POST', headers: { 'x-session-id': sid } });
+  const d = await r.json();
+  if (d.error) { showToast('⚠️', 'Race', d.error, '#ff4444'); return; }
+  showToast('🏁', 'Entered Race!', d.message || 'Good luck! Results in 4 hours.', '#ff6400');
+  loadGarageTab();
+}
+
+async function buyCar(carKey) {
+  const sid = localStorage.getItem('sml_session');
+  if (!sid) return;
+  try {
+    const r = await fetch('/api/stripe/buy-car', {
+      method: 'POST', headers: { 'x-session-id': sid, 'content-type': 'application/json' },
+      body: JSON.stringify({ carKey })
+    });
+    const d = await r.json();
+    if (d.checkoutUrl) window.location.href = d.checkoutUrl;
+    else if (d.error) showToast('⚠️', 'Dealership', d.error, '#ff4444');
+  } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
+}
+
+// Socket handlers for new events
+(function() {
+  function _hookSocket() {
+    if (typeof socket === 'undefined') { setTimeout(_hookSocket, 1000); return; }
+    socket.on('flash_challenge', ({ challenge }) => {
+      _flashChallenge = challenge;
+      renderFlashChallenge();
+      showToast('⚡', 'Flash Challenge!', challenge.title || challenge.label || 'New challenge!', '#ff6400');
+    });
+    socket.on('race_result', (d) => {
+      showToast('🏁', `Race Result: #${d.place} Place!`, `You won $${(d.prize||0).toLocaleString()}!`, '#ff6400');
+      loadGarageTab();
+    });
+    socket.on('purchase_complete', (d) => {
+      if (d.type === 'pet') { showToast('🐾', 'New Pet!', d.message, '#00ff88'); loadPetsTab(); }
+      if (d.type === 'car') { showToast('🚗', 'New Car!', d.message, '#00d4ff'); loadGarageTab(); }
+      if (d.type === 'card_pack') { showToast('🃏', 'Pack Opened!', d.message, '#ffd700'); loadCardsTab(); }
+      if (d.type === 'loot_box') { showToast('🎁', 'Boxes Added!', d.message, '#ffd700'); refreshBoxCount(); }
+    });
+    socket.on('loot_box_earned', (d) => {
+      showToast('🎁', 'Mystery Box!', d.message || 'You earned a Mystery Box!', '#ffd700');
+      refreshBoxCount();
+    });
+  }
+  _hookSocket();
+  // Auto-load flash challenge
+  setTimeout(loadFlashChallenge, 3000);
+  setInterval(loadFlashChallenge, 5 * 60 * 1000);
+  // Auto-refresh box count after login (re-use existing login event pattern)
+  document.addEventListener('sml_logged_in', refreshBoxCount);
+})();
 </script>
 </body>
 </html>

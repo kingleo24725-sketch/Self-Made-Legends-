@@ -144,36 +144,36 @@ const CHALLENGE_ACCEPT_WIN   = 3_600_000;
 
 // ── Underworld Armory ─────────────────────────────────────────────────────────
 const WEAPONS = {
-  rusty_shiv:       { tier:1,  label:'Rusty Shiv',          icon:'🔪', price_cents:   99, successBonus:0.03, maxPctBonus:0.01, catchReduction:0.00 },
-  switchblade:      { tier:2,  label:'Switchblade',         icon:'⚔️', price_cents:  199, successBonus:0.05, maxPctBonus:0.02, catchReduction:0.00 },
-  baseball_bat:     { tier:3,  label:'Baseball Bat',        icon:'🏏', price_cents:  299, successBonus:0.08, maxPctBonus:0.03, catchReduction:0.00 },
-  crowbar:          { tier:4,  label:'Crowbar',             icon:'🪝', price_cents:  499, successBonus:0.10, maxPctBonus:0.05, catchReduction:0.03 },
-  brass_knuckles:   { tier:5,  label:'Brass Knuckles',      icon:'👊', price_cents:  799, successBonus:0.12, maxPctBonus:0.07, catchReduction:0.05 },
-  taser:            { tier:6,  label:'Taser',               icon:'⚡', price_cents:  999, successBonus:0.15, maxPctBonus:0.09, catchReduction:0.08 },
-  smoke_grenade:    { tier:7,  label:'Smoke Grenade',       icon:'💨', price_cents: 1499, successBonus:0.18, maxPctBonus:0.12, catchReduction:0.10 },
-  glock:            { tier:8,  label:'Glock 19',            icon:'🔫', price_cents: 1999, successBonus:0.22, maxPctBonus:0.15, catchReduction:0.13 },
-  ak47:             { tier:9,  label:'AK-47',               icon:'🪖', price_cents: 3499, successBonus:0.28, maxPctBonus:0.20, catchReduction:0.18 },
-  military_arsenal: { tier:10, label:'Military Arsenal',    icon:'💣', price_cents: 4999, successBonus:0.35, maxPctBonus:0.25, catchReduction:0.22 },
+  rusty_shiv:       { tier:1,  label:'Rusty Shiv',          icon:'🔪', price_cents:  599, successBonus:0.03, maxPctBonus:0.01, catchReduction:0.00 },
+  switchblade:      { tier:2,  label:'Switchblade',         icon:'⚔️', price_cents:  699, successBonus:0.05, maxPctBonus:0.02, catchReduction:0.00 },
+  baseball_bat:     { tier:3,  label:'Baseball Bat',        icon:'🏏', price_cents:  799, successBonus:0.08, maxPctBonus:0.03, catchReduction:0.00 },
+  crowbar:          { tier:4,  label:'Crowbar',             icon:'🪝', price_cents:  999, successBonus:0.10, maxPctBonus:0.05, catchReduction:0.03 },
+  brass_knuckles:   { tier:5,  label:'Brass Knuckles',      icon:'👊', price_cents: 1299, successBonus:0.12, maxPctBonus:0.07, catchReduction:0.05 },
+  taser:            { tier:6,  label:'Taser',               icon:'⚡', price_cents: 1499, successBonus:0.15, maxPctBonus:0.09, catchReduction:0.08 },
+  smoke_grenade:    { tier:7,  label:'Smoke Grenade',       icon:'💨', price_cents: 1999, successBonus:0.18, maxPctBonus:0.12, catchReduction:0.10 },
+  glock:            { tier:8,  label:'Glock 19',            icon:'🔫', price_cents: 2499, successBonus:0.22, maxPctBonus:0.15, catchReduction:0.13 },
+  ak47:             { tier:9,  label:'AK-47',               icon:'🪖', price_cents: 3999, successBonus:0.28, maxPctBonus:0.20, catchReduction:0.18 },
+  military_arsenal: { tier:10, label:'Military Arsenal',    icon:'💣', price_cents: 5499, successBonus:0.35, maxPctBonus:0.25, catchReduction:0.22 },
 };
 
 const GUARD_DOGS = {
-  chihuahua:        { tier:1,  label:'Chihuahua',           icon:'🐕', price_cents:   99, biteChance:0.15, biteDamagePct:0.03 },
-  pomeranian:       { tier:2,  label:'Pomeranian',          icon:'🐩', price_cents:  199, biteChance:0.20, biteDamagePct:0.05 },
-  beagle:           { tier:3,  label:'Beagle',              icon:'🦴', price_cents:  399, biteChance:0.25, biteDamagePct:0.07 },
-  pit_bull:         { tier:4,  label:'Pit Bull',            icon:'🐾', price_cents:  599, biteChance:0.30, biteDamagePct:0.10 },
-  german_shepherd:  { tier:5,  label:'German Shepherd',     icon:'🦮', price_cents:  999, biteChance:0.35, biteDamagePct:0.13 },
-  doberman:         { tier:6,  label:'Doberman',            icon:'🐕', price_cents: 1499, biteChance:0.40, biteDamagePct:0.16 },
-  rottweiler:       { tier:7,  label:'Rottweiler',          icon:'🐕', price_cents: 1999, biteChance:0.45, biteDamagePct:0.20 },
-  belgian_malinois: { tier:8,  label:'Belgian Malinois',    icon:'🐆', price_cents: 2999, biteChance:0.50, biteDamagePct:0.24 },
-  wolf_hybrid:      { tier:9,  label:'Wolf Hybrid',         icon:'🐺', price_cents: 3999, biteChance:0.55, biteDamagePct:0.28 },
-  hellhounds:       { tier:10, label:'Pack of Hellhounds',  icon:'🔥', price_cents: 5999, biteChance:0.65, biteDamagePct:0.35 },
+  chihuahua:        { tier:1,  label:'Chihuahua',           icon:'🐕', price_cents:  599, biteChance:0.15, biteDamagePct:0.03 },
+  pomeranian:       { tier:2,  label:'Pomeranian',          icon:'🐩', price_cents:  699, biteChance:0.20, biteDamagePct:0.05 },
+  beagle:           { tier:3,  label:'Beagle',              icon:'🦴', price_cents:  899, biteChance:0.25, biteDamagePct:0.07 },
+  pit_bull:         { tier:4,  label:'Pit Bull',            icon:'🐾', price_cents: 1099, biteChance:0.30, biteDamagePct:0.10 },
+  german_shepherd:  { tier:5,  label:'German Shepherd',     icon:'🦮', price_cents: 1499, biteChance:0.35, biteDamagePct:0.13 },
+  doberman:         { tier:6,  label:'Doberman',            icon:'🐕', price_cents: 1999, biteChance:0.40, biteDamagePct:0.16 },
+  rottweiler:       { tier:7,  label:'Rottweiler',          icon:'🐕', price_cents: 2499, biteChance:0.45, biteDamagePct:0.20 },
+  belgian_malinois: { tier:8,  label:'Belgian Malinois',    icon:'🐆', price_cents: 3499, biteChance:0.50, biteDamagePct:0.24 },
+  wolf_hybrid:      { tier:9,  label:'Wolf Hybrid',         icon:'🐺', price_cents: 4499, biteChance:0.55, biteDamagePct:0.28 },
+  hellhounds:       { tier:10, label:'Pack of Hellhounds',  icon:'🔥', price_cents: 6499, biteChance:0.65, biteDamagePct:0.35 },
 };
 
 // Durability decrements on every heist attempt against the owner; row deleted at 0
 const SHIELDS = {
   iron:     { tier:1, label:'Iron Shield',     icon:'🛡️',   price_cents:   0, maxDurability:  3, successReduction:0.10, maxPctReduction:0.00 },
-  steel:    { tier:2, label:'Steel Shield',    icon:'⚡🛡️',  price_cents: 300, maxDurability:  7, successReduction:0.25, maxPctReduction:0.10 },
-  titanium: { tier:3, label:'Titanium Shield', icon:'💎🛡️',  price_cents: 600, maxDurability: 12, successReduction:0.40, maxPctReduction:0.20 },
+  steel:    { tier:2, label:'Steel Shield',    icon:'⚡🛡️',  price_cents: 800, maxDurability:  7, successReduction:0.25, maxPctReduction:0.10 },
+  titanium: { tier:3, label:'Titanium Shield', icon:'💎🛡️',  price_cents:1100, maxDurability: 12, successReduction:0.40, maxPctReduction:0.20 },
 };
 
 // Daily perk amounts by streak day (index 0 = day 1). Days 7+ hold at $100.
@@ -184,23 +184,72 @@ function _dailyPerkAmount(streak) {
 
 // ── Getaway Vehicles ──────────────────────────────────────────────────────────
 const GETAWAY_VEHICLES = {
-  bicycle:    { tier:1, label:'Bicycle',    icon:'🚲', price_cents:  149, catchReduction:0.05, bailReduction:0.05 },
-  moped:      { tier:2, label:'Moped',      icon:'🛵', price_cents:  299, catchReduction:0.10, bailReduction:0.10 },
-  motorcycle: { tier:3, label:'Motorcycle', icon:'🏍️', price_cents:  499, catchReduction:0.18, bailReduction:0.15 },
-  sports_car: { tier:4, label:'Sports Car', icon:'🚗', price_cents:  799, catchReduction:0.25, bailReduction:0.20 },
-  supercar:   { tier:5, label:'Supercar',   icon:'🏎️', price_cents: 1299, catchReduction:0.33, bailReduction:0.30 },
-  helicopter: { tier:6, label:'Helicopter', icon:'🚁', price_cents: 1999, catchReduction:0.42, bailReduction:0.40 },
+  bicycle:    { tier:1, label:'Bicycle',    icon:'🚲', price_cents:  649, catchReduction:0.05, bailReduction:0.05 },
+  moped:      { tier:2, label:'Moped',      icon:'🛵', price_cents:  799, catchReduction:0.10, bailReduction:0.10 },
+  motorcycle: { tier:3, label:'Motorcycle', icon:'🏍️', price_cents:  999, catchReduction:0.18, bailReduction:0.15 },
+  sports_car: { tier:4, label:'Sports Car', icon:'🚗', price_cents: 1299, catchReduction:0.25, bailReduction:0.20 },
+  supercar:   { tier:5, label:'Supercar',   icon:'🏎️', price_cents: 1799, catchReduction:0.33, bailReduction:0.30 },
+  helicopter: { tier:6, label:'Helicopter', icon:'🚁', price_cents: 2499, catchReduction:0.42, bailReduction:0.40 },
 };
 
 // ── Virtual Real Estate ───────────────────────────────────────────────────────
 const REAL_ESTATE = {
-  corner_store: { tier:1, label:'Corner Store', icon:'🏪', price_cents:  499, daily_income:   50 },
-  apartment:    { tier:2, label:'Apartment',    icon:'🏢', price_cents:  999, daily_income:  150 },
-  restaurant:   { tier:3, label:'Restaurant',   icon:'🍽️', price_cents: 1999, daily_income:  400 },
-  nightclub:    { tier:4, label:'Nightclub',    icon:'🎭', price_cents: 3499, daily_income:  900 },
-  casino:       { tier:5, label:'Casino',       icon:'🎰', price_cents: 5999, daily_income: 2000 },
-  skyscraper:   { tier:6, label:'Skyscraper',   icon:'🏙️', price_cents: 9999, daily_income: 5000 },
+  corner_store: { tier:1, label:'Corner Store', icon:'🏪', price_cents:  999, daily_income:   50 },
+  apartment:    { tier:2, label:'Apartment',    icon:'🏢', price_cents: 1499, daily_income:  150 },
+  restaurant:   { tier:3, label:'Restaurant',   icon:'🍽️', price_cents: 2499, daily_income:  400 },
+  nightclub:    { tier:4, label:'Nightclub',    icon:'🎭', price_cents: 3999, daily_income:  900 },
+  casino:       { tier:5, label:'Casino',       icon:'🎰', price_cents: 6499, daily_income: 2000 },
+  skyscraper:   { tier:6, label:'Skyscraper',   icon:'🏙️', price_cents:10499, daily_income: 5000 },
 };
+
+// ── Cars / Garage ─────────────────────────────────────────────────────────────
+const CARS = {
+  beater:    { tier:1, label:'Beater',        icon:'🚘', price_cents:  999, speed:20, stealth:10, style:5,  desc:'Gets you from A to B. Barely.' },
+  street:    { tier:2, label:'Street Racer',  icon:'🚗', price_cents: 1499, speed:40, stealth:20, style:20, desc:'A solid street-level runner.' },
+  sports:    { tier:3, label:'Sports Car',    icon:'🏎️', price_cents: 2499, speed:60, stealth:35, style:45, desc:'Turns heads and outrruns cops.' },
+  luxury:    { tier:4, label:'Luxury Sedan',  icon:'🚙', price_cents: 4499, speed:65, stealth:60, style:70, desc:'Low-key rich. The dream.' },
+  supercar:  { tier:5, label:'Supercar',      icon:'🏎️', price_cents: 7499, speed:85, stealth:50, style:85, desc:'0-60 in the time it takes to blink.' },
+  hypercar:  { tier:6, label:'Hypercar',      icon:'🚀', price_cents:10499, speed:99, stealth:70, style:99, desc:'The pinnacle. Legends only.' },
+};
+
+// ── Pets ─────────────────────────────────────────────────────────────────────
+const PETS = {
+  dog:    { key:'dog',    label:'Dog',    icon:'🐕', price_cents: 999,  rarity:'common',    daily_income: 500,   guard_bonus:0.05, desc:'Man\'s best friend.' },
+  cat:    { key:'cat',    label:'Cat',    icon:'🐈', price_cents: 999,  rarity:'common',    daily_income: 400,   guard_bonus:0.03, desc:'Does what it wants.' },
+  snake:  { key:'snake',  label:'Snake',  icon:'🐍', price_cents: 1999, rarity:'uncommon',  daily_income: 1500,  guard_bonus:0.08, desc:'Intimidates trespassers.' },
+  hawk:   { key:'hawk',   label:'Hawk',   icon:'🦅', price_cents: 1999, rarity:'uncommon',  daily_income: 2000,  guard_bonus:0.10, desc:'Watches your back from above.' },
+  tiger:  { key:'tiger',  label:'Tiger',  icon:'🐯', price_cents: 1999, rarity:'rare',      daily_income: 5000,  guard_bonus:0.20, desc:'Nobody tests a tiger owner.' },
+  dragon: { key:'dragon', label:'Dragon', icon:'🐉', price_cents: 3499, rarity:'legendary', daily_income:10000,  guard_bonus:0.35, desc:'Absolute legend status.' },
+};
+
+// ── Loot Box drop table ───────────────────────────────────────────────────────
+const LOOT_DROPS = {
+  common:    [
+    { weight:40, type:'paper',   value:10000,  label:'$10,000 Paper Money' },
+    { weight:30, type:'paper',   value:25000,  label:'$25,000 Paper Money' },
+    { weight:20, type:'credits', value:50,     label:'50 SML Credits' },
+    { weight:10, type:'paper',   value:50000,  label:'$50,000 Paper Money' },
+  ],
+  premium:   [
+    { weight:30, type:'paper',   value:100000, label:'$100,000 Paper Money' },
+    { weight:25, type:'credits', value:500,    label:'500 SML Credits' },
+    { weight:20, type:'credits', value:1000,   label:'1,000 SML Credits' },
+    { weight:15, type:'paper',   value:500000, label:'$500,000 Paper Money' },
+    { weight:7,  type:'credits', value:2000,   label:'2,000 SML Credits' },
+    { weight:3,  type:'paper',   value:1000000,label:'$1,000,000 Paper Money' },
+  ],
+};
+
+// ── Flash Challenge pool ──────────────────────────────────────────────────────
+const FLASH_CHALLENGES = [
+  { type:'trade',  title:'Bull Rush',   description:'Make 3 profitable trades in the next 20 minutes',    reward_type:'paper',   reward_value:25000,  duration_mins:20 },
+  { type:'heist',  title:'Heist Hour',  description:'Complete 1 successful heist in the next 30 minutes', reward_type:'credits', reward_value:200,    duration_mins:30 },
+  { type:'dice',   title:'Lucky Roll',  description:'Roll the dice 5 times in the next 15 minutes',       reward_type:'box',     reward_value:1,      duration_mins:15 },
+  { type:'spin',   title:'Spin Fever',  description:'Spin the wheel 3 times in the next 10 minutes',      reward_type:'paper',   reward_value:50000,  duration_mins:10 },
+  { type:'login',  title:'Early Bird',  description:'Be online in the next 5 minutes to claim your reward', reward_type:'credits', reward_value:100,  duration_mins:5  },
+  { type:'trade',  title:'Crypto Surge',description:'Make 2 crypto trades in the next 25 minutes',        reward_type:'paper',   reward_value:75000,  duration_mins:25 },
+  { type:'heist',  title:'Crew Run',    description:'Initiate any heist in the next 20 minutes',           reward_type:'box',     reward_value:1,      duration_mins:20 },
+];
 
 // ── Spin the Wheel prizes (weight-based) ─────────────────────────────────────
 const SPIN_PRIZES = [
@@ -784,6 +833,72 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           await _addCredits(recipientId, credits, 'gift', `${credits} Credits gifted by a friend`);
           emitToUser(recipientId, 'credits_received', { amount: credits, message: `🎁 You received ${credits} SML Credits as a gift!` });
           if (userId) emitToUser(userId, 'purchase_complete', { type: 'gift_credits', message: `🎁 Gift of ${credits} credits sent successfully!` });
+        }
+
+      } else if (type && type.startsWith('pet_')) {
+        const petKey = type.slice('pet_'.length);
+        if (userId && PETS[petKey]) {
+          const p = PETS[petKey];
+          const now = Date.now();
+          await db.run(
+            'INSERT INTO player_pets (user_id, pet_key, pet_name, happiness, xp, level, last_fed, acquired_at) VALUES (?, ?, ?, 100, 0, 1, ?, ?)',
+            [userId, petKey, p.label, now, now]
+          );
+          await _awardBox(userId, 'pet_bonus');
+          emitToUser(userId, 'purchase_complete', { type: 'pet', message: `${p.icon} Your ${p.label} has arrived! Feed it daily to keep it happy.` });
+          emitToUser(userId, 'inventory_updated', {});
+          console.log(`Pet purchased — user ${userId} pet ${petKey}`);
+        }
+
+      } else if (type && type.startsWith('car_')) {
+        const carKey = type.slice('car_'.length);
+        if (userId && CARS[carKey]) {
+          const c = CARS[carKey];
+          const now = Date.now();
+          await db.run(
+            'INSERT INTO player_cars (user_id, car_key, car_name, paint_color, acquired_at) VALUES (?, ?, ?, ?, ?)',
+            [userId, carKey, c.label, '#1a1a2e', now]
+          );
+          emitToUser(userId, 'purchase_complete', { type: 'car', message: `${c.icon} ${c.label} added to your garage! Speed: ${c.speed}, Stealth: ${c.stealth}.` });
+          emitToUser(userId, 'inventory_updated', {});
+          console.log(`Car purchased — user ${userId} car ${carKey}`);
+        }
+
+      } else if (type && type.startsWith('card_pack_')) {
+        const packType = type.slice('card_pack_'.length);
+        if (userId) {
+          const now = Date.now();
+          const cards = [];
+          for (let i = 0; i < 5; i++) {
+            const card = await _drawCard(packType);
+            if (card) {
+              await db.run('INSERT INTO player_cards (user_id, card_key, acquired_at) VALUES (?, ?, ?)', [userId, card.card_key, now]);
+              cards.push(card);
+            }
+          }
+          emitToUser(userId, 'purchase_complete', { type: 'card_pack', cards, message: `🃏 ${packType === 'legendary' ? 'Legendary' : 'Rare'} Pack opened! ${cards.length} cards added to your collection.` });
+          console.log(`Card pack purchased — user ${userId} pack ${packType} got ${cards.length} cards`);
+        }
+
+      } else if (type === 'loot_box_premium') {
+        if (userId) {
+          for (let i = 0; i < 5; i++) {
+            await _awardBox(userId, 'premium_purchase');
+          }
+          emitToUser(userId, 'purchase_complete', { type: 'loot_box', count: 5, message: '🎁 5 Premium Mystery Boxes added to your account!' });
+          console.log(`Premium loot boxes purchased — user ${userId} +5 boxes`);
+        }
+
+      } else if (type === 'casino_vip') {
+        if (userId) {
+          const now = Date.now();
+          await db.run(
+            'INSERT OR IGNORE INTO elite_memberships (user_id, activated_at, active) VALUES (?, ?, 1)',
+            [userId, now]
+          );
+          await db.run('UPDATE accounts SET casino_vip = 1 WHERE id = ?', [userId]);
+          emitToUser(userId, 'purchase_complete', { type: 'casino_vip', message: '🎰 VIP Casino Access activated! High-stakes tables unlocked.' });
+          console.log(`Casino VIP activated — user ${userId}`);
         }
       }
 
@@ -2089,6 +2204,14 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
         emitToUser(uid, 'heist_result', { success: true, amountStolen: share, heistType: config.label, icon: config.icon });
       }
 
+      // Raise heat level on successful heist (max 5)
+      await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE id = ?', [uid]);
+      if (teamId && teammates.length > 1) {
+        for (const rid of teammates) {
+          await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE id = ?', [rid]);
+        }
+      }
+      await _awardBox(uid, 'heist_win');
       res.json({ success: true, amountStolen: share, message: `${config.icon} ${config.label} succeeded! You stole $${share.toFixed(2)}` });
     } else {
       await db.run(
@@ -4666,6 +4789,364 @@ app.get("/api/tournament/my-winnings", authenticateUser, async (req, res) => {
   res.json({ balance: portfolio ? portfolio.cash_balance : 0, note: 'Tournament winnings are credited directly to your paper money balance.' });
 });
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOOT BOXES
+// ═══════════════════════════════════════════════════════════════════════════════
+function _lootDraw(rarity) {
+  const table = LOOT_DROPS[rarity] || LOOT_DROPS.common;
+  const total = table.reduce((s, d) => s + d.weight, 0);
+  let roll = Math.random() * total;
+  for (const drop of table) { roll -= drop.weight; if (roll <= 0) return drop; }
+  return table[table.length - 1];
+}
+
+async function _awardBox(userId, source) {
+  await db.run('INSERT INTO mystery_boxes (user_id, rarity, source, created_at) VALUES (?, ?, ?, ?)',
+    [userId, 'common', source, Date.now()]);
+}
+
+app.get('/api/boxes/my', authenticateUser, async (req, res) => {
+  const boxes = await db.all('SELECT id, rarity, source, created_at FROM mystery_boxes WHERE user_id = ? AND opened_at IS NULL ORDER BY created_at DESC', [req.user.userId]);
+  res.json({ boxes, count: boxes.length });
+});
+
+app.post('/api/boxes/open', authenticateUser, async (req, res) => {
+  const { boxId } = req.body;
+  const box = await db.get('SELECT * FROM mystery_boxes WHERE id = ? AND user_id = ? AND opened_at IS NULL', [boxId, req.user.userId]);
+  if (!box) return res.status(404).json({ error: 'Box not found or already opened' });
+  const drop = _lootDraw(box.rarity);
+  await db.run('UPDATE mystery_boxes SET opened_at = ? WHERE id = ?', [Date.now(), boxId]);
+  if (drop.type === 'paper') {
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [drop.value, req.user.userId]);
+    await _syncLeaderboard(req.user.userId);
+  } else if (drop.type === 'credits') {
+    await _addCredits(req.user.userId, drop.value, 'loot_box', 'Loot box reward');
+  }
+  await _notify(req.user.userId, 'loot_box', '🎁 Loot Box Opened!', `You got: ${drop.label}`);
+  res.json({ success: true, drop });
+});
+
+app.post('/api/stripe/loot-box-premium', authenticateUser, async (req, res) => {
+  try {
+    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const { checkoutUrl } = await stripeProcessor.createLootBoxCheckout(req.user.userId, acc.email);
+    res.json({ checkoutUrl });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// FLASH CHALLENGES
+// ═══════════════════════════════════════════════════════════════════════════════
+app.get('/api/flash-challenge/current', async (req, res) => {
+  const now = Date.now();
+  const challenge = await db.get('SELECT * FROM flash_challenges WHERE expires_at > ? ORDER BY created_at DESC LIMIT 1', [now]);
+  res.json({ challenge: challenge || null });
+});
+
+app.post('/api/flash-challenge/claim', authenticateUser, async (req, res) => {
+  const { challengeId } = req.body;
+  const uid = req.user.userId;
+  const now = Date.now();
+  const ch = await db.get('SELECT * FROM flash_challenges WHERE id = ? AND expires_at > ?', [challengeId, now]);
+  if (!ch) return res.status(404).json({ error: 'Challenge expired or not found' });
+  const already = await db.get('SELECT id FROM flash_challenge_completions WHERE challenge_id = ? AND user_id = ?', [challengeId, uid]);
+  if (already) return res.status(400).json({ error: 'Already claimed' });
+  await db.run('INSERT INTO flash_challenge_completions (challenge_id, user_id, completed_at) VALUES (?, ?, ?)', [challengeId, uid, now]);
+  if (ch.reward_type === 'paper') {
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [ch.reward_value, uid]);
+    await _syncLeaderboard(uid);
+  } else if (ch.reward_type === 'credits') {
+    await _addCredits(uid, ch.reward_value, 'flash_challenge', ch.title);
+  } else if (ch.reward_type === 'box') {
+    await _awardBox(uid, 'flash_challenge');
+  }
+  await _notify(uid, 'flash_challenge', '⚡ Flash Challenge Complete!', `You earned: ${ch.reward_type === 'box' ? '1 Mystery Box' : ch.reward_value + ' ' + ch.reward_type}`);
+  const rewardLabel = ch.reward_type === 'box' ? '1 Mystery Box' : `${ch.reward_value.toLocaleString()} ${ch.reward_type}`;
+  res.json({ success: true, reward_type: ch.reward_type, reward_value: ch.reward_value, message: `⚡ Claimed! You earned ${rewardLabel}!` });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CARDS
+// ═══════════════════════════════════════════════════════════════════════════════
+const PACK_RARITY_WEIGHTS = {
+  common:    { common:60, uncommon:30, rare:8, epic:2, legendary:0 },
+  rare:      { common:10, uncommon:30, rare:40, epic:17, legendary:3 },
+  legendary: { common:0,  uncommon:5,  rare:20, epic:40, legendary:35 },
+};
+
+async function _drawCard(packType) {
+  const weights = PACK_RARITY_WEIGHTS[packType] || PACK_RARITY_WEIGHTS.common;
+  const total = Object.values(weights).reduce((s, w) => s + w, 0);
+  let roll = Math.random() * total;
+  let rarity = 'common';
+  for (const [r, w] of Object.entries(weights)) { roll -= w; if (roll <= 0) { rarity = r; break; } }
+  const cards = await db.all('SELECT * FROM card_definitions WHERE rarity = ?', [rarity]);
+  if (!cards.length) {
+    const fallback = await db.all('SELECT * FROM card_definitions WHERE rarity = ?', ['common']);
+    return fallback[Math.floor(Math.random() * fallback.length)];
+  }
+  return cards[Math.floor(Math.random() * cards.length)];
+}
+
+app.get('/api/cards/catalog', async (req, res) => {
+  const cards = await db.all('SELECT * FROM card_definitions ORDER BY rarity, name');
+  res.json({ cards });
+});
+
+app.get('/api/cards/collection', authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const owned = await db.all(
+    `SELECT pc.id, pc.card_key, pc.level, pc.acquired_at, cd.name, cd.rarity, cd.icon, cd.attack, cd.defense, cd.hustle, cd.luck, cd.archetype
+     FROM player_cards pc JOIN card_definitions cd ON cd.card_key = pc.card_key
+     WHERE pc.user_id = ? ORDER BY cd.rarity DESC, cd.name`, [uid]);
+  res.json({ cards: owned });
+});
+
+app.post('/api/cards/pack/open', authenticateUser, async (req, res) => {
+  const { packType } = req.body; // 'common' | 'rare' | 'legendary'
+  const uid = req.user.userId;
+  const COSTS = { common: 100, rare: 300, legendary: 1000 };
+  const cost = COSTS[packType];
+  if (!cost) return res.status(400).json({ error: 'Invalid pack type' });
+  const cred = await db.get('SELECT credits FROM sml_credits WHERE user_id = ?', [uid]);
+  if (!cred || cred.credits < cost) return res.status(400).json({ error: 'Not enough SML Credits' });
+  await db.run('UPDATE sml_credits SET credits = credits - ? WHERE user_id = ?', [cost, uid]);
+  const drawn = [];
+  for (let i = 0; i < 5; i++) {
+    const card = await _drawCard(packType);
+    await db.run('INSERT INTO player_cards (user_id, card_key, level, acquired_at) VALUES (?, ?, 1, ?)', [uid, card.card_key, Date.now()]);
+    drawn.push(card);
+  }
+  res.json({ success: true, cards: drawn, creditsSpent: cost });
+});
+
+app.post('/api/stripe/card-pack', authenticateUser, async (req, res) => {
+  const { packType } = req.body;
+  if (!['rare', 'legendary'].includes(packType)) return res.status(400).json({ error: 'Invalid pack type' });
+  try {
+    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const { checkoutUrl } = await stripeProcessor.createCardPackCheckout(req.user.userId, acc.email, packType);
+    res.json({ checkoutUrl });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/cards/market', async (req, res) => {
+  const listings = await db.all(
+    `SELECT cml.id, cml.seller_id, cml.card_key, cml.price_credits, cml.listed_at,
+            cd.name, cd.rarity, cd.icon, cd.attack, cd.defense, cd.hustle, cd.luck,
+            a.full_name AS seller_name
+     FROM card_market_listings cml
+     JOIN card_definitions cd ON cd.card_key = cml.card_key
+     JOIN accounts a ON a.id = cml.seller_id
+     WHERE cml.sold_at IS NULL ORDER BY cml.listed_at DESC LIMIT 50`);
+  res.json({ listings });
+});
+
+app.post('/api/cards/market/list', authenticateUser, async (req, res) => {
+  const { playerCardId, priceCredits } = req.body;
+  const uid = req.user.userId;
+  const card = await db.get('SELECT * FROM player_cards WHERE id = ? AND user_id = ?', [playerCardId, uid]);
+  if (!card) return res.status(404).json({ error: 'Card not found' });
+  await db.run('INSERT INTO card_market_listings (seller_id, player_card_id, card_key, price_credits, listed_at) VALUES (?, ?, ?, ?, ?)',
+    [uid, playerCardId, card.card_key, priceCredits, Date.now()]);
+  res.json({ success: true });
+});
+
+app.post('/api/cards/market/buy/:listingId', authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const listing = await db.get('SELECT * FROM card_market_listings WHERE id = ? AND sold_at IS NULL', [req.params.listingId]);
+  if (!listing) return res.status(404).json({ error: 'Listing not found or already sold' });
+  if (listing.seller_id === uid) return res.status(400).json({ error: 'Cannot buy your own listing' });
+  const cred = await db.get('SELECT credits FROM sml_credits WHERE user_id = ?', [uid]);
+  if (!cred || cred.credits < listing.price_credits) return res.status(400).json({ error: 'Not enough credits' });
+  await db.run('UPDATE sml_credits SET credits = credits - ? WHERE user_id = ?', [listing.price_credits, uid]);
+  await _addCredits(listing.seller_id, listing.price_credits, 'card_sale', `Card sold: ${listing.card_key}`);
+  await db.run('UPDATE player_cards SET user_id = ? WHERE id = ?', [uid, listing.player_card_id]);
+  await db.run('UPDATE card_market_listings SET sold_at = ? WHERE id = ?', [Date.now(), listing.id]);
+  await _notify(listing.seller_id, 'card_sold', '💳 Card Sold!', `Your card sold for ${listing.price_credits} credits`);
+  res.json({ success: true });
+});
+
+app.post('/api/cards/duel/send', authenticateUser, async (req, res) => {
+  const { opponentId, wagerPaper } = req.body;
+  const uid = req.user.userId;
+  const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+  if (!portfolio || portfolio.cash_balance < (wagerPaper || 0)) return res.status(400).json({ error: 'Insufficient funds for wager' });
+  await db.run('INSERT INTO card_duels (challenger_id, opponent_id, wager_paper, status, created_at) VALUES (?, ?, ?, ?, ?)',
+    [uid, opponentId, wagerPaper || 0, 'pending', Date.now()]);
+  await _notify(opponentId, 'card_duel_challenge', '🃏 Card Duel Challenge!', 'Someone challenged you to a card duel! Check the Cards tab to respond.');
+  res.json({ success: true });
+});
+
+app.post('/api/cards/duel/resolve/:duelId', authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const duel = await db.get('SELECT * FROM card_duels WHERE id = ? AND (challenger_id = ? OR opponent_id = ?) AND status = ?',
+    [req.params.duelId, uid, uid, 'pending']);
+  if (!duel) return res.status(404).json({ error: 'Duel not found' });
+  const cCards = await db.all('SELECT pc.*, cd.attack+cd.defense+cd.hustle+cd.luck AS power FROM player_cards pc JOIN card_definitions cd ON cd.card_key = pc.card_key WHERE pc.user_id = ? ORDER BY power DESC LIMIT 3', [duel.challenger_id]);
+  const oCards = await db.all('SELECT pc.*, cd.attack+cd.defense+cd.hustle+cd.luck AS power FROM player_cards pc JOIN card_definitions cd ON cd.card_key = pc.card_key WHERE pc.user_id = ? ORDER BY power DESC LIMIT 3', [duel.opponent_id]);
+  const cPower = cCards.reduce((s, c) => s + c.power, 0) + Math.floor(Math.random() * 50);
+  const oPower = oCards.reduce((s, c) => s + c.power, 0) + Math.floor(Math.random() * 50);
+  const winnerId = cPower >= oPower ? duel.challenger_id : duel.opponent_id;
+  const loserId  = winnerId === duel.challenger_id ? duel.opponent_id : duel.challenger_id;
+  if (duel.wager_paper > 0) {
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [duel.wager_paper, winnerId]);
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [duel.wager_paper, loserId]);
+    await _syncLeaderboard(winnerId); await _syncLeaderboard(loserId);
+  }
+  await db.run('UPDATE card_duels SET winner_id = ?, status = ?, resolved_at = ? WHERE id = ?', [winnerId, 'resolved', Date.now(), duel.id]);
+  await _notify(winnerId, 'card_duel_win', '🃏 Card Duel Win!', `You won the duel${duel.wager_paper ? ' and $'+duel.wager_paper.toLocaleString()+' paper money!' : '!'}`);
+  await _notify(loserId, 'card_duel_loss', '🃏 Card Duel Lost', 'Better luck next time!');
+  res.json({ success: true, winnerId, challengerPower: cPower, opponentPower: oPower });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PETS
+// ═══════════════════════════════════════════════════════════════════════════════
+app.get('/api/pets/catalog', (req, res) => res.json({ pets: PETS }));
+
+app.get('/api/pets/mine', authenticateUser, async (req, res) => {
+  const rows = await db.all('SELECT * FROM player_pets WHERE user_id = ? ORDER BY acquired_at DESC', [req.user.userId]);
+  const pets = rows.map(r => {
+    const def = PETS[r.pet_key] || {};
+    return { ...r, icon: def.icon, daily_income_cached: def.daily_income || 0, guard_bonus: def.guard_bonus || 0 };
+  });
+  res.json({ pets });
+});
+
+app.post('/api/pets/feed/:petId', authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const pet = await db.get('SELECT * FROM player_pets WHERE id = ? AND user_id = ?', [req.params.petId, uid]);
+  if (!pet) return res.status(404).json({ error: 'Pet not found' });
+  const now = Date.now();
+  const lastFed = pet.last_fed_at || 0;
+  const hoursSince = (now - lastFed) / 3600000;
+  if (hoursSince < 20) return res.status(400).json({ error: 'Pet was fed recently. Come back in a few hours!' });
+  const newHappiness = Math.min(100, pet.happiness + 20);
+  await db.run('UPDATE player_pets SET last_fed_at = ?, happiness = ?, xp = xp + 10 WHERE id = ?', [now, newHappiness, pet.id]);
+  res.json({ success: true, happiness: newHappiness });
+});
+
+app.post('/api/pets/name/:petId', authenticateUser, async (req, res) => {
+  const { name } = req.body;
+  if (!name || name.length > 24) return res.status(400).json({ error: 'Name must be 1–24 chars' });
+  const pet = await db.get('SELECT id FROM player_pets WHERE id = ? AND user_id = ?', [req.params.petId, req.user.userId]);
+  if (!pet) return res.status(404).json({ error: 'Pet not found' });
+  await db.run('UPDATE player_pets SET name = ? WHERE id = ?', [name, pet.id]);
+  res.json({ success: true });
+});
+
+app.post('/api/stripe/buy-pet', authenticateUser, async (req, res) => {
+  const { petKey } = req.body;
+  const pet = PETS[petKey];
+  if (!pet) return res.status(400).json({ error: 'Unknown pet' });
+  try {
+    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const { checkoutUrl } = await stripeProcessor.createPetCheckout(req.user.userId, acc.email, petKey, pet.label, pet.price_cents);
+    res.json({ checkoutUrl });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Collect passive pet income
+app.post('/api/pets/collect', authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const pets = await db.all('SELECT * FROM player_pets WHERE user_id = ?', [uid]);
+  if (!pets.length) return res.status(400).json({ error: 'No pets' });
+  let total = 0;
+  const now = Date.now();
+  for (const pet of pets) {
+    const petDef = PETS[pet.pet_key];
+    if (!petDef) continue;
+    const hoursOwned = Math.min((now - pet.acquired_at) / 3600000, 24);
+    const happinessMult = pet.happiness / 100;
+    const income = Math.floor(petDef.daily_income * hoursOwned / 24 * happinessMult * (1 + pet.level * 0.1));
+    total += income;
+    const newHappiness = Math.max(0, pet.happiness - 5);
+    await db.run('UPDATE player_pets SET happiness = ?, xp = xp + 5 WHERE id = ?', [newHappiness, pet.id]);
+  }
+  if (total > 0) {
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [total, uid]);
+    await _syncLeaderboard(uid);
+  }
+  res.json({ success: true, earned: total });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CARS / GARAGE
+// ═══════════════════════════════════════════════════════════════════════════════
+app.get('/api/cars/catalog', (req, res) => res.json({ cars: CARS }));
+
+app.get('/api/cars/mine', authenticateUser, async (req, res) => {
+  const rows = await db.all('SELECT * FROM player_cars WHERE user_id = ? ORDER BY acquired_at DESC', [req.user.userId]);
+  const cars = rows.map(r => ({ ...r, ...(CARS[r.car_key] || {}) }));
+  res.json({ cars });
+});
+
+app.post('/api/stripe/buy-car', authenticateUser, async (req, res) => {
+  const { carKey } = req.body;
+  const car = CARS[carKey];
+  if (!car) return res.status(400).json({ error: 'Unknown car' });
+  try {
+    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const { checkoutUrl } = await stripeProcessor.createCarCheckout(req.user.userId, acc.email, carKey, car.label, car.price_cents);
+    res.json({ checkoutUrl });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/stripe/casino-vip', authenticateUser, async (req, res) => {
+  try {
+    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const { checkoutUrl } = await stripeProcessor.createCasinoVIPCheckout(req.user.userId, acc.email);
+    res.json({ checkoutUrl });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get('/api/races/current', async (req, res) => {
+  const race = await db.get("SELECT re.*, (SELECT COUNT(*) FROM race_entries WHERE race_id = re.id) AS entrants FROM race_events re WHERE re.status = 'open' ORDER BY re.created_at DESC LIMIT 1");
+  res.json({ race: race || null });
+});
+
+app.post('/api/races/enter', authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const now = Date.now();
+  const race = await db.get('SELECT * FROM race_events WHERE status = ? AND ends_at > ?', ['open', now]);
+  if (!race) return res.status(404).json({ error: 'No race currently open' });
+  const already = await db.get('SELECT id FROM race_entries WHERE race_id = ? AND user_id = ?', [race.id, uid]);
+  if (already) return res.status(400).json({ error: 'Already entered this race' });
+  const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+  if (!portfolio || portfolio.cash_balance < race.entry_fee) return res.status(400).json({ error: 'Not enough paper money for entry fee' });
+  const myBestCar = await db.get('SELECT car_key FROM player_cars WHERE user_id = ? ORDER BY acquired_at DESC LIMIT 1', [uid]);
+  const carKey = myBestCar ? myBestCar.car_key : 'beater';
+  const carDef = CARS[carKey] || CARS.beater;
+  const speedScore = carDef.speed + Math.floor(Math.random() * 30);
+  await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [race.entry_fee, uid]);
+  await db.run('UPDATE race_events SET prize_pool = prize_pool + ? WHERE id = ?', [race.entry_fee, race.id]);
+  await db.run('INSERT INTO race_entries (race_id, user_id, car_key, speed_score, entered_at) VALUES (?, ?, ?, ?, ?)', [race.id, uid, carKey, speedScore, now]);
+  await _syncLeaderboard(uid);
+  res.json({ success: true, carKey, speedScore });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEAT LEVEL
+// ═══════════════════════════════════════════════════════════════════════════════
+app.get('/api/heat/level', authenticateUser, async (req, res) => {
+  const acc = await db.get('SELECT heat_level FROM accounts WHERE id = ?', [req.user.userId]);
+  res.json({ heatLevel: acc ? acc.heat_level : 0 });
+});
+
+app.post('/api/heat/bribe', authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const BRIBE_COST = 500;
+  const cred = await db.get('SELECT credits FROM sml_credits WHERE user_id = ?', [uid]);
+  if (!cred || cred.credits < BRIBE_COST) return res.status(400).json({ error: 'Need 500 SML Credits to bribe' });
+  const acc = await db.get('SELECT heat_level FROM accounts WHERE id = ?', [uid]);
+  if (!acc || acc.heat_level === 0) return res.status(400).json({ error: 'You have no heat to cool down' });
+  await db.run('UPDATE sml_credits SET credits = credits - ? WHERE user_id = ?', [BRIBE_COST, uid]);
+  await db.run('UPDATE accounts SET heat_level = MAX(0, heat_level - 1) WHERE id = ?', [uid]);
+  const updated = await db.get('SELECT heat_level FROM accounts WHERE id = ?', [uid]);
+  res.json({ success: true, heatLevel: updated.heat_level });
+});
+
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
@@ -4745,6 +5226,74 @@ async function startServer() {
     await db.run('INSERT OR IGNORE INTO community_challenges (week_key, type, target, reward_paper) VALUES (?, ?, ?, ?)',
       [wk, 'heist', COMMUNITY_CHALLENGE_TARGET, COMMUNITY_CHALLENGE_REWARD]);
   }, 3_600_000);
+
+  // Flash Challenge scheduler — fires 4× daily at roughly 6-hour intervals
+  const FLASH_SCHEDULE_MS = 6 * 60 * 60 * 1000;
+  const _emitFlashChallenge = async () => {
+    try {
+      const tpl = FLASH_CHALLENGES[Math.floor(Math.random() * FLASH_CHALLENGES.length)];
+      const now = Date.now();
+      const durationMs = (tpl.duration_mins || 20) * 60 * 1000;
+      const expiresAt = now + durationMs;
+      const label = tpl.title || tpl.label || tpl.type;
+      const rewardAmount = tpl.reward_value || tpl.reward_amount || 0;
+      const result = await db.run(
+        'INSERT INTO flash_challenges (type, title, description, reward_type, reward_value, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [tpl.type, label, tpl.description, tpl.reward_type, rewardAmount, expiresAt, now]
+      );
+      const challenge = await db.get('SELECT * FROM flash_challenges WHERE id = ?', [result.lastID]);
+      if (challenge) {
+        io.emit('flash_challenge', { challenge, expiresAt });
+        console.log(`[FlashChallenge] Emitted: ${label} (expires in ${tpl.duration_mins}min)`);
+      }
+    } catch (e) { console.error('[FlashChallenge]', e.message); }
+  };
+  await _emitFlashChallenge();
+  setInterval(_emitFlashChallenge, FLASH_SCHEDULE_MS);
+
+  // Heat Level cooldown — reduce by 1 every 6 hours for players above 0
+  setInterval(async () => {
+    try {
+      await db.run('UPDATE accounts SET heat_level = heat_level - 1 WHERE heat_level > 0');
+      console.log('[HeatCooldown] Reduced heat by 1 for all hot players');
+    } catch (e) { console.error('[HeatCooldown]', e.message); }
+  }, 6 * 60 * 60 * 1000);
+
+  // Race resolution — every 4 hours, close current race and pay winners
+  const RACE_INTERVAL_MS = 4 * 60 * 60 * 1000;
+  const _resolveRace = async () => {
+    try {
+      const race = await db.get("SELECT * FROM race_events WHERE status = 'open' ORDER BY created_at ASC LIMIT 1");
+      if (!race) {
+        // Create a new race
+        const now = Date.now();
+        await db.run("INSERT INTO race_events (status, prize_pool, starts_at, ends_at, created_at) VALUES ('open', 0, ?, ?, ?)", [now, now + RACE_INTERVAL_MS, now]);
+        console.log('[Race] New race opened');
+        return;
+      }
+      const entries = await db.all('SELECT * FROM race_entries WHERE race_id = ? ORDER BY speed_score DESC', [race.id]);
+      if (entries.length < 2) { return; } // wait for more entrants
+      await db.run("UPDATE race_events SET status = 'closed', closed_at = ? WHERE id = ?", [Date.now(), race.id]);
+      const prizePool = race.prize_pool;
+      const payouts = [0.5, 0.3, 0.2];
+      for (let i = 0; i < Math.min(3, entries.length); i++) {
+        const winner = entries[i];
+        const winAmount = Math.floor(prizePool * payouts[i]);
+        if (winAmount > 0) {
+          const now = Date.now();
+          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [winAmount, now, winner.user_id]);
+          await _syncLeaderboard(winner.user_id);
+          emitToUser(winner.user_id, 'race_result', { place: i + 1, prize: winAmount, totalEntrants: entries.length });
+          await _notify(winner.user_id, 'race_win', `🏁 Race Result: #${i + 1} Place!`, `You won $${winAmount.toLocaleString()} from the race prize pool!`);
+        }
+      }
+      // Open the next race
+      await db.run("INSERT INTO race_events (status, prize_pool, created_at) VALUES ('open', 0, ?)", [Date.now()]);
+      console.log(`[Race] Resolved race ${race.id} — paid ${Math.min(3, entries.length)} winners from $${prizePool} pool`);
+    } catch (e) { console.error('[Race]', e.message); }
+  };
+  await _resolveRace();
+  setInterval(_resolveRace, RACE_INTERVAL_MS);
 
   // Limit Order checker — every 30 seconds
   setInterval(async () => {

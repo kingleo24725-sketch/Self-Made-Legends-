@@ -622,6 +622,133 @@ class DB {
         credits_awarded INTEGER NOT NULL,
         created_at      INTEGER NOT NULL
       )`,
+
+      // ── Mystery Loot Boxes ────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS mystery_boxes (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        rarity     TEXT NOT NULL DEFAULT 'common',
+        source     TEXT NOT NULL,
+        opened_at  INTEGER,
+        created_at INTEGER NOT NULL
+      )`,
+
+      // ── Flash Challenges ──────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS flash_challenges (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        type         TEXT NOT NULL,
+        title        TEXT NOT NULL,
+        description  TEXT NOT NULL,
+        reward_type  TEXT NOT NULL,
+        reward_value INTEGER NOT NULL,
+        expires_at   INTEGER NOT NULL,
+        created_at   INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS flash_challenge_completions (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        challenge_id INTEGER NOT NULL,
+        user_id      TEXT NOT NULL,
+        completed_at INTEGER NOT NULL,
+        UNIQUE(challenge_id, user_id)
+      )`,
+
+      // ── Card Collection System ────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS card_definitions (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        card_key    TEXT NOT NULL UNIQUE,
+        name        TEXT NOT NULL,
+        rarity      TEXT NOT NULL,
+        archetype   TEXT NOT NULL,
+        icon        TEXT NOT NULL,
+        attack      INTEGER NOT NULL DEFAULT 50,
+        defense     INTEGER NOT NULL DEFAULT 50,
+        hustle      INTEGER NOT NULL DEFAULT 50,
+        luck        INTEGER NOT NULL DEFAULT 50,
+        created_at  INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS player_cards (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     TEXT NOT NULL,
+        card_key    TEXT NOT NULL,
+        level       INTEGER NOT NULL DEFAULT 1,
+        acquired_at INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS card_market_listings (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        seller_id      TEXT NOT NULL,
+        player_card_id INTEGER NOT NULL,
+        card_key       TEXT NOT NULL,
+        price_credits  INTEGER NOT NULL,
+        listed_at      INTEGER NOT NULL,
+        sold_at        INTEGER
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS card_duels (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        challenger_id TEXT NOT NULL,
+        opponent_id   TEXT NOT NULL,
+        wager_paper   INTEGER NOT NULL DEFAULT 0,
+        winner_id     TEXT,
+        status        TEXT NOT NULL DEFAULT 'pending',
+        created_at    INTEGER NOT NULL,
+        resolved_at   INTEGER
+      )`,
+
+      // ── Pets System ───────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS player_pets (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        pet_key      TEXT NOT NULL,
+        name         TEXT NOT NULL DEFAULT 'My Pet',
+        level        INTEGER NOT NULL DEFAULT 1,
+        xp           INTEGER NOT NULL DEFAULT 0,
+        happiness    INTEGER NOT NULL DEFAULT 100,
+        last_fed_at  INTEGER,
+        acquired_at  INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS pet_accessories (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id       TEXT NOT NULL,
+        accessory_key TEXT NOT NULL,
+        pet_id        INTEGER,
+        acquired_at   INTEGER NOT NULL
+      )`,
+
+      // ── Cars / Garage System ──────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS player_cars (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        car_key      TEXT NOT NULL,
+        name         TEXT NOT NULL,
+        paint_color  TEXT NOT NULL DEFAULT '#ff6600',
+        acquired_at  INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS race_events (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        status       TEXT NOT NULL DEFAULT 'open',
+        entry_fee    INTEGER NOT NULL DEFAULT 10000,
+        prize_pool   INTEGER NOT NULL DEFAULT 0,
+        starts_at    INTEGER NOT NULL,
+        ends_at      INTEGER NOT NULL,
+        created_at   INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS race_entries (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        race_id      INTEGER NOT NULL,
+        user_id      TEXT NOT NULL,
+        car_key      TEXT NOT NULL,
+        speed_score  INTEGER NOT NULL,
+        finish_place INTEGER,
+        payout       INTEGER NOT NULL DEFAULT 0,
+        entered_at   INTEGER NOT NULL,
+        UNIQUE(race_id, user_id)
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)
@@ -629,6 +756,31 @@ class DB {
     try { await this.run('ALTER TABLE heist_attempts ADD COLUMN charges INTEGER DEFAULT 0'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_creator INTEGER DEFAULT 0'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_elite INTEGER DEFAULT 0'); } catch (_) {}
+    await db.run(`ALTER TABLE accounts ADD COLUMN heat_level INTEGER NOT NULL DEFAULT 0`).catch(() => {});
+    try { await this.run('ALTER TABLE accounts ADD COLUMN casino_vip INTEGER DEFAULT 0'); } catch (_) {}
+
+    // Seed card_definitions with initial cards if empty
+    const cardCount = await db.get('SELECT COUNT(*) as c FROM card_definitions');
+    if (cardCount.c === 0) {
+      const INITIAL_CARDS = [
+        { card_key:'the_trader',      name:'The Trader',            rarity:'common',    archetype:'finance',    icon:'📈', attack:40, defense:30, hustle:70, luck:50 },
+        { card_key:'the_hustler',     name:'The Hustler',           rarity:'common',    archetype:'street',     icon:'💰', attack:50, defense:40, hustle:80, luck:40 },
+        { card_key:'the_enforcer',    name:'The Enforcer',          rarity:'common',    archetype:'underworld', icon:'👊', attack:80, defense:50, hustle:40, luck:30 },
+        { card_key:'the_ghost',       name:'The Ghost',             rarity:'uncommon',  archetype:'stealth',    icon:'👻', attack:30, defense:70, hustle:60, luck:80 },
+        { card_key:'the_boss',        name:'The Boss',              rarity:'uncommon',  archetype:'empire',     icon:'🏆', attack:60, defense:60, hustle:70, luck:60 },
+        { card_key:'the_mogul',       name:'The Real Estate Mogul', rarity:'uncommon',  archetype:'finance',    icon:'🏙️', attack:30, defense:80, hustle:60, luck:70 },
+        { card_key:'crypto_king',     name:'The Crypto King',       rarity:'rare',      archetype:'finance',    icon:'₿',  attack:50, defense:50, hustle:90, luck:90 },
+        { card_key:'street_chemist',  name:'The Street Chemist',    rarity:'rare',      archetype:'underworld', icon:'⚗️', attack:70, defense:60, hustle:80, luck:60 },
+        { card_key:'the_legend',      name:'The Legend',            rarity:'epic',      archetype:'prestige',   icon:'👑', attack:80, defense:80, hustle:90, luck:80 },
+        { card_key:'self_made',       name:'Self-Made',             rarity:'legendary', archetype:'prestige',   icon:'💎', attack:95, defense:95, hustle:99, luck:95 },
+      ];
+      for (const c of INITIAL_CARDS) {
+        await db.run(
+          'INSERT OR IGNORE INTO card_definitions (card_key,name,rarity,archetype,icon,attack,defense,hustle,luck,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
+          [c.card_key, c.name, c.rarity, c.archetype, c.icon, c.attack, c.defense, c.hustle, c.luck, Date.now()]
+        );
+      }
+    }
   }
 }
 

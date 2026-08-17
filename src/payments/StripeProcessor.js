@@ -1,20 +1,20 @@
 const stripe = require("stripe");
 
-const CREATOR_FEE_CENTS = 1000; // $10.00/month
+const CREATOR_FEE_CENTS = 1500; // $15.00/month
 
 const CREDIT_PACKAGES = {
-  starter:  { credits: 500,  amount_cents: 500,  label: 'SML Credits — Starter Pack (500 Credits)' },
-  legends:  { credits: 2500, amount_cents: 2000, label: 'SML Credits — Legends Pack (2,500 Credits)' },
-  champion: { credits: 7000, amount_cents: 5000, label: 'SML Credits — Champion Pack (7,000 Credits)' },
+  starter:  { credits: 500,  amount_cents: 1000, label: 'SML Credits — Starter Pack (500 Credits)' },
+  legends:  { credits: 2500, amount_cents: 2500, label: 'SML Credits — Legends Pack (2,500 Credits)' },
+  champion: { credits: 7000, amount_cents: 5500, label: 'SML Credits — Champion Pack (7,000 Credits)' },
 };
 
 // Paper money packages — real money → virtual paper trading capital
 const PAPER_MONEY_PACKAGES = {
-  hustle:   { paper: 1000,   amount_cents: 499,  label: 'Hustle Pack — $1,000 Paper Money' },
-  grind:    { paper: 5000,   amount_cents: 1099, label: 'Grind Pack — $5,000 Paper Money' },
-  investor: { paper: 25000,  amount_cents: 1500, label: 'Investor Pack — $25,000 Paper Money' },
-  whale:    { paper: 50000,  amount_cents: 2000, label: 'Whale Pack — $50,000 Paper Money' },
-  ultimate: { paper: 200000, amount_cents: 7500, label: 'Ultimate Pack — $200,000 Paper Money' },
+  hustle:   { paper: 1000,   amount_cents: 999,  label: 'Hustle Pack — $1,000 Paper Money' },
+  grind:    { paper: 5000,   amount_cents: 1599, label: 'Grind Pack — $5,000 Paper Money' },
+  investor: { paper: 25000,  amount_cents: 2000, label: 'Investor Pack — $25,000 Paper Money' },
+  whale:    { paper: 50000,  amount_cents: 2500, label: 'Whale Pack — $50,000 Paper Money' },
+  ultimate: { paper: 200000, amount_cents: 8000, label: 'Ultimate Pack — $200,000 Paper Money' },
 };
 
 // Returns Unix timestamp for midnight UTC on the 1st of next month
@@ -28,17 +28,17 @@ class StripeProcessor {
   constructor() {
     this.stripe = stripe(process.env.STRIPE_SECRET_KEY);
     this.publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
-    // Cached Stripe Price ID for the $10/month subscription
+    // Cached Stripe Price ID for the $15/month subscription
     this._priceId = process.env.STRIPE_CREATOR_PRICE_ID || null;
   }
 
-  // Get or create the recurring $10/month Price on Stripe
+  // Get or create the recurring $15/month Price on Stripe
   async getOrCreatePrice() {
     if (this._priceId) return this._priceId;
 
     const product = await this.stripe.products.create({
       name: "Self-Made Legends Creator Subscription",
-      description: "$10/month creator membership — billed on the 1st of each month",
+      description: "$15/month creator membership — billed on the 1st of each month",
     });
 
     const price = await this.stripe.prices.create({
@@ -52,7 +52,7 @@ class StripeProcessor {
     return price.id;
   }
 
-  // Create a Stripe Checkout Session for the $10/month subscription
+  // Create a Stripe Checkout Session for the $15/month subscription
   async createCheckoutSession(userId, userEmail, successUrl, cancelUrl) {
     const priceId = await this.getOrCreatePrice();
 
@@ -108,7 +108,7 @@ class StripeProcessor {
     return { cancelled: sub.status === "canceled", status: sub.status };
   }
 
-  // Create a Stripe Checkout Session for the Season Pass ($2.99 one-time)
+  // Create a Stripe Checkout Session for the Season Pass ($14.99 one-time)
   async createSeasonPassCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -118,7 +118,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Season Pass', description: 'Premium badge frames, 1.5× XP multiplier, private leaderboard tier' },
-          unit_amount: 999,
+          unit_amount: 1499,
         },
         quantity: 1,
       }],
@@ -154,17 +154,17 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Premium Coach Pro ($4.99/month recurring)
+  // Create a Stripe Checkout Session for Premium Coach Pro ($9.99/month recurring)
   async createCoachProCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     if (!this._coachProPriceId) {
       const product = await this.stripe.products.create({
         name: 'SML Premium AI Coach',
-        description: '$4.99/month — Deeper AI responses, weekly personalized reports',
+        description: '$9.99/month — Deeper AI responses, weekly personalized reports',
       });
       const price = await this.stripe.prices.create({
         product: product.id,
-        unit_amount: 499,
+        unit_amount: 999,
         currency: 'usd',
         recurring: { interval: 'month' },
       });
@@ -209,7 +209,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Tournament Entry ($5.00 one-time)
+  // Create a Stripe Checkout Session for Tournament Entry ($10.00 one-time)
   async createTournamentEntryCheckout(userId, userEmail, tournamentId) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -219,7 +219,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Tournament Entry', description: '80% of entry pool pays top-3 players' },
-          unit_amount: 500,
+          unit_amount: 1000,
         },
         quantity: 1,
       }],
@@ -231,7 +231,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Jail Buyout ($5.00 one-time → release + $1k paper money)
+  // Create a Stripe Checkout Session for Jail Buyout ($10.00 one-time → release + $1k paper money)
   async createJailBuyoutCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -241,7 +241,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Jail Buyout', description: 'Pay your way out of jail + receive $1,000 paper money' },
-          unit_amount: 500,
+          unit_amount: 1000,
         },
         quantity: 1,
       }],
@@ -355,7 +355,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Battle Pass Season 1 ($4.99)
+  // Create a Stripe Checkout Session for Battle Pass Season 1 ($9.99)
   async createBattlePassCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -363,7 +363,7 @@ class StripeProcessor {
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
         product_data: { name: 'SML Battle Pass — Season 1', description: 'Unlock premium tier rewards across all 10 Battle Pass tiers' },
-        unit_amount: 499 }, quantity: 1 }],
+        unit_amount: 999 }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=battle_pass`,
       cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
@@ -372,16 +372,16 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for VIP Elite Membership ($24.99/month recurring)
+  // Create a Stripe Checkout Session for VIP Elite Membership ($29.99/month recurring)
   async createEliteCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const product = await this.stripe.products.create({
       name: 'Self-Made Legends Elite Membership',
-      description: '$24.99/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
+      description: '$29.99/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
     });
     const price = await this.stripe.prices.create({
       product: product.id,
-      unit_amount: 2499,
+      unit_amount: 2999,
       currency: 'usd',
       recurring: { interval: 'month' },
     });
@@ -414,7 +414,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for the Legend Starter Bundle ($14.99 one-time)
+  // Create a Stripe Checkout Session for the Legend Starter Bundle ($19.99 one-time)
   async createLegendBundleCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -422,11 +422,113 @@ class StripeProcessor {
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
         product_data: { name: 'SML Legend Starter Bundle', description: '2,500 Credits + $5,000 Paper Money + Neon Frame + Season XP Boost' },
-        unit_amount: 1499 }, quantity: 1 }],
+        unit_amount: 1999 }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=legend_bundle`,
       cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
       metadata: { userId: String(userId), type: 'legend_bundle', platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Pet purchase checkout
+  async createPetCheckout(userId, userEmail, petKey, petLabel, priceCents) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Pet — ${petLabel}`, description: 'Your new Self-Made Legends pet companion' },
+        unit_amount: priceCents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=pet_${petKey}`,
+      cancel_url: `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `pet_${petKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Car purchase checkout
+  async createCarCheckout(userId, userEmail, carKey, carLabel, priceCents) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Garage — ${carLabel}`, description: 'Street racing car + heist getaway vehicle' },
+        unit_amount: priceCents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=car_${carKey}`,
+      cancel_url: `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `car_${carKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Card pack direct purchase checkout
+  async createCardPackCheckout(userId, userEmail, packType) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const PACKS = {
+      rare:      { label: 'Rare Card Pack',      desc: '5 cards, Rare+ guaranteed',       amount: 999 },
+      legendary: { label: 'Legendary Card Pack', desc: '5 cards, Legendary+ guaranteed', amount: 1999 },
+    };
+    const pack = PACKS[packType];
+    if (!pack) throw new Error(`Unknown card pack: ${packType}`);
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML ${pack.label}`, description: pack.desc },
+        unit_amount: pack.amount }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=card_pack_${packType}`,
+      cancel_url: `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `card_pack_${packType}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Premium Loot Box 5-pack checkout
+  async createLootBoxCheckout(userId, userEmail) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: 'SML Premium Loot Box (5-pack)', description: 'Premium loot: credits, rare cards, exotic pets, hypercars' },
+        unit_amount: 999 }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=loot_box_premium`,
+      cancel_url: `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: 'loot_box_premium', platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // VIP Casino Access ($14.99/month)
+  async createCasinoVIPCheckout(userId, userEmail) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    if (!this._casinoVIPPriceId) {
+      const product = await this.stripe.products.create({
+        name: 'SML VIP Casino Access',
+        description: '$14.99/month — High-stakes tables, 10× rewards, VIP room',
+      });
+      const price = await this.stripe.prices.create({
+        product: product.id,
+        unit_amount: 1499,
+        currency: 'usd',
+        recurring: { interval: 'month' },
+      });
+      this._casinoVIPPriceId = price.id;
+    }
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price: this._casinoVIPPriceId, quantity: 1 }],
+      mode: 'subscription',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=casino_vip`,
+      cancel_url: `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: 'casino_vip', platform: 'Self-Made Legends' },
     });
     return { checkoutUrl: session.url, sessionId: session.id };
   }
