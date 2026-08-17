@@ -321,6 +321,57 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
+  // Create a Stripe Checkout Session for a Getaway Vehicle purchase (permanent)
+  async createGetawayCheckout(userId, userEmail, vehicleKey, vehicleLabel, priceCents) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Getaway — ${vehicleLabel}`, description: 'Permanent getaway vehicle: reduces catch rate and bail cost' },
+        unit_amount: priceCents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=getaway_${vehicleKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `getaway_${vehicleKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session for Virtual Real Estate purchase (permanent)
+  async createRealEstateCheckout(userId, userEmail, propertyKey, propertyLabel, priceCents) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Real Estate — ${propertyLabel}`, description: 'Virtual property generating daily passive paper money income' },
+        unit_amount: priceCents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=realestate_${propertyKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: `realestate_${propertyKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session for Battle Pass Season 1 ($4.99)
+  async createBattlePassCheckout(userId, userEmail) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: 'SML Battle Pass — Season 1', description: 'Unlock premium tier rewards across all 10 Battle Pass tiers' },
+        unit_amount: 499 }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=battle_pass`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: 'battle_pass', platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
   // Handle Stripe webhook to confirm subscription events on the server
   constructWebhookEvent(rawBody, signature) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;

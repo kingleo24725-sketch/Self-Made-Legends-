@@ -645,6 +645,9 @@
       <button class="nav-tab" onclick="switchTab('referrals'); loadReferrals()">🔗 Refer</button>
       <button class="nav-tab" onclick="switchTab('community'); loadCommunityFeed()">🌐 Community</button>
       <button class="nav-tab" onclick="switchTab('underworld'); initUnderworld()">🥷 Underworld</button>
+      <button class="nav-tab" onclick="switchTab('games'); loadGamesTab()">🎰 Games</button>
+      <button class="nav-tab" onclick="switchTab('realestate'); loadRealEstate()">🏘️ Real Estate</button>
+      <button class="nav-tab" onclick="switchTab('battlepass'); loadBattlePass()">🎫 Battle Pass</button>
     </div>
     <div class="nav-right">
       <div style="display:flex; align-items:center; gap:10px;">
@@ -925,6 +928,41 @@
               <tr><td colspan="6" style="color:#444; text-align:center; padding:16px;">No trades yet</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Price Alerts -->
+      <div class="card" style="margin-top:16px;" id="alerts-card">
+        <h2 style="font-size:1em; margin-bottom:4px; color:#ffd700;">🔔 Price Alerts</h2>
+        <p style="color:#888; font-size:0.82em; margin-bottom:14px;">Get notified in real-time when a symbol crosses your target price.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <input id="alert-symbol-in" placeholder="Symbol (e.g. AAPL)" style="flex:2; min-width:120px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; text-transform:uppercase;">
+          <input id="alert-price" type="number" placeholder="Target price" style="flex:2; min-width:120px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+          <select id="alert-dir" style="flex:1; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; cursor:pointer;">
+            <option value="above">Above</option>
+            <option value="below">Below</option>
+          </select>
+          <button onclick="setAlert()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Set Alert</button>
+        </div>
+        <div id="alerts-list"><div style="color:#555; font-size:0.88em; text-align:center; padding:10px;">No active alerts.</div></div>
+      </div>
+
+      <!-- Stock Tips Marketplace -->
+      <div class="card" style="margin-top:16px;" id="tips-card">
+        <h2 style="font-size:1em; margin-bottom:4px; color:#00ff88;">💡 Stock Tips Marketplace</h2>
+        <p style="color:#888; font-size:0.82em; margin-bottom:14px;">Buy tips from other players or sell your own analysis for SML Credits.</p>
+        <div id="tips-list" style="margin-bottom:16px;"><div style="color:#555; font-size:0.88em; text-align:center; padding:10px;">Loading tips…</div></div>
+        <hr style="border-color:#222; margin-bottom:14px;">
+        <h3 style="color:#aaa; font-size:0.9em; margin-bottom:12px;">Create a Tip</h3>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <input id="tip-symbol" placeholder="Symbol (e.g. BTC)" style="flex:1; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; text-transform:uppercase;">
+          <select id="tip-direction" style="flex:1; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; cursor:pointer;">
+            <option value="up">📈 Bullish</option>
+            <option value="down">📉 Bearish</option>
+          </select>
+          <input id="tip-cost" type="number" value="50" min="10" placeholder="Credits cost" style="flex:1; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+          <input id="tip-note" placeholder="Your analysis (optional)" style="flex:3; min-width:200px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+          <button onclick="createTip()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">List Tip</button>
         </div>
       </div>
     </section>
@@ -1383,6 +1421,22 @@
           </div>
         </div>
 
+        <!-- Weekly Community Challenge -->
+        <div style="margin-top:20px; background:#1a1f2e; border:1px solid #2a3050; border-radius:16px; padding:20px;" id="comm-challenge-card">
+          <h3 style="color:#00ff88; margin:0 0 8px;">🌍 Weekly Community Challenge</h3>
+          <p style="color:#888; font-size:0.85em; margin:0 0 14px;">Complete heists together — when the community reaches the target, everyone who participated earns a reward.</p>
+          <div id="comm-challenge-status"><div style="color:#555; font-size:0.88em; text-align:center; padding:12px;">Loading…</div></div>
+        </div>
+
+        <!-- NPC Boss Heist -->
+        <div style="margin-top:20px; background:#1a1f2e; border:1px solid #2a3050; border-radius:16px; padding:20px;" id="comm-boss-card">
+          <h3 style="color:#ff4444; margin:0 0 8px;">👹 NPC Boss Heist</h3>
+          <p style="color:#888; font-size:0.85em; margin:0 0 14px;">Attack the weekly boss once per hour. When HP hits zero, the $50,000 loot pool splits among all attackers proportionally by damage dealt.</p>
+          <div id="boss-status"><div style="color:#555; font-size:0.88em; text-align:center; padding:12px;">Loading…</div></div>
+          <div id="boss-hp-bar" style="margin:12px 0;"></div>
+          <button onclick="attackBoss()" id="boss-attack-btn" style="background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">⚔️ Attack Boss (1/hr)</button>
+        </div>
+
         <!-- Leaderboard Snapshot -->
         <div style="margin-top:20px;background:#1a1f2e;border:1px solid #2a3050;border-radius:16px;overflow:hidden;">
           <div style="padding:14px 18px;border-bottom:1px solid #2a3050;">
@@ -1775,6 +1829,52 @@
         </div>
       </div>
 
+      <!-- Card: Bounty Board -->
+      <div class="card" id="uw-bounty-card" style="margin-bottom:20px;">
+        <h3 style="color:#ffd700; margin-bottom:4px;">💰 Bounty Board</h3>
+        <p style="color:#888; font-size:0.82em; margin-bottom:12px;">Place paper money bounties on targets. First robber to successfully heist them claims the prize.</p>
+        <div id="uw-bounties-on-me" style="margin-bottom:12px;"></div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+          <input id="bounty-target" placeholder="Target user ID or email" style="flex:2; min-width:180px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+          <input id="bounty-amount" type="number" placeholder="Amount ($, min $10)" min="10" style="flex:1; min-width:120px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+          <button onclick="placeBounty()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Place Bounty</button>
+        </div>
+        <div id="uw-bounty-list">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:12px;">Loading bounties…</div>
+        </div>
+      </div>
+
+      <!-- Card: Protection & Intel -->
+      <div class="card" id="uw-protection-card" style="margin-bottom:20px;">
+        <h3 style="color:#ffd700; margin-bottom:4px;">🛡️ Protection &amp; Intel</h3>
+        <div id="uw-wanted-level" style="margin-bottom:12px;"></div>
+        <hr style="border-color:#222; margin:12px 0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
+          <div>
+            <div style="color:#4fc3f7; font-weight:700; margin-bottom:2px;">🔒 Witness Protection</div>
+            <div id="uw-wp-status" style="color:#888; font-size:0.82em;">24h immunity — 200 SML Credits</div>
+          </div>
+          <button onclick="activateWitnessProtection()" style="background:rgba(79,195,247,.15); border:1px solid rgba(79,195,247,.4); color:#4fc3f7; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.85em;">Activate (200 Credits)</button>
+        </div>
+        <hr style="border-color:#222; margin:12px 0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+          <div>
+            <div style="color:#00ff88; font-weight:700; margin-bottom:2px;">🛡️ Heist Insurance</div>
+            <div id="uw-insurance-status" style="color:#888; font-size:0.82em;">50% refund if robbed — 150 SML Credits</div>
+          </div>
+          <button onclick="activateInsurance()" style="background:rgba(0,255,136,.1); border:1px solid rgba(0,255,136,.3); color:#00ff88; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.85em;">Activate (150 Credits)</button>
+        </div>
+      </div>
+
+      <!-- Card: Getaway Vehicles -->
+      <div class="card" id="uw-getaway-card" style="margin-bottom:20px;">
+        <h3 style="color:#ffd700; margin-bottom:4px;">🚗 Getaway Vehicles</h3>
+        <p style="color:#888; font-size:0.82em; margin-bottom:14px;">Permanent upgrades — your best vehicle reduces catch rate and bail cost on every heist.</p>
+        <div id="uw-getaway-store">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
+      </div>
+
       <!-- Card 8: Send Funds -->
       <div class="card" id="uw-send-funds-card" style="margin-bottom:20px;">
         <h3 style="color:#ffd700; margin-bottom:4px;">💸 Send Funds</h3>
@@ -1807,6 +1907,80 @@
         </div>
       </div>
 
+    </div>
+  </section>
+
+  <!-- ── Games Section ───────────────────────────────────────────────── -->
+  <section class="section" id="games">
+    <div style="max-width:860px; margin:0 auto;">
+      <h2 style="color:#ffd700; font-size:1.6em; margin-bottom:6px;">🎰 Games</h2>
+      <p style="color:#aaa; margin-bottom:24px;">Wager paper money and spin for prizes. Free daily spin — extra spins cost 100 SML Credits each.</p>
+
+      <!-- Spin the Wheel -->
+      <div class="card" style="margin-bottom:20px; text-align:center;">
+        <h3 style="color:#ffd700; margin-bottom:8px;">🎡 Spin the Wheel</h3>
+        <div id="spin-status" style="color:#888; font-size:0.88em; margin-bottom:14px;">Loading…</div>
+        <canvas id="spin-canvas" width="280" height="280" style="max-width:100%; border-radius:50%; border:3px solid #333;"></canvas>
+        <div style="margin-top:14px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <button id="spin-btn" onclick="doSpin()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:12px 28px; font-weight:700; cursor:pointer; font-size:0.95em;">🎡 Spin (Free Daily)</button>
+          <button onclick="buyExtraSpin()" style="background:rgba(255,215,0,.12); border:1px solid rgba(255,215,0,.3); color:#ffd700; border-radius:8px; padding:12px 20px; font-weight:700; cursor:pointer; font-size:0.9em;">+1 Spin (100 Credits)</button>
+        </div>
+        <div id="spin-result" style="margin-top:12px; font-size:0.95em; min-height:20px;"></div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;">
+        <!-- Dice Game -->
+        <div class="card">
+          <h3 style="color:#00d4ff; margin-bottom:8px;">🎲 Dice Game</h3>
+          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Roll 2 dice. Sum 7–12 wins <strong style="color:#00ff88;">1.8×</strong>. Sum 2–6 loses.</p>
+          <div style="display:flex; gap:10px; margin-bottom:12px;">
+            <input id="dice-wager" type="number" placeholder="Wager ($)" min="1" style="flex:1; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none;">
+            <button onclick="playDice()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Roll</button>
+          </div>
+          <div id="dice-result" style="font-size:0.9em; min-height:20px; text-align:center; color:#aaa;"></div>
+        </div>
+
+        <!-- Card Flip -->
+        <div class="card">
+          <h3 style="color:#ff6b6b; margin-bottom:8px;">🃏 Card Flip</h3>
+          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Flip a card. <strong style="color:#ff4444;">Red</strong> wins <strong style="color:#00ff88;">1.9×</strong>. <strong style="color:#555;">Black</strong> loses.</p>
+          <div style="display:flex; gap:10px; margin-bottom:12px;">
+            <input id="card-wager" type="number" placeholder="Wager ($)" min="1" style="flex:1; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none;">
+            <button onclick="playCardFlip()" style="background:linear-gradient(135deg,#ff6b6b,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Flip</button>
+          </div>
+          <div id="card-result" style="font-size:0.9em; min-height:20px; text-align:center; color:#aaa;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Real Estate Section ──────────────────────────────────────────── -->
+  <section class="section" id="realestate">
+    <div style="max-width:860px; margin:0 auto;">
+      <h2 style="color:#00ff88; font-size:1.6em; margin-bottom:6px;">🏘️ Virtual Real Estate</h2>
+      <p style="color:#aaa; margin-bottom:24px;">Own virtual properties that generate passive daily paper money income. Click Collect to claim accumulated earnings (max 7 days).</p>
+      <div class="card" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div id="realestate-income-total" style="color:#00ff88; font-size:1.1em; font-weight:700;">Loading…</div>
+        <button onclick="collectAllIncome()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Collect All Income</button>
+      </div>
+      <div id="realestate-catalog" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px;">
+        <div style="color:#555; font-size:0.88em; text-align:center; padding:20px;">Loading properties…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Battle Pass Section ──────────────────────────────────────────── -->
+  <section class="section" id="battlepass">
+    <div style="max-width:800px; margin:0 auto;">
+      <h2 style="color:#ffd700; font-size:1.6em; margin-bottom:6px;">🎫 Battle Pass — Season 1</h2>
+      <p style="color:#aaa; margin-bottom:24px;">Earn XP through trades and heists to unlock rewards across 10 tiers. Upgrade to the Premium Pass for bonus prizes.</p>
+      <div class="card" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div id="bp-pass-status" style="color:#aaa; font-size:0.95em;">Loading…</div>
+        <button id="bp-buy-btn" onclick="buyBattlePass()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Unlock Premium ($4.99)</button>
+      </div>
+      <div id="bp-tiers" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="color:#555; font-size:0.88em; text-align:center; padding:20px;">Loading battle pass…</div>
+      </div>
     </div>
   </section>
 
@@ -3125,6 +3299,22 @@
           gift_paper_money_investor: '🎁 Gift sent! Your friend received $25,000 paper money.',
           gift_paper_money_whale:    '🎁 Gift sent! Your friend received $50,000 paper money.',
           gift_paper_money_ultimate: '🎁 Gift sent! Your friend received $200,000 paper money.',
+          // Getaway Vehicles
+          getaway_bicycle:    '🚲 Bicycle acquired! A humble start to your escape career.',
+          getaway_moped:      '🛵 Moped acquired! Weaving through traffic like a pro.',
+          getaway_motorcycle: '🏍️ Motorcycle acquired! Zero to gone in seconds.',
+          getaway_sports_car: '🚗 Sports Car acquired! Leave them in the dust.',
+          getaway_supercar:   '🏎️ Supercar acquired! They cannot keep up.',
+          getaway_helicopter: '🚁 Helicopter unlocked! You are literally untouchable.',
+          // Real Estate
+          realestate_corner_store: '🏪 Corner Store acquired! Earning $50/day passively.',
+          realestate_apartment:    '🏢 Apartment acquired! $150/day flowing in.',
+          realestate_restaurant:   '🍽️ Restaurant acquired! $400/day. Tables always full.',
+          realestate_nightclub:    '🎭 Nightclub acquired! $900/day. VIP only.',
+          realestate_casino:       '🎰 Casino acquired! $2,000/day. The house always wins.',
+          realestate_skyscraper:   '🏙️ Skyscraper acquired! $5,000/day. You are a mogul.',
+          // Battle Pass
+          battle_pass: '🎫 Battle Pass activated! Your premium rewards are waiting.',
         };
         const msg = msgs[payType] || '✅ Payment successful! Thank you for supporting Self-Made Legends.';
         setTimeout(() => showToast('✅', 'Payment Complete!', msg, '#00ff88'), 600);
@@ -4912,40 +5102,79 @@ function renderFeedItems(feed, el) {
     return;
   }
   function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  const RXNS = ['🔥','💀','👑','😂'];
   el.innerHTML = feed.map(e => {
+    const postId = e.id || (e.type + '_' + (e.tradeId || e.badgeId || e.timestamp || Math.random()));
+    const rxnBar = `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">${RXNS.map(r => `<button onclick="reactToPost('${esc(postId)}','${r}')" style="background:rgba(255,255,255,.06);border:1px solid #222;border-radius:20px;padding:3px 10px;cursor:pointer;font-size:0.8em;color:#aaa;">${r} <span id="rxn-${esc(postId)}-${encodeURIComponent(r)}">0</span></button>`).join('')}</div>`;
     if (e.type === 'trade') {
       const up = parseFloat(e.gainPct) >= 0;
-      return `<div class="comm-card">
+      return `<div class="comm-card" data-post-id="${esc(postId)}">
         <span class="comm-icon">${up?'📈':'📉'}</span>
         <div style="flex:1;min-width:0;">
           <div><span class="comm-name">${esc(e.displayName)}</span><span class="comm-tag ${up?'tag-trade-up':'tag-trade-dn'}">${up?'+':''}${esc(e.gainPct)}%</span></div>
           <div class="comm-body">Closed <strong style="color:#fff">$${esc(e.symbol)}</strong> — ${up?'nice profit 🎉':'took the loss, lived to trade again 💪'}</div>
+          ${rxnBar}
         </div>
         <span class="comm-time">${esc(e.timeAgo)}</span>
       </div>`;
     }
     if (e.type === 'badge') {
-      return `<div class="comm-card">
+      return `<div class="comm-card" data-post-id="${esc(postId)}">
         <span class="comm-icon">${esc(e.badgeIcon||'🎖️')}</span>
         <div style="flex:1;min-width:0;">
           <div><span class="comm-name">${esc(e.displayName)}</span><span class="comm-tag tag-badge">Badge</span></div>
           <div class="comm-body">Earned <strong style="color:#ffd700">${esc(e.badgeName)}</strong> — legend growing ⭐</div>
+          ${rxnBar}
         </div>
         <span class="comm-time">${esc(e.timeAgo)}</span>
       </div>`;
     }
     if (e.type === 'rank') {
-      return `<div class="comm-card">
+      return `<div class="comm-card" data-post-id="${esc(postId)}">
         <span class="comm-icon">🏆</span>
         <div style="flex:1;min-width:0;">
           <div><span class="comm-name">${esc(e.displayName)}</span><span class="comm-tag tag-rank">#${esc(e.newRank)}</span></div>
           <div class="comm-body">Climbed to <strong style="color:#00d4ff">#${esc(e.newRank)}</strong> on the national leaderboard 🔥</div>
+          ${rxnBar}
         </div>
         <span class="comm-time">${esc(e.timeAgo)}</span>
       </div>`;
     }
     return '';
   }).join('');
+  // Batch-load reaction counts
+  const postIds = feed.map(e => e.id || (e.type + '_' + (e.tradeId || e.badgeId || e.timestamp))).filter(Boolean);
+  if (postIds.length) loadReactions(postIds);
+}
+
+async function reactToPost(postId, emoji) {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/feed/react', { method:'POST', headers:hdrs(), body:JSON.stringify({ postId, emoji }) });
+    const data = await r.json();
+    if (data.counts) {
+      for (const [em, cnt] of Object.entries(data.counts)) {
+        const el = document.getElementById(`rxn-${postId}-${encodeURIComponent(em)}`);
+        if (el) el.textContent = cnt;
+      }
+    }
+  } catch(_) {}
+}
+
+async function loadReactions(postIds) {
+  if (!postIds || !postIds.length) return;
+  for (const pid of postIds) {
+    try {
+      const r = await fetch(`/api/feed/reactions/${encodeURIComponent(pid)}`);
+      const data = await r.json();
+      if (data.counts) {
+        for (const [em, cnt] of Object.entries(data.counts)) {
+          const el = document.getElementById(`rxn-${pid}-${encodeURIComponent(em)}`);
+          if (el) el.textContent = cnt;
+        }
+      }
+    } catch(_) {}
+  }
 }
 
 window.loadCommunityFeed = async function() {
@@ -5504,6 +5733,38 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
     socket.on('reward_claimed', (data) => {
       showToast('🎁', `Day ${data.streak} Reward!`, `+${fmtMoney(data.amount)} paper money added to your account`, '#00ff88');
       if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+    socket.on('price_alert', (d) => {
+      showToast('🔔', 'Price Alert!', `${d.symbol} hit ${fmtMoney(d.price)} (target: ${fmtMoney(d.target)})`, '#ffd700');
+    });
+    socket.on('bounty_collected', (d) => {
+      showToast('💰', 'Bounty Claimed!', `+${fmtMoney(d.amount)} bounty collected`, '#00ff88');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+    socket.on('bounty_executed', () => {
+      showToast('💰', 'Your Bounty Hit!', 'A robber claimed the bounty on your target', '#ffd700');
+    });
+    socket.on('bounty_placed', () => {
+      if (typeof loadBounties === 'function') loadBounties();
+    });
+    socket.on('insurance_payout', (d) => {
+      showToast('🛡️', 'Insurance Paid Out!', `Got back ${fmtMoney(d.refund)} of ${fmtMoney(d.stolen)} stolen`, '#4fc3f7');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+    socket.on('boss_heist_killed', (d) => {
+      showToast('👹', 'Boss Defeated!', `You earned ${fmtMoney(d.loot)} from the loot pool!`, '#ffd700');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+      if (typeof loadBossHeist === 'function') loadBossHeist();
+    });
+    socket.on('spin_result', (d) => {
+      showToast('🎡', 'Spin Result!', `You won: ${d.label}`, '#ffd700');
+    });
+    socket.on('weekly_challenge_complete', (d) => {
+      showToast('🌍', 'Challenge Complete!', `+${fmtMoney(d.reward)} for completing the weekly challenge!`, '#00ff88');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+    socket.on('tip_sold', (d) => {
+      showToast('💡', 'Tip Sold!', `Someone bought your tip — +${d.credits} SML Credits earned`, '#00ff88');
     });
   }
 
@@ -6327,6 +6588,609 @@ async function claimDailyReward() {
   } catch (_) {
     if (btn) { btn.disabled = false; btn.textContent = 'Claim Today\'s Reward'; }
   }
+}
+
+// ── Shared helpers for new features ──────────────────────────────────────────
+function _smlSesh() {
+  try { return JSON.parse(localStorage.getItem('sml_session') || 'null'); } catch(_) { return null; }
+}
+function _smlHdrs() {
+  const s = _smlSesh();
+  return s && s.sessionId
+    ? { 'Content-Type': 'application/json', 'x-session-id': s.sessionId }
+    : { 'Content-Type': 'application/json' };
+}
+function sesh() { return _smlSesh(); }
+function hdrs() { return _smlHdrs(); }
+
+// ── Spin the Wheel ────────────────────────────────────────────────────────────
+let _spinAnimating = false;
+const SPIN_COLORS = ['#ff4444','#ff8c00','#ffd700','#00ff88','#00d4ff','#7c3aed','#ff6b6b','#4fc3f7','#00cc6a'];
+const SPIN_LABELS = ['$25','$50','$100','$250','$500','$1,000','100 Cr','500 Cr','1,000 Cr'];
+
+function _drawWheel(angle) {
+  const canvas = document.getElementById('spin-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width / 2, cy = canvas.height / 2, r = cx - 8;
+  const n = SPIN_LABELS.length;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < n; i++) {
+    const start = angle + (i / n) * Math.PI * 2;
+    const end   = angle + ((i + 1) / n) * Math.PI * 2;
+    ctx.beginPath(); ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, start, end);
+    ctx.closePath();
+    ctx.fillStyle = SPIN_COLORS[i % SPIN_COLORS.length];
+    ctx.fill();
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(start + (end - start) / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText(SPIN_LABELS[i], r - 6, 4);
+    ctx.restore();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+  ctx.fillStyle = '#0d1118';
+  ctx.fill();
+  // Pointer
+  ctx.beginPath();
+  ctx.moveTo(cx + r - 2, cy - 10);
+  ctx.lineTo(cx + r + 14, cy);
+  ctx.lineTo(cx + r - 2, cy + 10);
+  ctx.closePath();
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+}
+
+window.loadSpin = async function() {
+  _drawWheel(0);
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/spin/status', { headers: hdrs() });
+    const d = await r.json();
+    const el = document.getElementById('spin-status');
+    const btn = document.getElementById('spin-btn');
+    if (!el) return;
+    if (d.canSpin || d.extraSpins > 0) {
+      el.innerHTML = `<span style="color:#00ff88;">🎡 Ready to spin!</span>${d.extraSpins > 0 ? ` <span style="color:#ffd700;">(+${d.extraSpins} extra)</span>` : ''}`;
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    } else {
+      const next = new Date(d.nextSpinAt);
+      el.innerHTML = `<span style="color:#888;">Next free spin: ${next.toLocaleTimeString()}</span>${d.extraSpins > 0 ? ` <span style="color:#ffd700;">(+${d.extraSpins} extra spins available)</span>` : ''}`;
+      if (btn && !d.extraSpins) { btn.disabled = true; btn.style.opacity = '0.5'; }
+    }
+  } catch(_) {}
+};
+
+function loadGamesTab() {
+  loadSpin();
+}
+
+window.doSpin = async function() {
+  if (_spinAnimating || !sesh()) return;
+  _spinAnimating = true;
+  const btn = document.getElementById('spin-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const spins = Math.floor(Math.random() * 8) + 5;
+    const totalAngle = spins * Math.PI * 2;
+    const duration = 3000;
+    const start = performance.now();
+    let baseAngle = 0;
+    function animate(now) {
+      const elapsed = now - start;
+      const prog = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - prog, 3);
+      _drawWheel(baseAngle + ease * totalAngle);
+      if (prog < 1) { requestAnimationFrame(animate); return; }
+      baseAngle = (baseAngle + totalAngle) % (Math.PI * 2);
+      _spinAnimating = false;
+      callSpin(baseAngle);
+    }
+    requestAnimationFrame(animate);
+  } catch(_) { _spinAnimating = false; }
+};
+
+async function callSpin(finalAngle) {
+  try {
+    const r = await fetch('/api/spin/spin', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('⏳', 'Not Ready', d.error, '#888'); loadSpin(); return; }
+    const el = document.getElementById('spin-result');
+    if (el) el.innerHTML = `<span style="color:#ffd700;font-weight:700;">🎉 You won: ${d.label}!</span>`;
+    if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    loadSpin();
+  } catch(_) {}
+}
+
+window.buyExtraSpin = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/spin/buy-extra', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌', 'Error', d.error, '#ff4444'); return; }
+    showToast('🎡', 'Extra Spin!', '+1 spin added. Go for it!', '#ffd700');
+    loadSpin();
+  } catch(_) {}
+};
+
+// ── Dice Game ─────────────────────────────────────────────────────────────────
+window.playDice = async function() {
+  const wager = parseFloat(document.getElementById('dice-wager').value);
+  if (!wager || wager <= 0) { showToast('❌','Error','Enter a valid wager','#ff4444'); return; }
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/game/dice', { method:'POST', headers:hdrs(), body:JSON.stringify({ wager }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    const el = document.getElementById('dice-result');
+    const color = d.won ? '#00ff88' : '#ff4444';
+    if (el) el.innerHTML = `<span style="color:${color};">🎲 ${d.roll1} + ${d.roll2} = ${d.sum} — ${d.won ? `Won ${fmtMoney(d.payout)}! 🎉` : `Lost ${fmtMoney(wager)} 💀`}</span>`;
+    if (typeof refreshPortfolio === 'function') refreshPortfolio();
+  } catch(_) {}
+};
+
+// ── Card Flip ─────────────────────────────────────────────────────────────────
+window.playCardFlip = async function() {
+  const wager = parseFloat(document.getElementById('card-wager').value);
+  if (!wager || wager <= 0) { showToast('❌','Error','Enter a valid wager','#ff4444'); return; }
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/game/card-flip', { method:'POST', headers:hdrs(), body:JSON.stringify({ wager }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    const el = document.getElementById('card-result');
+    const color = d.won ? '#00ff88' : '#ff4444';
+    const cardIcon = d.color === 'Red' ? '♥️' : '♠️';
+    if (el) el.innerHTML = `<span style="color:${color};">${cardIcon} ${d.color} — ${d.won ? `Won ${fmtMoney(d.payout)}! 🎉` : `Lost ${fmtMoney(wager)} 💀`}</span>`;
+    if (typeof refreshPortfolio === 'function') refreshPortfolio();
+  } catch(_) {}
+};
+
+// ── Bounty System ─────────────────────────────────────────────────────────────
+window.loadBounties = async function() {
+  if (!sesh()) return;
+  try {
+    const [listRes, myRes] = await Promise.all([
+      fetch('/api/bounty/list', { headers: hdrs() }),
+      fetch('/api/bounty/on-me', { headers: hdrs() }),
+    ]);
+    const { bounties } = await listRes.json();
+    const { bounties: onMe } = await myRes.json();
+    const listEl = document.getElementById('uw-bounty-list');
+    const meEl = document.getElementById('uw-bounties-on-me');
+    if (meEl) {
+      meEl.innerHTML = onMe && onMe.length
+        ? `<div style="background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.25);border-radius:8px;padding:10px 14px;margin-bottom:8px;color:#ff8888;font-size:0.85em;">⚠️ You have <strong>${onMe.length}</strong> active bounty(s) on you totaling <strong>${fmtMoney(onMe.reduce((s,b)=>s+b.amount,0))}</strong>!</div>`
+        : '';
+    }
+    if (listEl) {
+      listEl.innerHTML = !bounties || !bounties.length
+        ? '<div style="color:#555;font-size:0.88em;text-align:center;padding:10px;">No active bounties.</div>'
+        : bounties.map(b => `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1f2e;">
+            <span style="color:#aaa;font-size:0.85em;">🎯 ${b.targetName || b.target_id}</span>
+            <span style="color:#ffd700;font-weight:700;">${fmtMoney(b.amount)}</span>
+          </div>`).join('');
+    }
+  } catch(_) {}
+};
+
+window.placeBounty = async function() {
+  const target = document.getElementById('bounty-target').value.trim();
+  const amount = parseFloat(document.getElementById('bounty-amount').value);
+  if (!target || !amount || amount < 10) { showToast('❌','Error','Enter target and amount (min $10)','#ff4444'); return; }
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/bounty/place', { method:'POST', headers:hdrs(), body:JSON.stringify({ targetId: target, amount }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('💰','Bounty Placed!',`${fmtMoney(amount)} bounty is now active`,'#ffd700');
+    document.getElementById('bounty-target').value = '';
+    document.getElementById('bounty-amount').value = '';
+    loadBounties();
+    if (typeof refreshPortfolio === 'function') refreshPortfolio();
+  } catch(_) {}
+};
+
+// ── Witness Protection & Insurance ───────────────────────────────────────────
+window.loadProtection = async function() {
+  if (!sesh()) return;
+  try {
+    const [wpRes, insRes, wantedRes] = await Promise.all([
+      fetch('/api/witness-protection/status', { headers: hdrs() }),
+      fetch('/api/insurance/status', { headers: hdrs() }),
+      fetch('/api/wanted/level', { headers: hdrs() }),
+    ]);
+    const wp = await wpRes.json();
+    const ins = await insRes.json();
+    const wanted = await wantedRes.json();
+    const wpEl = document.getElementById('uw-wp-status');
+    const insEl = document.getElementById('uw-insurance-status');
+    const wantedEl = document.getElementById('uw-wanted-level');
+    if (wpEl) {
+      wpEl.textContent = wp.active
+        ? `🔒 Active until ${new Date(wp.activeUntil).toLocaleTimeString()}`
+        : '24h immunity from heists — 200 SML Credits';
+      wpEl.style.color = wp.active ? '#4fc3f7' : '#888';
+    }
+    if (insEl) {
+      insEl.textContent = ins.active
+        ? `🛡️ Active until ${new Date(ins.activeUntil).toLocaleTimeString()} (${Math.round(ins.coveragePct*100)}% coverage)`
+        : '50% refund if robbed — 150 SML Credits';
+      insEl.style.color = ins.active ? '#00ff88' : '#888';
+    }
+    if (wantedEl) {
+      const stars = '⭐'.repeat(wanted.stars || 0) + '☆'.repeat(5 - (wanted.stars || 0));
+      wantedEl.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><span style="color:#ffd700;font-size:1.2em;">${stars}</span><span style="color:#aaa;font-size:0.85em;">Wanted Level (${wanted.stars}/5 stars from ${wanted.heistCount} heists this week)</span></div>`;
+    }
+  } catch(_) {}
+};
+
+window.activateWitnessProtection = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/witness-protection/activate', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('🔒','Witness Protection!','You are now immune to heists for 24 hours','#4fc3f7');
+    loadProtection();
+  } catch(_) {}
+};
+
+window.activateInsurance = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/insurance/activate', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('🛡️','Heist Insurance!','You\'ll get 50% back if robbed in the next 24 hours','#00ff88');
+    loadProtection();
+  } catch(_) {}
+};
+
+// ── Getaway Vehicles ──────────────────────────────────────────────────────────
+window.loadGetaway = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/getaway/catalog', { headers: hdrs() });
+    const d = await r.json();
+    const el = document.getElementById('uw-getaway-store');
+    if (!el) return;
+    el.innerHTML = (d.vehicles || []).map(v => {
+      const owned = (d.owned || []).includes(v.key);
+      const isActive = d.bestKey === v.key;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1a1f2e;">
+        <div>
+          <span style="font-size:1.3em;">${v.icon}</span>
+          <span style="color:#e0e0e0;font-weight:600;margin-left:8px;">${v.label}</span>
+          ${isActive ? '<span style="background:rgba(0,255,136,.15);border:1px solid #00ff88;border-radius:12px;padding:2px 8px;font-size:0.7em;color:#00ff88;margin-left:6px;">ACTIVE</span>' : ''}
+          <div style="color:#555;font-size:0.78em;margin-top:2px;">Catch rate -${Math.round(v.catchReduction*100)}% · Bail cost -${Math.round(v.bailReduction*100)}%</div>
+        </div>
+        ${owned
+          ? `<span style="color:#00ff88;font-size:0.85em;font-weight:700;">✓ Owned</span>`
+          : `<button onclick="buyGetaway('${v.key}')" style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:0.82em;">$${(v.price_cents/100).toFixed(2)}</button>`}
+      </div>`;
+    }).join('');
+  } catch(_) {}
+};
+
+window.buyGetaway = async function(vehicleKey) {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/stripe/buy-getaway', { method:'POST', headers:hdrs(), body:JSON.stringify({ vehicleKey }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    if (d.checkoutUrl) window.location.href = d.checkoutUrl;
+  } catch(_) {}
+};
+
+// ── Price Alerts ──────────────────────────────────────────────────────────────
+window.setAlert = async function() {
+  const symbol = document.getElementById('alert-symbol-in').value.trim().toUpperCase();
+  const price  = parseFloat(document.getElementById('alert-price').value);
+  const dir    = document.getElementById('alert-dir').value;
+  if (!symbol || !price) { showToast('❌','Error','Enter symbol and target price','#ff4444'); return; }
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/alerts/set', { method:'POST', headers:hdrs(), body:JSON.stringify({ symbol, targetPrice: price, direction: dir }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('🔔','Alert Set!',`Will notify when ${symbol} goes ${dir} ${fmtMoney(price)}`,'#ffd700');
+    document.getElementById('alert-symbol-in').value = '';
+    document.getElementById('alert-price').value = '';
+    loadAlerts();
+  } catch(_) {}
+};
+
+window.loadAlerts = async function() {
+  if (!sesh()) return;
+  const el = document.getElementById('alerts-list');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/alerts', { headers: hdrs() });
+    const d = await r.json();
+    if (!d.alerts || !d.alerts.length) {
+      el.innerHTML = '<div style="color:#555;font-size:0.88em;text-align:center;padding:10px;">No active alerts.</div>';
+      return;
+    }
+    el.innerHTML = d.alerts.map(a => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1f2e;">
+        <span style="color:#aaa;font-size:0.85em;">🔔 <strong style="color:#e0e0e0;">${a.symbol}</strong> ${a.direction} ${fmtMoney(a.target_price)}</span>
+        <button onclick="deleteAlert(${a.id})" style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);color:#ff6666;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.78em;">✕</button>
+      </div>`).join('');
+  } catch(_) {}
+};
+
+window.deleteAlert = async function(id) {
+  if (!sesh()) return;
+  try {
+    await fetch(`/api/alerts/${id}`, { method:'DELETE', headers:hdrs() });
+    loadAlerts();
+  } catch(_) {}
+};
+
+// ── Stock Tips ────────────────────────────────────────────────────────────────
+window.loadTips = async function() {
+  const el = document.getElementById('tips-list');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/tips/marketplace', { headers: hdrs() });
+    const d = await r.json();
+    if (!d.tips || !d.tips.length) {
+      el.innerHTML = '<div style="color:#555;font-size:0.88em;text-align:center;padding:10px;">No tips yet — be the first to share alpha!</div>';
+      return;
+    }
+    el.innerHTML = d.tips.map(t => `
+      <div style="background:rgba(255,255,255,.03);border:1px solid #1a1f2e;border-radius:10px;padding:12px;margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <span style="font-weight:700;color:#e0e0e0;">${t.symbol} <span style="color:${t.direction==='up'?'#00ff88':'#ff4444'}">${t.direction==='up'?'📈 Bullish':'📉 Bearish'}</span></span>
+          <span style="color:#ffd700;font-size:0.82em;">${t.credits_cost} Credits · ${t.purchaseCount || 0} buyers</span>
+        </div>
+        ${t.note ? `<div style="color:#888;font-size:0.82em;margin-bottom:8px;">${t.note}</div>` : ''}
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="color:#555;font-size:0.75em;">by ${t.authorName || 'Legend'}</span>
+          ${t.owned ? '<span style="color:#00ff88;font-size:0.78em;">✓ Purchased</span>' : `<button onclick="buyTip(${t.id})" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:#00ff88;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:0.8em;">Buy (${t.credits_cost} Credits)</button>`}
+        </div>
+      </div>`).join('');
+  } catch(_) {}
+};
+
+window.createTip = async function() {
+  const symbol    = document.getElementById('tip-symbol').value.trim().toUpperCase();
+  const direction = document.getElementById('tip-direction').value;
+  const note      = document.getElementById('tip-note').value.trim();
+  const cost      = parseInt(document.getElementById('tip-cost').value) || 50;
+  if (!symbol) { showToast('❌','Error','Enter a symbol','#ff4444'); return; }
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/tips/create', { method:'POST', headers:hdrs(), body:JSON.stringify({ symbol, direction, note, creditsCost: cost }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('💡','Tip Listed!',`Your ${symbol} tip is now live in the marketplace`,'#00ff88');
+    document.getElementById('tip-symbol').value = '';
+    document.getElementById('tip-note').value = '';
+    loadTips();
+  } catch(_) {}
+};
+
+window.buyTip = async function(tipId) {
+  if (!sesh()) return;
+  try {
+    const r = await fetch(`/api/tips/buy/${tipId}`, { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('💡','Tip Purchased!','Check the symbol in Market Watch','#00ff88');
+    loadTips();
+  } catch(_) {}
+};
+
+// ── Real Estate ───────────────────────────────────────────────────────────────
+window.loadRealEstate = async function() {
+  const el = document.getElementById('realestate-catalog');
+  const totalEl = document.getElementById('realestate-income-total');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/realestate/catalog', { headers: sesh() ? hdrs() : {} });
+    const d = await r.json();
+    if (totalEl) {
+      const income = d.properties ? d.properties.filter(p => p.owned).reduce((s,p) => s + p.pendingIncome, 0) : 0;
+      totalEl.textContent = `Accumulated income: ${fmtMoney(income)}`;
+    }
+    if (!d.properties || !d.properties.length) {
+      el.innerHTML = '<div style="color:#555;font-size:0.88em;text-align:center;padding:20px;">No properties available.</div>';
+      return;
+    }
+    el.innerHTML = d.properties.map(p => `
+      <div style="background:#1a1f2e;border:1px solid ${p.owned?'rgba(0,255,136,.3)':'#2a3050'};border-radius:14px;padding:18px;">
+        <div style="font-size:2em;margin-bottom:8px;">${p.icon}</div>
+        <div style="font-weight:700;color:#e0e0e0;margin-bottom:4px;">${p.label}</div>
+        <div style="color:#00ff88;font-size:0.85em;margin-bottom:8px;">+${fmtMoney(p.daily_income)}/day</div>
+        ${p.owned
+          ? `<div style="color:#ffd700;font-size:0.82em;margin-bottom:8px;">Pending: ${fmtMoney(p.pendingIncome)}</div>
+             <div style="background:rgba(0,255,136,.1);border-radius:6px;padding:3px 10px;color:#00ff88;font-size:0.78em;text-align:center;display:inline-block;">✓ Owned</div>`
+          : `<button onclick="buyRealEstate('${p.key}')" style="background:linear-gradient(135deg,#00ff88,#00cc6a);color:#000;border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;font-size:0.85em;width:100%;">Buy ($${(p.price_cents/100).toFixed(2)})</button>`}
+      </div>`).join('');
+  } catch(_) {}
+};
+
+window.buyRealEstate = async function(propertyKey) {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/stripe/buy-realestate', { method:'POST', headers:hdrs(), body:JSON.stringify({ propertyKey }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    if (d.checkoutUrl) window.location.href = d.checkoutUrl;
+  } catch(_) {}
+};
+
+window.collectAllIncome = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/realestate/collect', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('🏘️','Income Collected!',`+${fmtMoney(d.totalCollected)} paper money added`,'#00ff88');
+    loadRealEstate();
+    if (typeof refreshPortfolio === 'function') refreshPortfolio();
+  } catch(_) {}
+};
+
+// ── Battle Pass ───────────────────────────────────────────────────────────────
+window.loadBattlePass = async function() {
+  const statusEl = document.getElementById('bp-pass-status');
+  const tiersEl  = document.getElementById('bp-tiers');
+  const buyBtn   = document.getElementById('bp-buy-btn');
+  if (!tiersEl) return;
+  if (!sesh()) { tiersEl.innerHTML = '<div style="color:#555;text-align:center;padding:20px;">Log in to view Battle Pass</div>'; return; }
+  try {
+    const r = await fetch('/api/battlepass/status', { headers: hdrs() });
+    const d = await r.json();
+    const userXp = d.totalXp || 0;
+    const isPaid = d.passType === 'paid';
+    if (statusEl) statusEl.innerHTML = `<span style="color:#ffd700;font-weight:700;">${isPaid ? '⭐ Premium Pass' : '🆓 Free Pass'}</span> · <span style="color:#aaa;">${userXp.toLocaleString()} XP total</span>`;
+    if (buyBtn) buyBtn.style.display = isPaid ? 'none' : 'inline-block';
+    const claimed = new Set(d.claimedTiers || []);
+    tiersEl.innerHTML = (d.tiers || []).map(t => {
+      const unlocked = userXp >= t.xp;
+      const isClaimed = claimed.has(t.tier);
+      const freeRwd = t.free;
+      const paidRwd = t.paid;
+      return `<div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid ${unlocked?'rgba(255,215,0,.2)':'#1a1f2e'};border-radius:10px;padding:12px;">
+        <div style="min-width:36px;text-align:center;font-weight:800;font-size:1.1em;color:${unlocked?'#ffd700':'#555'};">${t.tier}</div>
+        <div style="flex:1;">
+          <div style="color:#555;font-size:0.75em;margin-bottom:2px;">${t.xp.toLocaleString()} XP required</div>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <span style="font-size:0.85em;"><span style="color:#888;">Free:</span> <span style="color:#aaa;">${freeRwd.type==='paper'?fmtMoney(freeRwd.amount):freeRwd.amount+' Credits'}</span></span>
+            <span style="font-size:0.85em;"><span style="color:#ffd700;">⭐ Premium:</span> <span style="color:#ffd700;">${paidRwd.type==='paper'?fmtMoney(paidRwd.amount):paidRwd.amount+' Credits'}</span></span>
+          </div>
+        </div>
+        ${isClaimed
+          ? '<span style="color:#00ff88;font-size:0.82em;font-weight:700;">✓ Claimed</span>'
+          : unlocked
+            ? `<button onclick="claimBPTier(${t.tier})" style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:0.82em;">Claim</button>`
+            : `<span style="color:#333;font-size:0.78em;">Locked</span>`}
+      </div>`;
+    }).join('');
+  } catch(_) {}
+};
+
+window.claimBPTier = async function(tier) {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/battlepass/claim', { method:'POST', headers:hdrs(), body:JSON.stringify({ tier }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    const rwd = d.reward;
+    showToast('🎫','Tier Claimed!',`${rwd.type==='paper'?fmtMoney(rwd.amount)+' paper money':rwd.amount+' SML Credits'} added`,'#ffd700');
+    loadBattlePass();
+    if (typeof refreshPortfolio === 'function') refreshPortfolio();
+  } catch(_) {}
+};
+
+window.buyBattlePass = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/stripe/buy-battlepass', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    if (d.checkoutUrl) window.location.href = d.checkoutUrl;
+  } catch(_) {}
+};
+
+// ── Community Challenge ───────────────────────────────────────────────────────
+window.loadCommunityChallenge = async function() {
+  const el = document.getElementById('comm-challenge-status');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/challenge/weekly');
+    const d = await r.json();
+    if (!d.challenge) { el.innerHTML = '<div style="color:#555;font-size:0.88em;">No active challenge.</div>'; return; }
+    const c = d.challenge;
+    const pct = Math.min(100, Math.round((c.progress / c.target) * 100));
+    el.innerHTML = `
+      <div style="margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:#e0e0e0;font-size:0.9em;">${c.progress.toLocaleString()} / ${c.target.toLocaleString()} heists</span>
+        <span style="color:#00ff88;font-weight:700;">${pct}%</span>
+      </div>
+      <div style="background:#0d1118;border-radius:20px;overflow:hidden;height:12px;">
+        <div style="background:linear-gradient(90deg,#00ff88,#00cc6a);width:${pct}%;height:100%;border-radius:20px;transition:.3s;"></div>
+      </div>
+      <div style="color:#888;font-size:0.8em;margin-top:6px;">Reward: ${fmtMoney(c.reward_paper)} for all participants when complete ${c.completed?'✅ COMPLETE!':''}</div>`;
+  } catch(_) {}
+};
+
+// ── Boss Heist ────────────────────────────────────────────────────────────────
+window.loadBossHeist = async function() {
+  const el = document.getElementById('boss-status');
+  const hpEl = document.getElementById('boss-hp-bar');
+  const btn = document.getElementById('boss-attack-btn');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/boss-heist/status', { headers: sesh() ? hdrs() : {} });
+    const d = await r.json();
+    if (!d.boss) { el.innerHTML = '<div style="color:#555;font-size:0.88em;">No active boss this week.</div>'; return; }
+    const b = d.boss;
+    const pct = Math.max(0, Math.round((b.hp_remaining / b.max_hp) * 100));
+    if (hpEl) hpEl.innerHTML = `
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="color:#ff4444;font-size:0.85em;">HP: ${b.hp_remaining.toLocaleString()} / ${b.max_hp.toLocaleString()}</span>
+        <span style="color:#aaa;font-size:0.82em;">Loot: ${fmtMoney(b.loot_pool)}</span>
+      </div>
+      <div style="background:#0d1118;border-radius:20px;overflow:hidden;height:14px;">
+        <div style="background:linear-gradient(90deg,#ff4444,#cc0000);width:${pct}%;height:100%;border-radius:20px;transition:.3s;"></div>
+      </div>`;
+    if (el) el.innerHTML = b.killed
+      ? `<div style="color:#00ff88;font-weight:700;text-align:center;padding:8px;">👹 Boss Defeated! New boss spawns next week.</div>`
+      : `<div style="color:#aaa;font-size:0.85em;text-align:center;">${d.myDamage?`Your damage: ${d.myDamage}`:'Attack to participate in loot distribution!'}</div>`;
+    if (btn) {
+      const canAttack = !b.killed && (!d.myLastAttack || Date.now() - d.myLastAttack >= 3600000);
+      btn.disabled = !canAttack;
+      btn.style.opacity = canAttack ? '1' : '0.5';
+      if (!canAttack && !b.killed && d.myLastAttack) {
+        const next = new Date(d.myLastAttack + 3600000);
+        btn.textContent = `⚔️ Next attack: ${next.toLocaleTimeString()}`;
+      } else {
+        btn.textContent = '⚔️ Attack Boss (1/hr)';
+      }
+    }
+  } catch(_) {}
+};
+
+window.attackBoss = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/boss-heist/attack', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('👹',d.killed?'Boss Defeated!':'Boss Hit!',d.killed?`Boss defeated! You earned ${fmtMoney(d.myLoot||0)}`:`Dealt ${d.damage} damage! Boss HP: ${d.hpRemaining}`,'#ff4444');
+    loadBossHeist();
+    if (d.killed && typeof refreshPortfolio === 'function') refreshPortfolio();
+  } catch(_) {}
+};
+
+// ── Load community challenge/boss when community tab opens ─────────────────
+const _uwOrigSwitchTab = window.switchTab;
+if (typeof _uwOrigSwitchTab === 'function') {
+  window.switchTab = function(tab) {
+    _uwOrigSwitchTab.apply(this, arguments);
+    if (tab === 'community') {
+      if (typeof loadCommunityChallenge === 'function') loadCommunityChallenge();
+      if (typeof loadBossHeist === 'function') loadBossHeist();
+    }
+    if (tab === 'underworld') {
+      if (typeof loadBounties === 'function') loadBounties();
+      if (typeof loadProtection === 'function') loadProtection();
+      if (typeof loadGetaway === 'function') loadGetaway();
+    }
+    if (tab === 'trade') {
+      if (typeof loadAlerts === 'function') loadAlerts();
+      if (typeof loadTips === 'function') loadTips();
+    }
+  };
 }
 </script>
 </body>

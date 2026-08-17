@@ -390,6 +390,148 @@ class DB {
         last_claim   INTEGER,
         total_earned REAL DEFAULT 0
       )`,
+
+      // ── Spin the Wheel ────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS spin_claims (
+        user_id     TEXT PRIMARY KEY,
+        last_spin   INTEGER,
+        extra_spins INTEGER DEFAULT 0
+      )`,
+
+      // ── Bounty System ─────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS bounties (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        placer_id    TEXT NOT NULL,
+        target_id    TEXT NOT NULL,
+        amount       REAL NOT NULL,
+        active       INTEGER DEFAULT 1,
+        collected_by TEXT,
+        resolved_at  INTEGER,
+        created_at   INTEGER NOT NULL
+      )`,
+
+      // ── Witness Protection ────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS witness_protection (
+        user_id      TEXT PRIMARY KEY,
+        active_until INTEGER NOT NULL,
+        activated_at INTEGER NOT NULL
+      )`,
+
+      // ── Getaway Vehicles ──────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS player_getaways (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        vehicle_key  TEXT NOT NULL,
+        purchased_at INTEGER,
+        UNIQUE(user_id, vehicle_key)
+      )`,
+
+      // ── Heist Insurance ───────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS heist_insurance (
+        user_id      TEXT PRIMARY KEY,
+        active_until INTEGER NOT NULL,
+        coverage_pct REAL NOT NULL DEFAULT 0.5,
+        activated_at INTEGER NOT NULL
+      )`,
+
+      // ── Price Alerts ──────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS price_alerts (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        symbol       TEXT NOT NULL,
+        target_price REAL NOT NULL,
+        direction    TEXT NOT NULL,
+        triggered    INTEGER DEFAULT 0,
+        created_at   INTEGER NOT NULL,
+        UNIQUE(user_id, symbol)
+      )`,
+
+      // ── Community Challenge ───────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS community_challenges (
+        week_key     TEXT PRIMARY KEY,
+        type         TEXT NOT NULL,
+        target       INTEGER NOT NULL,
+        progress     INTEGER DEFAULT 0,
+        reward_paper REAL DEFAULT 500,
+        completed    INTEGER DEFAULT 0,
+        completed_at INTEGER
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS challenge_participants (
+        week_key TEXT NOT NULL,
+        user_id  TEXT NOT NULL,
+        contrib  INTEGER DEFAULT 0,
+        rewarded INTEGER DEFAULT 0,
+        PRIMARY KEY (week_key, user_id)
+      )`,
+
+      // ── NPC Boss Heist ────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS boss_heist (
+        week_key     TEXT PRIMARY KEY,
+        hp_remaining INTEGER NOT NULL DEFAULT 5000,
+        max_hp       INTEGER NOT NULL DEFAULT 5000,
+        loot_pool    REAL NOT NULL DEFAULT 50000,
+        killed       INTEGER DEFAULT 0,
+        killed_at    INTEGER
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS boss_heist_attacks (
+        week_key    TEXT NOT NULL,
+        user_id     TEXT NOT NULL,
+        total_dmg   INTEGER DEFAULT 0,
+        last_attack INTEGER,
+        rewarded    INTEGER DEFAULT 0,
+        PRIMARY KEY (week_key, user_id)
+      )`,
+
+      // ── Feed Reactions ────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS feed_reactions (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id    TEXT NOT NULL,
+        user_id    TEXT NOT NULL,
+        emoji      TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        UNIQUE(post_id, user_id)
+      )`,
+
+      // ── Stock Tips Marketplace ────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS stock_tips (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        author_id       TEXT NOT NULL,
+        symbol          TEXT NOT NULL,
+        direction       TEXT NOT NULL,
+        note            TEXT,
+        credits_cost    INTEGER NOT NULL DEFAULT 50,
+        price_at_create REAL,
+        active          INTEGER DEFAULT 1,
+        created_at      INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS stock_tip_purchases (
+        tip_id       INTEGER NOT NULL,
+        user_id      TEXT NOT NULL,
+        purchased_at INTEGER NOT NULL,
+        PRIMARY KEY (tip_id, user_id)
+      )`,
+
+      // ── Virtual Real Estate ───────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS player_real_estate (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        property_key TEXT NOT NULL,
+        purchased_at INTEGER,
+        last_collect INTEGER,
+        UNIQUE(user_id, property_key)
+      )`,
+
+      // ── Battle Pass ───────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS battle_pass (
+        user_id       TEXT PRIMARY KEY,
+        season_id     TEXT NOT NULL DEFAULT 'S1',
+        pass_type     TEXT NOT NULL DEFAULT 'free',
+        claimed_tiers TEXT NOT NULL DEFAULT '[]',
+        activated_at  INTEGER
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)
