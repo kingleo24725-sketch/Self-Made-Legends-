@@ -602,25 +602,11 @@ app.post("/api/payments/deposit", authenticateUser, (req, res) => {
 });
 
 app.post("/api/payments/withdraw", authenticateUser, (req, res) => {
-  const { amount, currency, method, destination } = req.body;
-
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ error: "Invalid amount" });
-  }
-
-  const account = accountManager.getAccountById(req.user.userId);
-  if (account.balances.usd < amount) {
-    return res.status(400).json({ error: "Insufficient balance" });
-  }
-
-  const result = paymentProcessor.createWithdrawal(
-    req.user.userId,
-    amount,
-    currency,
-    method,
-    destination
-  );
-  res.json(result);
+  // SML Bucks are virtual currency with no cash value — no real withdrawal is processed
+  res.status(400).json({
+    error: 'SML Bucks are virtual currency and cannot be withdrawn as real money. They have no cash value.',
+    note: 'See Terms of Service for details on virtual currency.',
+  });
 });
 
 app.get("/api/payments/history", authenticateUser, (req, res) => {

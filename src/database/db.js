@@ -906,6 +906,14 @@ class DB {
         purchased_at INTEGER NOT NULL,
         UNIQUE(user_id, weapon_key, skin_key)
       )`,
+      `CREATE TABLE IF NOT EXISTS audit_log (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT NOT NULL,
+        user_id    TEXT,
+        ip_address TEXT,
+        details    TEXT,
+        created_at INTEGER NOT NULL
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)

@@ -5,7 +5,7 @@ const priceEngine = require('../market/PriceEngine');
 
 const BOT_ID    = 'sml-bot';
 const BOT_EMAIL = 'bot@sml.gg';
-const BOT_NAME  = 'SML Bot';
+const BOT_NAME  = 'SML Bot (AI)';
 const STARTING_CASH = 1000;
 
 class BotTrader {

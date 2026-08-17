@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
+const db = require("../database/db");
 
 class SecurityManager {
   constructor() {
@@ -216,10 +217,14 @@ class SecurityManager {
     };
 
     this.auditLog.push(auditEntry);
-
-    if (this.auditLog.length > 100000) {
-      this.auditLog = this.auditLog.slice(-50000);
+    if (this.auditLog.length > 10000) {
+      this.auditLog = this.auditLog.slice(-5000);
     }
+
+    db.run(
+      'INSERT INTO audit_log (event_type, user_id, ip_address, details, created_at) VALUES (?, ?, ?, ?, ?)',
+      [action, userId || null, auditEntry.ipAddress, JSON.stringify(details), Date.now()]
+    ).catch(() => {});
 
     return auditEntry;
   }
