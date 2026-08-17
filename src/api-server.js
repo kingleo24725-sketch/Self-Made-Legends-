@@ -5763,7 +5763,8 @@ async function startServer() {
         }
       }
       // Open the next race
-      await db.run("INSERT INTO race_events (status, prize_pool, created_at) VALUES ('open', 0, ?)", [Date.now()]);
+      const _nextNow = Date.now();
+      await db.run("INSERT INTO race_events (status, prize_pool, starts_at, ends_at, created_at) VALUES ('open', 0, ?, ?, ?)", [_nextNow, _nextNow + RACE_INTERVAL_MS, _nextNow]);
       console.log(`[Race] Resolved race ${race.id} — paid ${Math.min(3, entries.length)} winners from $${prizePool} pool`);
     } catch (e) { console.error('[Race]', e.message); }
   };

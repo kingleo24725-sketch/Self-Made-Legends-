@@ -9191,10 +9191,10 @@ async function claimReferralMilestones() {
 }
 // Extend loadReferrals to also load milestones
 const _origLoadReferrals = typeof loadReferrals === 'function' ? loadReferrals : null;
-function loadReferrals() {
+window.loadReferrals = function() {
   if (_origLoadReferrals) _origLoadReferrals();
   loadReferralMilestones();
-}
+};
 
 // ── Casino: Blackjack ─────────────────────────────────────────────────────────
 let _bjGameId = null;
