@@ -382,6 +382,14 @@ class DB {
         stripe_session TEXT,
         created_at     INTEGER NOT NULL
       )`,
+
+      // Daily perk streak (free paper money rewards for logging in daily)
+      `CREATE TABLE IF NOT EXISTS daily_perks (
+        user_id      TEXT PRIMARY KEY,
+        streak       INTEGER DEFAULT 0,
+        last_claim   INTEGER,
+        total_earned REAL DEFAULT 0
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)

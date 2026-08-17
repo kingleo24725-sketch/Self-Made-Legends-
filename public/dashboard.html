@@ -780,6 +780,54 @@
           <a href="/leaderboard.html" target="_blank" style="color:#00d4ff; font-size:0.9em; text-decoration:none;">📊 View Full National Leaderboard →</a>
         </div>
       </div>
+
+      <!-- ── Daily Rewards card ────────────────────────────────────────── -->
+      <div class="card" id="daily-rewards-card" style="border:1px solid rgba(255,215,0,0.25); background:linear-gradient(135deg,rgba(255,215,0,0.05) 0%,rgba(0,212,255,0.04) 100%);">
+        <h2 style="color:#ffd700; margin-bottom:6px;">🎁 Daily Rewards</h2>
+        <p style="color:#888; font-size:0.82em; margin:0 0 14px;">Log in every day to earn free paper money. Miss a day and your streak resets!</p>
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:120px; background:#0d1b2a; border-radius:10px; padding:14px; text-align:center;">
+            <div style="font-size:2em;" id="dr-streak-icon">🔥</div>
+            <div style="color:#888; font-size:0.78em; margin-top:4px; text-transform:uppercase; letter-spacing:.05em;">Current Streak</div>
+            <div id="dr-streak" style="color:#ffd700; font-size:1.8em; font-weight:700; margin-top:2px;">—</div>
+            <div style="color:#555; font-size:0.75em;">days</div>
+          </div>
+          <div style="flex:1; min-width:140px; background:#0d1b2a; border-radius:10px; padding:14px; text-align:center;">
+            <div style="font-size:2em;">💵</div>
+            <div style="color:#888; font-size:0.78em; margin-top:4px; text-transform:uppercase; letter-spacing:.05em;">Today's Reward</div>
+            <div id="dr-amount" style="color:#00ff88; font-size:1.8em; font-weight:700; margin-top:2px;">—</div>
+            <div style="color:#555; font-size:0.75em;">paper money</div>
+          </div>
+        </div>
+        <!-- Streak ladder -->
+        <div style="display:flex; gap:5px; margin-bottom:14px; flex-wrap:wrap;">
+          <div class="dr-day" data-day="1" style="flex:1; min-width:44px; text-align:center; padding:7px 4px; border-radius:7px; background:#0d1b2a; font-size:0.75em; color:#888;">
+            <div style="font-size:1.1em;">📅</div><div style="margin-top:3px; font-weight:600; color:#00d4ff;">$25</div><div style="color:#555; font-size:0.75em;">Day 1</div>
+          </div>
+          <div class="dr-day" data-day="2" style="flex:1; min-width:44px; text-align:center; padding:7px 4px; border-radius:7px; background:#0d1b2a; font-size:0.75em; color:#888;">
+            <div style="font-size:1.1em;">📅</div><div style="margin-top:3px; font-weight:600; color:#00d4ff;">$25</div><div style="color:#555; font-size:0.75em;">Day 2</div>
+          </div>
+          <div class="dr-day" data-day="3" style="flex:1; min-width:44px; text-align:center; padding:7px 4px; border-radius:7px; background:#0d1b2a; font-size:0.75em; color:#888;">
+            <div style="font-size:1.1em;">📅</div><div style="margin-top:3px; font-weight:600; color:#00d4ff;">$50</div><div style="color:#555; font-size:0.75em;">Day 3</div>
+          </div>
+          <div class="dr-day" data-day="4" style="flex:1; min-width:44px; text-align:center; padding:7px 4px; border-radius:7px; background:#0d1b2a; font-size:0.75em; color:#888;">
+            <div style="font-size:1.1em;">📅</div><div style="margin-top:3px; font-weight:600; color:#00d4ff;">$50</div><div style="color:#555; font-size:0.75em;">Day 4</div>
+          </div>
+          <div class="dr-day" data-day="5" style="flex:1; min-width:44px; text-align:center; padding:7px 4px; border-radius:7px; background:#0d1b2a; font-size:0.75em; color:#888;">
+            <div style="font-size:1.1em;">📅</div><div style="margin-top:3px; font-weight:600; color:#00d4ff;">$75</div><div style="color:#555; font-size:0.75em;">Day 5</div>
+          </div>
+          <div class="dr-day" data-day="6" style="flex:1; min-width:44px; text-align:center; padding:7px 4px; border-radius:7px; background:#0d1b2a; font-size:0.75em; color:#888;">
+            <div style="font-size:1.1em;">📅</div><div style="margin-top:3px; font-weight:600; color:#00d4ff;">$75</div><div style="color:#555; font-size:0.75em;">Day 6</div>
+          </div>
+          <div class="dr-day" data-day="7" style="flex:1; min-width:44px; text-align:center; padding:7px 4px; border-radius:7px; background:#0d1b2a; font-size:0.75em; color:#888;">
+            <div style="font-size:1.1em;">🔥</div><div style="margin-top:3px; font-weight:600; color:#ffd700;">$100</div><div style="color:#888; font-size:0.75em;">Day 7+</div>
+          </div>
+        </div>
+        <button id="dr-claim-btn" onclick="claimDailyReward()" style="width:100%; padding:13px; background:linear-gradient(135deg,#ffd700,#ffaa00); color:#000; font-weight:700; font-size:1em; border:none; border-radius:8px; cursor:pointer; letter-spacing:.04em;">
+          Claim Today's Reward
+        </button>
+        <div id="dr-status" style="margin-top:10px; text-align:center; font-size:0.85em; color:#888;"></div>
+      </div>
     </section>
 
     <!-- ── Trade Section ────────────────────────────────────────────────── -->
@@ -2349,6 +2397,7 @@
           loadBadges();
           loadStreaks();
           loadAvatarPreview();
+          checkDailyReward();
         } else {
           // Logged in but no season pass
           const profileR = await fetch('/api/profile/me', { headers: { 'X-Session-Id': sid } });
@@ -5449,6 +5498,13 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
       if (typeof refreshPortfolio === 'function') refreshPortfolio();
     });
     socket.on('inventory_updated', () => { loadArmory && loadArmory(); });
+    socket.on('weapon_defense', (data) => {
+      showToast(data.icon || '⚔️', 'Weapon Fought Back!', `Your ${data.weaponName} countered ${data.robberName}'s heist — reduced their odds!`, '#ffd700');
+    });
+    socket.on('reward_claimed', (data) => {
+      showToast('🎁', `Day ${data.streak} Reward!`, `+${fmtMoney(data.amount)} paper money added to your account`, '#00ff88');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
   }
 
   // Initialize after DOM ready
@@ -6195,6 +6251,82 @@ async function giftRealMoney() {
     if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
     else showToast('❌', 'Error', data.error || 'Could not open checkout', '#ff4444');
   } catch (_) { showToast('❌', 'Error', 'Network error', '#ff4444'); }
+}
+
+// ── Daily Rewards ──────────────────────────────────────────────────────────
+async function checkDailyReward() {
+  if (!sessionId) return;
+  try {
+    const res  = await fetch('/api/rewards/daily-status', { headers: { 'x-session-id': sessionId } });
+    if (!res.ok) return;
+    const data = await res.json();
+    const streakEl  = document.getElementById('dr-streak');
+    const amountEl  = document.getElementById('dr-amount');
+    const btnEl     = document.getElementById('dr-claim-btn');
+    const statusEl  = document.getElementById('dr-status');
+    const iconEl    = document.getElementById('dr-streak-icon');
+
+    if (streakEl)  streakEl.textContent  = data.streak || 0;
+    if (amountEl)  amountEl.textContent  = `$${data.nextAmount}`;
+    if (iconEl)    iconEl.textContent    = data.streak >= 7 ? '🔥' : data.streak >= 3 ? '⚡' : '📅';
+
+    // Highlight completed days on the ladder
+    document.querySelectorAll('.dr-day').forEach(el => {
+      const day = parseInt(el.dataset.day, 10);
+      if (day <= data.streak) {
+        el.style.background = 'rgba(0,255,136,0.12)';
+        el.style.border     = '1px solid rgba(0,255,136,0.35)';
+      } else if (day === data.streak + 1) {
+        el.style.background = 'rgba(255,215,0,0.12)';
+        el.style.border     = '1px solid rgba(255,215,0,0.4)';
+      } else {
+        el.style.background = '#0d1b2a';
+        el.style.border     = '1px solid transparent';
+      }
+    });
+
+    if (btnEl) {
+      if (data.canClaim) {
+        btnEl.disabled   = false;
+        btnEl.textContent = `Claim $${data.nextAmount} Now`;
+        btnEl.style.opacity = '1';
+        if (statusEl) statusEl.textContent = data.streak >= 7 ? '🔥 Max streak! Keep it going for $100/day!' : '';
+      } else {
+        btnEl.disabled    = true;
+        btnEl.textContent = 'Already Claimed Today';
+        btnEl.style.opacity = '0.5';
+        if (data.nextClaimAt && statusEl) {
+          const diff = data.nextClaimAt - Date.now();
+          const hrs  = Math.floor(diff / 3600000);
+          const mins = Math.floor((diff % 3600000) / 60000);
+          statusEl.textContent = `Next reward in ${hrs}h ${mins}m`;
+        }
+      }
+    }
+  } catch (_) {}
+}
+
+async function claimDailyReward() {
+  if (!sessionId) return;
+  const btn = document.getElementById('dr-claim-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Claiming…'; }
+  try {
+    const res  = await fetch('/api/rewards/daily-claim', {
+      method: 'POST',
+      headers: { 'x-session-id': sessionId },
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast('🎁', `Day ${data.streak} Reward!`, `+$${data.amount} paper money — ${data.message}`, '#ffd700');
+      await checkDailyReward();
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    } else {
+      showToast('⏳', 'Already Claimed', data.error || 'Come back tomorrow!', '#888');
+      await checkDailyReward();
+    }
+  } catch (_) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Claim Today\'s Reward'; }
+  }
 }
 </script>
 </body>

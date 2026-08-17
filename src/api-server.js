@@ -176,6 +176,12 @@ const SHIELDS = {
   titanium: { tier:3, label:'Titanium Shield', icon:'💎🛡️',  price_cents: 600, maxDurability: 12, successReduction:0.40, maxPctReduction:0.20 },
 };
 
+// Daily perk amounts by streak day (index 0 = day 1). Days 7+ hold at $100.
+const DAILY_PERK_AMOUNTS = [25, 25, 50, 50, 75, 75, 100];
+function _dailyPerkAmount(streak) {
+  return DAILY_PERK_AMOUNTS[Math.min(streak - 1, DAILY_PERK_AMOUNTS.length - 1)];
+}
+
 app.post("/api/auth/register", (req, res) => {
   const { email, password, fullName, referralCode } = req.body;
 
@@ -941,6 +947,72 @@ app.get("/api/underworld/inventory", authenticateUser, async (req, res) => {
   }
 });
 
+// ===== DAILY REWARDS =====
+
+const TWENTY_FOUR_H = 86400_000;
+const FORTY_EIGHT_H = 172800_000;
+
+app.get("/api/rewards/daily-status", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const row = await db.get('SELECT streak, last_claim FROM daily_perks WHERE user_id = ?', [uid]);
+    const now = Date.now();
+    if (!row || !row.last_claim) {
+      return res.json({ canClaim: true, streak: 0, nextAmount: 25, nextClaimAt: null });
+    }
+    const elapsed = now - row.last_claim;
+    const canClaim = elapsed >= TWENTY_FOUR_H;
+    const streakBroken = elapsed >= FORTY_EIGHT_H;
+    const currentStreak = streakBroken ? 0 : row.streak;
+    const nextStreak = currentStreak + 1;
+    res.json({
+      canClaim,
+      streak: currentStreak,
+      nextAmount: _dailyPerkAmount(nextStreak),
+      nextClaimAt: canClaim ? null : row.last_claim + TWENTY_FOUR_H,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post("/api/rewards/daily-claim", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const row = await db.get('SELECT streak, last_claim FROM daily_perks WHERE user_id = ?', [uid]);
+    const now = Date.now();
+    if (row && row.last_claim && (now - row.last_claim) < TWENTY_FOUR_H) {
+      const hrs = Math.ceil((row.last_claim + TWENTY_FOUR_H - now) / 3600000);
+      return res.status(429).json({ error: `Already claimed today. Come back in ~${hrs}h!` });
+    }
+    const streakBroken = row && row.last_claim && (now - row.last_claim) >= FORTY_EIGHT_H;
+    const currentStreak = (!row || !row.last_claim || streakBroken) ? 0 : row.streak;
+    const newStreak = currentStreak + 1;
+    const amount = _dailyPerkAmount(newStreak);
+    await db.run(
+      `INSERT INTO daily_perks (user_id, streak, last_claim, total_earned) VALUES (?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET streak = ?, last_claim = ?, total_earned = total_earned + ?`,
+      [uid, newStreak, now, amount, newStreak, now, amount]
+    );
+    await db.run(
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+       ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+      [uid, amount, now, amount, now]
+    );
+    await _syncLeaderboard(uid);
+    emitToUser(uid, 'reward_claimed', { amount, streak: newStreak });
+    res.json({
+      success: true,
+      amount,
+      streak: newStreak,
+      nextAmount: _dailyPerkAmount(newStreak + 1),
+      message: `🎁 Day ${newStreak} streak! +$${amount} paper money added`,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ===== UNDERWORLD — HEIST SYSTEM =====
 
 // Helper: compute portfolio value for a user
@@ -1048,18 +1120,22 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
     const targetCash = targetPortfolio ? targetPortfolio.cash_balance : 0;
     if (targetCash < MIN_TARGET_CASH) return res.status(400).json({ error: 'Target doesn\'t have enough cash to heist' });
 
-    // Armory modifiers — best weapon among all teammates for success roll
+    // Armory modifiers — best weapon among all teammates for success roll; defender's weapon fights back
     const teammateWeapons = await Promise.all(teammates.map(rid => _getBestWeapon(rid)));
     const bestTeamWeapon  = teammateWeapons.filter(Boolean).sort((a, b) => b.tier - a.tier)[0] || null;
     const targetShield    = await _getActiveShield(targetUserId);
+    const defenderWeapon  = await _getBestWeapon(targetUserId);
 
+    // Defender weapon counters at 50% efficiency — stacks with shield
     const effectiveChance = Math.min(0.95, Math.max(0.01,
       (bestTeamWeapon ? config.baseChance + bestTeamWeapon.successBonus : config.baseChance)
       - (targetShield ? targetShield.successReduction : 0)
+      - (defenderWeapon ? defenderWeapon.successBonus * 0.5 : 0)
     ));
     const effectiveMaxPct = Math.min(0.50, Math.max(0.01,
       (bestTeamWeapon ? config.maxPct + bestTeamWeapon.maxPctBonus : config.maxPct)
       - (targetShield ? targetShield.maxPctReduction : 0)
+      - (defenderWeapon ? defenderWeapon.maxPctBonus * 0.5 : 0)
     ));
 
     const now = Date.now();
@@ -1145,6 +1221,15 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
       }
     }
 
+    // Defender weapon counter-notification
+    if (defenderWeapon) {
+      emitToUser(targetUserId, 'weapon_defense', {
+        weaponName: defenderWeapon.label,
+        icon: defenderWeapon.icon,
+        robberName: _displayName(uid),
+      });
+    }
+
     // Guard dog bite — fires regardless of heist outcome
     const dog = await _getBestDog(targetUserId);
     if (dog && Math.random() < dog.biteChance) {
@@ -1179,8 +1264,13 @@ app.post("/api/heist/press-charges", authenticateUser, async (req, res) => {
 
     await db.run('UPDATE heist_attempts SET charges = 1 WHERE id = ?', [heistId]);
 
-    const robberWeapon = await _getBestWeapon(heist.robber_id);
-    const effectiveCatchRate = robberWeapon ? Math.max(0.05, CATCH_RATE - robberWeapon.catchReduction) : CATCH_RATE;
+    const robberWeapon   = await _getBestWeapon(heist.robber_id);
+    const defenderWeapon = await _getBestWeapon(heist.target_id);
+    const effectiveCatchRate = Math.min(0.95, Math.max(0.05,
+      CATCH_RATE
+      - (robberWeapon   ? robberWeapon.catchReduction * 1.0  : 0)   // robber weapon reduces catch chance
+      + (defenderWeapon ? defenderWeapon.catchReduction * 0.5 : 0)  // defender weapon boosts catch chance
+    ));
     const caught = Math.random() < effectiveCatchRate;
     const robberName = _displayName(heist.robber_id);
 
