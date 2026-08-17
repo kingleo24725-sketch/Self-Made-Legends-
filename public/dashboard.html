@@ -648,6 +648,7 @@
       <button class="nav-tab" onclick="switchTab('games'); loadGamesTab()">🎰 Games</button>
       <button class="nav-tab" onclick="switchTab('realestate'); loadRealEstate()">🏘️ Real Estate</button>
       <button class="nav-tab" onclick="switchTab('battlepass'); loadBattlePass()">🎫 Battle Pass</button>
+      <button class="nav-tab" id="creator-hub-tab" style="display:none;" onclick="switchTab('creator-hub'); loadCreatorHub()">👑 Creator Hub</button>
     </div>
     <div class="nav-right">
       <div style="display:flex; align-items:center; gap:10px;">
@@ -782,6 +783,26 @@
           </div>
           <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="toggle-btn" onclick="toggleTrading()">Start Trading</button>
           <div id="share-rank-bar" style="display:none; margin-top:14px; padding:12px; background:rgba(255,215,0,0.07); border:1px solid rgba(255,215,0,0.2); border-radius:8px;"></div>
+        </div>
+
+        <!-- Bring Your Crew -->
+        <div class="card" style="border:1px solid rgba(0,255,136,0.3); background:linear-gradient(135deg,rgba(0,255,136,0.04) 0%,rgba(0,212,255,0.03) 100%);">
+          <h2 style="color:#00ff88; margin-bottom:6px;">🤝 Bring Your Crew</h2>
+          <p style="color:#888; font-size:0.83em; margin-bottom:14px; line-height:1.5;">You both get <strong style="color:#ffd700;">+$500 paper money</strong> when a friend signs up with your link.</p>
+          <div style="margin-bottom:14px;">
+            <label style="color:#aaa; font-size:0.78em; display:block; margin-bottom:6px;">Your Referral Link</label>
+            <div style="display:flex; gap:8px;">
+              <input id="crew-referral-input" type="text" readonly style="flex:1; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#00d4ff; font-size:0.82em; padding:8px 12px; outline:none;" placeholder="Loading…">
+              <button onclick="copyCrewLink()" style="background:#00ff88; color:#000; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:0.82em; cursor:pointer; white-space:nowrap;" title="Copy link">📋 Copy</button>
+            </div>
+          </div>
+          <div style="margin-bottom:4px;">
+            <label style="color:#aaa; font-size:0.78em; display:block; margin-bottom:6px;">Add a Friend by Email</label>
+            <div style="display:flex; gap:8px;">
+              <input id="crew-friend-email" type="email" placeholder="friend@email.com" style="flex:1; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#e0e0e0; font-size:0.82em; padding:8px 12px; outline:none;">
+              <button onclick="sendCrewInvite()" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:0.82em; cursor:pointer; white-space:nowrap;">Add</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1186,13 +1207,15 @@
         <div class="card" style="border:1px solid #00d4ff; position:relative; overflow:hidden;">
           <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">🎫</div>
           <div style="color:#00d4ff; font-weight:bold; font-size:1.05em; margin-bottom:4px;">🎫 Season Pass</div>
-          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$9.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/season</span></div>
-          <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
+          <div style="color:#00ff88; font-size:1.9em; font-weight:bold; margin-bottom:4px; font-variant-numeric:tabular-nums;">$9.99 <span style="font-size:0.42em; color:#555; font-weight:normal;">/season</span></div>
+          <p style="color:#ffd700; font-size:0.78em; font-weight:600; margin:0 0 10px;">⚡ Competitive Edge — play free, or level up your game</p>
+          <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 10px; line-height:2.1;">
             <li>✨ Premium badge frames</li>
             <li>⚡ 1.5× XP Multiplier all season</li>
             <li>🥇 Private leaderboard tier</li>
             <li>📊 Advanced analytics view</li>
           </ul>
+          <p style="color:#555; font-size:0.78em; margin:0 0 10px;">Play free without it — upgrade when you're ready to compete.</p>
           <div id="season-pass-status" style="color:#555; font-size:0.78em; min-height:18px; margin-bottom:8px;"></div>
           <button class="btn btn-success" id="season-pass-btn" onclick="buySeasonPass()" style="width:100%;">🎫 Get Season Pass</button>
         </div>
@@ -1757,22 +1780,14 @@
       <div style="font-size:3.5em; margin-bottom:12px;">👑</div>
       <h1 style="color:#ffd700; font-size:1.9em; font-weight:900; letter-spacing:0.02em; margin-bottom:8px;">Self-Made Legends</h1>
       <p style="color:#888; font-size:0.95em; line-height:1.7; margin-bottom:8px;">The AI-powered stock trading game. Compete on the national leaderboard. Build your legend.</p>
-      <p style="color:#ffd700; font-size:0.88em; font-weight:600; margin-bottom:28px;">Season Pass required to play — $1.00/season</p>
+      <p style="color:#00ff88; font-size:0.88em; font-weight:600; margin-bottom:28px;">Play Free — No Subscription Needed</p>
 
       <!-- Not logged in state -->
       <div id="paywall-guest" style="display:flex; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
         <button onclick="paywallLogin()" style="background:#ffd700; color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Login</button>
-        <button onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign Up &amp; Get Season Pass</button>
+        <button onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign Up Free</button>
         <button onclick="openForgotPassword()" style="background:transparent; border:none; color:#888; font-size:0.82em; cursor:pointer; text-decoration:underline; margin-top:2px;">Forgot Password?</button>
         <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard (Public) →</a>
-      </div>
-
-      <!-- Logged in, no access state -->
-      <div id="paywall-member" style="display:none; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
-        <p id="paywall-member-info" style="color:#aaa; font-size:0.88em; margin-bottom:4px;"></p>
-        <button onclick="buySeasonPassPaywall()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer;">Get Season Pass — $1.00</button>
-        <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard →</a>
-        <button onclick="paywallLogout()" style="background:transparent; border:none; color:#444; font-size:0.78em; cursor:pointer; margin-top:4px;">Logout</button>
       </div>
     </div>
   </div>
@@ -2136,6 +2151,53 @@
       </div>
       <div id="bp-tiers" style="display:flex; flex-direction:column; gap:10px;">
         <div style="color:#555; font-size:0.88em; text-align:center; padding:20px;">Loading battle pass…</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Creator Hub Section -->
+  <section class="section" id="creator-hub">
+    <div style="max-width:860px; margin:0 auto;">
+      <h2 style="color:#ffd700; font-size:1.6em; margin-bottom:6px;">👑 Creator Hub</h2>
+      <p style="color:#aaa; margin-bottom:24px;">Your earnings, followers, and impact — all in one place. Grow your audience, earn commissions, and keep 100% of your tip income.</p>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:20px;">
+        <div class="card" style="text-align:center; border:1px solid rgba(255,215,0,0.25);">
+          <div style="font-size:2em; margin-bottom:8px;">👥</div>
+          <div id="ch-followers" style="color:#ffd700; font-size:2em; font-weight:900; font-variant-numeric:tabular-nums;">—</div>
+          <div style="color:#888; font-size:0.8em; margin-top:4px;">Followers</div>
+        </div>
+        <div class="card" style="text-align:center; border:1px solid rgba(0,212,255,0.25);">
+          <div style="font-size:2em; margin-bottom:8px;">💎</div>
+          <div id="ch-month-credits" style="color:#00d4ff; font-size:2em; font-weight:900; font-variant-numeric:tabular-nums;">—</div>
+          <div style="color:#888; font-size:0.8em; margin-top:4px;">Credits This Month</div>
+        </div>
+        <div class="card" style="text-align:center; border:1px solid rgba(0,255,136,0.25);">
+          <div style="font-size:2em; margin-bottom:8px;">📈</div>
+          <div id="ch-total-credits" style="color:#00ff88; font-size:2em; font-weight:900; font-variant-numeric:tabular-nums;">—</div>
+          <div style="color:#888; font-size:0.8em; margin-top:4px;">Total Earned (Credits)</div>
+        </div>
+        <div class="card" style="text-align:center; border:1px solid rgba(155,89,182,0.35);">
+          <div style="font-size:2em; margin-bottom:8px;">💰</div>
+          <div id="ch-tip-income" style="color:#d4a7f5; font-size:2em; font-weight:900; font-variant-numeric:tabular-nums;">—</div>
+          <div style="color:#888; font-size:0.8em; margin-top:4px;">Tip Income (Credits)</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="color:#ffd700; margin-bottom:14px;">🔗 Grow Your Audience</h3>
+        <p style="color:#888; font-size:0.85em; margin-bottom:12px;">Share your referral link. When someone you refer buys Credits, Elite, or a Battle Pass, you earn <strong style="color:#ffd700;">10% in SML Credits</strong>.</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <input id="ch-referral-input" type="text" readonly style="flex:1; min-width:200px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#00d4ff; font-size:0.82em; padding:10px 14px; outline:none;" placeholder="Loading your link…">
+          <button onclick="copyCreatorLink()" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.85em; cursor:pointer;">📋 Copy Link</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="color:#00d4ff; margin-bottom:14px;">📋 Recent Commissions</h3>
+        <div id="ch-commissions-list" style="display:flex; flex-direction:column; gap:8px;">
+          <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
       </div>
     </div>
   </section>
@@ -2740,30 +2802,14 @@
 
     async function checkAndReveal() {
       const sid = getSessionId();
-      if (!sid) return; // stay on paywall (guest state)
-      try {
-        const r = await fetch('/api/account/has-access', { headers: { 'X-Session-Id': sid } });
-        const d = await r.json();
-        if (d.hasAccess) {
-          document.getElementById('paywall-overlay').style.display = 'none';
-          loadAccountData();
-          loadBadges();
-          loadStreaks();
-          loadAvatarPreview();
-          checkDailyReward();
-        } else {
-          // Logged in but no season pass
-          const profileR = await fetch('/api/profile/me', { headers: { 'X-Session-Id': sid } });
-          const profile = await profileR.json();
-          document.getElementById('paywall-guest').style.display = 'none';
-          document.getElementById('paywall-member').style.display = 'flex';
-          document.getElementById('paywall-member-info').textContent = `Logged in as ${profile.email || ''}. A Season Pass is required to play.`;
-        }
-      } catch {
-        // Network error — allow through
-        document.getElementById('paywall-overlay').style.display = 'none';
-        loadAccountData();
-      }
+      if (!sid) return; // stay on guest paywall
+      // Any logged-in user gets full access — Season Pass is an optional upgrade
+      document.getElementById('paywall-overlay').style.display = 'none';
+      loadAccountData();
+      loadBadges();
+      loadStreaks();
+      loadAvatarPreview();
+      checkDailyReward();
     }
 
     function paywallLogin() {
@@ -2808,11 +2854,8 @@
             if (loginData.success) {
               setSessionId(loginData.sessionId);
               currentUser = email;
+              checkAndReveal();
               openProfileSetup();
-              // Show paywall member state so they can buy season pass
-              document.getElementById('paywall-guest').style.display = 'none';
-              document.getElementById('paywall-member').style.display = 'flex';
-              document.getElementById('paywall-member-info').textContent = `Account created! Now get a Season Pass to start playing.`;
             }
           });
         } else {
@@ -2846,7 +2889,7 @@
       sessionId = null;
       localStorage.removeItem('sessionId');
       currentUser = null;
-      document.getElementById('paywall-member').style.display = 'none';
+      document.getElementById('paywall-overlay').style.display = 'flex';
       document.getElementById('paywall-guest').style.display = 'flex';
     }
 
@@ -4020,6 +4063,86 @@
       } else {
         copyReferralLink();
       }
+    }
+
+    // ── Bring Your Crew ─────────────────────────────────────────────────
+    function initCrewCard() {
+      const input = document.getElementById('crew-referral-input');
+      if (!input) return;
+      const sid = getSessionId();
+      if (!sid) { input.placeholder = 'Log in to get your referral link'; return; }
+      fetch('/api/social/referral-link', { headers: { 'X-Session-Id': sid } })
+        .then(r => r.json())
+        .then(d => { if (d.referralLink || d.link) input.value = d.referralLink || d.link; })
+        .catch(() => {});
+    }
+
+    function copyCrewLink() {
+      const val = document.getElementById('crew-referral-input').value;
+      if (!val || val.startsWith('Loading')) return;
+      navigator.clipboard.writeText(val).then(() => showToast('📋', 'Copied!', 'Referral link copied to clipboard.', '#00ff88'));
+    }
+
+    function sendCrewInvite() {
+      const email = document.getElementById('crew-friend-email').value.trim();
+      if (!email) return;
+      const sid = getSessionId();
+      if (!sid) { showToast('🔒', 'Login Required', 'Log in to invite friends.', '#ff4444'); return; }
+      fetch('/api/social/friends/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Session-Id': sid },
+        body: JSON.stringify({ email })
+      }).then(r => r.json()).then(d => {
+        if (d.success) {
+          document.getElementById('crew-friend-email').value = '';
+          showToast('✅', 'Invite Sent!', `Friend request sent to ${email}.`, '#00ff88');
+        } else {
+          showToast('❌', 'Failed', d.error || 'Could not send invite.', '#ff4444');
+        }
+      }).catch(() => showToast('❌', 'Error', 'Network error.', '#ff4444'));
+    }
+
+    // ── Creator Hub ──────────────────────────────────────────────────────
+    function loadCreatorHub() {
+      const sid = getSessionId();
+      if (!sid) return;
+      fetch('/api/creator/dashboard', { headers: { 'X-Session-Id': sid } })
+        .then(r => r.json())
+        .then(d => {
+          if (d.error) {
+            document.querySelector('#creator-hub .section > div > p').textContent = d.error;
+            return;
+          }
+          document.getElementById('ch-followers').textContent = (d.followerCount || 0).toLocaleString();
+          document.getElementById('ch-month-credits').textContent = (d.thisMonthCredits || 0).toLocaleString();
+          document.getElementById('ch-total-credits').textContent = (d.totalCommissionCredits || 0).toLocaleString();
+          document.getElementById('ch-tip-income').textContent = (d.totalTipIncome || 0).toLocaleString();
+
+          const refInput = document.getElementById('ch-referral-input');
+          fetch('/api/social/referral-link', { headers: { 'X-Session-Id': sid } })
+            .then(r => r.json()).then(rd => { if (refInput && (rd.referralLink || rd.link)) refInput.value = rd.referralLink || rd.link; });
+
+          const list = document.getElementById('ch-commissions-list');
+          if (!d.recentCommissions || d.recentCommissions.length === 0) {
+            list.innerHTML = '<div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">No commissions yet — share your referral link to start earning!</div>';
+          } else {
+            list.innerHTML = d.recentCommissions.map(c => `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#0d1b2a; border-radius:8px; gap:12px;">
+                <div>
+                  <div style="color:#e0e0e0; font-size:0.88em;">${c.purchase_type.replace(/_/g,' ')}</div>
+                  <div style="color:#555; font-size:0.78em;">${new Date(c.created_at).toLocaleDateString()}</div>
+                </div>
+                <div style="color:#ffd700; font-weight:700; font-size:0.95em;">+${c.credits_awarded} credits</div>
+              </div>`).join('');
+          }
+        })
+        .catch(() => {});
+    }
+
+    function copyCreatorLink() {
+      const val = document.getElementById('ch-referral-input').value;
+      if (!val || val.startsWith('Loading')) return;
+      navigator.clipboard.writeText(val).then(() => showToast('📋', 'Copied!', 'Your creator link copied.', '#ffd700'));
     }
 
     // ── Missions ────────────────────────────────────────────────────────
@@ -7815,7 +7938,7 @@ window.closeProfileSetup = function() {
   };
 })();
 
-// Show notif bell once logged in
+// Show notif bell once logged in; show Creator Hub tab for creators; init crew card
 (function() {
   const _origLoadAcc = window.loadAccountData;
   if (typeof _origLoadAcc === 'function') {
@@ -7823,6 +7946,18 @@ window.closeProfileSetup = function() {
       _origLoadAcc.apply(this, arguments);
       const bell = document.getElementById('notif-bell');
       if (bell) bell.style.display = 'inline-flex';
+      // Init "Bring Your Crew" referral link
+      if (typeof initCrewCard === 'function') initCrewCard();
+      // Reveal Creator Hub tab for creator members
+      const sid = typeof getSessionId === 'function' ? getSessionId() : null;
+      if (sid) {
+        fetch('/api/creator/dashboard', { headers: { 'X-Session-Id': sid } })
+          .then(r => r.json())
+          .then(d => {
+            const tab = document.getElementById('creator-hub-tab');
+            if (tab && !d.error) tab.style.display = 'inline-block';
+          }).catch(() => {});
+      }
     };
   }
 })();

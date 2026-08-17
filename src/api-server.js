@@ -507,6 +507,28 @@ async function _notify(userId, type, title, body) {
   } catch (_) {}
 }
 
+
+// Helper: award creator commission when a referred user makes a purchase
+async function _awardCreatorCommission(buyerUserId, purchaseType, credits) {
+  try {
+    const commissionCredits = Math.floor(credits * 0.10);
+    if (commissionCredits < 1) return;
+    const ref = await db.get(
+      "SELECT referrer_id FROM referral_events WHERE referee_id = ? AND event_type = 'signup' LIMIT 1",
+      [buyerUserId]
+    );
+    if (!ref) return;
+    const creatorRow = await db.get('SELECT active FROM creator_memberships WHERE user_id = ? AND active = 1', [ref.referrer_id]);
+    if (!creatorRow) return;
+    const bal = await _addCredits(ref.referrer_id, commissionCredits, 'creator_commission', `Creator commission from ${purchaseType}`);
+    await db.run(
+      'INSERT INTO creator_commissions (creator_id, source_user_id, purchase_type, credits_awarded, created_at) VALUES (?, ?, ?, ?, ?)',
+      [ref.referrer_id, buyerUserId, purchaseType, commissionCredits, Date.now()]
+    );
+    emitToUser(ref.referrer_id, 'creator_commission', { amount: commissionCredits, balance: bal, type: purchaseType });
+  } catch (_) {}
+}
+
 // Helper: add SML credits to a user's balance
 async function _addCredits(userId, amount, type, description) {
   const row = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [userId]);
@@ -549,14 +571,17 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
       } else if (type === 'credit_topup_starter') {
         const bal = await _addCredits(userId, 500, 'topup', 'Starter Pack purchase');
         emitToUser(userId, 'purchase_complete', { type: 'credits', amount: 500, balance: bal, message: '💎 500 SML Credits added!' });
+        await _awardCreatorCommission(userId, 'credits_500', 500);
 
       } else if (type === 'credit_topup_legends') {
         const bal = await _addCredits(userId, 2500, 'topup', 'Legends Pack purchase');
         emitToUser(userId, 'purchase_complete', { type: 'credits', amount: 2500, balance: bal, message: '💎 2,500 SML Credits added!' });
+        await _awardCreatorCommission(userId, 'credits_2500', 2500);
 
       } else if (type === 'credit_topup_champion') {
         const bal = await _addCredits(userId, 7000, 'topup', 'Champion Pack purchase');
         emitToUser(userId, 'purchase_complete', { type: 'credits', amount: 7000, balance: bal, message: '💎 7,000 SML Credits added!' });
+        await _awardCreatorCommission(userId, 'credits_7000', 7000);
 
       } else if (type === 'coach_pro') {
         const now = Date.now();
@@ -735,6 +760,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           await db.run('UPDATE elite_memberships SET active = 1, activated_at = ? WHERE user_id = ?', [now, userId]);
           await db.run('UPDATE accounts SET is_elite = 1 WHERE id = ?', [userId]);
           emitToUser(userId, 'purchase_complete', { type: 'elite_membership', message: '💎 Elite Membership activated! You are in the top tier — exclusive perks unlocked.' });
+          await _awardCreatorCommission(userId, 'elite_membership', 250);
         }
 
       } else if (type === 'legend_bundle') {
@@ -1585,12 +1611,17 @@ app.post("/api/tips/buy/:tipId", authenticateUser, async (req, res) => {
     if (!credits || credits.balance < tip.credits_cost) return res.status(400).json({ error: `Not enough credits (need ${tip.credits_cost})` });
     const now = Date.now();
     await db.run('UPDATE sml_credits SET balance = balance - ?, updated_at = ? WHERE user_id = ?', [tip.credits_cost, now, uid]);
-    await db.run(
-      'INSERT INTO sml_credits (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = balance + ?, updated_at = ?',
-      [tip.author_id, tip.credits_cost, now, tip.credits_cost, now]
-    );
+    // Creators keep 100% of tip credits; non-creators get 80% (20% platform cut)
+    const authorCreator = await db.get('SELECT active FROM creator_memberships WHERE user_id = ? AND active = 1', [tip.author_id]);
+    const authorShare = authorCreator ? tip.credits_cost : Math.floor(tip.credits_cost * 0.8);
+    if (authorShare > 0) {
+      await db.run(
+        'INSERT INTO sml_credits (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = balance + ?, updated_at = ?',
+        [tip.author_id, authorShare, now, authorShare, now]
+      );
+    }
     await db.run('INSERT INTO stock_tip_purchases (tip_id, user_id, purchased_at) VALUES (?, ?, ?)', [tipId, uid, now]);
-    emitToUser(tip.author_id, 'tip_sold', { symbol: tip.symbol, credits: tip.credits_cost });
+    emitToUser(tip.author_id, 'tip_sold', { symbol: tip.symbol, credits: authorShare });
     res.json({ success: true, tip: { symbol: tip.symbol, direction: tip.direction, note: tip.note } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3073,6 +3104,97 @@ app.get("/api/social/feed", authenticateUser, (req, res) => {
   res.json({ feed, totalItems: feed.length });
 });
 
+// ── Creator Follow System ──────────────────────────────────────────────────
+app.post("/api/social/follow/:userId", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const targetId = req.params.userId;
+  if (uid === targetId) return res.status(400).json({ error: 'Cannot follow yourself' });
+  try {
+    await db.run(
+      'INSERT OR IGNORE INTO creator_followers (creator_id, follower_id, created_at) VALUES (?, ?, ?)',
+      [targetId, uid, Date.now()]
+    );
+    const count = await db.get('SELECT COUNT(*) AS c FROM creator_followers WHERE creator_id = ?', [targetId]);
+    _notify(targetId, 'follow', '👥 New Follower', 'Someone started following your creator profile!');
+    res.json({ success: true, followerCount: count.c });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.delete("/api/social/follow/:userId", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const targetId = req.params.userId;
+  try {
+    await db.run('DELETE FROM creator_followers WHERE creator_id = ? AND follower_id = ?', [targetId, uid]);
+    const count = await db.get('SELECT COUNT(*) AS c FROM creator_followers WHERE creator_id = ?', [targetId]);
+    res.json({ success: true, followerCount: count.c });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/social/followers/me", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const count = await db.get('SELECT COUNT(*) AS c FROM creator_followers WHERE creator_id = ?', [uid]);
+    const followers = await db.all(
+      `SELECT a.id, a.full_name, a.email FROM creator_followers cf
+       JOIN accounts a ON a.id = cf.follower_id
+       WHERE cf.creator_id = ? ORDER BY cf.created_at DESC LIMIT 50`,
+      [uid]
+    );
+    res.json({ followerCount: count.c, followers });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/social/following/me", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const following = await db.all(
+      `SELECT a.id, a.full_name, a.email FROM creator_followers cf
+       JOIN accounts a ON a.id = cf.creator_id
+       WHERE cf.follower_id = ? ORDER BY cf.created_at DESC LIMIT 50`,
+      [uid]
+    );
+    res.json({ following, followingCount: following.length });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ── Creator Dashboard ──────────────────────────────────────────────────────
+app.get("/api/creator/dashboard", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const membership = await db.get('SELECT active, activated_at FROM creator_memberships WHERE user_id = ?', [uid]);
+    if (!membership || !membership.active) return res.status(403).json({ error: 'Creator Membership required' });
+
+    const followerCount = (await db.get('SELECT COUNT(*) AS c FROM creator_followers WHERE creator_id = ?', [uid])).c;
+    const totalCommissions = await db.get(
+      'SELECT COALESCE(SUM(credits_awarded), 0) AS total FROM creator_commissions WHERE creator_id = ?', [uid]
+    );
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+    const monthCommissions = await db.get(
+      'SELECT COALESCE(SUM(credits_awarded), 0) AS total FROM creator_commissions WHERE creator_id = ? AND created_at >= ?',
+      [uid, monthStart.getTime()]
+    );
+    const recentCommissions = await db.all(
+      'SELECT source_user_id, purchase_type, credits_awarded, created_at FROM creator_commissions WHERE creator_id = ? ORDER BY created_at DESC LIMIT 10',
+      [uid]
+    );
+    const tipIncome = await db.get(
+      `SELECT COALESCE(SUM(cl.amount), 0) AS total FROM credit_ledger cl WHERE cl.user_id = ? AND cl.type = 'tip_income'`,
+      [uid]
+    );
+    const creditBalance = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [uid]);
+
+    res.json({
+      followerCount,
+      totalCommissionCredits: totalCommissions.total,
+      thisMonthCredits: monthCommissions.total,
+      totalTipIncome: tipIncome ? tipIncome.total : 0,
+      creditBalance: creditBalance ? creditBalance.balance : 0,
+      recentCommissions,
+      activeSince: membership.activated_at
+    });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== AI IMPROVEMENT & CONTINUOUS UPDATE ENDPOINTS =====
 
 app.get("/api/ai/performance", (req, res) => {
@@ -4144,12 +4266,8 @@ app.get("/api/trade/history", authenticateUser, async (req, res) => {
 
 // ── Access Check ──────────────────────────────────────────────────────────
 app.get("/api/account/has-access", authenticateUser, async (req, res) => {
-  const uid = req.user.userId;
-  const account = accountManager.getAccountById(uid);
-  if (!account) return res.json({ hasAccess: false });
-  if (account.isCreatorMember || account.tier === 'creator') return res.json({ hasAccess: true });
-  const sp = await db.get('SELECT active FROM season_passes WHERE user_id = ? AND active = 1', [uid]);
-  res.json({ hasAccess: !!sp });
+  // Free to play — Season Pass is a competitive upgrade, not a gate
+  res.json({ hasAccess: true });
 });
 
 // ── AI Challenge ──────────────────────────────────────────────────────────

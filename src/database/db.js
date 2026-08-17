@@ -606,6 +606,22 @@ class DB {
         created_at  INTEGER NOT NULL,
         filled_at   INTEGER
       )`,
+
+      `CREATE TABLE IF NOT EXISTS creator_followers (
+        creator_id  TEXT NOT NULL,
+        follower_id TEXT NOT NULL,
+        created_at  INTEGER NOT NULL,
+        PRIMARY KEY (creator_id, follower_id)
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS creator_commissions (
+        id              INTEGER PRIMARY KEY AUTOINCREMENT,
+        creator_id      TEXT NOT NULL,
+        source_user_id  TEXT NOT NULL,
+        purchase_type   TEXT NOT NULL,
+        credits_awarded INTEGER NOT NULL,
+        created_at      INTEGER NOT NULL
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)
