@@ -29,7 +29,7 @@
   </div>
 
   <div class="container">
-    <p class="last-updated">Last updated: August 2026 &nbsp;·&nbsp; Self-Made Legends LLC</p>
+    <p class="last-updated">Effective: August 17, 2026 &nbsp;·&nbsp; Last Updated: August 17, 2026 &nbsp;·&nbsp; Self-Made Legends LLC</p>
 
     <div class="highlight">
       <strong style="color:#00ff88;">The short version:</strong> We collect only what we need to run the platform, we never sell your data, and you can delete your account anytime. Full details below.
@@ -73,12 +73,14 @@
     <h2>4. Payment Processing</h2>
     <p>All payments are processed by <strong>Stripe</strong>. We do not store your credit card number, CVV, or full card details on our servers. Stripe's privacy policy applies to payment data: <a href="https://stripe.com/privacy" target="_blank">stripe.com/privacy</a>.</p>
 
-    <h2>5. Information Sharing</h2>
+    <h2>5. Information Sharing &amp; Third-Party Processors</h2>
     <p>We do <strong>not</strong> sell, rent, or trade your personal information to any third party. We share data only in these limited circumstances:</p>
     <ul>
-      <li><strong>Stripe</strong> — for payment processing</li>
-      <li><strong>Railway.app</strong> — our cloud hosting provider (your data resides on their servers)</li>
-      <li><strong>Legal requirements</strong> — if required by law or to protect our rights</li>
+      <li><strong>Stripe</strong> — payment processing. Your card data is sent directly to Stripe and never stored on our servers. See <a href="https://stripe.com/privacy" target="_blank">stripe.com/privacy</a>.</li>
+      <li><strong>Railway.app</strong> — cloud hosting and infrastructure. Your data resides on Railway's servers in the US. See <a href="https://railway.app/legal/privacy" target="_blank">railway.app/legal/privacy</a>.</li>
+      <li><strong>AI Coach Provider</strong> — coach queries you submit may be processed by an AI service to generate responses. Queries are not stored beyond the current session for model training. The AI provider processes data under a data processing agreement.</li>
+      <li><strong>Email delivery provider</strong> — transactional and marketing emails are delivered via a third-party email service (e.g. SendGrid or similar). Your email address is shared with this provider solely to deliver emails you have requested.</li>
+      <li><strong>Legal requirements</strong> — if required by law or court order, or to protect our rights and the safety of users.</li>
     </ul>
 
     <h2>6. Public Leaderboard</h2>
@@ -94,38 +96,67 @@
     </ul>
 
     <h2>8. Data Retention</h2>
-    <p>We retain your account data as long as your account is active. If you delete your account, we remove your personal information within 30 days, except where retention is required by law.</p>
+    <p>We retain data according to the following schedules:</p>
+    <ul>
+      <li><strong>Account and profile data</strong> — retained while your account is active; deleted within 30 days of account deletion request</li>
+      <li><strong>Payment records</strong> — retained for 7 years to comply with financial recordkeeping requirements</li>
+      <li><strong>Server and security logs</strong> — retained for 90 days</li>
+      <li><strong>AI coach queries</strong> — not retained beyond the current session; not used for model training</li>
+      <li><strong>Audit logs</strong> — retained for 2 years for security and compliance purposes</li>
+    </ul>
+    <p>Where retention is required by applicable law (tax, financial, or legal records), we retain that data for the legally required period regardless of account deletion.</p>
 
     <h2>9. Your Rights</h2>
     <ul>
-      <li><strong>Access</strong> — request a copy of your data</li>
-      <li><strong>Correction</strong> — update inaccurate information</li>
-      <li><strong>Deletion</strong> — request account deletion</li>
-      <li><strong>Opt-out</strong> — unsubscribe from marketing emails at any time</li>
+      <li><strong>Access</strong> — request a copy of your data (or use <code>GET /api/account/export</code> in-app)</li>
+      <li><strong>Correction</strong> — update inaccurate information in Account Settings</li>
+      <li><strong>Deletion</strong> — delete your account and all personal data (use <code>DELETE /api/account</code> in-app, or email us)</li>
+      <li><strong>Portability</strong> — receive your data in a structured, machine-readable format (JSON export via the API)</li>
+      <li><strong>Restriction</strong> — request that we limit processing of your data while a complaint is pending</li>
+      <li><strong>Objection</strong> — object to processing based on legitimate interests</li>
+      <li><strong>Opt-out of marketing</strong> — unsubscribe from marketing emails at any time via the unsubscribe link</li>
     </ul>
-    <p>To exercise any of these rights, email <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a>.</p>
+    <p>To exercise any of these rights, email <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a>. We will respond within 30 days (45 days for complex requests).</p>
 
     <h2>10. CCPA — California Residents</h2>
     <p>If you are a California resident, you have the following rights under the California Consumer Privacy Act (CCPA):</p>
     <ul>
-      <li><strong>Right to Know</strong> — you may request a list of the categories of personal information we have collected about you</li>
-      <li><strong>Right to Delete</strong> — you may request deletion of your personal information</li>
+      <li><strong>Right to Know</strong> — request the categories and specific pieces of personal information we have collected about you</li>
+      <li><strong>Right to Delete</strong> — request deletion of your personal information (subject to legal exceptions)</li>
+      <li><strong>Right to Opt-Out of Sale</strong> — we do not sell your personal information. If this changes, we will provide a "Do Not Sell My Personal Information" link before any such sharing begins.</li>
       <li><strong>Right to Non-Discrimination</strong> — we will not discriminate against you for exercising your CCPA rights</li>
     </ul>
-    <p><strong style="color:#e0e0e0;">We do not sell your personal information</strong> to any third party. To exercise your CCPA rights, contact us at <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a>.</p>
+    <p>To exercise your CCPA rights, contact us at <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a> or write to us at 18615 E Arrowhead Pl, Independence, MO 64056. We will respond within 45 days.</p>
 
-    <h2>11. Children's Privacy</h2>
-    <p>Self-Made Legends is not directed at persons under 18. <strong style="color:#e0e0e0;">We do not knowingly collect personal information from anyone under 18 years old.</strong> We require date-of-birth verification at registration to enforce this. If you believe a minor has created an account, contact us immediately at <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a> and we will delete the account.</p>
+    <h2>11. Children's Privacy (COPPA)</h2>
+    <p>Self-Made Legends is not directed at persons under 18, and specifically not at children under 13. <strong style="color:#e0e0e0;">We do not knowingly collect personal information from anyone under 13 years old.</strong> We require date-of-birth verification at registration. If we discover that a user is under 13, we will immediately delete their account and all associated data in compliance with the Children's Online Privacy Protection Act (COPPA). If you believe a minor under 13 has created an account, contact us immediately at <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a>.</p>
 
     <h2>12. Cookies</h2>
-    <p>We use session storage (not persistent cookies) to keep you logged in. We do not use advertising or tracking cookies.</p>
+    <p>We use session storage to keep you logged in during your browser session. We do not use advertising or tracking cookies. <strong>Note:</strong> Stripe, our payment processor, may set cookies on Stripe-hosted checkout pages when you make a purchase. Those cookies are governed by <a href="https://stripe.com/privacy" target="_blank">Stripe's Privacy Policy</a>.</p>
 
-    <h2>13. Changes to This Policy</h2>
+    <h2>12a. Data Breach Notification</h2>
+    <p>In the event of a security breach that compromises your personal information, we will notify you and applicable regulatory authorities as required by law — within 72 hours of discovery for users in the EU/EEA (GDPR Art. 33–34), and within the timeframe required by your state's breach notification law (e.g., 30–45 days for California, New York, and other states with specific requirements). Notification will be sent to the email address associated with your account.</p>
+
+    <h2>13. GDPR — European Union / EEA Residents</h2>
+    <p>If you are located in the European Union, European Economic Area, or United Kingdom, the following applies to you under the General Data Protection Regulation (GDPR):</p>
+    <p><strong>Lawful Bases for Processing:</strong></p>
+    <ul>
+      <li><strong>Contract performance</strong> (Art. 6(1)(b)) — account creation, portfolio management, trade execution, payment processing</li>
+      <li><strong>Legitimate interests</strong> (Art. 6(1)(f)) — security monitoring, fraud prevention, platform improvement</li>
+      <li><strong>Consent</strong> (Art. 6(1)(a)) — marketing emails (you may withdraw consent anytime)</li>
+      <li><strong>Legal obligation</strong> (Art. 6(1)(c)) — retaining financial records as required by law</li>
+    </ul>
+    <p><strong>International Data Transfers:</strong> Your data is stored and processed in the United States. We transfer data from the EU/EEA to the US under Standard Contractual Clauses (SCCs) approved by the European Commission with each of our service providers (Stripe, Railway.app).</p>
+    <p><strong>GDPR Rights:</strong> In addition to the rights in §9, you have the right to lodge a complaint with your national data protection supervisory authority if you believe we have not handled your data appropriately.</p>
+    <p><strong>Data Controller:</strong> Self-Made Legends LLC, 18615 E Arrowhead Pl, Independence, MO 64056, USA. Email: <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a>.</p>
+
+    <h2>14. Changes to This Policy</h2>
     <p>We may update this Privacy Policy occasionally. We will notify registered users by email of material changes. Continued use of the platform after changes constitutes acceptance.</p>
 
-    <h2>14. Contact</h2>
+    <h2>15. Contact</h2>
     <p>For privacy questions or requests:<br>
     <strong>Self-Made Legends LLC</strong><br>
+    18615 E Arrowhead Pl, Independence, MO 64056<br>
     Email: <a href="mailto:leobrown24725@yahoo.com">leobrown24725@yahoo.com</a></p>
   </div>
 

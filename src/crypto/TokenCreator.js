@@ -60,7 +60,7 @@ class TokenCreator {
     holders.set(userId, token.totalSupply);
     this.tokenHolders.set(tokenAddress, holders);
 
-    // Set initial price (starting at $0.01)
+    // Set initial price (0.01 SML Bucks — virtual currency only, no real-world monetary value)
     this.tokenPrices.set(tokenAddress, 0.01);
 
     // Track user's tokens

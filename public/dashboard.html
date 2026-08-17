@@ -3331,10 +3331,12 @@
       const password = prompt('Create a password (min 8 characters):');
       const dateOfBirth = prompt('Enter your date of birth (MM/DD/YYYY) — you must be 18 or older:');
       if (!fullName || !email || !password || !dateOfBirth) return;
+      const tosAgreed = confirm('By clicking OK you confirm you are 18 or older and agree to the Self-Made Legends Terms of Service (terms.html) and Privacy Policy (privacy-policy.html). All trading on this platform is simulated — no real money is invested.');
+      if (!tosAgreed) return;
       fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, email, password, dateOfBirth })
+        body: JSON.stringify({ fullName, email, password, dateOfBirth, tos_agreed: true })
       }).then(r => r.json()).then(data => {
         if (data.success) {
           return fetch('/api/auth/login', {

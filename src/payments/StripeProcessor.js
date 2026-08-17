@@ -218,7 +218,7 @@ class StripeProcessor {
       line_items: [{
         price_data: {
           currency: 'usd',
-          product_data: { name: 'SML Tournament Entry', description: '80% of entry pool pays top-3 players' },
+          product_data: { name: 'SML Tournament Entry', description: '80% of entry pool pays top-3 players in SML Bucks (virtual currency — no cash value). Tournament prizes are not real money.' },
           unit_amount: 1000,
         },
         quantity: 1,
@@ -469,8 +469,8 @@ class StripeProcessor {
   async createCardPackCheckout(userId, userEmail, packType) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const PACKS = {
-      rare:      { label: 'Rare Card Pack',      desc: '5 cards, Rare+ guaranteed',       amount: 999 },
-      legendary: { label: 'Legendary Card Pack', desc: '5 cards, Legendary+ guaranteed', amount: 1999 },
+      rare:      { label: 'Rare Card Pack',      desc: '5 virtual collectible cards. Odds: Uncommon 50%, Rare 40%, Epic 9%, Legendary 1%. Virtual items only — no cash value.',       amount: 999 },
+      legendary: { label: 'Legendary Card Pack', desc: '5 virtual collectible cards. Odds: Rare 40%, Epic 40%, Legendary 20%. Virtual items only — no cash value.', amount: 1999 },
     };
     const pack = PACKS[packType];
     if (!pack) throw new Error(`Unknown card pack: ${packType}`);
@@ -495,7 +495,7 @@ class StripeProcessor {
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
-        product_data: { name: 'SML Premium Loot Box (5-pack)', description: 'Premium loot: credits, rare cards, exotic pets, hypercars' },
+        product_data: { name: 'SML Premium Loot Box (5-pack)', description: '5 premium virtual loot boxes. Odds per box: Common 40%, Rare 35%, Epic 20%, Legendary 5%. All items are virtual with no cash value.' },
         unit_amount: 999 }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=loot_box_premium`,
@@ -505,13 +505,13 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // VIP Casino Access ($14.99/month)
+  // VIP Game Pass ($14.99/month)
   async createCasinoVIPCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     if (!this._casinoVIPPriceId) {
       const product = await this.stripe.products.create({
-        name: 'SML VIP Casino Access',
-        description: '$14.99/month — High-stakes tables, 10× rewards, VIP room',
+        name: 'SML VIP Game Pass',
+        description: '$14.99/month — Unlocks VIP game modes, high-stakes simulated tables, 10× in-game rewards, and VIP room features. All gameplay uses virtual Casino Chips — no real money is wagered. Renews automatically. Cancel anytime.',
       });
       const price = await this.stripe.prices.create({
         product: product.id,

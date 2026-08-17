@@ -63,12 +63,13 @@ class CoachSystem {
       return this._adapt(best.answer, level, needsExtra, best.topic);
     }
 
+    const disclaimer = '\n\n---\n*⚠️ SML Coach is an AI for educational purposes only — not a licensed financial advisor. Nothing here is financial advice. Consult a qualified professional before investing real money.*';
     const fallbacks = {
       beginner:     "Great question! My best advice for beginners: start with companies you know and use every day. If you understand the business, you have an edge. Keep asking — I'm here to help you become a legend. 💪",
       intermediate: "Interesting question! That's where real edge comes from — asking what others don't. Study the leaderboard's top players for behavioral patterns, and keep refining your system. 📊",
       advanced:     "Deep territory. At the top, it's all about edge, consistency, and risk-adjusted returns. Let the data drive the decision — not the narrative. 🏆",
     };
-    return fallbacks[level] || fallbacks.beginner;
+    return (fallbacks[level] || fallbacks.beginner) + disclaimer;
   }
 
   // ── Store feedback; adapt negFeedback map ──────────────────────────────────
@@ -215,7 +216,8 @@ class CoachSystem {
       suffix += `\n\n📚 **More detail:** It looks like this topic needs a deeper dive. Try the Boot Camp at /training.html, or ask me a more specific follow-up question about ${topic}.`;
     }
 
-    return answer + suffix;
+    const disclaimer = '\n\n---\n*⚠️ SML Coach is an AI for educational purposes only — not a licensed financial advisor. Nothing here is financial advice. Consult a qualified professional before investing real money.*';
+    return answer + suffix + disclaimer;
   }
 
   async _persistContext(userId, state) {
@@ -456,7 +458,7 @@ Key exchanges:
 • **NASDAQ** — tech-heavy: Apple, Google, Amazon, Tesla
 • **S&P 500** — the 500 largest US companies, used as the benchmark for the whole market
 
-On SML you trade against real price data from these exchanges, so your paper trading experience mirrors exactly what real trading feels like! 🎯`,
+On SML you trade with simulated price data modeled on real market behavior — so your paper trading experience teaches you the habits and patterns of real trading. 🎯`,
       },
       {
         topic: 'basics',
@@ -598,7 +600,7 @@ A stock that drops 50% needs to rise 100% just to break even. A small loss is ch
 
 The hardest thing in trading is admitting you're wrong. Stop losses force the discipline that separates winning traders from losing ones.
 
-On SML practice this on every trade — decide your stop loss BEFORE you buy. Build the habit now so it's automatic when real money is on the line. 💪`,
+On SML practice this on every trade — decide your stop loss BEFORE you buy. Build the habit now so it becomes second nature. 💪`,
       },
       {
         topic: 'strategy',
@@ -621,7 +623,7 @@ See which sectors the top players are in. Learn from them.
 XP and badges compound — even on losing days you're building your legend.
 
 **6. Paper trade like it's real money**
-The habits you build here transfer directly to real investing. Take it seriously!
+The habits you build here — discipline, research, risk management — can inform real investing habits. Always consult a licensed financial advisor before investing real money.
 
 Ready to make your first trade? 🚀`,
       },

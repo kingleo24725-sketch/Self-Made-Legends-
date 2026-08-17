@@ -412,10 +412,14 @@ const BLOCKED_NAMES = [
 ];
 
 app.post("/api/auth/register", (req, res) => {
-  const { email, password, fullName, dateOfBirth, referralCode } = req.body;
+  const { email, password, fullName, dateOfBirth, referralCode, tos_agreed } = req.body;
 
   if (!email || !password || !fullName) {
     return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  if (!tos_agreed) {
+    return res.status(400).json({ error: "You must agree to the Terms of Service to create an account." });
   }
 
   // Age gate — must be 18+
@@ -500,6 +504,39 @@ app.post("/api/auth/logout", authenticateUser, (req, res) => {
   const sessionId = req.headers["x-session-id"];
   const result = accountManager.logout(sessionId);
   res.json(result);
+});
+
+// GDPR / CCPA: Export all personal data for authenticated user
+app.get("/api/account/export", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    const [account, portfolio, holdings, trades, messages] = await Promise.all([
+      db.get('SELECT user_id, email, full_name, created_at FROM accounts WHERE user_id = ?', [uid]),
+      db.get('SELECT * FROM user_portfolios WHERE user_id = ?', [uid]),
+      db.all('SELECT * FROM holdings WHERE user_id = ?', [uid]),
+      db.all('SELECT * FROM trades WHERE user_id = ? ORDER BY timestamp DESC LIMIT 1000', [uid]),
+      db.all('SELECT * FROM chat_messages WHERE sender_id = ? ORDER BY created_at DESC LIMIT 500', [uid]),
+    ]);
+    res.json({ exported_at: new Date().toISOString(), account, portfolio, holdings, trades, messages });
+  } catch (e) {
+    res.status(500).json({ error: 'Export failed' });
+  }
+});
+
+// GDPR / CCPA: Delete account and all personal data
+app.delete("/api/account", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  try {
+    await db.run('DELETE FROM chat_messages WHERE sender_id = ?', [uid]);
+    await db.run('DELETE FROM notifications WHERE user_id = ?', [uid]);
+    await db.run('DELETE FROM holdings WHERE user_id = ?', [uid]);
+    await db.run('DELETE FROM trades WHERE user_id = ?', [uid]);
+    await db.run('DELETE FROM user_portfolios WHERE user_id = ?', [uid]);
+    await db.run('DELETE FROM accounts WHERE user_id = ?', [uid]);
+    res.json({ message: 'Account and all personal data deleted. This cannot be undone.' });
+  } catch (e) {
+    res.status(500).json({ error: 'Deletion failed — contact leobrown24725@yahoo.com' });
+  }
 });
 
 app.get("/api/account/profile", authenticateUser, (req, res) => {
