@@ -281,18 +281,18 @@ const SEASON_CHAPTERS = {
 // ── Loot Box drop table ───────────────────────────────────────────────────────
 const LOOT_DROPS = {
   common:    [
-    { weight:40, type:'paper',   value:10000,  label:'$10,000 Paper Money' },
-    { weight:30, type:'paper',   value:25000,  label:'$25,000 Paper Money' },
+    { weight:40, type:'paper',   value:10000,  label:'$10,000 SML Bucks' },
+    { weight:30, type:'paper',   value:25000,  label:'$25,000 SML Bucks' },
     { weight:20, type:'credits', value:50,     label:'50 SML Credits' },
-    { weight:10, type:'paper',   value:50000,  label:'$50,000 Paper Money' },
+    { weight:10, type:'paper',   value:50000,  label:'$50,000 SML Bucks' },
   ],
   premium:   [
-    { weight:30, type:'paper',   value:100000, label:'$100,000 Paper Money' },
+    { weight:30, type:'paper',   value:100000, label:'$100,000 SML Bucks' },
     { weight:25, type:'credits', value:500,    label:'500 SML Credits' },
     { weight:20, type:'credits', value:1000,   label:'1,000 SML Credits' },
-    { weight:15, type:'paper',   value:500000, label:'$500,000 Paper Money' },
+    { weight:15, type:'paper',   value:500000, label:'$500,000 SML Bucks' },
     { weight:7,  type:'credits', value:2000,   label:'2,000 SML Credits' },
-    { weight:3,  type:'paper',   value:1000000,label:'$1,000,000 Paper Money' },
+    { weight:3,  type:'paper',   value:1000000,label:'$1,000,000 SML Bucks' },
   ],
 };
 
@@ -309,12 +309,12 @@ const FLASH_CHALLENGES = [
 
 // ── Spin the Wheel prizes (weight-based) ─────────────────────────────────────
 const SPIN_PRIZES = [
-  { weight:28, type:'paper',   amount:25,   label:'$25 Paper Money'    },
-  { weight:22, type:'paper',   amount:50,   label:'$50 Paper Money'    },
-  { weight:15, type:'paper',   amount:100,  label:'$100 Paper Money'   },
-  { weight:12, type:'paper',   amount:250,  label:'$250 Paper Money'   },
-  { weight:8,  type:'paper',   amount:500,  label:'$500 Paper Money'   },
-  { weight:5,  type:'paper',   amount:1000, label:'$1,000 Paper Money' },
+  { weight:28, type:'paper',   amount:25,   label:'$25 SML Bucks'    },
+  { weight:22, type:'paper',   amount:50,   label:'$50 SML Bucks'    },
+  { weight:15, type:'paper',   amount:100,  label:'$100 SML Bucks'   },
+  { weight:12, type:'paper',   amount:250,  label:'$250 SML Bucks'   },
+  { weight:8,  type:'paper',   amount:500,  label:'$500 SML Bucks'   },
+  { weight:5,  type:'paper',   amount:1000, label:'$1,000 SML Bucks' },
   { weight:5,  type:'credits', amount:100,  label:'100 SML Credits'    },
   { weight:3,  type:'credits', amount:500,  label:'500 SML Credits'    },
   { weight:2,  type:'credits', amount:1000, label:'1,000 SML Credits'  },
@@ -429,12 +429,12 @@ app.post("/api/auth/register", (req, res) => {
             await db.run('UPDATE referral_links SET signups = signups + 1 WHERE code = ?', [referralCode]);
             await db.run('INSERT INTO referral_events (code, referrer_id, referee_id, event_type, bonus_paid, created_at) VALUES (?, ?, ?, ?, ?, ?)',
               [referralCode, referrerId, result.userId, 'signup', 500, now]);
-            // Give referee 500 paper money immediately
+            // Give referee 500 SML Bucks immediately
             await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 500, updated_at = ? WHERE user_id = ?', [now, result.userId]);
-            // Give referrer 500 paper money immediately
+            // Give referrer 500 SML Bucks immediately
             await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 500, updated_at = ? WHERE user_id = ?', [now, referrerId]);
             await _syncLeaderboard(referrerId);
-            emitToUser(referrerId, 'referral_bonus', { amount: 500, message: '🔗 +$500 paper money — your referral just signed up!' });
+            emitToUser(referrerId, 'referral_bonus', { amount: 500, message: '🔗 +$500 SML Bucks — your referral just signed up!' });
           }
         } catch (_) {}
       })();
@@ -786,8 +786,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
             [userId, pkg.paper, pkg.paper, now, pkg.paper, pkg.paper, now]
           );
           await _syncLeaderboard(userId);
-          emitToUser(userId, 'purchase_complete', { type: 'paper_money', amount: pkg.paper, message: `💰 $${pkg.paper.toLocaleString()} paper money added to your account! Keep trading!` });
-          console.log(`Paper money ${packageKey} — user ${userId} +$${pkg.paper}`);
+          emitToUser(userId, 'purchase_complete', { type: 'paper_money', amount: pkg.paper, message: `💰 $${pkg.paper.toLocaleString()} SML Bucks added to your account! Keep trading!` });
+          console.log(`SML Bucks ${packageKey} — user ${userId} +$${pkg.paper}`);
         }
 
       } else if (type === 'jail_buyout') {
@@ -806,7 +806,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
               emitToUser(jail.victim_id, 'fine_collected', { amount: jail.amount_owed, source: 'jail_buyout' });
             }
             emitToUser(userId, 'jail_released', { amount: 1000 });
-            emitToUser(userId, 'purchase_complete', { type: 'jail_buyout', message: '🔓 Released from jail! +$1,000 paper money added.' });
+            emitToUser(userId, 'purchase_complete', { type: 'jail_buyout', message: '🔓 Released from jail! +$1,000 SML Bucks added.' });
             await _syncLeaderboard(userId);
             console.log(`Jail buyout — user ${userId} released`);
           }
@@ -868,7 +868,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           );
           await _syncLeaderboard(recipientId);
           emitToUser(recipientId, 'transfer_received', { amount: pkg.paper, senderName: _displayName(userId), isGift: true });
-          console.log(`Gift paper money — sender ${userId} → recipient ${recipientId} $${pkg.paper}`);
+          console.log(`Gift SML Bucks — sender ${userId} → recipient ${recipientId} $${pkg.paper}`);
         }
 
       } else if (type && type.startsWith('getaway_')) {
@@ -1116,7 +1116,7 @@ app.post("/api/stripe/credits/topup", authenticateUser, async (req, res) => {
   }
 });
 
-// ===== STRIPE — PAPER MONEY TOP-UP =====
+// ===== STRIPE — SML BUCKS TOP-UP =====
 
 app.post("/api/stripe/paper-money", authenticateUser, async (req, res) => {
   if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
@@ -1130,12 +1130,12 @@ app.post("/api/stripe/paper-money", authenticateUser, async (req, res) => {
     const result = await stripeProcessor.createPaperMoneyCheckout(req.user.userId, userEmail, pkgKey);
     res.json({ success: true, ...result });
   } catch (err) {
-    console.error("Paper money checkout error:", err.message);
-    res.status(500).json({ error: 'Paper money checkout failed: ' + err.message });
+    console.error("SML Bucks checkout error:", err.message);
+    res.status(500).json({ error: 'SML Bucks checkout failed: ' + err.message });
   }
 });
 
-// ===== ACCOUNT — SOCIAL SHARE CLAIM ($100 paper money, once per 24h) =====
+// ===== ACCOUNT — SOCIAL SHARE CLAIM ($100 SML Bucks, once per 24h) =====
 
 app.post("/api/account/social-claim", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
@@ -1159,7 +1159,7 @@ app.post("/api/account/social-claim", authenticateUser, async (req, res) => {
       [uid, now, now]
     );
     await _syncLeaderboard(uid);
-    res.json({ success: true, amount: 100, message: '💰 $100 paper money added! Thank you for sharing SML!' });
+    res.json({ success: true, amount: 100, message: '💰 $100 SML Bucks added! Thank you for sharing SML!' });
   } catch (e) {
     console.error('[social-claim] error:', e.message);
     res.status(500).json({ error: 'Claim failed — please try again' });
@@ -1296,7 +1296,7 @@ app.post("/api/shield/claim-free", authenticateUser, async (req, res) => {
   }
 });
 
-// POST /api/transfer/send-paper  (direct paper money transfer between players)
+// POST /api/transfer/send-paper  (direct SML Bucks transfer between players)
 app.post("/api/transfer/send-paper", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
   const { recipientId, amount } = req.body;
@@ -1307,7 +1307,7 @@ app.post("/api/transfer/send-paper", authenticateUser, async (req, res) => {
     if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
     const senderPortfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
     const senderCash = senderPortfolio ? senderPortfolio.cash_balance : 0;
-    if (senderCash < amount) return res.status(400).json({ error: 'Insufficient paper money' });
+    if (senderCash < amount) return res.status(400).json({ error: 'Insufficient SML Bucks' });
     const now = Date.now();
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [amount, now, uid]);
     await db.run(
@@ -1322,13 +1322,13 @@ app.post("/api/transfer/send-paper", authenticateUser, async (req, res) => {
     await _syncLeaderboard(uid);
     await _syncLeaderboard(recipientId);
     emitToUser(recipientId, 'transfer_received', { amount, senderName: _displayName(uid), isGift: false });
-    res.json({ success: true, message: `Sent $${amount.toFixed(2)} paper money to ${_displayName(recipientId)}` });
+    res.json({ success: true, message: `Sent $${amount.toFixed(2)} SML Bucks to ${_displayName(recipientId)}` });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
 
-// POST /api/stripe/gift-paper-money  (buy paper money as a Stripe gift for another player)
+// POST /api/stripe/gift-paper-money  (buy SML Bucks as a Stripe gift for another player)
 app.post("/api/stripe/gift-paper-money", authenticateUser, async (req, res) => {
   if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
   const uid = req.user.userId;
@@ -1468,7 +1468,7 @@ app.post("/api/bounty/place", authenticateUser, async (req, res) => {
   if (targetId === uid) return res.status(400).json({ error: 'Cannot place bounty on yourself' });
   try {
     const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    if (!portfolio || portfolio.cash_balance < amount) return res.status(400).json({ error: 'Insufficient paper money' });
+    if (!portfolio || portfolio.cash_balance < amount) return res.status(400).json({ error: 'Insufficient SML Bucks' });
     const now = Date.now();
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [amount, now, uid]);
     await db.run('INSERT INTO bounties (placer_id, target_id, amount, created_at) VALUES (?, ?, ?, ?)', [uid, targetId, amount, now]);
@@ -1725,7 +1725,7 @@ app.post("/api/game/dice", authenticateUser, async (req, res) => {
     const cash = portfolio ? portfolio.cash_balance : 0;
     const actualWager = Math.min(wager, cash, MAX_WAGER);
     if (actualWager < wager) return res.status(400).json({ error: `Wager capped at $${MAX_WAGER.toLocaleString()} max or your balance`, max: MAX_WAGER });
-    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient paper money' });
+    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient SML Bucks' });
     const roll1 = Math.floor(Math.random() * 6) + 1;
     const roll2 = Math.floor(Math.random() * 6) + 1;
     const sum = roll1 + roll2;
@@ -1749,7 +1749,7 @@ app.post("/api/game/card-flip", authenticateUser, async (req, res) => {
     const cash = portfolio ? portfolio.cash_balance : 0;
     const actualWager = Math.min(wager, cash, MAX_WAGER);
     if (actualWager < wager) return res.status(400).json({ error: `Wager capped at $${MAX_WAGER.toLocaleString()} max or your balance`, max: MAX_WAGER });
-    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient paper money' });
+    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient SML Bucks' });
     const color = Math.random() < 0.5 ? 'Red' : 'Black';
     const won = color === 'Red';
     const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0; // 1.8× (house +10% EV)
@@ -1978,7 +1978,7 @@ app.post("/api/battlepass/claim", authenticateUser, async (req, res) => {
     }
     claimedTiers.push(tier);
     await db.run('UPDATE battle_pass SET claimed_tiers = ? WHERE user_id = ?', [JSON.stringify(claimedTiers), uid]);
-    res.json({ success: true, reward: track, message: `Tier ${tier} claimed! You received ${track.type === 'paper' ? '$' + track.amount + ' paper money' : track.amount + ' SML Credits'}` });
+    res.json({ success: true, reward: track, message: `Tier ${tier} claimed! You received ${track.type === 'paper' ? '$' + track.amount + ' SML Bucks' : track.amount + ' SML Credits'}` });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2071,7 +2071,7 @@ app.post("/api/rewards/daily-claim", authenticateUser, async (req, res) => {
       amount,
       streak: newStreak,
       nextAmount: _dailyPerkAmount(newStreak + 1),
-      message: `🎁 Day ${newStreak} streak! +$${amount} paper money added`,
+      message: `🎁 Day ${newStreak} streak! +$${amount} SML Bucks added`,
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -3346,7 +3346,7 @@ app.post("/api/nfts/legend/buy/:id", authenticateUser, async (req, res) => {
     if (!listing) return res.status(404).json({ error: 'Listing not found' });
     if (listing.seller_id === uid) return res.status(400).json({ error: "Can't buy your own NFT" });
     const buyer = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    if (!buyer || buyer.cash_balance < listing.price_paper) return res.status(400).json({ error: 'Not enough paper money' });
+    if (!buyer || buyer.cash_balance < listing.price_paper) return res.status(400).json({ error: 'Not enough SML Bucks' });
     const now = Date.now();
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [listing.price_paper, uid]);
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [listing.price_paper, listing.seller_id]);
@@ -3386,7 +3386,7 @@ app.post("/api/casino/blackjack/start", authenticateUser, async (req, res) => {
     const acct = await db.get('SELECT casino_vip FROM accounts WHERE id = ?', [uid]);
     if (bet >= CASINO_VIP_MIN && !acct?.casino_vip) return res.status(403).json({ error: 'VIP Casino access required for bets $500k+' });
     const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough paper money' });
+    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough SML Bucks' });
     // Cancel any active game first
     await db.run("UPDATE casino_blackjack SET status='forfeited' WHERE user_id = ? AND status = 'active'", [uid]);
     const deck = _buildDeck();
@@ -3504,7 +3504,7 @@ app.post("/api/casino/horses/bet", authenticateUser, async (req, res) => {
     if (!race) return res.status(404).json({ error: 'Race not in betting phase' });
     if (Date.now() >= race.starts_at) return res.status(400).json({ error: 'Betting window closed' });
     const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough paper money' });
+    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough SML Bucks' });
     const existingBet = await db.get('SELECT id FROM horse_bets WHERE race_id=? AND user_id=?', [raceId, uid]);
     if (existingBet) return res.status(400).json({ error: 'Already placed a bet in this race' });
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [bet, uid]);
@@ -3736,7 +3736,7 @@ app.post('/api/season/story/complete/:chapterNum', authenticateUser, async (req,
       await db.run('INSERT OR IGNORE INTO badge_awards (user_id, badge_key, awarded_at) VALUES (?,?,?)', [uid, chapter.reward_badge, now]).catch(() => {});
     }
 
-    await _notify(uid, 'season_chapter', `📖 Chapter ${chapterNum} Complete!`, `"${chapter.title}" — ${chapter.reward_credits} Credits & $${chapter.reward_paper.toLocaleString()} paper money!`);
+    await _notify(uid, 'season_chapter', `📖 Chapter ${chapterNum} Complete!`, `"${chapter.title}" — ${chapter.reward_credits} Credits & $${chapter.reward_paper.toLocaleString()} SML Bucks!`);
     emitToUser(uid, 'season_chapter_complete', { chapterNum, title: chapter.title, rewards: { credits: chapter.reward_credits, paper: chapter.reward_paper } });
 
     res.json({ ok: true, chapter: { ...chapter, completed: true }, rewards: { credits: chapter.reward_credits, paper: chapter.reward_paper, badge: chapter.reward_badge } });
@@ -5568,7 +5568,7 @@ app.post("/api/admin/tournament/payout", requireAdmin, async (req, res) => {
 
 app.get("/api/tournament/my-winnings", authenticateUser, async (req, res) => {
   const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [req.user.userId]);
-  res.json({ balance: portfolio ? portfolio.cash_balance : 0, note: 'Tournament winnings are credited directly to your paper money balance.' });
+  res.json({ balance: portfolio ? portfolio.cash_balance : 0, note: 'Tournament winnings are credited directly to your SML Bucks balance.' });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -5777,7 +5777,7 @@ app.post('/api/cards/duel/resolve/:duelId', authenticateUser, async (req, res) =
     await _syncLeaderboard(winnerId); await _syncLeaderboard(loserId);
   }
   await db.run('UPDATE card_duels SET winner_id = ?, status = ?, resolved_at = ? WHERE id = ?', [winnerId, 'resolved', Date.now(), duel.id]);
-  await _notify(winnerId, 'card_duel_win', '🃏 Card Duel Win!', `You won the duel${duel.wager_paper ? ' and $'+duel.wager_paper.toLocaleString()+' paper money!' : '!'}`);
+  await _notify(winnerId, 'card_duel_win', '🃏 Card Duel Win!', `You won the duel${duel.wager_paper ? ' and $'+duel.wager_paper.toLocaleString()+' SML Bucks!' : '!'}`);
   await _notify(loserId, 'card_duel_loss', '🃏 Card Duel Lost', 'Better luck next time!');
   res.json({ success: true, winnerId, challengerPower: cPower, opponentPower: oPower });
 });
@@ -5896,7 +5896,7 @@ app.post('/api/races/enter', authenticateUser, async (req, res) => {
   const already = await db.get('SELECT id FROM race_entries WHERE race_id = ? AND user_id = ?', [race.id, uid]);
   if (already) return res.status(400).json({ error: 'Already entered this race' });
   const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-  if (!portfolio || portfolio.cash_balance < race.entry_fee) return res.status(400).json({ error: 'Not enough paper money for entry fee' });
+  if (!portfolio || portfolio.cash_balance < race.entry_fee) return res.status(400).json({ error: 'Not enough SML Bucks for entry fee' });
   const myBestCar = await db.get('SELECT car_key FROM player_cars WHERE user_id = ? ORDER BY acquired_at DESC LIMIT 1', [uid]);
   const carKey = myBestCar ? myBestCar.car_key : 'beater';
   const carDef = CARS[carKey] || CARS.beater;

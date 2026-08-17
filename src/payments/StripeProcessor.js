@@ -8,13 +8,13 @@ const CREDIT_PACKAGES = {
   champion: { credits: 7000, amount_cents: 5500, label: 'SML Credits — Champion Pack (7,000 Credits)' },
 };
 
-// Paper money packages — real money → virtual paper trading capital
+// SML Bucks packages — real money → virtual paper trading capital
 const PAPER_MONEY_PACKAGES = {
-  hustle:   { paper: 1000,   amount_cents: 999,  label: 'Hustle Pack — $1,000 Paper Money' },
-  grind:    { paper: 5000,   amount_cents: 1599, label: 'Grind Pack — $5,000 Paper Money' },
-  investor: { paper: 25000,  amount_cents: 2000, label: 'Investor Pack — $25,000 Paper Money' },
-  whale:    { paper: 50000,  amount_cents: 2500, label: 'Whale Pack — $50,000 Paper Money' },
-  ultimate: { paper: 200000, amount_cents: 8000, label: 'Ultimate Pack — $200,000 Paper Money' },
+  hustle:   { paper: 1000,   amount_cents: 999,  label: 'Hustle Pack — $1,000 SML Bucks' },
+  grind:    { paper: 5000,   amount_cents: 1599, label: 'Grind Pack — $5,000 SML Bucks' },
+  investor: { paper: 25000,  amount_cents: 2000, label: 'Investor Pack — $25,000 SML Bucks' },
+  whale:    { paper: 50000,  amount_cents: 2500, label: 'Whale Pack — $50,000 SML Bucks' },
+  ultimate: { paper: 200000, amount_cents: 8000, label: 'Ultimate Pack — $200,000 SML Bucks' },
 };
 
 // Returns Unix timestamp for midnight UTC on the 1st of next month
@@ -185,10 +185,10 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Paper Money top-up
+  // Create a Stripe Checkout Session for SML Bucks top-up
   async createPaperMoneyCheckout(userId, userEmail, packageKey) {
     const pkg = PAPER_MONEY_PACKAGES[packageKey];
-    if (!pkg) throw new Error(`Unknown paper money package: ${packageKey}`);
+    if (!pkg) throw new Error(`Unknown SML Bucks package: ${packageKey}`);
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -196,7 +196,7 @@ class StripeProcessor {
       line_items: [{
         price_data: {
           currency: 'usd',
-          product_data: { name: pkg.label, description: `Add $${pkg.paper.toLocaleString()} paper money to your SML trading account` },
+          product_data: { name: pkg.label, description: `Add $${pkg.paper.toLocaleString()} SML Bucks to your SML trading account` },
           unit_amount: pkg.amount_cents,
         },
         quantity: 1,
@@ -231,7 +231,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Jail Buyout ($10.00 one-time → release + $1k paper money)
+  // Create a Stripe Checkout Session for Jail Buyout ($10.00 one-time → release + $1k SML Bucks)
   async createJailBuyoutCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -240,7 +240,7 @@ class StripeProcessor {
       line_items: [{
         price_data: {
           currency: 'usd',
-          product_data: { name: 'SML Jail Buyout', description: 'Pay your way out of jail + receive $1,000 paper money' },
+          product_data: { name: 'SML Jail Buyout', description: 'Pay your way out of jail + receive $1,000 SML Bucks' },
           unit_amount: 1000,
         },
         quantity: 1,
@@ -304,14 +304,14 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session to gift paper money to another player
+  // Create a Stripe Checkout Session to gift SML Bucks to another player
   async createGiftPaperMoneyCheckout(senderId, senderEmail, recipientId, packageKey, pkg) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: senderEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
-        product_data: { name: `SML Gift — ${pkg.label}`, description: `Send $${pkg.paper.toLocaleString()} paper money to a friend` },
+        product_data: { name: `SML Gift — ${pkg.label}`, description: `Send $${pkg.paper.toLocaleString()} SML Bucks to a friend` },
         unit_amount: pkg.amount_cents }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=gift_paper_money_${packageKey}`,
@@ -345,7 +345,7 @@ class StripeProcessor {
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
-        product_data: { name: `SML Real Estate — ${propertyLabel}`, description: 'Virtual property generating daily passive paper money income' },
+        product_data: { name: `SML Real Estate — ${propertyLabel}`, description: 'Virtual property generating daily passive SML Bucks income' },
         unit_amount: priceCents }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=realestate_${propertyKey}`,
@@ -421,7 +421,7 @@ class StripeProcessor {
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
-        product_data: { name: 'SML Legend Starter Bundle', description: '2,500 Credits + $5,000 Paper Money + Neon Frame + Season XP Boost' },
+        product_data: { name: 'SML Legend Starter Bundle', description: '2,500 Credits + $5,000 SML Bucks + Neon Frame + Season XP Boost' },
         unit_amount: 1999 }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=legend_bundle`,

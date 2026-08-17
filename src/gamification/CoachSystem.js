@@ -442,7 +442,7 @@ When you buy 1 share of Apple, you literally own a small fraction of Apple Inc. 
 
 Companies sell stocks to raise money to grow their business. You buy stocks hoping the company's value rises so you can sell your share for more than you paid — that difference is your profit (called a "gain").
 
-On SML you practice this with paper money so you can learn without any real risk! 🎮`,
+On SML you practice this with SML Bucks so you can learn without any real risk! 🎮`,
       },
       {
         topic: 'basics',

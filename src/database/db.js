@@ -383,7 +383,7 @@ class DB {
         created_at     INTEGER NOT NULL
       )`,
 
-      // Daily perk streak (free paper money rewards for logging in daily)
+      // Daily perk streak (free SML Bucks rewards for logging in daily)
       `CREATE TABLE IF NOT EXISTS daily_perks (
         user_id      TEXT PRIMARY KEY,
         streak       INTEGER DEFAULT 0,
