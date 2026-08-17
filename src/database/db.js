@@ -532,11 +532,87 @@ class DB {
         claimed_tiers TEXT NOT NULL DEFAULT '[]',
         activated_at  INTEGER
       )`,
+
+      // ── Creator Membership (DB-backed fulfillment) ────────────────────────────
+      `CREATE TABLE IF NOT EXISTS creator_memberships (
+        user_id      TEXT PRIMARY KEY,
+        activated_at INTEGER NOT NULL,
+        active       INTEGER DEFAULT 1
+      )`,
+
+      // ── Elite Membership (top-tier VIP at $24.99/mo) ──────────────────────────
+      `CREATE TABLE IF NOT EXISTS elite_memberships (
+        user_id      TEXT PRIMARY KEY,
+        activated_at INTEGER NOT NULL,
+        active       INTEGER DEFAULT 1
+      )`,
+
+      // ── Persistent Referral Links (replaces in-memory Map) ───────────────────
+      `CREATE TABLE IF NOT EXISTS referral_links (
+        user_id    TEXT PRIMARY KEY,
+        code       TEXT UNIQUE NOT NULL,
+        clicks     INTEGER DEFAULT 0,
+        signups    INTEGER DEFAULT 0,
+        converted  INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS referral_events (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        code         TEXT NOT NULL,
+        referrer_id  TEXT NOT NULL,
+        referee_id   TEXT,
+        event_type   TEXT NOT NULL,
+        bonus_paid   REAL DEFAULT 0,
+        created_at   INTEGER NOT NULL
+      )`,
+
+      // ── XP Booster (consumable 2× XP for 24h, costs 500 credits) ─────────────
+      `CREATE TABLE IF NOT EXISTS xp_boosts (
+        user_id      TEXT PRIMARY KEY,
+        active_until INTEGER NOT NULL,
+        multiplier   REAL NOT NULL DEFAULT 2.0,
+        activated_at INTEGER NOT NULL
+      )`,
+
+      // ── Player Cosmetics (avatar frames + nameplate colors) ───────────────────
+      `CREATE TABLE IF NOT EXISTS player_cosmetics (
+        user_id         TEXT PRIMARY KEY,
+        frame_style     TEXT DEFAULT 'default',
+        nameplate_color TEXT DEFAULT 'default',
+        updated_at      INTEGER
+      )`,
+
+      // ── Persistent Notification Inbox ─────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS notifications (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        type       TEXT NOT NULL,
+        title      TEXT NOT NULL,
+        body       TEXT NOT NULL,
+        read       INTEGER DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )`,
+
+      // ── Limit Orders ──────────────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS limit_orders (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     TEXT NOT NULL,
+        symbol      TEXT NOT NULL,
+        order_type  TEXT NOT NULL,
+        quantity    REAL NOT NULL,
+        limit_price REAL NOT NULL,
+        status      TEXT DEFAULT 'pending',
+        created_at  INTEGER NOT NULL,
+        filled_at   INTEGER
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_bot INTEGER DEFAULT 0'); } catch (_) {}
     try { await this.run('ALTER TABLE heist_attempts ADD COLUMN charges INTEGER DEFAULT 0'); } catch (_) {}
+    try { await this.run('ALTER TABLE accounts ADD COLUMN is_creator INTEGER DEFAULT 0'); } catch (_) {}
+    try { await this.run('ALTER TABLE accounts ADD COLUMN is_elite INTEGER DEFAULT 0'); } catch (_) {}
   }
 }
 

@@ -657,9 +657,21 @@
         <div class="user-info" id="user-info">Not Logged In</div>
       </div>
       <a href="/profile.html" id="profile-link" style="display:none;color:#aaa;text-decoration:none;font-size:0.8em;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.07);">👤 Profile</a>
+      <button id="notif-bell" onclick="toggleNotifPanel()" title="Notifications" style="display:none;position:relative;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;color:#e0e0e0;cursor:pointer;font-size:1em;">
+        🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ff4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
+      </button>
       <button class="btn btn-danger" id="logout-btn" style="display:none;" onclick="logout()">Logout</button>
     </div>
   </nav>
+
+  <!-- ── Notification Panel ──────────────────────────────────────────────── -->
+  <div id="notif-panel" style="display:none;position:fixed;top:70px;right:16px;z-index:9000;width:340px;max-height:500px;overflow-y:auto;background:#10161f;border:1px solid rgba(255,215,0,0.25);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.08);">
+      <span style="color:#ffd700;font-weight:700;">🔔 Notifications</span>
+      <button onclick="markAllNotifsRead()" style="background:none;border:none;color:#00d4ff;cursor:pointer;font-size:0.8em;">Mark all read</button>
+    </div>
+    <div id="notif-list" style="padding:8px;"></div>
+  </div>
 
   <!-- ── Live Price Ticker ─────────────────────────────────────────────── -->
   <div id="live-ticker" style="background:#080d14;border-bottom:1px solid rgba(0,212,255,.18);overflow:hidden;white-space:nowrap;padding:0;height:30px;display:flex;align-items:center;">
@@ -699,6 +711,26 @@
       <div style="text-align: center; margin-bottom: 30px; color: #00d4ff;">
         <h2 style="font-size: 1.8em; margin: 0;">Welcome to Self Made Legends Universe</h2>
         <p style="color: #00ff88; font-size: 1.1em;">Your AI-Powered Multi-Asset Trading Platform</p>
+      </div>
+
+      <!-- Today's Checklist -->
+      <div id="today-checklist" style="display:none; background:linear-gradient(135deg,#0a1628,#101c30); border:1px solid rgba(0,212,255,0.2); border-radius:12px; padding:16px 20px; margin-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <span style="font-size:1.2em;">📋</span>
+          <span style="color:#00d4ff; font-weight:700; font-size:0.95em;">Today's Checklist</span>
+          <span style="margin-left:auto; color:#555; font-size:0.8em;" id="checklist-streak"></span>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;" id="checklist-items"></div>
+      </div>
+
+      <!-- My Rank Widget -->
+      <div id="my-rank-widget" style="display:none; background:linear-gradient(135deg,#1a1200,#20180a); border:1px solid rgba(255,215,0,0.2); border-radius:12px; padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <span style="font-size:1.5em;">🏆</span>
+        <div style="flex:1; min-width:160px;">
+          <div style="color:#555; font-size:0.72em; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Your Rank This Week</div>
+          <div id="my-rank-text" style="color:#ffd700; font-weight:700; font-size:1.1em;">—</div>
+        </div>
+        <button onclick="shareMyWeek()" style="background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3); color:#ffd700; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.82em;">📤 Share My Week</button>
       </div>
 
       <div class="grid">
@@ -965,6 +997,23 @@
           <button onclick="createTip()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">List Tip</button>
         </div>
       </div>
+
+      <!-- Limit Orders -->
+      <div class="card" style="margin-top:16px;">
+        <h2 style="font-size:1em; margin-bottom:4px; color:#ffd700;">📋 Limit Orders</h2>
+        <p style="color:#888; font-size:0.82em; margin-bottom:14px;">Set a target price and your order fills automatically when the market hits it.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+          <input id="lo-symbol" placeholder="Symbol (e.g. AAPL)" style="flex:2; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; text-transform:uppercase;">
+          <select id="lo-type" style="flex:1; min-width:90px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none; cursor:pointer;">
+            <option value="buy">Buy</option>
+            <option value="sell">Sell</option>
+          </select>
+          <input id="lo-qty" type="number" placeholder="Qty" min="1" style="flex:1; min-width:70px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+          <input id="lo-price" type="number" placeholder="Limit price" style="flex:2; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
+          <button onclick="placeLimitOrder()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Place Order</button>
+        </div>
+        <div id="limit-orders-list"><div style="color:#555; font-size:0.88em; text-align:center; padding:10px;">No pending limit orders.</div></div>
+      </div>
     </section>
 
     <!-- ── AI Coach Chat Bubble (global, shown on Trade tab) ──────────── -->
@@ -1200,20 +1249,119 @@
 
       </div>
 
+      <!-- Legend Starter Bundle (featured) -->
+      <div class="card" style="border:2px solid #ffd700; background:linear-gradient(135deg,#1a1200,#2a1a00); margin-bottom:20px; position:relative; overflow:hidden;">
+        <div style="position:absolute;top:8px;right:10px;background:#ffd700;color:#000;font-size:0.7em;font-weight:900;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:1px;">Best Value</div>
+        <div style="position:absolute;bottom:-20px;right:-12px;font-size:6em;opacity:0.05;pointer-events:none;">⚡</div>
+        <div style="color:#ffd700; font-weight:bold; font-size:1.1em; margin-bottom:4px;">⚡ Legend Starter Pack — One-Time</div>
+        <div style="color:#00ff88; font-size:2em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$14.99 <span style="font-size:0.38em; color:#555; font-weight:normal;font-variant-numeric:normal;">one-time</span></div>
+        <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
+          <li>💎 2,500 SML Credits</li>
+          <li>💰 $5,000 Paper Money</li>
+          <li>🎫 1-Month Season Pass boost</li>
+          <li>🖼️ Neon avatar frame cosmetic</li>
+        </ul>
+        <button class="btn btn-success" onclick="buyLegendBundle()" style="width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000;">⚡ Grab the Bundle — $14.99</button>
+      </div>
+
+      <!-- VIP Elite Membership -->
+      <div class="card" style="border:1px solid #9b59b6; margin-bottom:20px; position:relative; overflow:hidden;">
+        <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.08;pointer-events:none;">👑</div>
+        <div style="color:#d4a7f5; font-weight:bold; font-size:1.1em; margin-bottom:4px;">👑 VIP Elite Membership</div>
+        <div style="color:#d4a7f5; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$24.99 <span style="font-size:0.38em; color:#555; font-weight:normal;">/month</span></div>
+        <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 16px; line-height:2.1;">
+          <li>🛡️ 3× safe capacity (less stolen in heists)</li>
+          <li>⚡ Permanent 2× XP multiplier</li>
+          <li>🖼️ Elite gold badge frame on leaderboard</li>
+          <li>🎮 Exclusive Elite-only heist type</li>
+          <li>📊 Everything in Creator Membership</li>
+        </ul>
+        <div id="elite-status" style="color:#555; font-size:0.78em; min-height:18px; margin-bottom:8px;"></div>
+        <button class="btn" onclick="buyEliteMembership()" id="elite-btn" style="width:100%; background:linear-gradient(135deg,#6b21a8,#9b59b6); border-color:#9b59b6; color:#fff;">👑 Join Elite — $24.99/month</button>
+      </div>
+
       <!-- Creator Membership (existing) -->
       <div class="card" style="border:1px solid #00d4ff; margin-bottom:20px;">
         <h2 style="color:#00d4ff; margin-bottom:6px;">⭐ Creator Membership — $10 / Month</h2>
         <p style="color:#888; margin-bottom:8px; font-size:0.9em;">
           Subscribe for <strong style="color:#00ff88;">$10/month</strong> to unlock token creation,
-          premium leaderboard recognition, and creator-only features.
+          premium leaderboard recognition, and creator-only features. 2× safe cap + gold badge frame.
         </p>
         <p style="color:#666; font-size:0.82em; margin-bottom:16px;">
-          Billed on the <strong>1st of every month</strong> · Cancel anytime · Powered by Stripe
+          Billed monthly · Cancel anytime · Powered by Stripe
         </p>
         <button class="btn btn-success" onclick="payCreatorFee()" id="creator-fee-btn" style="width:100%;">
           💳 Subscribe — $10/month
         </button>
         <div id="creator-fee-status" style="margin-top:12px; color:#00ff88; display:none;"></div>
+      </div>
+
+      <!-- Battle Pass -->
+      <div class="card" style="border:1px solid #ffd700; margin-bottom:20px; position:relative; overflow:hidden;">
+        <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">🎫</div>
+        <div style="color:#ffd700; font-weight:bold; font-size:1.1em; margin-bottom:4px;">🎫 Battle Pass — $4.99</div>
+        <div style="color:#ffd700; font-size:1.4em; font-weight:bold; margin-bottom:8px;">10 Reward Tiers this Season</div>
+        <p style="color:#888; font-size:0.84em; margin-bottom:14px;">Earn XP through trades and heists. Unlock rewards across all 10 tiers. Premium Pass unlocks bonus prizes at every tier.</p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+          <span style="background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); border-radius:20px; padding:3px 10px; font-size:0.78em; color:#ffd700;">💰 Paper Money</span>
+          <span style="background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.3); border-radius:20px; padding:3px 10px; font-size:0.78em; color:#00d4ff;">💎 SML Credits</span>
+          <span style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); border-radius:20px; padding:3px 10px; font-size:0.78em; color:#00ff88;">🎖️ Exclusive Badges</span>
+        </div>
+        <button class="btn" onclick="buyBattlePass()" style="width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-weight:700;">🎫 Unlock Premium Battle Pass — $4.99</button>
+        <div style="text-align:center; margin-top:8px;"><button onclick="switchTab('battlepass'); loadBattlePass()" style="background:none; border:none; color:#555; font-size:0.8em; cursor:pointer; text-decoration:underline;">View all tiers →</button></div>
+      </div>
+
+      <!-- XP Booster -->
+      <div class="card" style="border:1px solid #00ff88; margin-bottom:20px; position:relative; overflow:hidden;">
+        <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">⚡</div>
+        <div style="color:#00ff88; font-weight:bold; font-size:1.05em; margin-bottom:4px;">⚡ XP Booster — 500 Credits / 24h</div>
+        <p style="color:#888; font-size:0.84em; margin-bottom:12px;">Activate a 2× XP multiplier for 24 hours. Stacks with Season Pass (1.5×) and Elite Membership (2×).</p>
+        <div id="boost-status-display" style="color:#555; font-size:0.82em; margin-bottom:12px; min-height:18px;"></div>
+        <button class="btn btn-success" onclick="activateBoost()" id="boost-btn" style="width:100%; background:rgba(0,100,50,0.3); border-color:#00ff88;">⚡ Activate Booster — 500 Credits</button>
+      </div>
+
+      <!-- Cosmetics Store -->
+      <div class="card" style="border:1px solid #ff6b6b; margin-bottom:20px;">
+        <div style="color:#ff9999; font-weight:bold; font-size:1.05em; margin-bottom:8px;">🎨 Cosmetics Store</div>
+        <p style="color:#888; font-size:0.84em; margin-bottom:14px;">Customize your avatar frame and nameplate with SML Credits.</p>
+        <div id="cosmetics-catalog" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px;">
+          <div style="color:#555; font-size:0.85em; text-align:center; padding:12px;">Loading store…</div>
+        </div>
+      </div>
+
+      <!-- Gift Credits / Gift Paper Money -->
+      <div class="card" style="border:1px solid #9b59b6; margin-bottom:20px;">
+        <div style="color:#d4a7f5; font-weight:bold; font-size:1.05em; margin-bottom:8px;">🎁 Gift to a Friend</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex-wrap:wrap;">
+          <div>
+            <div style="color:#aaa; font-size:0.83em; margin-bottom:8px;">Gift Paper Money</div>
+            <input id="gift-pm-email" type="email" placeholder="Recipient email" style="width:100%; box-sizing:border-box; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:8px 12px; font-size:0.85em; outline:none; margin-bottom:8px;">
+            <select id="gift-pm-tier" style="width:100%; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:8px 12px; font-size:0.85em; outline:none; margin-bottom:8px;">
+              <option value="starter">$5,000 — $5</option>
+              <option value="basic">$15,000 — $10</option>
+              <option value="pro">$50,000 — $25</option>
+              <option value="elite">$150,000 — $50</option>
+              <option value="legend">$500,000 — $100</option>
+            </select>
+            <button onclick="giftPaperMoney()" style="width:100%; background:rgba(0,212,255,0.15); border:1px solid #00d4ff; border-radius:8px; color:#00d4ff; padding:9px; font-weight:700; cursor:pointer; font-size:0.85em;">🎁 Send Paper Money Gift</button>
+          </div>
+          <div>
+            <div style="color:#aaa; font-size:0.83em; margin-bottom:8px;">Gift SML Credits</div>
+            <input id="gift-cr-email" type="email" placeholder="Recipient email" style="width:100%; box-sizing:border-box; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:8px 12px; font-size:0.85em; outline:none; margin-bottom:8px;">
+            <select id="gift-cr-pkg" style="width:100%; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:8px 12px; font-size:0.85em; outline:none; margin-bottom:8px;">
+              <option value="starter">500 Credits — $5</option>
+              <option value="legends">2,500 Credits — $20</option>
+              <option value="champion">7,000 Credits — $50</option>
+            </select>
+            <button onclick="giftCredits()" style="width:100%; background:rgba(155,89,182,0.2); border:1px solid #9b59b6; border-radius:8px; color:#d4a7f5; padding:9px; font-weight:700; cursor:pointer; font-size:0.85em;">🎁 Send Credits Gift</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- My Subscriptions -->
+      <div class="card" style="margin-bottom:20px;">
+        <div style="color:#aaa; font-weight:bold; font-size:1em; margin-bottom:12px;">📋 My Active Subscriptions</div>
+        <div id="subscriptions-list"><div style="color:#555; font-size:0.85em;">Loading…</div></div>
       </div>
 
       <!-- Transaction History -->
@@ -1929,10 +2077,18 @@
       </div>
 
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px;">
+        <!-- XP Booster -->
+        <div class="card" style="border:1px solid #00ff88;">
+          <h3 style="color:#00ff88; margin-bottom:8px;">⚡ XP Booster</h3>
+          <p style="color:#888; font-size:0.85em; margin-bottom:12px;">Activate a 2× XP multiplier for 24 hours. Costs 500 SML Credits.</p>
+          <div id="boost-status-games" style="color:#555; font-size:0.82em; margin-bottom:12px; min-height:16px;"></div>
+          <button onclick="activateBoost()" style="width:100%; background:rgba(0,100,50,0.3); border:1px solid #00ff88; border-radius:8px; color:#00ff88; padding:10px; font-weight:700; cursor:pointer;">⚡ Activate — 500 Credits</button>
+        </div>
+
         <!-- Dice Game -->
         <div class="card">
           <h3 style="color:#00d4ff; margin-bottom:8px;">🎲 Dice Game</h3>
-          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Roll 2 dice. Sum 7–12 wins <strong style="color:#00ff88;">1.8×</strong>. Sum 2–6 loses.</p>
+          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Roll 2 dice. Sum 8–12 wins <strong style="color:#00ff88;">1.8×</strong>. Sum 2–7 loses.</p>
           <div style="display:flex; gap:10px; margin-bottom:12px;">
             <input id="dice-wager" type="number" placeholder="Wager ($)" min="1" style="flex:1; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none;">
             <button onclick="playDice()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Roll</button>
@@ -1943,7 +2099,7 @@
         <!-- Card Flip -->
         <div class="card">
           <h3 style="color:#ff6b6b; margin-bottom:8px;">🃏 Card Flip</h3>
-          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Flip a card. <strong style="color:#ff4444;">Red</strong> wins <strong style="color:#00ff88;">1.9×</strong>. <strong style="color:#555;">Black</strong> loses.</p>
+          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Flip a card. <strong style="color:#ff4444;">Red</strong> wins <strong style="color:#00ff88;">1.8×</strong>. <strong style="color:#555;">Black</strong> loses.</p>
           <div style="display:flex; gap:10px; margin-bottom:12px;">
             <input id="card-wager" type="number" placeholder="Wager ($)" min="1" style="flex:1; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none;">
             <button onclick="playCardFlip()" style="background:linear-gradient(135deg,#ff6b6b,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Flip</button>
@@ -1983,6 +2139,29 @@
       </div>
     </div>
   </section>
+
+  <!-- Profile Setup Modal (replaces prompt() for gender/division) -->
+  <div id="profile-setup-modal" style="display:none; position:fixed; inset:0; z-index:9800; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:linear-gradient(135deg,#0d1421,#111827); border:1px solid rgba(0,212,255,0.3); border-radius:16px; padding:28px 32px; max-width:420px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,0.7);">
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:2em; margin-bottom:8px;">👤</div>
+        <h3 style="color:#00d4ff; font-size:1.2em; margin:0 0 6px;">One quick thing</h3>
+        <p style="color:#888; font-size:0.88em;">Choose your leaderboard division to compete with your peers.</p>
+      </div>
+      <div style="margin-bottom:20px;">
+        <div style="color:#aaa; font-size:0.82em; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Gender</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;" id="ps-gender-btns">
+          <button onclick="psSelectGender('male')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Male</button>
+          <button onclick="psSelectGender('female')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Female</button>
+          <button onclick="psSelectGender('other')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Prefer not</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
+        <button onclick="closeProfileSetup()" style="background:none; border:1px solid #333; color:#666; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9em;">Skip</button>
+        <button id="ps-confirm-btn" onclick="confirmProfileSetup()" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; font-size:0.9em;">Save →</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Global Milestone Celebration Overlay -->
   <div id="celebration-overlay" style="display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:hidden;">
@@ -2629,11 +2808,7 @@
             if (loginData.success) {
               setSessionId(loginData.sessionId);
               currentUser = email;
-              const gChoice = prompt('Select your leaderboard division:\n1 = Male\n2 = Female\n3 = Prefer not to say\n\nEnter 1, 2, or 3:');
-              const gMap = { '1': 'male', '2': 'female', '3': 'other' };
-              if (gMap[gChoice]) {
-                fetch('/api/account/gender', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Session-Id': loginData.sessionId }, body: JSON.stringify({ gender: gMap[gChoice] }) });
-              }
+              openProfileSetup();
               // Show paywall member state so they can buy season pass
               document.getElementById('paywall-guest').style.display = 'none';
               document.getElementById('paywall-member').style.display = 'flex';
@@ -2744,10 +2919,8 @@
                     loadBadges();
                     loadStreaks();
                     loadAvatarPreview();
-                    // Prompt gender for leaderboard separation
-                    const gChoice = prompt('One quick thing — select your leaderboard division:\n1 = Male\n2 = Female\n3 = Prefer not to say\n\nEnter 1, 2, or 3:');
-                    const gMap = { '1': 'male', '2': 'female', '3': 'other' };
-                    if (gMap[gChoice]) apiCall('/api/account/gender', 'POST', { gender: gMap[gChoice] });
+                    // Open profile setup modal for gender/division
+                    openProfileSetup();
                     // Show onboarding for new users
                     localStorage.removeItem('sml_onboarded');
                     checkOnboarding();
@@ -7171,6 +7344,488 @@ window.attackBoss = async function() {
     if (d.killed && typeof refreshPortfolio === 'function') refreshPortfolio();
   } catch(_) {}
 };
+
+// ── Notification System ────────────────────────────────────────────────────────
+
+let _notifPanelOpen = false;
+
+window.toggleNotifPanel = function() {
+  const panel = document.getElementById('notif-panel');
+  if (!panel) return;
+  _notifPanelOpen = !_notifPanelOpen;
+  panel.style.display = _notifPanelOpen ? 'block' : 'none';
+  if (_notifPanelOpen) {
+    loadNotifications();
+    document.getElementById('notif-badge').style.display = 'none';
+  }
+};
+
+window.loadNotifications = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/notifications', { headers: hdrs() });
+    const d = await r.json();
+    const list = document.getElementById('notif-list');
+    if (!list) return;
+    const notifs = d.notifications || [];
+    if (!notifs.length) {
+      list.innerHTML = '<div style="color:#555; text-align:center; padding:20px; font-size:0.85em;">No notifications yet.</div>';
+      return;
+    }
+    list.innerHTML = notifs.map(n => `
+      <div style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; gap:10px; align-items:flex-start; ${n.read?'opacity:0.6':''}">
+        <div style="flex:1;">
+          <div style="color:#e0e0e0; font-size:0.85em; font-weight:600;">${esc(n.title)}</div>
+          <div style="color:#888; font-size:0.78em; margin-top:2px;">${esc(n.body)}</div>
+        </div>
+        <button onclick="deleteNotif(${n.id})" style="background:none; border:none; color:#333; cursor:pointer; font-size:0.9em; flex-shrink:0; padding:2px 4px;" title="Dismiss">✕</button>
+      </div>`).join('');
+    if (notifs.some(n => !n.read)) {
+      fetch('/api/notifications/read', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ ids: notifs.filter(n=>!n.read).map(n=>n.id) }) }).catch(()=>{});
+    }
+  } catch(_) {}
+};
+
+window.markAllNotifsRead = async function() {
+  if (!sesh()) return;
+  try {
+    await fetch('/api/notifications/read', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ ids: 'all' }) });
+    loadNotifications();
+    document.getElementById('notif-badge').style.display = 'none';
+  } catch(_) {}
+};
+
+window.deleteNotif = async function(id) {
+  if (!sesh()) return;
+  try {
+    await fetch(`/api/notifications/${id}`, { method:'DELETE', headers:hdrs() });
+    loadNotifications();
+  } catch(_) {}
+};
+
+function _incrementNotifBadge() {
+  const bell = document.getElementById('notif-bell');
+  const badge = document.getElementById('notif-badge');
+  if (bell) bell.style.display = 'inline-flex';
+  if (badge && !_notifPanelOpen) {
+    const cur = parseInt(badge.textContent || '0') || 0;
+    badge.textContent = cur + 1;
+    badge.style.display = 'flex';
+    badge.style.alignItems = 'center';
+    badge.style.justifyContent = 'center';
+  }
+}
+
+// ── Today's Checklist ──────────────────────────────────────────────────────────
+
+window.loadDailyChecklist = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/daily-checklist', { headers: hdrs() });
+    const d = await r.json();
+    const container = document.getElementById('today-checklist');
+    const items = document.getElementById('checklist-items');
+    const streakEl = document.getElementById('checklist-streak');
+    if (!container || !items) return;
+    container.style.display = 'block';
+    if (d.streak) streakEl.textContent = `🔥 ${d.streak}-day streak`;
+    const checks = [
+      { done: d.spinDone,       label: 'Daily Spin', tab: 'games' },
+      { done: d.tradedToday,    label: 'Made a Trade', tab: 'trade' },
+      { done: d.heistedToday,   label: 'Daily Heist', tab: 'underworld' },
+      { done: d.missionActive,  label: 'Mission Active', tab: 'missions' },
+    ];
+    items.innerHTML = checks.map(c => `
+      <div onclick="switchTab('${c.tab}')" style="display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:20px; background:${c.done?'rgba(0,255,136,0.1)':'rgba(255,255,255,0.04)'}; border:1px solid ${c.done?'rgba(0,255,136,0.3)':'rgba(255,255,255,0.08)'}; cursor:pointer; transition:background .15s; white-space:nowrap;">
+        <span style="font-size:1em;">${c.done ? '✅' : '⬜'}</span>
+        <span style="color:${c.done?'#00ff88':'#888'}; font-size:0.82em;">${c.label}</span>
+      </div>`).join('');
+  } catch(_) {}
+};
+
+// ── My Rank Widget ─────────────────────────────────────────────────────────────
+
+window.loadMyRank = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/leaderboard/current-week', { headers: hdrs() });
+    const d = await r.json();
+    const widget = document.getElementById('my-rank-widget');
+    const text = document.getElementById('my-rank-text');
+    if (!widget || !text) return;
+    const lb = d.leaderboard || [];
+    const uid = (d.currentUserId || '').toString();
+    const idx = lb.findIndex(p => (p.userId || p.user_id || '').toString() === uid);
+    if (idx >= 0) {
+      widget.style.display = 'flex';
+      text.textContent = `#${idx + 1} of ${lb.length} players this week`;
+    }
+  } catch(_) {}
+};
+
+// ── Boost ─────────────────────────────────────────────────────────────────────
+
+window.loadBoostStatus = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/boost/status', { headers: hdrs() });
+    const d = await r.json();
+    const els = ['boost-status-display', 'boost-status-games'];
+    const label = d.active
+      ? `⚡ Active — ${d.multiplier}× XP until ${new Date(d.activeUntil).toLocaleTimeString()}`
+      : 'Inactive — 500 Credits activates 2× XP for 24h';
+    els.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = label; });
+    const btn = document.getElementById('boost-btn');
+    if (btn) btn.textContent = d.active ? '⚡ Booster Active' : '⚡ Activate Booster — 500 Credits';
+  } catch(_) {}
+};
+
+window.activateBoost = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/boost/activate', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('⚡','XP Booster Activated!','2× XP for the next 24 hours!','#00ff88');
+    loadBoostStatus();
+  } catch(_) {}
+};
+
+// ── Cosmetics Store ────────────────────────────────────────────────────────────
+
+window.loadCosmeticsStore = async function() {
+  if (!sesh()) return;
+  try {
+    const [catR, mineR] = await Promise.all([
+      fetch('/api/cosmetics/catalog', { headers: hdrs() }),
+      fetch('/api/cosmetics/mine', { headers: hdrs() }),
+    ]);
+    const cat = await catR.json();
+    const mine = await mineR.json();
+    const container = document.getElementById('cosmetics-catalog');
+    if (!container) return;
+    const items = (cat.frames || []).concat(cat.nameplates || []);
+    if (!items.length) { container.innerHTML = '<div style="color:#555; text-align:center; padding:12px; font-size:0.85em;">No items available.</div>'; return; }
+    container.innerHTML = items.map(item => {
+      const owned = (item.type === 'frame' && mine.frameStyle === item.id) ||
+                    (item.type === 'nameplate' && mine.nameplateColor === item.id);
+      return `<div style="background:#0d1421; border:1px solid ${owned?'#ffd700':'rgba(255,255,255,0.08)'}; border-radius:10px; padding:12px; text-align:center; cursor:${owned?'default':'pointer'};" onclick="${owned?'':'buyCosmetic(\''+item.type+'\',\''+item.id+'\')'}" title="${item.name}">
+        <div style="font-size:1.8em; margin-bottom:4px;">${item.icon || '🖼️'}</div>
+        <div style="color:#e0e0e0; font-size:0.78em; font-weight:600; margin-bottom:2px;">${esc(item.name)}</div>
+        <div style="color:${owned?'#ffd700':'#9b59b6'}; font-size:0.72em;">${owned ? '✓ Equipped' : `${item.cost} Credits`}</div>
+      </div>`;
+    }).join('');
+  } catch(_) {}
+};
+
+window.buyCosmetic = async function(type, item) {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/cosmetics/buy', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ type, item }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('🎨','Cosmetic Equipped!',`Your new ${type} has been applied.`,'#9b59b6');
+    loadCosmeticsStore();
+  } catch(_) {}
+};
+
+// ── Subscriptions ──────────────────────────────────────────────────────────────
+
+window.loadSubscriptions = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/subscriptions/status', { headers: hdrs() });
+    const d = await r.json();
+    const container = document.getElementById('subscriptions-list');
+    if (!container) return;
+    const subs = [
+      { key:'creator', label:'Creator Membership', price:'$10/mo', active: d.isCreator },
+      { key:'elite', label:'VIP Elite Membership', price:'$24.99/mo', active: d.isElite },
+      { key:'coach', label:'Coach Pro', price:'$4.99/mo', active: d.isCoach },
+    ];
+    container.innerHTML = subs.map(s => `
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+        <div style="width:10px; height:10px; border-radius:50%; background:${s.active?'#00ff88':'#333'}; flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div style="color:#e0e0e0; font-size:0.88em;">${s.label}</div>
+          <div style="color:#555; font-size:0.75em;">${s.active ? 'Active · ' + s.price : 'Not subscribed'}</div>
+        </div>
+        ${s.active ? `<button onclick="cancelSub('${s.key}')" style="background:none; border:1px solid #333; color:#555; border-radius:6px; padding:4px 12px; cursor:pointer; font-size:0.75em;">Cancel</button>` : ''}
+      </div>`).join('');
+  } catch(_) {}
+};
+
+window.cancelSub = async function(type) {
+  if (!confirm('Cancel this subscription?')) return;
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/stripe/cancel-subscription', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ type }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('✅','Cancelled','Your subscription has been cancelled.','#00d4ff');
+    loadSubscriptions();
+  } catch(_) {}
+};
+
+// ── Elite Membership ───────────────────────────────────────────────────────────
+
+window.buyEliteMembership = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/stripe/elite-membership', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.checkoutUrl) { window.location.href = d.checkoutUrl; }
+    else showToast('❌','Error',d.error||'Unable to start checkout','#ff4444');
+  } catch(_) {}
+};
+
+// ── Legend Bundle ──────────────────────────────────────────────────────────────
+
+window.buyLegendBundle = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/stripe/legend-bundle', { method:'POST', headers:hdrs() });
+    const d = await r.json();
+    if (d.checkoutUrl) { window.location.href = d.checkoutUrl; }
+    else showToast('❌','Error',d.error||'Unable to start checkout','#ff4444');
+  } catch(_) {}
+};
+
+// ── Gift ───────────────────────────────────────────────────────────────────────
+
+window.giftPaperMoney = async function() {
+  if (!sesh()) return;
+  const email = (document.getElementById('gift-pm-email') || {}).value || '';
+  const tier  = (document.getElementById('gift-pm-tier')  || {}).value || 'starter';
+  if (!email) { showToast('⚠️','Missing Email','Enter the recipient email.','#ffd700'); return; }
+  try {
+    const r = await fetch('/api/stripe/gift-paper-money', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ recipientEmail: email, tier }) });
+    const d = await r.json();
+    if (d.checkoutUrl) { window.location.href = d.checkoutUrl; }
+    else showToast('❌','Error',d.error||'Gift setup failed','#ff4444');
+  } catch(_) {}
+};
+
+window.giftCredits = async function() {
+  if (!sesh()) return;
+  const email = (document.getElementById('gift-cr-email') || {}).value || '';
+  const pkg   = (document.getElementById('gift-cr-pkg')   || {}).value || 'starter';
+  if (!email) { showToast('⚠️','Missing Email','Enter the recipient email.','#ffd700'); return; }
+  try {
+    const r = await fetch('/api/stripe/gift-credits', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ recipientEmail: email, packageKey: pkg }) });
+    const d = await r.json();
+    if (d.checkoutUrl) { window.location.href = d.checkoutUrl; }
+    else showToast('❌','Error',d.error||'Gift setup failed','#ff4444');
+  } catch(_) {}
+};
+
+// ── Limit Orders ───────────────────────────────────────────────────────────────
+
+window.placeLimitOrder = async function() {
+  if (!sesh()) return;
+  const symbol = ((document.getElementById('lo-symbol')||{}).value||'').toUpperCase().trim();
+  const type   = (document.getElementById('lo-type')||{}).value || 'buy';
+  const qty    = parseFloat((document.getElementById('lo-qty')||{}).value || '0');
+  const price  = parseFloat((document.getElementById('lo-price')||{}).value || '0');
+  if (!symbol || qty <= 0 || price <= 0) { showToast('⚠️','Invalid Input','Fill in all limit order fields.','#ffd700'); return; }
+  try {
+    const r = await fetch('/api/trade/limit-order', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ symbol, type, quantity: qty, limitPrice: price }) });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('📋','Limit Order Placed',`${type.toUpperCase()} ${qty} ${symbol} @ $${price.toFixed(2)}`,'#ffd700');
+    loadLimitOrders();
+    ['lo-symbol','lo-qty','lo-price'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  } catch(_) {}
+};
+
+window.loadLimitOrders = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/trade/limit-orders', { headers: hdrs() });
+    const d = await r.json();
+    const container = document.getElementById('limit-orders-list');
+    if (!container) return;
+    const orders = d.orders || [];
+    if (!orders.length) { container.innerHTML = '<div style="color:#555; font-size:0.88em; text-align:center; padding:10px;">No pending limit orders.</div>'; return; }
+    container.innerHTML = `<table style="width:100%; font-size:0.82em; border-collapse:collapse;">
+      <thead><tr>
+        <th style="text-align:left; color:#555; padding:6px 4px;">Symbol</th>
+        <th style="text-align:left; color:#555; padding:6px 4px;">Type</th>
+        <th style="text-align:right; color:#555; padding:6px 4px;">Qty</th>
+        <th style="text-align:right; color:#555; padding:6px 4px;">Limit</th>
+        <th style="text-align:right; color:#555; padding:6px 4px;"></th>
+      </tr></thead>
+      <tbody>
+      ${orders.map(o => `<tr style="border-top:1px solid rgba(255,255,255,0.04);">
+        <td style="padding:8px 4px; color:#e0e0e0; font-weight:600;">${esc(o.symbol)}</td>
+        <td style="padding:8px 4px; color:${o.order_type==='buy'?'#00ff88':'#ff6b6b'};">${(o.order_type||'').toUpperCase()}</td>
+        <td style="padding:8px 4px; text-align:right; color:#aaa;">${o.quantity}</td>
+        <td style="padding:8px 4px; text-align:right; font-variant-numeric:tabular-nums; color:#ffd700;">$${parseFloat(o.limit_price).toFixed(2)}</td>
+        <td style="padding:8px 4px; text-align:right;"><button onclick="cancelLimitOrder(${o.id})" style="background:none; border:1px solid #333; color:#555; border-radius:4px; padding:3px 10px; cursor:pointer; font-size:0.75em;">Cancel</button></td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  } catch(_) {}
+};
+
+window.cancelLimitOrder = async function(id) {
+  if (!sesh()) return;
+  try {
+    const r = await fetch(`/api/trade/limit-order/${id}`, { method:'DELETE', headers:hdrs() });
+    const d = await r.json();
+    if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
+    showToast('✅','Order Cancelled','Limit order cancelled.','#aaa');
+    loadLimitOrders();
+  } catch(_) {}
+};
+
+// ── Share My Week ──────────────────────────────────────────────────────────────
+
+window.shareMyWeek = async function() {
+  if (!sesh()) return;
+  try {
+    const r = await fetch('/api/stats/weekly-card', { headers: hdrs() });
+    const d = await r.json();
+    const text = `I went ${d.gainPct >= 0 ? '+' : ''}${parseFloat(d.gainPct||0).toFixed(1)}% this week on Self-Made Legends, ranked #${d.rank||'?'} nationally. ${d.trades||0} trades this week. Play free at selfmadelegends.com 🚀`;
+    if (navigator.share) {
+      navigator.share({ title: 'My SML Week', text }).catch(() => copyToClipboard(text));
+    } else {
+      copyToClipboard(text);
+      showToast('📋','Copied!','Stats copied to clipboard.','#00d4ff');
+    }
+  } catch(_) {}
+};
+
+function copyToClipboard(text) {
+  try {
+    if (navigator.clipboard) { navigator.clipboard.writeText(text); return; }
+    const ta = document.createElement('textarea'); ta.value = text;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  } catch(_) {}
+}
+
+// ── Profile Setup Modal ────────────────────────────────────────────────────────
+
+let _psGender = null;
+
+window.openProfileSetup = function() {
+  _psGender = null;
+  const modal = document.getElementById('profile-setup-modal');
+  if (modal) modal.style.display = 'flex';
+};
+
+window.psSelectGender = function(g) {
+  _psGender = g;
+  document.querySelectorAll('#ps-gender-btns button').forEach(btn => {
+    const isActive = btn.getAttribute('onclick') === `psSelectGender('${g}')`;
+    btn.style.borderColor = isActive ? '#00d4ff' : '#2a2a3a';
+    btn.style.background = isActive ? 'rgba(0,212,255,0.12)' : 'none';
+    btn.style.color = isActive ? '#00d4ff' : '#aaa';
+  });
+};
+
+window.confirmProfileSetup = function() {
+  if (_psGender && sesh()) {
+    fetch('/api/account/gender', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ gender: _psGender }) }).catch(()=>{});
+  }
+  closeProfileSetup();
+};
+
+window.closeProfileSetup = function() {
+  const modal = document.getElementById('profile-setup-modal');
+  if (modal) modal.style.display = 'none';
+};
+
+// ── Extended socket handlers ───────────────────────────────────────────────────
+
+(function() {
+  function _attachExtendedSockets() {
+    if (typeof socket === 'undefined') { setTimeout(_attachExtendedSockets, 1000); return; }
+
+    socket.on('notification', function(n) {
+      _incrementNotifBadge();
+      showToast(n.type === 'badge_earned' ? '🎖️' : '🔔', n.title, n.body, '#00d4ff');
+      if (window.SMLSounds) SMLSounds.notification();
+      if (_notifPanelOpen) loadNotifications();
+    });
+
+    socket.on('referral_bonus', function(d) {
+      showToast('🔗','Referral Bonus!',d.message || `+${fmtMoney(d.amount)} from referral!`,'#00ff88');
+    });
+
+    socket.on('limit_order_filled', function(d) {
+      showToast('📋','Limit Order Filled!',`${(d.type||'').toUpperCase()} ${d.quantity} ${d.symbol} @ $${parseFloat(d.price||0).toFixed(2)}`,'#ffd700');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+      loadLimitOrders();
+    });
+
+    socket.on('credits_received', function(d) {
+      showToast('💎','Credits Received!',d.message || `${d.amount} Credits added to your account.`,'#9b59b6');
+      const el = document.getElementById('credits-balance-display');
+      if (el && d.newBalance !== undefined) el.textContent = Number(d.newBalance).toLocaleString() + ' Credits';
+    });
+
+    socket.on('tournament_payout', function(d) {
+      showToast('🏆','Tournament Payout!',d.message || `You won ${fmtMoney(d.amount)} from the tournament!`,'#ffd700');
+      if (typeof refreshPortfolio === 'function') refreshPortfolio();
+    });
+
+    // Extend purchase_complete to handle new types
+    socket.on('purchase_complete', function({ type, message, amount, balance }) {
+      if (type === 'elite_membership') {
+        showToast('👑','Elite Membership Active!', message || 'Welcome to the VIP Elite tier!','#9b59b6');
+        loadSubscriptions();
+        return;
+      }
+      if (type === 'legend_bundle') {
+        showToast('⚡','Legend Starter Pack Delivered!', message || '2,500 credits, $5k paper money + Neon frame unlocked!','#ffd700');
+        loadCosmeticsStore();
+        return;
+      }
+      if ((type||'').startsWith('gift_credits')) {
+        showToast('🎁','Gift Credits Sent!', message || 'Credits delivered to recipient.','#9b59b6');
+        return;
+      }
+    });
+  }
+  _attachExtendedSockets();
+})();
+
+// ── Load data when dashboard / payments / trade tabs open (extended) ───────────
+
+(function() {
+  const _extOrigSwitch = window.switchTab;
+  if (typeof _extOrigSwitch !== 'function') return;
+  window.switchTab = function(tab) {
+    _extOrigSwitch.apply(this, arguments);
+    if (tab === 'dashboard') {
+      loadDailyChecklist();
+      loadMyRank();
+    }
+    if (tab === 'payments') {
+      loadBoostStatus();
+      loadCosmeticsStore();
+      loadSubscriptions();
+    }
+    if (tab === 'trade') {
+      loadLimitOrders();
+    }
+    if (tab === 'games') {
+      loadBoostStatus();
+    }
+  };
+})();
+
+// Show notif bell once logged in
+(function() {
+  const _origLoadAcc = window.loadAccountData;
+  if (typeof _origLoadAcc === 'function') {
+    window.loadAccountData = function() {
+      _origLoadAcc.apply(this, arguments);
+      const bell = document.getElementById('notif-bell');
+      if (bell) bell.style.display = 'inline-flex';
+    };
+  }
+})();
 
 // ── Load community challenge/boss when community tab opens ─────────────────
 const _uwOrigSwitchTab = window.switchTab;

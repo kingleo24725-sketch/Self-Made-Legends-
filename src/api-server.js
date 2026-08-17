@@ -252,6 +252,25 @@ app.post("/api/auth/register", (req, res) => {
     notifier.sendWelcome(email, fullName).catch(() => {});
     if (referralCode) {
       referralSystem.processReferral(referralCode, result.userId, email);
+      // Persist referral event and give both parties instant signup bonus
+      (async () => {
+        try {
+          const refRow = await db.get('SELECT user_id FROM referral_links WHERE code = ?', [referralCode]);
+          if (refRow) {
+            const referrerId = refRow.user_id;
+            const now = Date.now();
+            await db.run('UPDATE referral_links SET signups = signups + 1 WHERE code = ?', [referralCode]);
+            await db.run('INSERT INTO referral_events (code, referrer_id, referee_id, event_type, bonus_paid, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+              [referralCode, referrerId, result.userId, 'signup', 500, now]);
+            // Give referee 500 paper money immediately
+            await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 500, updated_at = ? WHERE user_id = ?', [now, result.userId]);
+            // Give referrer 500 paper money immediately
+            await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 500, updated_at = ? WHERE user_id = ?', [now, referrerId]);
+            await _syncLeaderboard(referrerId);
+            emitToUser(referrerId, 'referral_bonus', { amount: 500, message: '🔗 +$500 paper money — your referral just signed up!' });
+          }
+        } catch (_) {}
+      })();
     }
   }
 
@@ -463,11 +482,29 @@ app.post("/api/stripe/cancel-subscription", authenticateUser, async (req, res) =
   }
 });
 
-// Helper: complete a mission action with Season Pass 1.5× XP bonus if active
+// Helper: complete a mission action with Season Pass and XP Booster multipliers
 async function awardMissionXP(userId, actionId) {
-  const row = await db.get('SELECT active FROM season_passes WHERE user_id = ? AND active = 1', [userId]);
-  const mult = row ? 1.5 : 1;
+  const [passRow, boostRow, eliteRow] = await Promise.all([
+    db.get('SELECT active FROM season_passes WHERE user_id = ? AND active = 1', [userId]),
+    db.get('SELECT active_until, multiplier FROM xp_boosts WHERE user_id = ?', [userId]),
+    db.get('SELECT active FROM elite_memberships WHERE user_id = ?', [userId]),
+  ]);
+  let mult = 1;
+  if (passRow) mult *= 1.5;
+  if (eliteRow && eliteRow.active) mult *= 2;
+  if (boostRow && boostRow.active_until > Date.now()) mult *= boostRow.multiplier;
   return missionSystem.completeAction(userId, actionId, mult);
+}
+
+// Helper: create a persistent notification and emit socket event
+async function _notify(userId, type, title, body) {
+  try {
+    await db.run(
+      'INSERT INTO notifications (user_id, type, title, body, read, created_at) VALUES (?, ?, ?, ?, 0, ?)',
+      [userId, type, title, body, Date.now()]
+    );
+    emitToUser(userId, 'notification', { type, title, body, timestamp: Date.now() });
+  } catch (_) {}
 }
 
 // Helper: add SML credits to a user's balance
@@ -682,7 +719,46 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         }
 
       } else if (type === 'creator_subscription') {
-        console.log(`Creator subscription started — user ${userId}`);
+        if (userId) {
+          const now = Date.now();
+          await db.run('INSERT OR IGNORE INTO creator_memberships (user_id, activated_at, active) VALUES (?, ?, 1)', [userId, now]);
+          await db.run('UPDATE creator_memberships SET active = 1, activated_at = ? WHERE user_id = ?', [now, userId]);
+          await db.run('UPDATE accounts SET is_creator = 1 WHERE id = ?', [userId]);
+          emitToUser(userId, 'purchase_complete', { type: 'creator_membership', message: '👑 Creator Membership activated! Your exclusive perks are live.' });
+        }
+        console.log(`Creator Membership activated — user ${userId}`);
+
+      } else if (type === 'elite_membership') {
+        if (userId) {
+          const now = Date.now();
+          await db.run('INSERT OR IGNORE INTO elite_memberships (user_id, activated_at, active) VALUES (?, ?, 1)', [userId, now]);
+          await db.run('UPDATE elite_memberships SET active = 1, activated_at = ? WHERE user_id = ?', [now, userId]);
+          await db.run('UPDATE accounts SET is_elite = 1 WHERE id = ?', [userId]);
+          emitToUser(userId, 'purchase_complete', { type: 'elite_membership', message: '💎 Elite Membership activated! You are in the top tier — exclusive perks unlocked.' });
+        }
+
+      } else if (type === 'legend_bundle') {
+        if (userId) {
+          const now = Date.now();
+          await _addCredits(userId, 2500, 'bundle', 'Legend Starter Bundle — 2,500 Credits');
+          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 5000, updated_at = ? WHERE user_id = ?', [now, userId]);
+          await db.run('UPDATE accounts SET is_season_pass = 1 WHERE id = ?', [userId]);
+          await db.run('INSERT OR IGNORE INTO player_cosmetics (user_id, frame_style, updated_at) VALUES (?, ?, ?)', [userId, 'neon', now]);
+          await db.run('UPDATE player_cosmetics SET frame_style = CASE WHEN frame_style = \'default\' THEN \'neon\' ELSE frame_style END, updated_at = ? WHERE user_id = ?', [now, userId]);
+          await _syncLeaderboard(userId);
+          emitToUser(userId, 'purchase_complete', { type: 'legend_bundle', message: '🎁 Legend Bundle activated! 2,500 Credits + $5,000 + Neon Frame added.' });
+        }
+
+      } else if (type && type.startsWith('gift_credits_')) {
+        const packageKey = type.slice('gift_credits_'.length);
+        const recipientId = obj.metadata?.recipientId;
+        const creditAmounts = { starter: 500, legends: 2500, champion: 7000 };
+        const credits = creditAmounts[packageKey];
+        if (recipientId && credits) {
+          await _addCredits(recipientId, credits, 'gift', `${credits} Credits gifted by a friend`);
+          emitToUser(recipientId, 'credits_received', { amount: credits, message: `🎁 You received ${credits} SML Credits as a gift!` });
+          if (userId) emitToUser(userId, 'purchase_complete', { type: 'gift_credits', message: `🎁 Gift of ${credits} credits sent successfully!` });
+        }
       }
 
     } else if (event.type === "customer.subscription.deleted") {
@@ -1382,41 +1458,47 @@ app.post("/api/boss-heist/attack", authenticateUser, async (req, res) => {
 
 app.post("/api/game/dice", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
-  const { wager } = req.body;
-  if (!wager || wager <= 0) return res.status(400).json({ error: 'wager must be positive' });
+  const wager = parseFloat(req.body.wager);
+  if (isNaN(wager) || wager <= 0) return res.status(400).json({ error: 'wager must be a positive number' });
+  const MAX_WAGER = 10000;
   try {
     const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
     const cash = portfolio ? portfolio.cash_balance : 0;
-    if (cash < wager) return res.status(400).json({ error: 'Insufficient paper money' });
+    const actualWager = Math.min(wager, cash, MAX_WAGER);
+    if (actualWager < wager) return res.status(400).json({ error: `Wager capped at $${MAX_WAGER.toLocaleString()} max or your balance`, max: MAX_WAGER });
+    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient paper money' });
     const roll1 = Math.floor(Math.random() * 6) + 1;
     const roll2 = Math.floor(Math.random() * 6) + 1;
     const sum = roll1 + roll2;
-    const won = sum >= 7;
-    const payout = won ? parseFloat((wager * 1.8).toFixed(2)) : 0;
-    const net = won ? payout - wager : -wager;
+    const won = sum >= 8; // 8–12 wins (house-favorable: 41.7% win rate)
+    const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0;
+    const net = won ? payout - actualWager : -actualWager;
     const now = Date.now();
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [net, now, uid]);
     await _syncLeaderboard(uid);
-    res.json({ success: true, roll1, roll2, sum, won, wager, payout, net });
+    res.json({ success: true, roll1, roll2, sum, won, wager: actualWager, payout, net });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post("/api/game/card-flip", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
-  const { wager } = req.body;
-  if (!wager || wager <= 0) return res.status(400).json({ error: 'wager must be positive' });
+  const wager = parseFloat(req.body.wager);
+  if (isNaN(wager) || wager <= 0) return res.status(400).json({ error: 'wager must be a positive number' });
+  const MAX_WAGER = 10000;
   try {
     const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
     const cash = portfolio ? portfolio.cash_balance : 0;
-    if (cash < wager) return res.status(400).json({ error: 'Insufficient paper money' });
+    const actualWager = Math.min(wager, cash, MAX_WAGER);
+    if (actualWager < wager) return res.status(400).json({ error: `Wager capped at $${MAX_WAGER.toLocaleString()} max or your balance`, max: MAX_WAGER });
+    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient paper money' });
     const color = Math.random() < 0.5 ? 'Red' : 'Black';
     const won = color === 'Red';
-    const payout = won ? parseFloat((wager * 1.9).toFixed(2)) : 0;
-    const net = won ? payout - wager : -wager;
+    const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0; // 1.8× (house +10% EV)
+    const net = won ? payout - actualWager : -actualWager;
     const now = Date.now();
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [net, now, uid]);
     await _syncLeaderboard(uid);
-    res.json({ success: true, color, won, wager, payout, net });
+    res.json({ success: true, color, won, wager: actualWager, payout, net });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -2750,35 +2832,54 @@ app.get("/api/creator/earnings", (req, res) => {
 
 // ===== REFERRAL ENDPOINTS =====
 
-app.post("/api/referrals/generate-link", authenticateUser, (req, res) => {
-  const account = accountManager.getAccountById(req.user.userId);
-  const link = referralSystem.generateReferralLink(req.user.userId, account.email);
-  res.json(link);
-});
-
-app.get("/api/referrals/my-link", authenticateUser, (req, res) => {
-  const link = referralSystem.getReferralLink(req.user.userId);
-  if (!link) {
-    const account = accountManager.getAccountById(req.user.userId);
-    return res.json(referralSystem.generateReferralLink(req.user.userId, account.email));
+app.post("/api/referrals/generate-link", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const account = accountManager.getAccountById(uid);
+  // Check DB first
+  let row = await db.get('SELECT code FROM referral_links WHERE user_id = ?', [uid]);
+  if (!row) {
+    const link = referralSystem.generateReferralLink(uid, account.email);
+    await db.run('INSERT OR IGNORE INTO referral_links (user_id, code, created_at) VALUES (?, ?, ?)',
+      [uid, link.code, Date.now()]);
+    row = { code: link.code };
   }
-  res.json(link);
+  const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+  res.json({ code: row.code, link: `${BASE}/?ref=${row.code}`, userId: uid });
 });
 
-app.get("/api/referrals/stats", authenticateUser, (req, res) => {
-  const stats = referralSystem.getReferralStats(req.user.userId);
-  res.json(stats);
+app.get("/api/referrals/my-link", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  let row = await db.get('SELECT code, clicks, signups, converted FROM referral_links WHERE user_id = ?', [uid]);
+  if (!row) {
+    const account = accountManager.getAccountById(uid);
+    const link = referralSystem.generateReferralLink(uid, account.email);
+    await db.run('INSERT OR IGNORE INTO referral_links (user_id, code, created_at) VALUES (?, ?, ?)',
+      [uid, link.code, Date.now()]);
+    row = { code: link.code, clicks: 0, signups: 0, converted: 0 };
+  }
+  const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+  res.json({ code: row.code, link: `${BASE}/?ref=${row.code}`, userId: uid, clicks: row.clicks, signups: row.signups, converted: row.converted });
 });
 
-app.get("/api/referrals/leaderboard", (req, res) => {
+app.get("/api/referrals/stats", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const row = await db.get('SELECT clicks, signups, converted FROM referral_links WHERE user_id = ?', [uid]);
+  const events = await db.all('SELECT event_type, bonus_paid FROM referral_events WHERE referrer_id = ?', [uid]);
+  const totalBonuses = events.reduce((s, e) => s + (e.bonus_paid || 0), 0);
+  res.json({ clicks: row ? row.clicks : 0, signups: row ? row.signups : 0, converted: row ? row.converted : 0, totalBonusesPaid: totalBonuses });
+});
+
+app.get("/api/referrals/leaderboard", async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
-  const leaderboard = referralSystem.getLeaderboard(limit);
-  res.json({ leaderboard, totalUsers: leaderboard.length });
+  const rows = await db.all('SELECT user_id, signups, converted FROM referral_links ORDER BY signups DESC LIMIT ?', [limit]);
+  res.json({ leaderboard: rows, totalUsers: rows.length });
 });
 
-app.get("/api/referrals/track/:code", (req, res) => {
-  const tracked = referralSystem.trackReferralClick(req.params.code);
-  res.json({ tracked });
+app.get("/api/referrals/track/:code", async (req, res) => {
+  const code = req.params.code;
+  await db.run('UPDATE referral_links SET clicks = clicks + 1 WHERE code = ?', [code]);
+  referralSystem.trackReferralClick(code); // keep in-memory in sync
+  res.json({ tracked: true });
 });
 
 // ===== REFERRAL BONUS POOL ENDPOINTS =====
@@ -3965,7 +4066,8 @@ app.post("/api/trade/buy", authenticateUser, async (req, res) => {
     [uid, sym, 'BUY', qty, price, 'manual', now]);
 
   await _syncLeaderboard(uid);
-  await awardMissionXP(uid, 'trade');
+  awardMissionXP(uid, 'make_3_trades').catch(() => {});
+  awardMissionXP(uid, 'make_5_trades').catch(() => {});
   await tradeCoach.onTrade(uid, { type: 'BUY', symbol: sym, quantity: qty, price });
 
   // Award trade-count badges
@@ -4166,6 +4268,286 @@ setInterval(async () => {
 
 setInterval(runAnalysis, 60000);
 
+// ===== CREATOR / ELITE STATUS =====
+
+app.get("/api/creator/status", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const [creatorRow, eliteRow] = await Promise.all([
+    db.get('SELECT activated_at, active FROM creator_memberships WHERE user_id = ?', [uid]),
+    db.get('SELECT activated_at, active FROM elite_memberships WHERE user_id = ?', [uid]),
+  ]);
+  res.json({
+    isCreator: !!(creatorRow && creatorRow.active),
+    isElite:   !!(eliteRow && eliteRow.active),
+    creatorActivatedAt: creatorRow ? creatorRow.activated_at : null,
+    eliteActivatedAt:   eliteRow   ? eliteRow.activated_at   : null,
+  });
+});
+
+app.get("/api/subscriptions/status", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const [creatorRow, eliteRow, coachRow] = await Promise.all([
+    db.get('SELECT active, activated_at FROM creator_memberships WHERE user_id = ?', [uid]),
+    db.get('SELECT active, activated_at FROM elite_memberships WHERE user_id = ?', [uid]),
+    db.get('SELECT active, activated_at FROM premium_coach_subs WHERE user_id = ?', [uid]),
+  ]);
+  res.json({
+    creator: { active: !!(creatorRow && creatorRow.active), activatedAt: creatorRow ? creatorRow.activated_at : null },
+    elite:   { active: !!(eliteRow   && eliteRow.active),   activatedAt: eliteRow   ? eliteRow.activated_at   : null },
+    coachPro:{ active: !!(coachRow   && coachRow.active),   activatedAt: coachRow   ? coachRow.activated_at   : null },
+  });
+});
+
+// ===== STRIPE — NEW CHECKOUT ENDPOINTS =====
+
+app.post("/api/stripe/elite-membership", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const existing = await db.get('SELECT active FROM elite_memberships WHERE user_id = ?', [uid]);
+  if (existing && existing.active) return res.status(400).json({ error: 'Elite Membership already active' });
+  const acct = accountManager.getAccountById(uid);
+  const { checkoutUrl } = await stripeProcessor.createEliteCheckout(uid, acct ? acct.email : null);
+  res.json({ checkoutUrl });
+});
+
+app.post("/api/stripe/gift-credits", authenticateUser, async (req, res) => {
+  const { recipientEmail, packageKey } = req.body;
+  if (!recipientEmail || !packageKey) return res.status(400).json({ error: 'recipientEmail and packageKey required' });
+  const CREDIT_PACKAGES_MAP = { starter: { credits: 500, amount_cents: 500, label: 'Starter Pack (500 Credits)' }, legends: { credits: 2500, amount_cents: 2000, label: 'Legends Pack (2,500 Credits)' }, champion: { credits: 7000, amount_cents: 5000, label: 'Champion Pack (7,000 Credits)' } };
+  const pkg = CREDIT_PACKAGES_MAP[packageKey];
+  if (!pkg) return res.status(400).json({ error: 'Invalid package' });
+  const recipient = accountManager.getAccount(recipientEmail);
+  if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
+  const uid = req.user.userId;
+  const senderAcct = accountManager.getAccountById(uid);
+  const { checkoutUrl } = await stripeProcessor.createGiftCreditsCheckout(uid, senderAcct ? senderAcct.email : null, recipient.id, packageKey, pkg);
+  res.json({ checkoutUrl });
+});
+
+app.post("/api/stripe/legend-bundle", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const acct = accountManager.getAccountById(uid);
+  const { checkoutUrl } = await stripeProcessor.createLegendBundleCheckout(uid, acct ? acct.email : null);
+  res.json({ checkoutUrl });
+});
+
+// ===== XP BOOSTER =====
+
+app.get("/api/boost/status", authenticateUser, async (req, res) => {
+  const row = await db.get('SELECT active_until, multiplier, activated_at FROM xp_boosts WHERE user_id = ?', [req.user.userId]);
+  const active = row && row.active_until > Date.now();
+  res.json({ active: !!active, activeUntil: row ? row.active_until : null, multiplier: active ? row.multiplier : 1 });
+});
+
+app.post("/api/boost/activate", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const COST = 500;
+  const credits = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [uid]);
+  if (!credits || credits.balance < COST) return res.status(400).json({ error: `Insufficient credits (need ${COST})`, balance: credits ? credits.balance : 0 });
+  const now = Date.now();
+  const activeUntil = now + 86_400_000;
+  await db.run('UPDATE sml_credits SET balance = balance - ?, updated_at = ? WHERE user_id = ?', [COST, now, uid]);
+  await db.run('INSERT INTO credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?)',
+    [uid, -COST, 'spend', 'XP Booster 24h', now]);
+  await db.run(`INSERT INTO xp_boosts (user_id, active_until, multiplier, activated_at) VALUES (?, ?, 2.0, ?)
+    ON CONFLICT(user_id) DO UPDATE SET active_until = ?, multiplier = 2.0, activated_at = ?`,
+    [uid, activeUntil, now, activeUntil, now]);
+  const newBalance = credits.balance - COST;
+  res.json({ success: true, activeUntil, multiplier: 2, creditsBalance: newBalance });
+});
+
+// ===== COSMETICS STORE =====
+
+const COSMETICS_CATALOG = {
+  frames: [
+    { key: 'silver',    label: 'Silver Frame',    icon: '🥈', cost: 100 },
+    { key: 'gold',      label: 'Gold Frame',      icon: '🥇', cost: 200 },
+    { key: 'neon',      label: 'Neon Frame',      icon: '⚡', cost: 300 },
+    { key: 'diamond',   label: 'Diamond Frame',   icon: '💎', cost: 500 },
+    { key: 'legendary', label: 'Legendary Frame', icon: '👑', cost: 1000 },
+  ],
+  nameplates: [
+    { key: 'red',     label: 'Red Nameplate',     icon: '🔴', cost: 100 },
+    { key: 'blue',    label: 'Blue Nameplate',    icon: '🔵', cost: 100 },
+    { key: 'purple',  label: 'Purple Nameplate',  icon: '🟣', cost: 200 },
+    { key: 'rainbow', label: 'Rainbow Nameplate', icon: '🌈', cost: 500 },
+  ],
+};
+
+app.get("/api/cosmetics/catalog", authenticateUser, async (req, res) => {
+  const row = await db.get('SELECT frame_style, nameplate_color FROM player_cosmetics WHERE user_id = ?', [req.user.userId]);
+  res.json({ catalog: COSMETICS_CATALOG, equipped: row || { frame_style: 'default', nameplate_color: 'default' } });
+});
+
+app.post("/api/cosmetics/buy", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { type, item } = req.body;
+  if (!type || !item) return res.status(400).json({ error: 'type and item required' });
+  const catalog = type === 'frame' ? COSMETICS_CATALOG.frames : type === 'nameplate' ? COSMETICS_CATALOG.nameplates : null;
+  if (!catalog) return res.status(400).json({ error: 'type must be "frame" or "nameplate"' });
+  const cosmetic = catalog.find(c => c.key === item);
+  if (!cosmetic) return res.status(404).json({ error: 'Item not found in catalog' });
+  const credits = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [uid]);
+  const bal = credits ? credits.balance : 0;
+  if (bal < cosmetic.cost) return res.status(400).json({ error: `Insufficient credits (need ${cosmetic.cost})`, balance: bal });
+  const now = Date.now();
+  await db.run('UPDATE sml_credits SET balance = balance - ?, updated_at = ? WHERE user_id = ?', [cosmetic.cost, now, uid]);
+  await db.run('INSERT INTO credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?)',
+    [uid, -cosmetic.cost, 'spend', `Cosmetic: ${cosmetic.label}`, now]);
+  const col = type === 'frame' ? 'frame_style' : 'nameplate_color';
+  await db.run(`INSERT INTO player_cosmetics (user_id, ${col}, updated_at) VALUES (?, ?, ?)
+    ON CONFLICT(user_id) DO UPDATE SET ${col} = ?, updated_at = ?`, [uid, item, now, item, now]);
+  res.json({ success: true, equipped: item, creditsBalance: bal - cosmetic.cost });
+});
+
+app.get("/api/cosmetics/mine", authenticateUser, async (req, res) => {
+  const row = await db.get('SELECT frame_style, nameplate_color FROM player_cosmetics WHERE user_id = ?', [req.user.userId]);
+  res.json(row || { frame_style: 'default', nameplate_color: 'default' });
+});
+
+// ===== NOTIFICATION INBOX =====
+
+app.get("/api/notifications", authenticateUser, async (req, res) => {
+  const rows = await db.all(
+    'SELECT id, type, title, body, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 50',
+    [req.user.userId]
+  );
+  const unread = rows.filter(r => !r.read).length;
+  res.json({ notifications: rows, unread });
+});
+
+app.post("/api/notifications/read", authenticateUser, async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
+  if (ids.length === 0) return res.json({ success: true });
+  const placeholders = ids.map(() => '?').join(',');
+  await db.run(`UPDATE notifications SET read = 1 WHERE user_id = ? AND id IN (${placeholders})`,
+    [req.user.userId, ...ids]);
+  res.json({ success: true });
+});
+
+app.delete("/api/notifications/:id", authenticateUser, async (req, res) => {
+  await db.run('DELETE FROM notifications WHERE id = ? AND user_id = ?', [req.params.id, req.user.userId]);
+  res.json({ success: true });
+});
+
+// ===== DAILY CHECKLIST =====
+
+app.get("/api/daily-checklist", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const todayStart = new Date(); todayStart.setUTCHours(0, 0, 0, 0);
+  const todayTs = todayStart.getTime();
+  const [spinRow, tradeRow, heistRow, missionRow] = await Promise.all([
+    db.get('SELECT last_spin FROM spin_claims WHERE user_id = ?', [uid]),
+    db.get('SELECT COUNT(*) as cnt FROM trades WHERE user_id = ? AND timestamp >= ?', [uid, todayTs]),
+    db.get('SELECT COUNT(*) as cnt FROM heist_attempts WHERE robber_id = ? AND created_at >= ?', [uid, todayTs]),
+    db.get('SELECT COUNT(*) as cnt FROM user_missions WHERE user_id = ? AND status = ?', [uid, 'in_progress']),
+  ]);
+  const loginBadge = badgeSystem.getLoginStreak ? badgeSystem.getLoginStreak(uid) : null;
+  res.json({
+    streak: loginBadge ? loginBadge.streak : 0,
+    spinDone:      !!(spinRow && spinRow.last_spin && spinRow.last_spin > Date.now() - 86_400_000),
+    tradedToday:   !!(tradeRow && tradeRow.cnt > 0),
+    heistedToday:  !!(heistRow && heistRow.cnt > 0),
+    missionActive: !!(missionRow && missionRow.cnt > 0),
+  });
+});
+
+// ===== WEEKLY PERFORMANCE CARD =====
+
+app.get("/api/stats/weekly-card", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const weekStart = new Date(); weekStart.setUTCHours(0, 0, 0, 0);
+  weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
+  const weekTs = weekStart.getTime();
+  const [portfolio, tradeCount, lb] = await Promise.all([
+    db.get('SELECT cash_balance, total_invested FROM user_portfolios WHERE user_id = ?', [uid]),
+    db.get('SELECT COUNT(*) as cnt FROM trades WHERE user_id = ? AND timestamp >= ?', [uid, weekTs]),
+    db.all('SELECT user_id FROM leaderboard_scores ORDER BY score DESC LIMIT 500'),
+  ]);
+  const rankEntry = lb.findIndex(r => r.user_id === uid);
+  const rank = rankEntry >= 0 ? rankEntry + 1 : null;
+  const gainPct = portfolio && portfolio.total_invested > 0
+    ? ((portfolio.cash_balance - portfolio.total_invested) / portfolio.total_invested * 100).toFixed(2)
+    : '0.00';
+  const acct = accountManager.getAccountById(uid);
+  const refRow = await db.get('SELECT code FROM referral_links WHERE user_id = ?', [uid]);
+  const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+  const refLink = refRow ? `${BASE}/?ref=${refRow.code}` : BASE;
+  res.json({
+    gainPct, rank, totalPlayers: lb.length,
+    trades: tradeCount ? tradeCount.cnt : 0,
+    name: acct ? (acct.fullName || acct.email) : 'A Legend',
+    shareText: `I ${parseFloat(gainPct) >= 0 ? 'gained' : 'lost'} ${parseFloat(gainPct) >= 0 ? '+' : ''}${gainPct}% this week on Self-Made Legends${rank ? `, ranked #${rank}` : ''}! Play free → ${refLink} 🚀`,
+  });
+});
+
+// ===== LIMIT ORDERS =====
+
+app.post("/api/trade/limit-order", authenticateUser, async (req, res) => {
+  const uid = req.user.userId;
+  const { symbol, order_type, quantity, limit_price } = req.body;
+  if (!symbol || !order_type || !quantity || !limit_price) return res.status(400).json({ error: 'symbol, order_type, quantity, limit_price required' });
+  if (!['buy', 'sell'].includes(order_type)) return res.status(400).json({ error: 'order_type must be "buy" or "sell"' });
+  const qty = parseFloat(quantity);
+  const price = parseFloat(limit_price);
+  if (isNaN(qty) || qty <= 0 || isNaN(price) || price <= 0) return res.status(400).json({ error: 'quantity and limit_price must be positive numbers' });
+  if (!priceEngine.getPrice(symbol)) return res.status(400).json({ error: 'Unknown symbol' });
+  const now = Date.now();
+  const result = await db.run(
+    'INSERT INTO limit_orders (user_id, symbol, order_type, quantity, limit_price, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [uid, symbol.toUpperCase(), order_type, qty, price, 'pending', now]
+  );
+  res.json({ success: true, orderId: result.lastID, symbol, order_type, quantity: qty, limit_price: price });
+});
+
+app.get("/api/trade/limit-orders", authenticateUser, async (req, res) => {
+  const rows = await db.all(
+    'SELECT id, symbol, order_type, quantity, limit_price, status, created_at, filled_at FROM limit_orders WHERE user_id = ? ORDER BY created_at DESC',
+    [req.user.userId]
+  );
+  res.json({ orders: rows });
+});
+
+app.delete("/api/trade/limit-order/:id", authenticateUser, async (req, res) => {
+  const result = await db.run(
+    'UPDATE limit_orders SET status = ? WHERE id = ? AND user_id = ? AND status = ?',
+    ['cancelled', req.params.id, req.user.userId, 'pending']
+  );
+  if (result.changes === 0) return res.status(404).json({ error: 'Order not found or already filled/cancelled' });
+  res.json({ success: true });
+});
+
+// ===== TOURNAMENT PAYOUT =====
+
+app.post("/api/admin/tournament/payout", requireAdmin, async (req, res) => {
+  const { tournamentId, winners } = req.body;
+  if (!tournamentId || !Array.isArray(winners) || winners.length === 0) {
+    return res.status(400).json({ error: 'tournamentId and winners array required' });
+  }
+  const poolRow = await db.get('SELECT prize_pool FROM tournament_prize_pools WHERE tournament_id = ?', [tournamentId]);
+  if (!poolRow || poolRow.prize_pool <= 0) return res.status(400).json({ error: 'No prize pool for this tournament' });
+  const pool = poolRow.prize_pool;
+  const splits = [0.60, 0.25, 0.15];
+  const now = Date.now();
+  const payouts = [];
+  for (let i = 0; i < Math.min(winners.length, 3); i++) {
+    const { userId, placement } = winners[i];
+    const amount = parseFloat((pool * splits[i]).toFixed(2));
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [amount, now, userId]);
+    await _syncLeaderboard(userId);
+    emitToUser(userId, 'tournament_payout', { placement: placement || (i + 1), amount, tournamentId });
+    await _notify(userId, 'tournament_payout', '🏆 Tournament Payout!', `You earned $${amount.toLocaleString()} as placement #${placement || (i + 1)} in Tournament #${tournamentId}`);
+    payouts.push({ userId, placement: placement || (i + 1), amount });
+  }
+  await db.run('UPDATE tournament_prize_pools SET prize_pool = 0 WHERE tournament_id = ?', [tournamentId]);
+  res.json({ success: true, payouts, totalPaid: pool });
+});
+
+app.get("/api/tournament/my-winnings", authenticateUser, async (req, res) => {
+  const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [req.user.userId]);
+  res.json({ balance: portfolio ? portfolio.cash_balance : 0, note: 'Tournament winnings are credited directly to your paper money balance.' });
+});
+
 const PORT = process.env.PORT || 3000;
 
 async function startServer() {
@@ -4231,6 +4613,7 @@ async function startServer() {
         if (hit) {
           await db.run('UPDATE price_alerts SET triggered = 1 WHERE id = ?', [a.id]);
           emitToUser(a.user_id, 'price_alert', { symbol: a.symbol, price: cur, target: a.target_price, direction: a.direction });
+          await _notify(a.user_id, 'price_alert', '🔔 Price Alert!', `${a.symbol} hit $${cur.toFixed(2)} (target: $${a.target_price}, direction: ${a.direction})`);
         }
       }
     } catch (_) {}
@@ -4244,6 +4627,50 @@ async function startServer() {
     await db.run('INSERT OR IGNORE INTO community_challenges (week_key, type, target, reward_paper) VALUES (?, ?, ?, ?)',
       [wk, 'heist', COMMUNITY_CHALLENGE_TARGET, COMMUNITY_CHALLENGE_REWARD]);
   }, 3_600_000);
+
+  // Limit Order checker — every 30 seconds
+  setInterval(async () => {
+    try {
+      const orders = await db.all('SELECT id, user_id, symbol, order_type, quantity, limit_price FROM limit_orders WHERE status = ?', ['pending']);
+      for (const o of orders) {
+        const cur = priceEngine.getPrice(o.symbol);
+        if (!cur) continue;
+        const triggered = (o.order_type === 'buy' && cur <= o.limit_price) || (o.order_type === 'sell' && cur >= o.limit_price);
+        if (!triggered) continue;
+        const now = Date.now();
+        // Execute the trade
+        if (o.order_type === 'buy') {
+          const cost = parseFloat((o.quantity * cur).toFixed(2));
+          const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [o.user_id]);
+          if (!port || port.cash_balance < cost) {
+            await db.run('UPDATE limit_orders SET status = ? WHERE id = ?', ['cancelled', o.id]);
+            emitToUser(o.user_id, 'limit_order_cancelled', { orderId: o.id, reason: 'Insufficient funds when triggered' });
+            continue;
+          }
+          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [cost, now, o.user_id]);
+          await db.run('INSERT INTO holdings (user_id, symbol, quantity, avg_price) VALUES (?, ?, ?, ?) ON CONFLICT(user_id, symbol) DO UPDATE SET quantity = quantity + ?, avg_price = (avg_price * quantity + ? * ?) / (quantity + ?)',
+            [o.user_id, o.symbol, o.quantity, cur, o.quantity, cur, o.quantity, o.quantity]);
+          await db.run('INSERT INTO trades (user_id, symbol, type, quantity, price, source, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [o.user_id, o.symbol, 'BUY', o.quantity, cur, 'limit_order', now]);
+        } else {
+          const holding = await db.get('SELECT quantity FROM holdings WHERE user_id = ? AND symbol = ?', [o.user_id, o.symbol]);
+          if (!holding || holding.quantity < o.quantity) {
+            await db.run('UPDATE limit_orders SET status = ? WHERE id = ?', ['cancelled', o.id]);
+            continue;
+          }
+          const proceeds = parseFloat((o.quantity * cur).toFixed(2));
+          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [proceeds, now, o.user_id]);
+          await db.run('UPDATE holdings SET quantity = quantity - ? WHERE user_id = ? AND symbol = ?', [o.quantity, o.user_id, o.symbol]);
+          await db.run('INSERT INTO trades (user_id, symbol, type, quantity, price, source, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [o.user_id, o.symbol, 'SELL', o.quantity, cur, 'limit_order', now]);
+        }
+        await db.run('UPDATE limit_orders SET status = ?, filled_at = ? WHERE id = ?', ['filled', now, o.id]);
+        await _syncLeaderboard(o.user_id);
+        emitToUser(o.user_id, 'limit_order_filled', { orderId: o.id, symbol: o.symbol, order_type: o.order_type, quantity: o.quantity, fillPrice: cur });
+        await _notify(o.user_id, 'limit_order_filled', '📋 Limit Order Filled!', `Your ${o.order_type} order for ${o.quantity} ${o.symbol} filled at $${cur.toFixed(2)}`);
+      }
+    } catch (_) {}
+  }, 30_000);
 
   server.listen(PORT, () => {
     console.log(`🚀 Multi-Asset Trading Bot Server running on http://localhost:${PORT}`);

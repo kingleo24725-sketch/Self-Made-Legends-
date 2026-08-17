@@ -118,7 +118,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Season Pass', description: 'Premium badge frames, 1.5× XP multiplier, private leaderboard tier' },
-          unit_amount: 100,
+          unit_amount: 999,
         },
         quantity: 1,
       }],
@@ -368,6 +368,65 @@ class StripeProcessor {
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=battle_pass`,
       cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
       metadata: { userId: String(userId), type: 'battle_pass', platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session for VIP Elite Membership ($24.99/month recurring)
+  async createEliteCheckout(userId, userEmail) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const product = await this.stripe.products.create({
+      name: 'Self-Made Legends Elite Membership',
+      description: '$24.99/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
+    });
+    const price = await this.stripe.prices.create({
+      product: product.id,
+      unit_amount: 2499,
+      currency: 'usd',
+      recurring: { interval: 'month' },
+    });
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price: price.id, quantity: 1 }],
+      mode: 'subscription',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=elite_membership`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: 'elite_membership', platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session to gift SML Credits to another player
+  async createGiftCreditsCheckout(senderId, senderEmail, recipientId, packageKey, pkg) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: senderEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: `SML Gift Credits — ${pkg.label}`, description: `Send ${pkg.credits} SML Credits to a friend` },
+        unit_amount: pkg.amount_cents }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=gift_credits_${packageKey}`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(senderId), recipientId: String(recipientId), type: `gift_credits_${packageKey}`, platform: 'Self-Made Legends' },
+    });
+    return { checkoutUrl: session.url, sessionId: session.id };
+  }
+
+  // Create a Stripe Checkout Session for the Legend Starter Bundle ($14.99 one-time)
+  async createLegendBundleCheckout(userId, userEmail) {
+    const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
+    const session = await this.stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      customer_email: userEmail || undefined,
+      line_items: [{ price_data: { currency: 'usd',
+        product_data: { name: 'SML Legend Starter Bundle', description: '2,500 Credits + $5,000 Paper Money + Neon Frame + Season XP Boost' },
+        unit_amount: 1499 }, quantity: 1 }],
+      mode: 'payment',
+      success_url: `${BASE}/dashboard.html?payment=success&pay_type=legend_bundle`,
+      cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
+      metadata: { userId: String(userId), type: 'legend_bundle', platform: 'Self-Made Legends' },
     });
     return { checkoutUrl: session.url, sessionId: session.id };
   }
