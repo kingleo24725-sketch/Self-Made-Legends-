@@ -749,6 +749,106 @@ class DB {
         entered_at   INTEGER NOT NULL,
         UNIQUE(race_id, user_id)
       )`,
+
+      // ── Market News Events ─────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS market_news_events (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        symbol      TEXT NOT NULL,
+        headline    TEXT NOT NULL,
+        pct_change  REAL NOT NULL,
+        direction   TEXT NOT NULL,
+        warning_at  INTEGER NOT NULL,
+        applied_at  INTEGER,
+        reverted_at INTEGER,
+        created_at  INTEGER NOT NULL
+      )`,
+
+      // ── In-Game Legend NFTs ────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS legend_nfts (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        owner_id   TEXT NOT NULL,
+        nft_name   TEXT NOT NULL,
+        nft_icon   TEXT NOT NULL DEFAULT '🎨',
+        rarity     TEXT NOT NULL DEFAULT 'common',
+        mint_stats TEXT NOT NULL DEFAULT '{}',
+        minted_at  INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS nft_listings (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        nft_id      INTEGER NOT NULL,
+        seller_id   TEXT NOT NULL,
+        price_paper INTEGER NOT NULL,
+        listed_at   INTEGER NOT NULL,
+        sold_at     INTEGER
+      )`,
+
+      // ── Referral Milestones ────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS referral_milestones (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        milestone  INTEGER NOT NULL,
+        claimed_at INTEGER NOT NULL,
+        UNIQUE(user_id, milestone)
+      )`,
+
+      // ── Casino: Blackjack ──────────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS casino_blackjack (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id     TEXT NOT NULL,
+        bet_paper   INTEGER NOT NULL,
+        player_hand TEXT NOT NULL DEFAULT '[]',
+        dealer_hand TEXT NOT NULL DEFAULT '[]',
+        deck        TEXT NOT NULL DEFAULT '[]',
+        status      TEXT NOT NULL DEFAULT 'active',
+        outcome     TEXT,
+        payout      INTEGER NOT NULL DEFAULT 0,
+        created_at  INTEGER NOT NULL,
+        resolved_at INTEGER
+      )`,
+
+      // ── Casino: Horse Racing ───────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS horse_races (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        status      TEXT NOT NULL DEFAULT 'betting',
+        result_json TEXT,
+        starts_at   INTEGER NOT NULL,
+        resolved_at INTEGER,
+        created_at  INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS horse_bets (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        race_id   INTEGER NOT NULL,
+        user_id   TEXT NOT NULL,
+        horse_num INTEGER NOT NULL,
+        bet_paper INTEGER NOT NULL,
+        payout    INTEGER NOT NULL DEFAULT 0,
+        placed_at INTEGER NOT NULL,
+        UNIQUE(race_id, user_id)
+      )`,
+
+      // ── Trade War (Weekly Battle Royale) ───────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS trade_war_events (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        status         TEXT NOT NULL DEFAULT 'upcoming',
+        starts_at      INTEGER NOT NULL,
+        ends_at        INTEGER NOT NULL,
+        entry_credits  INTEGER NOT NULL DEFAULT 500,
+        created_at     INTEGER NOT NULL
+      )`,
+
+      `CREATE TABLE IF NOT EXISTS trade_war_entries (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        war_id         INTEGER NOT NULL,
+        user_id        TEXT NOT NULL,
+        cash           INTEGER NOT NULL DEFAULT 100000,
+        portfolio_json TEXT NOT NULL DEFAULT '{}',
+        final_value    INTEGER,
+        rank           INTEGER,
+        entered_at     INTEGER NOT NULL,
+        UNIQUE(war_id, user_id)
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)

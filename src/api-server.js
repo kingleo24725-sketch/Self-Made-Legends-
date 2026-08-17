@@ -286,6 +286,68 @@ const BOSS_HEIST_LOOT = 50000;
 const COMMUNITY_CHALLENGE_TARGET = 1000;
 const COMMUNITY_CHALLENGE_REWARD = 500;
 
+// ── Market News Events ────────────────────────────────────────────────────────
+const MARKET_SYMBOLS = ['AAPL','MSFT','GOOGL','TSLA','AMZN','META','NVDA','BTC','ETH','SOL'];
+const MARKET_NEWS_UP = [
+  { headline:'{{sym}} announces record earnings — analysts raise price target',  pct: 0.35 },
+  { headline:'{{sym}} lands massive government contract — shares surge',          pct: 0.28 },
+  { headline:'{{sym}} CEO reveals groundbreaking product — market erupts',        pct: 0.40 },
+  { headline:'{{sym}} partnership with tech giant confirmed — investors celebrate', pct: 0.32 },
+  { headline:'Retail investors pile into {{sym}} — short squeeze incoming',       pct: 0.50 },
+  { headline:'{{sym}} reports 3× analyst estimate growth',                        pct: 0.22 },
+];
+const MARKET_NEWS_DOWN = [
+  { headline:'{{sym}} CEO under investigation — shares plummet',                  pct:-0.38 },
+  { headline:'Regulators launch probe into {{sym}} — stock crashes',              pct:-0.45 },
+  { headline:'{{sym}} misses earnings by wide margin — panic selling begins',     pct:-0.30 },
+  { headline:'Major {{sym}} product recall announced — investors flee',           pct:-0.35 },
+  { headline:'Whistleblower exposes {{sym}} fraud — circuit breakers triggered',  pct:-0.55 },
+  { headline:'{{sym}} halves its dividend — holders rush to exit',                pct:-0.25 },
+];
+
+// ── Referral Milestone Rewards ────────────────────────────────────────────────
+const REFERRAL_MILESTONES = [
+  { count:1,  credits:500,   paper:0,      badge:'Recruiter',    label:'First Recruit' },
+  { count:5,  credits:2500,  paper:0,      badge:'Connector',    label:'5 Signups' },
+  { count:10, credits:10000, paper:0,      badge:'LegendMaker',  label:'10 Signups' },
+  { count:25, credits:25000, paper:500000, badge:'TopRecruiter', label:'25 Signups' },
+];
+
+// ── Casino ────────────────────────────────────────────────────────────────────
+const HORSE_NAMES = ['Lightning','Thunder','Shadow','Blaze','Storm','Ghost'];
+const HORSE_ODDS  = [2.5, 3.0, 4.0, 5.0, 7.0, 10.0]; // fixed odds for simplicity
+const BLACKJACK_SUITS = ['♠','♥','♦','♣'];
+const BLACKJACK_RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const CASINO_MIN_BET = 1000;
+const CASINO_VIP_MIN = 500000;
+function _buildDeck() {
+  const deck = [];
+  for (const s of BLACKJACK_SUITS) for (const r of BLACKJACK_RANKS) deck.push(`${r}${s}`);
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+function _cardValue(card) {
+  const r = card.slice(0, -1);
+  if (r === 'A') return 11;
+  if (['J','Q','K'].includes(r)) return 10;
+  return parseInt(r);
+}
+function _handTotal(cards) {
+  let total = cards.reduce((s, c) => s + _cardValue(c), 0);
+  let aces  = cards.filter(c => c.startsWith('A')).length;
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
+  return total;
+}
+
+// ── Trade War ─────────────────────────────────────────────────────────────────
+const TRADE_WAR_ENTRY_CREDITS = 500;
+const TRADE_WAR_START_CASH    = 100000;
+const TRADE_WAR_DURATION_MS   = 60 * 60 * 1000; // 1 hour
+const TRADE_WAR_PRIZES        = [10000, 5000, 2500]; // credits for top 3
+
 app.post("/api/auth/register", (req, res) => {
   const { email, password, fullName, referralCode } = req.body;
 
@@ -3061,6 +3123,419 @@ app.get("/api/referrals/bonus-pool/verification", (req, res) => {
   res.json(verification);
 });
 
+// ===== REFERRAL MILESTONE ENDPOINTS =====
+
+app.post("/api/referrals/claim-milestone", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const row = await db.get('SELECT signups FROM referral_links WHERE user_id = ?', [uid]);
+    const signups = row ? row.signups : 0;
+    const claimed = (await db.all('SELECT milestone FROM referral_milestones WHERE user_id = ?', [uid])).map(r => r.milestone);
+    const rewards = [];
+    for (const m of REFERRAL_MILESTONES) {
+      if (signups >= m.count && !claimed.includes(m.count)) {
+        await db.run('INSERT OR IGNORE INTO referral_milestones (user_id, milestone, claimed_at) VALUES (?,?,?)', [uid, m.count, Date.now()]);
+        if (m.credits) await _addCredits(uid, m.credits, 'referral_milestone', `Referral milestone: ${m.label}`);
+        if (m.paper) {
+          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [m.paper, uid]);
+          await _syncLeaderboard(uid);
+        }
+        await _notify(uid, 'badge', `🏆 ${m.badge} Badge Unlocked!`, `You earned the ${m.badge} badge + ${m.credits.toLocaleString()} credits for ${m.label}!`);
+        rewards.push(m);
+      }
+    }
+    res.json({ ok: true, claimed: rewards, signups });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/referrals/milestones", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const row = await db.get('SELECT signups FROM referral_links WHERE user_id = ?', [uid]);
+    const signups = row ? row.signups : 0;
+    const claimed = (await db.all('SELECT milestone FROM referral_milestones WHERE user_id = ?', [uid])).map(r => r.milestone);
+    const milestones = REFERRAL_MILESTONES.map(m => ({
+      ...m, reached: signups >= m.count, claimed: claimed.includes(m.count)
+    }));
+    res.json({ signups, milestones });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== MARKET NEWS EVENTS =====
+
+app.get("/api/market/news", async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+    const events = await db.all('SELECT * FROM market_news_events ORDER BY created_at DESC LIMIT ?', [limit]);
+    res.json({ events });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/market/pump-dump", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { symbol, direction } = req.body;
+    if (!symbol || !['up','down'].includes(direction)) return res.status(400).json({ error: 'symbol and direction (up/down) required' });
+    if (!MARKET_SYMBOLS.includes(symbol)) return res.status(400).json({ error: 'Symbol not available for events' });
+    const acct = await db.get('SELECT credits FROM accounts WHERE id = ?', [uid]);
+    if (!acct || acct.credits < 1000) return res.status(400).json({ error: 'Not enough credits (need 1,000)' });
+    await db.run('UPDATE accounts SET credits = credits - 1000 WHERE id = ?', [uid]);
+    emitToUser(uid, 'credits_update', { credits: (acct.credits - 1000) });
+    const pool = direction === 'up' ? MARKET_NEWS_UP : MARKET_NEWS_DOWN;
+    const tpl = pool[Math.floor(Math.random() * pool.length)];
+    const headline = tpl.headline.replace('{{sym}}', symbol);
+    const now = Date.now();
+    const pct = tpl.pct * 0.5; // player-triggered = half the impact
+    await db.run('INSERT INTO market_news_events (symbol, headline, pct_change, direction, warning_at, created_at) VALUES (?,?,?,?,?,?)',
+      [symbol, `[PLAYER ALERT] ${headline}`, pct, direction, now, now]);
+    const cur = priceEngine.getPrice(symbol);
+    if (cur) {
+      priceEngine.updatePrice(symbol, parseFloat((cur * (1 + pct)).toFixed(4)));
+      setTimeout(() => { if (cur) priceEngine.updatePrice(symbol, cur); }, 15 * 60 * 1000);
+    }
+    io.emit('market_news', { symbol, headline: `[PLAYER ALERT] ${headline}`, pct_change: pct, direction });
+    res.json({ ok: true, symbol, direction, headline, pct: (pct * 100).toFixed(1) + '%' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== IN-GAME LEGEND NFT ENDPOINTS =====
+
+const _nftRarityFromStats = (totalXp, heatLevel) => {
+  if (totalXp >= 50000 || heatLevel >= 5) return 'legendary';
+  if (totalXp >= 20000 || heatLevel >= 3) return 'epic';
+  if (totalXp >= 5000  || heatLevel >= 2) return 'rare';
+  if (totalXp >= 1000) return 'uncommon';
+  return 'common';
+};
+
+app.post("/api/nfts/legend/mint", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const existing = await db.get('SELECT id FROM legend_nfts WHERE owner_id = ?', [uid]);
+    if (existing) return res.status(400).json({ error: 'You already minted your Legend NFT. Trade the old one first.' });
+    const acct = await db.get('SELECT credits, heat_level, full_name FROM accounts WHERE id = ?', [uid]);
+    if (!acct || acct.credits < 500) return res.status(400).json({ error: 'Minting costs 500 credits' });
+    const xpRow = await db.get('SELECT total_xp FROM user_xp WHERE user_id = ?', [uid]);
+    const totalXp = xpRow ? xpRow.total_xp : 0;
+    const rarity = _nftRarityFromStats(totalXp, acct.heat_level || 0);
+    const icons = { common:'🥉', uncommon:'🥈', rare:'🥇', epic:'💎', legendary:'👑' };
+    const nftName = `${acct.full_name || 'Legend'} #${Math.floor(Math.random() * 9000) + 1000}`;
+    const mintStats = JSON.stringify({ xp: totalXp, heat: acct.heat_level || 0, mintedAt: Date.now() });
+    await db.run('UPDATE accounts SET credits = credits - 500 WHERE id = ?', [uid]);
+    const result = await db.run('INSERT INTO legend_nfts (owner_id, nft_name, nft_icon, rarity, mint_stats, minted_at) VALUES (?,?,?,?,?,?)',
+      [uid, nftName, icons[rarity], rarity, mintStats, Date.now()]);
+    await _notify(uid, 'nft_mint', '🎨 Legend NFT Minted!', `Your ${rarity} Legend NFT "${nftName}" is ready!`);
+    res.json({ ok: true, nftId: result.lastID, nftName, rarity, icon: icons[rarity] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/nfts/legend/my-nft", authenticateUser, async (req, res) => {
+  try {
+    const nft = await db.get('SELECT * FROM legend_nfts WHERE owner_id = ?', [req.user.userId]);
+    const listing = nft ? await db.get('SELECT * FROM nft_listings WHERE nft_id = ? AND sold_at IS NULL', [nft.id]) : null;
+    res.json({ nft, listing });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/nfts/legend/list", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { price } = req.body;
+    if (!price || price < 1000) return res.status(400).json({ error: 'Minimum listing price is $1,000 paper' });
+    const nft = await db.get('SELECT * FROM legend_nfts WHERE owner_id = ?', [uid]);
+    if (!nft) return res.status(404).json({ error: 'You have no Legend NFT to list' });
+    const existing = await db.get('SELECT id FROM nft_listings WHERE nft_id = ? AND sold_at IS NULL', [nft.id]);
+    if (existing) return res.status(400).json({ error: 'Already listed. Delist first.' });
+    await db.run('INSERT INTO nft_listings (nft_id, seller_id, price_paper, listed_at) VALUES (?,?,?,?)',
+      [nft.id, uid, price, Date.now()]);
+    res.json({ ok: true, nftId: nft.id, price });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/nfts/legend/delist", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const nft = await db.get('SELECT id FROM legend_nfts WHERE owner_id = ?', [uid]);
+    if (!nft) return res.status(404).json({ error: 'No NFT found' });
+    await db.run('DELETE FROM nft_listings WHERE nft_id = ? AND seller_id = ? AND sold_at IS NULL', [nft.id, uid]);
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/nfts/legend/buy/:id", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const listingId = parseInt(req.params.id);
+    const listing = await db.get('SELECT * FROM nft_listings WHERE id = ? AND sold_at IS NULL', [listingId]);
+    if (!listing) return res.status(404).json({ error: 'Listing not found' });
+    if (listing.seller_id === uid) return res.status(400).json({ error: "Can't buy your own NFT" });
+    const buyer = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+    if (!buyer || buyer.cash_balance < listing.price_paper) return res.status(400).json({ error: 'Not enough paper money' });
+    const now = Date.now();
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [listing.price_paper, uid]);
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [listing.price_paper, listing.seller_id]);
+    await db.run('UPDATE legend_nfts SET owner_id = ? WHERE id = ?', [uid, listing.nft_id]);
+    await db.run('UPDATE nft_listings SET sold_at = ? WHERE id = ?', [now, listingId]);
+    await _syncLeaderboard(uid);
+    await _syncLeaderboard(listing.seller_id);
+    const nft = await db.get('SELECT * FROM legend_nfts WHERE id = ?', [listing.nft_id]);
+    emitToUser(listing.seller_id, 'nft_sold', { nftName: nft.nft_name, price: listing.price_paper });
+    await _notify(listing.seller_id, 'nft_sold', '💰 NFT Sold!', `Your "${nft.nft_name}" sold for $${listing.price_paper.toLocaleString()}!`);
+    await _notify(uid, 'nft_bought', '🎨 NFT Purchased!', `You now own "${nft.nft_name}"!`);
+    res.json({ ok: true, nft });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/nfts/legend/marketplace", async (req, res) => {
+  try {
+    const listings = await db.all(`
+      SELECT nl.*, ln.nft_name, ln.nft_icon, ln.rarity, a.full_name AS seller_name
+      FROM nft_listings nl
+      JOIN legend_nfts ln ON ln.id = nl.nft_id
+      LEFT JOIN accounts a ON a.id = nl.seller_id
+      WHERE nl.sold_at IS NULL
+      ORDER BY nl.listed_at DESC LIMIT 50
+    `);
+    res.json({ listings });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== CASINO: BLACKJACK =====
+
+app.post("/api/casino/blackjack/start", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { bet } = req.body;
+    if (!bet || bet < CASINO_MIN_BET) return res.status(400).json({ error: `Minimum bet is $${CASINO_MIN_BET.toLocaleString()}` });
+    const acct = await db.get('SELECT casino_vip FROM accounts WHERE id = ?', [uid]);
+    if (bet >= CASINO_VIP_MIN && !acct?.casino_vip) return res.status(403).json({ error: 'VIP Casino access required for bets $500k+' });
+    const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough paper money' });
+    // Cancel any active game first
+    await db.run("UPDATE casino_blackjack SET status='forfeited' WHERE user_id = ? AND status = 'active'", [uid]);
+    const deck = _buildDeck();
+    const player = [deck.pop(), deck.pop()];
+    const dealer = [deck.pop(), deck.pop()];
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [bet, uid]);
+    await _syncLeaderboard(uid);
+    const result = await db.run(
+      "INSERT INTO casino_blackjack (user_id, bet_paper, player_hand, dealer_hand, deck, status, created_at) VALUES (?,?,?,?,?,'active',?)",
+      [uid, bet, JSON.stringify(player), JSON.stringify(dealer), JSON.stringify(deck), Date.now()]
+    );
+    const playerTotal = _handTotal(player);
+    const dealerVisible = dealer[0];
+    // Check natural blackjack
+    if (playerTotal === 21) {
+      const dealerTotal = _handTotal(dealer);
+      if (dealerTotal === 21) {
+        await db.run("UPDATE casino_blackjack SET status='push', outcome='push', payout=?, resolved_at=? WHERE id=?", [bet, Date.now(), result.lastID]);
+        await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [bet, uid]);
+        return res.json({ gameId: result.lastID, player, dealer, playerTotal: 21, dealerTotal: 21, outcome: 'push', payout: 0, message: 'Push! Both have Blackjack.' });
+      }
+      const payout = Math.floor(bet * 2.5);
+      await db.run("UPDATE casino_blackjack SET status='blackjack', outcome='win', payout=?, resolved_at=? WHERE id=?", [payout, Date.now(), result.lastID]);
+      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [payout, uid]);
+      await _syncLeaderboard(uid);
+      return res.json({ gameId: result.lastID, player, dealer, playerTotal: 21, dealerVisible, outcome: 'blackjack', payout, message: '🃏 Blackjack! You win 2.5x!' });
+    }
+    res.json({ gameId: result.lastID, player, dealer: [dealerVisible], playerTotal, status: 'active' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/casino/blackjack/hit", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { gameId } = req.body;
+    const game = await db.get("SELECT * FROM casino_blackjack WHERE id=? AND user_id=? AND status='active'", [gameId, uid]);
+    if (!game) return res.status(404).json({ error: 'No active game found' });
+    const deck = JSON.parse(game.deck);
+    const player = JSON.parse(game.player_hand);
+    player.push(deck.pop());
+    const total = _handTotal(player);
+    if (total > 21) {
+      await db.run("UPDATE casino_blackjack SET status='bust', outcome='lose', player_hand=?, deck=?, resolved_at=? WHERE id=?",
+        [JSON.stringify(player), JSON.stringify(deck), Date.now(), gameId]);
+      return res.json({ gameId, player, total, outcome: 'bust', payout: 0, message: '💥 Bust! Over 21.' });
+    }
+    await db.run('UPDATE casino_blackjack SET player_hand=?, deck=? WHERE id=?',
+      [JSON.stringify(player), JSON.stringify(deck), gameId]);
+    res.json({ gameId, player, total, status: 'active' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/casino/blackjack/stand", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { gameId } = req.body;
+    const game = await db.get("SELECT * FROM casino_blackjack WHERE id=? AND user_id=? AND status='active'", [gameId, uid]);
+    if (!game) return res.status(404).json({ error: 'No active game found' });
+    const deck = JSON.parse(game.deck);
+    const player = JSON.parse(game.player_hand);
+    const dealer = JSON.parse(game.dealer_hand);
+    // Dealer draws to 17+
+    while (_handTotal(dealer) < 17) dealer.push(deck.pop());
+    const playerTotal = _handTotal(player);
+    const dealerTotal = _handTotal(dealer);
+    let outcome, payout, message;
+    if (dealerTotal > 21 || playerTotal > dealerTotal) {
+      outcome = 'win'; payout = game.bet_paper * 2;
+      message = dealerTotal > 21 ? '🎉 Dealer busts! You win!' : '🎉 You win!';
+    } else if (playerTotal === dealerTotal) {
+      outcome = 'push'; payout = game.bet_paper;
+      message = '🤝 Push! Bet returned.';
+    } else {
+      outcome = 'lose'; payout = 0;
+      message = '😞 Dealer wins.';
+    }
+    await db.run("UPDATE casino_blackjack SET status='done', outcome=?, payout=?, player_hand=?, dealer_hand=?, deck=?, resolved_at=? WHERE id=?",
+      [outcome, payout, JSON.stringify(player), JSON.stringify(dealer), JSON.stringify(deck), Date.now(), gameId]);
+    if (payout > 0) {
+      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [payout, uid]);
+      await _syncLeaderboard(uid);
+    }
+    res.json({ gameId, player, dealer, playerTotal, dealerTotal, outcome, payout, message });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== CASINO: HORSE RACING =====
+
+app.get("/api/casino/horses/current", async (req, res) => {
+  try {
+    let race = await db.get("SELECT * FROM horse_races WHERE status IN ('betting','running') ORDER BY created_at DESC LIMIT 1");
+    if (!race) {
+      const now = Date.now();
+      const starts = now + 5 * 60 * 1000; // 5 min betting window
+      await db.run("INSERT INTO horse_races (status, starts_at, created_at) VALUES ('betting',?,?)", [starts, now]);
+      race = await db.get("SELECT * FROM horse_races WHERE status='betting' ORDER BY created_at DESC LIMIT 1");
+    }
+    const totalBets = await db.get('SELECT COALESCE(SUM(bet_paper),0) as total FROM horse_bets WHERE race_id=?', [race.id]);
+    const betsByHorse = await db.all('SELECT horse_num, SUM(bet_paper) as total FROM horse_bets WHERE race_id=? GROUP BY horse_num', [race.id]);
+    const horses = HORSE_NAMES.map((n, i) => ({
+      num: i + 1, name: n, odds: HORSE_ODDS[i],
+      totalBets: (betsByHorse.find(b => b.horse_num === i + 1) || {}).total || 0,
+    }));
+    res.json({ race, horses, totalPool: totalBets.total });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/casino/horses/bet", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { raceId, horseNum, bet } = req.body;
+    if (!raceId || !horseNum || !bet || bet < 1000) return res.status(400).json({ error: 'raceId, horseNum, and bet (min $1,000) required' });
+    if (horseNum < 1 || horseNum > 6) return res.status(400).json({ error: 'Horse number must be 1–6' });
+    const race = await db.get("SELECT * FROM horse_races WHERE id=? AND status='betting'", [raceId]);
+    if (!race) return res.status(404).json({ error: 'Race not in betting phase' });
+    if (Date.now() >= race.starts_at) return res.status(400).json({ error: 'Betting window closed' });
+    const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
+    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough paper money' });
+    const existingBet = await db.get('SELECT id FROM horse_bets WHERE race_id=? AND user_id=?', [raceId, uid]);
+    if (existingBet) return res.status(400).json({ error: 'Already placed a bet in this race' });
+    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [bet, uid]);
+    await db.run('INSERT INTO horse_bets (race_id, user_id, horse_num, bet_paper, placed_at) VALUES (?,?,?,?,?)',
+      [raceId, uid, horseNum, bet, Date.now()]);
+    await _syncLeaderboard(uid);
+    res.json({ ok: true, raceId, horseNum, horseName: HORSE_NAMES[horseNum - 1], bet });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/casino/horses/my-bet", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const race = await db.get("SELECT * FROM horse_races WHERE status IN ('betting','running') ORDER BY created_at DESC LIMIT 1");
+    if (!race) return res.json({ bet: null });
+    const bet = await db.get('SELECT * FROM horse_bets WHERE race_id=? AND user_id=?', [race.id, uid]);
+    res.json({ bet, race });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== TRADE WAR =====
+
+app.get("/api/trade-war/status", async (req, res) => {
+  try {
+    const war = await db.get("SELECT * FROM trade_war_events WHERE status IN ('upcoming','active') ORDER BY starts_at ASC LIMIT 1");
+    if (!war) return res.json({ war: null });
+    const entryCount = await db.get('SELECT COUNT(*) as c FROM trade_war_entries WHERE war_id = ?', [war.id]);
+    res.json({ war, entryCount: entryCount.c });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/trade-war/enter", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const war = await db.get("SELECT * FROM trade_war_events WHERE status = 'upcoming' ORDER BY starts_at ASC LIMIT 1");
+    if (!war) return res.status(404).json({ error: 'No upcoming Trade War' });
+    const existing = await db.get('SELECT id FROM trade_war_entries WHERE war_id=? AND user_id=?', [war.id, uid]);
+    if (existing) return res.status(400).json({ error: 'Already entered' });
+    const acct = await db.get('SELECT credits FROM accounts WHERE id = ?', [uid]);
+    if (!acct || acct.credits < TRADE_WAR_ENTRY_CREDITS) return res.status(400).json({ error: `Entry costs ${TRADE_WAR_ENTRY_CREDITS} credits` });
+    await db.run('UPDATE accounts SET credits = credits - ? WHERE id = ?', [TRADE_WAR_ENTRY_CREDITS, uid]);
+    await db.run('INSERT INTO trade_war_entries (war_id, user_id, cash, portfolio_json, entered_at) VALUES (?,?,?,?,?)',
+      [war.id, uid, TRADE_WAR_START_CASH, '{}', Date.now()]);
+    res.json({ ok: true, warId: war.id, startCash: TRADE_WAR_START_CASH, startsAt: war.starts_at });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post("/api/trade-war/trade", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { symbol, type, quantity } = req.body;
+    if (!symbol || !type || !quantity || quantity <= 0) return res.status(400).json({ error: 'symbol, type (buy/sell), quantity required' });
+    const war = await db.get("SELECT * FROM trade_war_events WHERE status = 'active' ORDER BY starts_at DESC LIMIT 1");
+    if (!war) return res.status(400).json({ error: 'No active Trade War' });
+    const entry = await db.get('SELECT * FROM trade_war_entries WHERE war_id=? AND user_id=?', [war.id, uid]);
+    if (!entry) return res.status(403).json({ error: 'You did not enter this Trade War' });
+    const price = priceEngine.getPrice(symbol);
+    if (!price) return res.status(400).json({ error: 'Symbol price unavailable' });
+    const portfolio = JSON.parse(entry.portfolio_json || '{}');
+    if (type === 'buy') {
+      const cost = price * quantity;
+      if (entry.cash < cost) return res.status(400).json({ error: 'Not enough Trade War cash' });
+      await db.run('UPDATE trade_war_entries SET cash = cash - ? WHERE war_id=? AND user_id=?', [cost, war.id, uid]);
+      portfolio[symbol] = (portfolio[symbol] || 0) + quantity;
+    } else {
+      if (!portfolio[symbol] || portfolio[symbol] < quantity) return res.status(400).json({ error: 'Not enough shares' });
+      const proceeds = price * quantity;
+      await db.run('UPDATE trade_war_entries SET cash = cash + ? WHERE war_id=? AND user_id=?', [proceeds, war.id, uid]);
+      portfolio[symbol] -= quantity;
+      if (portfolio[symbol] <= 0) delete portfolio[symbol];
+    }
+    await db.run('UPDATE trade_war_entries SET portfolio_json=? WHERE war_id=? AND user_id=?',
+      [JSON.stringify(portfolio), war.id, uid]);
+    const newEntry = await db.get('SELECT * FROM trade_war_entries WHERE war_id=? AND user_id=?', [war.id, uid]);
+    const portfolioValue = Object.entries(portfolio).reduce((s, [sym, qty]) => s + (priceEngine.getPrice(sym) || 0) * qty, 0);
+    const totalValue = newEntry.cash + portfolioValue;
+    res.json({ ok: true, cash: newEntry.cash, portfolio, portfolioValue, totalValue });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/trade-war/leaderboard", async (req, res) => {
+  try {
+    const war = await db.get("SELECT * FROM trade_war_events WHERE status IN ('active','ended') ORDER BY starts_at DESC LIMIT 1");
+    if (!war) return res.json({ entries: [] });
+    const entries = await db.all('SELECT te.*, a.full_name FROM trade_war_entries te LEFT JOIN accounts a ON a.id = te.user_id WHERE war_id=?', [war.id]);
+    const ranked = entries.map(e => {
+      const port = JSON.parse(e.portfolio_json || '{}');
+      const portVal = Object.entries(port).reduce((s, [sym, qty]) => s + (priceEngine.getPrice(sym) || 0) * qty, 0);
+      return { ...e, totalValue: e.cash + portVal };
+    }).sort((a, b) => b.totalValue - a.totalValue);
+    res.json({ war, entries: ranked });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/trade-war/my-entry", authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const war = await db.get("SELECT * FROM trade_war_events WHERE status IN ('upcoming','active') ORDER BY starts_at ASC LIMIT 1");
+    if (!war) return res.json({ entry: null });
+    const entry = await db.get('SELECT * FROM trade_war_entries WHERE war_id=? AND user_id=?', [war.id, uid]);
+    if (!entry) return res.json({ entry: null, war });
+    const port = JSON.parse(entry.portfolio_json || '{}');
+    const portVal = Object.entries(port).reduce((s, [sym, qty]) => s + (priceEngine.getPrice(sym) || 0) * qty, 0);
+    res.json({ entry: { ...entry, totalValue: entry.cash + portVal }, war, portfolio: port });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 // ===== SOCIAL ENDPOINTS - FRIENDS =====
 
 app.post("/api/social/friends/add", authenticateUser, (req, res) => {
@@ -5294,6 +5769,146 @@ async function startServer() {
   };
   await _resolveRace();
   setInterval(_resolveRace, RACE_INTERVAL_MS);
+
+  // Market News Events — fire every 2–4 hours randomly
+  const _fireMarketNews = async () => {
+    try {
+      const symbol = MARKET_SYMBOLS[Math.floor(Math.random() * MARKET_SYMBOLS.length)];
+      const isUp   = Math.random() > 0.45; // slight positive bias
+      const pool   = isUp ? MARKET_NEWS_UP : MARKET_NEWS_DOWN;
+      const tpl    = pool[Math.floor(Math.random() * pool.length)];
+      const headline = tpl.headline.replace('{{sym}}', symbol);
+      const pct      = tpl.pct;
+      const now      = Date.now();
+      await db.run('INSERT INTO market_news_events (symbol, headline, pct_change, direction, warning_at, created_at) VALUES (?,?,?,?,?,?)',
+        [symbol, headline, pct, isUp ? 'up' : 'down', now, now]);
+      // 5-minute warning to all users
+      io.emit('market_news_warning', { symbol, headline, pct_change: pct, direction: isUp ? 'up' : 'down', appliesIn: 300 });
+      console.log(`[MarketNews] Warning: ${symbol} ${isUp ? '+' : ''}${(pct*100).toFixed(0)}% in 5min`);
+      // Apply the price change after 5 minutes
+      setTimeout(async () => {
+        try {
+          const cur = priceEngine.getPrice(symbol);
+          if (cur) {
+            const newPrice = parseFloat((cur * (1 + pct)).toFixed(4));
+            priceEngine.updatePrice(symbol, newPrice);
+            io.emit('market_news_applied', { symbol, headline, pct_change: pct, newPrice });
+            await db.run('UPDATE market_news_events SET applied_at = ? WHERE symbol = ? AND applied_at IS NULL ORDER BY created_at DESC LIMIT 1',
+              [Date.now(), symbol]);
+            // Revert after 15 minutes
+            setTimeout(() => { priceEngine.updatePrice(symbol, cur); }, 15 * 60 * 1000);
+          }
+        } catch (_) {}
+      }, 5 * 60 * 1000);
+    } catch (e) { console.error('[MarketNews]', e.message); }
+  };
+  // Random interval: 2–4 hours
+  const _scheduleNextNews = () => {
+    const delay = (2 + Math.random() * 2) * 60 * 60 * 1000;
+    setTimeout(async () => { await _fireMarketNews(); _scheduleNextNews(); }, delay);
+  };
+  _scheduleNextNews();
+
+  // Horse Race auto-resolution — check every 2 minutes
+  const _resolveHorseRace = async () => {
+    try {
+      const race = await db.get("SELECT * FROM horse_races WHERE status IN ('betting','running') ORDER BY created_at ASC LIMIT 1");
+      if (!race) return;
+      const now = Date.now();
+      if (race.status === 'betting' && now >= race.starts_at) {
+        await db.run("UPDATE horse_races SET status='running' WHERE id=?", [race.id]);
+        io.emit('horse_race_started', { raceId: race.id, horses: HORSE_NAMES });
+      } else if (race.status === 'running') {
+        // Resolve with weighted random based on odds (lower odds = more likely to win)
+        const weights = HORSE_ODDS.map(o => 1 / o);
+        const total   = weights.reduce((s, w) => s + w, 0);
+        let roll = Math.random() * total;
+        let winner = 0;
+        for (let i = 0; i < weights.length; i++) { roll -= weights[i]; if (roll <= 0) { winner = i + 1; break; } }
+        if (!winner) winner = 1;
+        await db.run("UPDATE horse_races SET status='done', result_json=?, resolved_at=? WHERE id=?",
+          [JSON.stringify({ winner, horseName: HORSE_NAMES[winner - 1] }), now, race.id]);
+        const winBets = await db.all('SELECT * FROM horse_bets WHERE race_id=? AND horse_num=?', [race.id, winner]);
+        const totalPool = (await db.get('SELECT COALESCE(SUM(bet_paper),0) as total FROM horse_bets WHERE race_id=?', [race.id])).total;
+        const totalWinBets = winBets.reduce((s, b) => s + b.bet_paper, 0);
+        for (const b of winBets) {
+          const payout = totalWinBets > 0 ? Math.floor((b.bet_paper / totalWinBets) * totalPool * 0.9) : 0;
+          if (payout > 0) {
+            await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [payout, b.user_id]);
+            await db.run('UPDATE horse_bets SET payout=? WHERE id=?', [payout, b.id]);
+            await _syncLeaderboard(b.user_id);
+            emitToUser(b.user_id, 'horse_win', { raceid: race.id, horseName: HORSE_NAMES[winner - 1], payout });
+            await _notify(b.user_id, 'horse_win', `🏇 ${HORSE_NAMES[winner - 1]} Wins!`, `You won $${payout.toLocaleString()} from the horse race!`);
+          }
+        }
+        io.emit('horse_race_result', { raceId: race.id, winner, horseName: HORSE_NAMES[winner - 1] });
+        // Open next race in 2 minutes
+        setTimeout(async () => {
+          const starts = Date.now() + 5 * 60 * 1000;
+          await db.run("INSERT INTO horse_races (status, starts_at, created_at) VALUES ('betting',?,?)", [starts, Date.now()]);
+          io.emit('horse_race_new', { startsIn: 300 });
+        }, 2 * 60 * 1000);
+      }
+    } catch (e) { console.error('[HorseRace]', e.message); }
+  };
+  setInterval(_resolveHorseRace, 2 * 60 * 1000);
+  await _resolveHorseRace();
+
+  // Trade War scheduler — opens every Sunday 8pm EST (Mon 1am UTC), runs 1 hour
+  const _ensureTradeWar = async () => {
+    try {
+      const existing = await db.get("SELECT id FROM trade_war_events WHERE status IN ('upcoming','active')");
+      if (existing) return;
+      // Find next Sunday 8pm EST = next Mon 1am UTC
+      const now = new Date();
+      const nextMon = new Date(now);
+      nextMon.setUTCHours(1, 0, 0, 0);
+      const dayOfWeek = nextMon.getUTCDay();
+      const daysUntilMon = dayOfWeek === 1 ? (now.getUTCHours() >= 1 ? 7 : 0) : (8 - dayOfWeek) % 7 || 7;
+      nextMon.setUTCDate(nextMon.getUTCDate() + daysUntilMon);
+      const startsAt = nextMon.getTime();
+      const endsAt   = startsAt + TRADE_WAR_DURATION_MS;
+      await db.run("INSERT INTO trade_war_events (status, starts_at, ends_at, entry_credits, created_at) VALUES ('upcoming',?,?,?,?)",
+        [startsAt, endsAt, TRADE_WAR_ENTRY_CREDITS, Date.now()]);
+      io.emit('trade_war_announced', { startsAt, endsAt, entryCredits: TRADE_WAR_ENTRY_CREDITS });
+      console.log(`[TradeWar] Scheduled for ${new Date(startsAt).toISOString()}`);
+    } catch (e) { console.error('[TradeWar]', e.message); }
+  };
+  const _tickTradeWar = async () => {
+    try {
+      const now = Date.now();
+      const upcoming = await db.get("SELECT * FROM trade_war_events WHERE status = 'upcoming' AND starts_at <= ?", [now]);
+      if (upcoming) {
+        await db.run("UPDATE trade_war_events SET status='active' WHERE id=?", [upcoming.id]);
+        io.emit('trade_war_started', { warId: upcoming.id, endsAt: upcoming.ends_at });
+        console.log(`[TradeWar] War ${upcoming.id} started!`);
+      }
+      const active = await db.get("SELECT * FROM trade_war_events WHERE status = 'active' AND ends_at <= ?", [now]);
+      if (active) {
+        const entries = await db.all('SELECT * FROM trade_war_entries WHERE war_id=?', [active.id]);
+        const ranked = entries.map(e => {
+          const port = JSON.parse(e.portfolio_json || '{}');
+          const portVal = Object.entries(port).reduce((s, [sym, qty]) => s + (priceEngine.getPrice(sym) || 0) * qty, 0);
+          return { ...e, totalValue: e.cash + portVal };
+        }).sort((a, b) => b.totalValue - a.totalValue);
+        for (let i = 0; i < ranked.length; i++) {
+          const e = ranked[i];
+          await db.run('UPDATE trade_war_entries SET final_value=?, rank=? WHERE id=?', [e.totalValue, i + 1, e.id]);
+          if (i < TRADE_WAR_PRIZES.length) {
+            await _addCredits(e.user_id, TRADE_WAR_PRIZES[i], 'trade_war', `Trade War #${active.id} — #${i + 1} place`);
+            emitToUser(e.user_id, 'trade_war_result', { rank: i + 1, prize: TRADE_WAR_PRIZES[i], totalValue: e.totalValue });
+            await _notify(e.user_id, 'trade_war', `🏆 Trade War Result: #${i + 1}!`, `You placed #${i + 1} and earned ${TRADE_WAR_PRIZES[i].toLocaleString()} credits!`);
+          }
+        }
+        await db.run("UPDATE trade_war_events SET status='ended' WHERE id=?", [active.id]);
+        io.emit('trade_war_ended', { warId: active.id, winners: ranked.slice(0, 3).map(e => ({ userId: e.user_id, totalValue: e.totalValue })) });
+        console.log(`[TradeWar] War ${active.id} ended — ${ranked.length} players`);
+        await _ensureTradeWar();
+      }
+    } catch (e) { console.error('[TradeWar]', e.message); }
+  };
+  await _ensureTradeWar();
+  setInterval(_tickTradeWar, 60 * 1000); // check every minute
 
   // Limit Order checker — every 30 seconds
   setInterval(async () => {

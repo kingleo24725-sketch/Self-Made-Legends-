@@ -634,8 +634,8 @@
       <button class="nav-tab active" onclick="switchTab('dashboard')">Dashboard</button>
       <button class="nav-tab" onclick="switchTab('trade'); initTradeTab()">📈 Trade</button>
       <button class="nav-tab" onclick="switchTab('stocks')">Stocks</button>
-      <button class="nav-tab" onclick="switchTab('crypto')">Crypto</button>
-      <button class="nav-tab" onclick="switchTab('nft')">NFTs</button>
+      <button class="nav-tab" onclick="switchTab('crypto'); loadCryptoTab()">Crypto</button>
+      <button class="nav-tab" onclick="switchTab('nft'); loadNFTTab()">NFTs</button>
       <button class="nav-tab" onclick="switchTab('account')">Account</button>
       <button class="nav-tab" onclick="switchTab('payments')">Payments</button>
       <button class="nav-tab" onclick="switchTab('badges')">🎖️ Badges</button>
@@ -651,6 +651,8 @@
       <button class="nav-tab" onclick="switchTab('cards'); loadCardsTab()">🃏 Cards</button>
       <button class="nav-tab" onclick="switchTab('pets'); loadPetsTab()">🐾 Pets</button>
       <button class="nav-tab" onclick="switchTab('garage'); loadGarageTab()">🚗 Garage</button>
+      <button class="nav-tab" onclick="switchTab('casino'); loadCasinoTab()">🎰 Casino</button>
+      <button class="nav-tab" onclick="switchTab('trade-war'); loadTradeWarTab()">⚔️ Trade War</button>
       <button class="nav-tab" id="creator-hub-tab" style="display:none;" onclick="switchTab('creator-hub'); loadCreatorHub()">👑 Creator Hub</button>
     </div>
     <div class="nav-right">
@@ -1105,6 +1107,18 @@
       </div>
       <h2 style="text-align: center; color: #00ff88; margin-bottom: 20px;">Self-Made Legends Universe - Multi-Asset Trading</h2>
 
+      <!-- Market News Alert Banner -->
+      <div id="market-news-banner" style="display:none; background:linear-gradient(135deg,rgba(255,100,0,0.15),rgba(255,200,0,0.1)); border:1px solid #ff6400; border-radius:12px; padding:14px 18px; margin-bottom:18px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span style="font-size:1.3em;">📰</span>
+          <div style="flex:1;">
+            <div id="market-news-headline" style="color:#ffd700; font-weight:bold; font-size:0.95em;"></div>
+            <div style="color:#aaa; font-size:0.8em; margin-top:3px;">Price impact in <span id="market-news-countdown" style="color:#ff6400; font-weight:bold;">5:00</span></div>
+          </div>
+          <div id="market-news-pct" style="font-size:1.2em; font-weight:bold;"></div>
+        </div>
+      </div>
+
       <div class="grid">
         <div class="card">
           <h2>💎 Top Cryptocurrencies</h2>
@@ -1115,16 +1129,84 @@
           <div id="crypto-signals"></div>
         </div>
       </div>
+
+      <!-- Token Creation -->
+      <div style="margin-top:24px;">
+        <div class="card">
+          <h2>🪙 Create Your Own Token</h2>
+          <p style="color:#888; font-size:0.88em; margin-bottom:16px;">Creator &amp; Elite members can launch a custom crypto token. Other players can buy &amp; sell it — and you earn a fee on every trade.</p>
+          <div id="token-create-gate" style="display:none;">
+            <div class="grid" style="grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;">
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.82em; color:#aaa;">Token Name</label>
+                <input id="tk-name" type="text" placeholder="e.g. Grind Coin" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.82em; color:#aaa;">Ticker (3–5 chars)</label>
+                <input id="tk-symbol" type="text" maxlength="5" placeholder="GRD" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box; text-transform:uppercase;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.82em; color:#aaa;">Total Supply</label>
+                <input id="tk-supply" type="number" placeholder="1000000" min="1000" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label style="font-size:0.82em; color:#aaa;">Description (optional)</label>
+                <input id="tk-desc" type="text" placeholder="The hustle token" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box;">
+              </div>
+            </div>
+            <button onclick="createToken()" style="background:linear-gradient(135deg,#7c3aed,#00d4ff); color:#fff; border:none; border-radius:10px; padding:11px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; width:100%;">🚀 Launch Token</button>
+            <div id="token-create-result" style="margin-top:12px;"></div>
+          </div>
+          <div id="token-create-locked" style="color:#888; font-size:0.88em;">
+            🔒 Requires Creator or Elite membership. <button onclick="switchTab('payments')" style="background:none; border:none; color:#00d4ff; cursor:pointer; text-decoration:underline; font-size:1em;">Upgrade →</button>
+          </div>
+        </div>
+
+        <!-- My Tokens -->
+        <div class="card" style="margin-top:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <h2 style="margin:0;">📊 My Tokens</h2>
+            <button onclick="loadMyTokens()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+          </div>
+          <div id="my-tokens-list" style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
+
+        <!-- Token Marketplace -->
+        <div class="card" style="margin-top:14px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <h2 style="margin:0;">🏪 Token Marketplace</h2>
+            <button onclick="loadTokenMarket()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+          </div>
+          <div id="token-market-list" style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+        </div>
+      </div>
     </section>
 
     <!-- NFT Section -->
     <section class="section" id="nft">
       <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="color: #00d4ff; font-size: 1.6em;">🎨 NFT Trading Universe</h2>
-        <p style="color: #d4a76a; font-size: 0.95em;">Discover & Trade Legendary NFT Collections</p>
+        <h2 style="color: #00d4ff; font-size: 1.6em;">🎨 NFT Universe</h2>
+        <p style="color: #d4a76a; font-size: 0.95em;">Mint your Legend NFT • Trade on the marketplace</p>
       </div>
+
+      <!-- My Legend NFT -->
+      <div class="card" style="margin-bottom:18px;" id="my-nft-card">
+        <h2>👤 My Legend NFT</h2>
+        <div id="my-nft-display" style="text-align:center; padding:16px; color:#555;">Loading…</div>
+      </div>
+
+      <!-- NFT Marketplace -->
+      <div class="card" style="margin-bottom:18px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h2 style="margin:0;">🏪 Legend NFT Marketplace</h2>
+          <button onclick="loadNFTMarket()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+        </div>
+        <div id="nft-market-list" style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
+      </div>
+
+      <!-- Real NFT Collections -->
       <div class="card">
-        <h2>🖼️ Trending NFT Collections</h2>
+        <h2>🖼️ Trending NFT Collections (Real Market)</h2>
         <div id="trending-nfts"></div>
       </div>
     </section>
@@ -1565,15 +1647,127 @@
           </div>
         </div>
 
+        <!-- Milestone Rewards -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+            <h3 style="color:#ffd700; margin:0;">🏆 Milestone Rewards</h3>
+            <button onclick="loadReferralMilestones()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+          </div>
+          <div id="referral-milestones" style="display:flex; flex-direction:column; gap:10px;">
+            <div style="color:#555; text-align:center; padding:16px;">Loading milestones…</div>
+          </div>
+          <button id="claim-milestones-btn" onclick="claimReferralMilestones()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:12px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; width:100%; margin-top:14px;">🎁 Claim Rewards</button>
+        </div>
+
         <div class="card" style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.2);">
           <h3 style="color:#00ff88; margin-bottom:12px;">💡 How Referrals Work</h3>
           <ul style="color:#bbb; padding-left:20px; line-height:2;">
             <li>Share your unique link with friends, family, or followers</li>
             <li>When someone signs up using your link, you get credit</li>
+            <li>Reach milestones for credits, badges &amp; paper money bonuses</li>
             <li>Top referrers are featured on the monthly honor board</li>
-            <li>Future rewards (badges, bonuses) will unlock as the platform grows</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <!-- Casino Section -->
+    <section class="section" id="casino">
+      <div style="text-align:center; margin-bottom:28px;">
+        <h2 style="color:#ffd700; font-size:1.8em;">🎰 Underground Casino</h2>
+        <p style="color:#aaa; font-size:0.95em;">High-stakes games for legends only. Play smart — or lose everything.</p>
+      </div>
+
+      <div class="grid">
+        <!-- Blackjack -->
+        <div class="card" style="min-width:300px;">
+          <h2 style="color:#00ff88;">🃏 Blackjack</h2>
+          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Beat the dealer. Under 21 and above theirs — simple as that.</p>
+          <div id="bj-game" style="display:none;">
+            <div style="display:flex; gap:16px; margin-bottom:16px;">
+              <div style="flex:1;">
+                <div style="color:#aaa; font-size:0.78em; margin-bottom:6px;">YOUR HAND</div>
+                <div id="bj-player-cards" style="font-size:2em; letter-spacing:4px;"></div>
+                <div id="bj-player-total" style="color:#00ff88; font-weight:bold; margin-top:4px;"></div>
+              </div>
+              <div style="flex:1;">
+                <div style="color:#aaa; font-size:0.78em; margin-bottom:6px;">DEALER</div>
+                <div id="bj-dealer-cards" style="font-size:2em; letter-spacing:4px;"></div>
+                <div id="bj-dealer-total" style="color:#ff6b6b; font-weight:bold; margin-top:4px;"></div>
+              </div>
+            </div>
+            <div id="bj-result" style="text-align:center; font-size:1.1em; font-weight:bold; min-height:28px; margin-bottom:12px;"></div>
+            <div id="bj-actions" style="display:flex; gap:10px;">
+              <button onclick="bjHit()" id="bj-hit-btn" style="flex:1; background:#00ff88; color:#000; border:none; border-radius:8px; padding:12px; font-weight:bold; cursor:pointer;">Hit</button>
+              <button onclick="bjStand()" id="bj-stand-btn" style="flex:1; background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:12px; font-weight:bold; cursor:pointer;">Stand</button>
+            </div>
+          </div>
+          <div id="bj-start" style="">
+            <div class="form-group" style="margin-bottom:12px;">
+              <label style="color:#aaa; font-size:0.82em;">Your Bet (Paper Money)</label>
+              <input id="bj-bet" type="number" placeholder="min $1,000" min="1000" step="1000" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box; margin-top:6px;">
+            </div>
+            <button onclick="bjStart()" style="background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:12px; font-weight:bold; cursor:pointer; width:100%; font-size:1em;">🃏 Deal</button>
+          </div>
+          <div id="bj-new-game" style="display:none; margin-top:12px;">
+            <button onclick="bjReset()" style="background:rgba(0,212,255,0.15); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:10px 20px; cursor:pointer; width:100%; font-weight:bold;">🔄 New Hand</button>
+          </div>
+        </div>
+
+        <!-- Horse Racing -->
+        <div class="card" style="min-width:300px;">
+          <h2 style="color:#ffd700;">🏇 Horse Racing</h2>
+          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Pick your horse. 5-minute betting window. May the fastest win.</p>
+          <div id="horse-race-panel">
+            <div style="color:#555; text-align:center; padding:24px;">Loading race…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trade War Section -->
+    <section class="section" id="trade-war">
+      <div style="text-align:center; margin-bottom:28px;">
+        <h2 style="color:#ff6b6b; font-size:1.8em;">⚔️ Weekly Trade War</h2>
+        <p style="color:#aaa; font-size:0.95em;">Every Sunday 8pm EST — 50 players, $100k each, 60 minutes. Trade your way to the top.</p>
+      </div>
+
+      <div id="trade-war-status-card" class="card" style="margin-bottom:18px;">
+        <div style="color:#555; text-align:center; padding:24px;">Loading Trade War status…</div>
+      </div>
+
+      <div id="trade-war-my-entry" class="card" style="display:none; margin-bottom:18px;">
+        <h2>📊 My War Portfolio</h2>
+        <div style="display:flex; gap:16px; margin-bottom:12px; flex-wrap:wrap;">
+          <div style="flex:1; background:#0d1b2a; border-radius:8px; padding:14px; text-align:center; min-width:100px;">
+            <div id="tw-cash" style="color:#00ff88; font-size:1.4em; font-weight:bold;">—</div>
+            <div style="color:#555; font-size:0.78em; margin-top:4px;">Cash</div>
+          </div>
+          <div style="flex:1; background:#0d1b2a; border-radius:8px; padding:14px; text-align:center; min-width:100px;">
+            <div id="tw-portfolio-val" style="color:#00d4ff; font-size:1.4em; font-weight:bold;">—</div>
+            <div style="color:#555; font-size:0.78em; margin-top:4px;">Portfolio</div>
+          </div>
+          <div style="flex:1; background:#0d1b2a; border-radius:8px; padding:14px; text-align:center; min-width:100px;">
+            <div id="tw-total-val" style="color:#ffd700; font-size:1.4em; font-weight:bold;">—</div>
+            <div style="color:#555; font-size:0.78em; margin-top:4px;">Total Value</div>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+          <input id="tw-symbol" type="text" placeholder="Symbol (e.g. AAPL)" style="flex:1; min-width:120px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; font-size:0.9em;">
+          <input id="tw-qty" type="number" placeholder="Qty" min="1" style="width:90px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; font-size:0.9em;">
+          <button onclick="twTrade('buy')" style="background:#00ff88; color:#000; border:none; border-radius:8px; padding:9px 18px; font-weight:bold; cursor:pointer;">Buy</button>
+          <button onclick="twTrade('sell')" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:9px 18px; font-weight:bold; cursor:pointer;">Sell</button>
+        </div>
+        <div id="tw-trade-result" style="color:#aaa; font-size:0.85em; min-height:20px;"></div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+          <h2 style="margin:0;">🏆 War Leaderboard</h2>
+          <button onclick="loadTradeWarLB()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+        </div>
+        <div id="trade-war-lb" style="color:#555; text-align:center; padding:16px;">Loading…</div>
       </div>
     </section>
 
@@ -8695,6 +8889,46 @@ async function buyCar(carKey) {
       showToast('🎁', 'Mystery Box!', d.message || 'You earned a Mystery Box!', '#ffd700');
       refreshBoxCount();
     });
+    socket.on('market_news_warning', (d) => {
+      const sign = d.pct_change > 0 ? '+' : '';
+      const color = d.pct_change > 0 ? '#00ff88' : '#ff6b6b';
+      showToast('📰', `Market News — ${d.symbol}`, `${d.headline.substring(0, 60)}… (${sign}${(d.pct_change*100).toFixed(0)}% in 5 min)`, color);
+      _startMarketNewsBanner(d);
+    });
+    socket.on('market_news_applied', (d) => {
+      document.getElementById('market-news-banner').style.display = 'none';
+      const sign = d.pct_change > 0 ? '+' : '';
+      showToast('💥', `${d.symbol} price moved!`, `${sign}${(d.pct_change*100).toFixed(0)}% — trade now!`, d.pct_change > 0 ? '#00ff88' : '#ff6b6b');
+    });
+    socket.on('horse_race_started', (d) => {
+      showToast('🏇', 'Race Started!', "They're off! No more bets.", '#ffd700');
+      if (document.getElementById('casino').classList.contains('active')) loadCasinoTab();
+    });
+    socket.on('horse_race_result', (d) => {
+      showToast('🏁', 'Race Result!', `${d.horseName} wins!`, '#ffd700');
+      if (document.getElementById('casino').classList.contains('active')) loadCasinoTab();
+    });
+    socket.on('horse_race_new', () => {
+      showToast('🏇', 'New Race!', 'Betting opens for the next horse race!', '#00d4ff');
+      if (document.getElementById('casino').classList.contains('active')) loadCasinoTab();
+    });
+    socket.on('horse_win', (d) => {
+      showToast('🎉', 'You Won!', `${d.horseName} won! You earned $${(d.payout||0).toLocaleString()}!`, '#00ff88');
+    });
+    socket.on('trade_war_announced', (d) => {
+      showToast('⚔️', 'Trade War Announced!', `Entry: ${d.entryCredits} credits. Starts ${new Date(d.startsAt).toLocaleDateString()}`, '#ff6b6b');
+    });
+    socket.on('trade_war_started', () => {
+      showToast('⚔️', 'TRADE WAR LIVE!', 'The Trade War has started! 60 minutes on the clock.', '#ff6b6b');
+      if (document.getElementById('trade-war').classList.contains('active')) loadTradeWarTab();
+    });
+    socket.on('trade_war_ended', (d) => {
+      showToast('🏆', 'Trade War Over!', 'Results are in! Check your placement.', '#ffd700');
+      if (document.getElementById('trade-war').classList.contains('active')) loadTradeWarTab();
+    });
+    socket.on('trade_war_result', (d) => {
+      if (d.rank <= 3) showToast('🏆', `Trade War #${d.rank} Place!`, `You earned ${d.prize.toLocaleString()} credits!`, '#ffd700');
+    });
   }
   _hookSocket();
   // Auto-load flash challenge
@@ -8703,6 +8937,471 @@ async function buyCar(carKey) {
   // Auto-refresh box count after login (re-use existing login event pattern)
   document.addEventListener('sml_logged_in', refreshBoxCount);
 })();
+
+// ── Market News Banner ────────────────────────────────────────────────────────
+let _marketNewsTimer = null;
+function _startMarketNewsBanner(d) {
+  const banner = document.getElementById('market-news-banner');
+  const headline = document.getElementById('market-news-headline');
+  const countdown = document.getElementById('market-news-countdown');
+  const pctEl = document.getElementById('market-news-pct');
+  if (!banner) return;
+  banner.style.display = 'block';
+  headline.textContent = d.headline;
+  const pct = (d.pct_change * 100).toFixed(0);
+  const color = d.pct_change > 0 ? '#00ff88' : '#ff6b6b';
+  pctEl.style.color = color;
+  pctEl.textContent = (d.pct_change > 0 ? '▲' : '▼') + Math.abs(pct) + '%';
+  let secs = 300;
+  if (_marketNewsTimer) clearInterval(_marketNewsTimer);
+  _marketNewsTimer = setInterval(() => {
+    secs--;
+    if (secs <= 0) { clearInterval(_marketNewsTimer); banner.style.display = 'none'; return; }
+    const m = Math.floor(secs / 60), s = secs % 60;
+    countdown.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  }, 1000);
+}
+
+// ── Token Creation ────────────────────────────────────────────────────────────
+function loadCryptoTab() {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  // Check if Creator or Elite
+  fetch('/api/account', { headers:{ 'x-session-id': sess } })
+    .then(r => r.json()).then(d => {
+      const unlocked = d.account && (d.account.is_creator || d.account.is_elite || d.account.subscription_tier === 'elite');
+      document.getElementById('token-create-gate').style.display = unlocked ? 'block' : 'none';
+      document.getElementById('token-create-locked').style.display = unlocked ? 'none' : 'block';
+      loadMyTokens();
+      loadTokenMarket();
+    }).catch(() => {});
+}
+async function createToken() {
+  const sess = localStorage.getItem('sml_session');
+  const name = document.getElementById('tk-name').value.trim();
+  const symbol = document.getElementById('tk-symbol').value.trim().toUpperCase();
+  const supply = parseInt(document.getElementById('tk-supply').value);
+  const desc = document.getElementById('tk-desc').value.trim();
+  const resultEl = document.getElementById('token-create-result');
+  if (!name || !symbol || !supply) { resultEl.innerHTML = '<span style="color:#ff6b6b">Fill in name, ticker, and supply.</span>'; return; }
+  resultEl.innerHTML = '<span style="color:#aaa">Launching token…</span>';
+  const r = await fetch('/api/tokens/create', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ name, symbol, totalSupply: supply, description: desc }) });
+  const d = await r.json();
+  if (d.success || d.tokenAddress) {
+    resultEl.innerHTML = `<span style="color:#00ff88">✅ Token <strong>${symbol}</strong> launched! Address: <code style="font-size:0.78em">${d.tokenAddress || ''}</code></span>`;
+    loadMyTokens(); loadTokenMarket();
+  } else {
+    resultEl.innerHTML = `<span style="color:#ff6b6b">${d.error || 'Error launching token'}</span>`;
+  }
+}
+async function loadMyTokens() {
+  const sess = localStorage.getItem('sml_session');
+  const el = document.getElementById('my-tokens-list');
+  if (!el || !sess) return;
+  const r = await fetch('/api/tokens/my-tokens', { headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  if (!d.tokens || !d.tokens.length) { el.innerHTML = '<span style="color:#555">No tokens yet. Create your first one above.</span>'; return; }
+  el.innerHTML = d.tokens.map(t => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1e3a5f;">
+      <div>
+        <span style="color:#ffd700; font-weight:bold;">${t.symbol}</span>
+        <span style="color:#888; font-size:0.85em; margin-left:8px;">${t.name}</span>
+      </div>
+      <div style="text-align:right;">
+        <div style="color:#00ff88; font-size:0.9em;">$${(t.currentPrice||0.01).toFixed(4)}</div>
+        <div style="color:#aaa; font-size:0.78em;">Supply: ${(t.totalSupply||0).toLocaleString()}</div>
+      </div>
+    </div>`).join('');
+}
+async function loadTokenMarket() {
+  const el = document.getElementById('token-market-list');
+  if (!el) return;
+  const r = await fetch('/api/tokens/marketplace/top-by-cap');
+  const d = await r.json();
+  const tokens = d.topTokens || [];
+  if (!tokens.length) { el.innerHTML = '<span style="color:#555">No tokens in marketplace yet.</span>'; return; }
+  const sess = localStorage.getItem('sml_session');
+  el.innerHTML = tokens.slice(0,10).map(t => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1e3a5f;">
+      <div>
+        <span style="color:#ffd700; font-weight:bold;">${t.symbol}</span>
+        <span style="color:#888; font-size:0.85em; margin-left:8px;">${t.name}</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <div style="text-align:right;">
+          <div style="color:#00ff88; font-size:0.9em;">$${(t.currentPrice||0.01).toFixed(4)}</div>
+          <div style="color:#aaa; font-size:0.78em;">Cap: $${((t.currentPrice||0)*(t.totalSupply||0)).toLocaleString()}</div>
+        </div>
+        ${sess ? `<button onclick="buyToken('${t.tokenAddress}')" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:0.8em;">Buy</button>` : ''}
+      </div>
+    </div>`).join('');
+}
+async function buyToken(addr) {
+  const sess = localStorage.getItem('sml_session');
+  const amount = parseFloat(prompt('How many tokens to buy?') || '0');
+  if (!amount || amount <= 0) return;
+  const payAmt = parseFloat(prompt('Max paper money to spend?') || '0');
+  if (!payAmt || payAmt <= 0) return;
+  const r = await fetch(`/api/tokens/${addr}/buy`, { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ amount, paymentAmount: payAmt }) });
+  const d = await r.json();
+  if (d.success) { showToast('🪙', 'Token Bought!', `Bought ${amount} tokens`, '#00ff88'); loadTokenMarket(); }
+  else showToast('❌', 'Error', d.error || 'Failed', '#ff6b6b');
+}
+
+// ── In-Game NFT Functions ─────────────────────────────────────────────────────
+async function loadNFTTab() {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  await loadMyNFT();
+  await loadNFTMarket();
+}
+async function loadMyNFT() {
+  const sess = localStorage.getItem('sml_session');
+  const el = document.getElementById('my-nft-display');
+  if (!el || !sess) return;
+  const r = await fetch('/api/nfts/legend/my-nft', { headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  const RARITY_COLORS = { common:'#aaa', uncommon:'#00ff88', rare:'#00d4ff', epic:'#7c3aed', legendary:'#ffd700' };
+  if (!d.nft) {
+    el.innerHTML = `
+      <div style="padding:20px;">
+        <p style="color:#888; margin-bottom:16px;">You haven't minted your Legend NFT yet. Mint it to represent your journey on-chain.</p>
+        <p style="color:#aaa; font-size:0.85em; margin-bottom:16px;">Cost: <strong style="color:#ffd700">500 Credits</strong> • Rarity based on your XP &amp; Heat Level</p>
+        <button onclick="mintLegendNFT()" style="background:linear-gradient(135deg,#7c3aed,#00d4ff); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-weight:bold; cursor:pointer; font-size:1em;">🎨 Mint My Legend NFT</button>
+      </div>`;
+  } else {
+    const rc = RARITY_COLORS[d.nft.rarity] || '#aaa';
+    const listed = d.listing;
+    el.innerHTML = `
+      <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap; justify-content:center; padding:16px;">
+        <div style="font-size:4em;">${d.nft.nft_icon}</div>
+        <div style="text-align:left;">
+          <div style="color:${rc}; font-weight:bold; font-size:1.2em;">${d.nft.nft_name}</div>
+          <div style="background:${rc}22; color:${rc}; border:1px solid ${rc}; border-radius:12px; padding:2px 10px; font-size:0.78em; display:inline-block; margin-top:4px;">${d.nft.rarity.toUpperCase()}</div>
+          <div style="color:#888; font-size:0.82em; margin-top:8px;">Minted ${new Date(d.nft.minted_at).toLocaleDateString()}</div>
+          ${listed ? `<div style="color:#ffd700; font-size:0.88em; margin-top:6px;">Listed for $${listed.price_paper.toLocaleString()} paper</div>` : ''}
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; min-width:160px;">
+          ${!listed
+            ? `<div style="display:flex; gap:8px;">
+                <input id="nft-list-price" type="number" placeholder="Price (paper)" min="1000" style="flex:1; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:6px; padding:8px; color:#e0e0e0; font-size:0.85em;">
+                <button onclick="listMyNFT()" style="background:#ffd700; color:#000; border:none; border-radius:6px; padding:8px 14px; font-weight:bold; cursor:pointer; font-size:0.82em;">List</button>
+              </div>`
+            : `<button onclick="delistMyNFT()" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:bold; cursor:pointer;">Remove Listing</button>`}
+        </div>
+      </div>`;
+  }
+}
+async function mintLegendNFT() {
+  const sess = localStorage.getItem('sml_session');
+  const r = await fetch('/api/nfts/legend/mint', { method:'POST', headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  if (d.ok) { showToast('🎨', 'NFT Minted!', `${d.rarity} "${d.nftName}" is yours!`, '#7c3aed'); loadMyNFT(); }
+  else showToast('❌', 'Mint Failed', d.error || 'Error', '#ff6b6b');
+}
+async function listMyNFT() {
+  const sess = localStorage.getItem('sml_session');
+  const price = parseInt(document.getElementById('nft-list-price').value);
+  if (!price || price < 1000) { showToast('❌', 'Error', 'Min price is $1,000 paper', '#ff6b6b'); return; }
+  const r = await fetch('/api/nfts/legend/list', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ price }) });
+  const d = await r.json();
+  if (d.ok) { showToast('✅', 'NFT Listed!', `Listed for $${price.toLocaleString()}`, '#00ff88'); loadMyNFT(); loadNFTMarket(); }
+  else showToast('❌', 'Error', d.error || 'Failed', '#ff6b6b');
+}
+async function delistMyNFT() {
+  const sess = localStorage.getItem('sml_session');
+  const r = await fetch('/api/nfts/legend/delist', { method:'POST', headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  if (d.ok) { showToast('✅', 'Delisted', 'NFT removed from marketplace', '#aaa'); loadMyNFT(); loadNFTMarket(); }
+  else showToast('❌', 'Error', d.error || 'Failed', '#ff6b6b');
+}
+async function buyNFT(listingId) {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) { showToast('🔒', 'Login Required', 'Log in to buy NFTs', '#aaa'); return; }
+  const r = await fetch(`/api/nfts/legend/buy/${listingId}`, { method:'POST', headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  if (d.ok) { showToast('🎨', 'NFT Purchased!', `You now own "${d.nft.nft_name}"!`, '#7c3aed'); loadMyNFT(); loadNFTMarket(); }
+  else showToast('❌', 'Error', d.error || 'Failed', '#ff6b6b');
+}
+async function loadNFTMarket() {
+  const el = document.getElementById('nft-market-list');
+  if (!el) return;
+  const r = await fetch('/api/nfts/legend/marketplace');
+  const d = await r.json();
+  if (!d.listings || !d.listings.length) { el.innerHTML = '<span style="color:#555">No NFTs listed yet. Be the first!</span>'; return; }
+  const RC = { common:'#aaa', uncommon:'#00ff88', rare:'#00d4ff', epic:'#7c3aed', legendary:'#ffd700' };
+  el.innerHTML = d.listings.map(l => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #1e3a5f; gap:12px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.8em;">${l.nft_icon}</span>
+        <div>
+          <div style="color:${RC[l.rarity]||'#aaa'}; font-weight:bold;">${l.nft_name}</div>
+          <div style="color:#555; font-size:0.78em;">${l.rarity.toUpperCase()} • by ${l.seller_name || 'Unknown'}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="color:#ffd700; font-weight:bold;">$${l.price_paper.toLocaleString()}</span>
+        <button onclick="buyNFT(${l.id})" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:7px 14px; cursor:pointer; font-size:0.82em; font-weight:bold;">Buy</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Referral Milestones ───────────────────────────────────────────────────────
+async function loadReferralMilestones() {
+  const sess = localStorage.getItem('sml_session');
+  const el = document.getElementById('referral-milestones');
+  const claimBtn = document.getElementById('claim-milestones-btn');
+  if (!el || !sess) return;
+  const r = await fetch('/api/referrals/milestones', { headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  const milestones = d.milestones || [];
+  let hasClaimable = false;
+  el.innerHTML = milestones.map(m => {
+    if (m.reached && !m.claimed) hasClaimable = true;
+    const state = m.claimed ? 'claimed' : m.reached ? 'claimable' : 'locked';
+    const bg = state === 'claimed' ? 'rgba(0,255,136,0.08)' : state === 'claimable' ? 'rgba(255,215,0,0.1)' : '#0d1b2a';
+    const border = state === 'claimed' ? '1px solid #00ff8844' : state === 'claimable' ? '1px solid #ffd700' : '1px solid #1e3a5f';
+    const icon = state === 'claimed' ? '✅' : state === 'claimable' ? '🎁' : '🔒';
+    return `<div style="background:${bg}; border:${border}; border-radius:10px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.4em;">${icon}</span>
+        <div>
+          <div style="font-weight:bold; color:${state==='locked'?'#555':'#e0e0e0'};">${m.label}</div>
+          <div style="color:#888; font-size:0.8em; margin-top:2px;">${m.credits.toLocaleString()} credits${m.paper ? ' + $'+m.paper.toLocaleString()+' paper' : ''} • ${m.badge} badge</div>
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="color:${state==='locked'?'#444':'#aaa'}; font-size:0.82em;">${d.signups||0}/${m.count} signups</div>
+        ${state === 'claimed' ? '<div style="color:#00ff88; font-size:0.78em;">Claimed</div>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+  if (claimBtn) claimBtn.style.display = hasClaimable ? 'block' : 'none';
+}
+async function claimReferralMilestones() {
+  const sess = localStorage.getItem('sml_session');
+  const r = await fetch('/api/referrals/claim-milestone', { method:'POST', headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  if (d.ok && d.claimed.length > 0) {
+    showToast('🏆', 'Rewards Claimed!', `${d.claimed.map(m=>m.badge).join(', ')} unlocked!`, '#ffd700');
+    loadReferralMilestones();
+  } else if (d.ok) {
+    showToast('ℹ️', 'Nothing to Claim', 'Keep referring to unlock milestones!', '#aaa');
+  }
+}
+// Extend loadReferrals to also load milestones
+const _origLoadReferrals = typeof loadReferrals === 'function' ? loadReferrals : null;
+function loadReferrals() {
+  if (_origLoadReferrals) _origLoadReferrals();
+  loadReferralMilestones();
+}
+
+// ── Casino: Blackjack ─────────────────────────────────────────────────────────
+let _bjGameId = null;
+function loadCasinoTab() {
+  loadHorseRace();
+}
+function bjReset() {
+  _bjGameId = null;
+  document.getElementById('bj-game').style.display = 'none';
+  document.getElementById('bj-start').style.display = '';
+  document.getElementById('bj-new-game').style.display = 'none';
+  document.getElementById('bj-result').textContent = '';
+}
+async function bjStart() {
+  const sess = localStorage.getItem('sml_session');
+  const bet = parseInt(document.getElementById('bj-bet').value);
+  if (!bet || bet < 1000) { showToast('❌', 'Error', 'Minimum bet is $1,000', '#ff6b6b'); return; }
+  const r = await fetch('/api/casino/blackjack/start', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ bet }) });
+  const d = await r.json();
+  if (d.error) { showToast('❌', 'Error', d.error, '#ff6b6b'); return; }
+  _bjGameId = d.gameId;
+  document.getElementById('bj-start').style.display = 'none';
+  document.getElementById('bj-new-game').style.display = 'none';
+  document.getElementById('bj-game').style.display = '';
+  _renderBJ(d);
+}
+function _renderBJ(d) {
+  const playerCards = d.player || [];
+  const dealerCards = d.dealer || [];
+  document.getElementById('bj-player-cards').textContent = playerCards.join(' ');
+  document.getElementById('bj-dealer-cards').textContent = dealerCards.join(' ');
+  document.getElementById('bj-player-total').textContent = `Total: ${d.playerTotal || ''}`;
+  document.getElementById('bj-dealer-total').textContent = d.dealerTotal ? `Total: ${d.dealerTotal}` : '';
+  const resultEl = document.getElementById('bj-result');
+  const actionsEl = document.getElementById('bj-actions');
+  if (d.outcome) {
+    const colors = { win:'#00ff88', blackjack:'#ffd700', bust:'#ff6b6b', lose:'#ff6b6b', push:'#aaa' };
+    resultEl.style.color = colors[d.outcome] || '#aaa';
+    resultEl.textContent = d.message || d.outcome;
+    actionsEl.style.display = 'none';
+    document.getElementById('bj-new-game').style.display = '';
+    if (d.payout) showToast('🃏', d.outcome === 'blackjack' ? '🃏 Blackjack!' : '🎉 Win!', `+$${d.payout.toLocaleString()}`, '#00ff88');
+  } else {
+    resultEl.textContent = '';
+    actionsEl.style.display = 'flex';
+  }
+}
+async function bjHit() {
+  if (!_bjGameId) return;
+  const sess = localStorage.getItem('sml_session');
+  const r = await fetch('/api/casino/blackjack/hit', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ gameId: _bjGameId }) });
+  const d = await r.json();
+  if (d.error) { showToast('❌', 'Error', d.error, '#ff6b6b'); return; }
+  _renderBJ(d);
+}
+async function bjStand() {
+  if (!_bjGameId) return;
+  const sess = localStorage.getItem('sml_session');
+  const r = await fetch('/api/casino/blackjack/stand', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ gameId: _bjGameId }) });
+  const d = await r.json();
+  if (d.error) { showToast('❌', 'Error', d.error, '#ff6b6b'); return; }
+  _renderBJ(d);
+}
+
+// ── Casino: Horse Racing ──────────────────────────────────────────────────────
+let _horseRaceId = null;
+async function loadHorseRace() {
+  const el = document.getElementById('horse-race-panel');
+  if (!el) return;
+  const r = await fetch('/api/casino/horses/current');
+  const d = await r.json();
+  if (d.error) { el.innerHTML = `<div style="color:#ff6b6b">${d.error}</div>`; return; }
+  const race = d.race;
+  _horseRaceId = race.id;
+  const now = Date.now();
+  const bettingOpen = race.status === 'betting' && now < race.starts_at;
+  const timeLeft = Math.max(0, Math.ceil((race.starts_at - now) / 1000));
+  const sess = localStorage.getItem('sml_session');
+  let myBetHorse = null;
+  if (sess) {
+    const mb = await fetch('/api/casino/horses/my-bet', { headers:{ 'x-session-id': sess } });
+    const md = await mb.json();
+    if (md.bet) myBetHorse = md.bet.horse_num;
+  }
+  const statusLabel = race.status === 'betting' ? (bettingOpen ? `🟢 Betting Open (${timeLeft}s left)` : '⏳ Closing bets…') : race.status === 'running' ? '🏇 Race in progress!' : '🏁 Race ended';
+  el.innerHTML = `
+    <div style="color:#aaa; font-size:0.82em; margin-bottom:10px;">${statusLabel}</div>
+    <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:14px;">
+      ${d.horses.map(h => {
+        const isMyBet = myBetHorse === h.num;
+        return `<div style="display:flex; align-items:center; gap:10px; background:${isMyBet?'rgba(255,215,0,0.1)':'#0d1b2a'}; border:1px solid ${isMyBet?'#ffd700':'#1e3a5f'}; border-radius:8px; padding:8px 12px;">
+          <span style="color:#ffd700; font-weight:bold; min-width:20px;">#${h.num}</span>
+          <span style="color:#e0e0e0; flex:1;">🐎 ${h.name}</span>
+          <span style="color:#aaa; font-size:0.82em;">Odds ${h.odds}x</span>
+          <span style="color:#888; font-size:0.78em;">$${(h.totalBets||0).toLocaleString()} bet</span>
+          ${bettingOpen && !myBetHorse ? `<button onclick="placeBet(${h.num})" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; font-size:0.78em;">Bet</button>` : ''}
+          ${isMyBet ? '<span style="color:#ffd700; font-size:0.78em;">← Your pick</span>' : ''}
+        </div>`;
+      }).join('')}
+    </div>
+    ${bettingOpen && !myBetHorse ? `<div style="display:flex; gap:8px; align-items:center;">
+      <input id="horse-bet-amt" type="number" placeholder="Bet amount" min="1000" step="1000" style="flex:1; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:8px 12px; color:#e0e0e0; font-size:0.85em;">
+    </div>` : ''}
+    <div style="color:#aaa; font-size:0.78em; margin-top:8px;">Total pool: $${(d.totalPool||0).toLocaleString()}</div>
+  `;
+  if (bettingOpen) setTimeout(loadHorseRace, 15000);
+}
+async function placeBet(horseNum) {
+  const sess = localStorage.getItem('sml_session');
+  const betAmt = parseInt(document.getElementById('horse-bet-amt')?.value || '0');
+  if (!betAmt || betAmt < 1000) { showToast('❌', 'Error', 'Minimum bet $1,000', '#ff6b6b'); return; }
+  const r = await fetch('/api/casino/horses/bet', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ raceId: _horseRaceId, horseNum, bet: betAmt }) });
+  const d = await r.json();
+  if (d.ok) { showToast('🏇', 'Bet Placed!', `You bet on ${d.horseName}!`, '#ffd700'); loadHorseRace(); }
+  else showToast('❌', 'Error', d.error || 'Failed', '#ff6b6b');
+}
+
+// ── Trade War ─────────────────────────────────────────────────────────────────
+async function loadTradeWarTab() {
+  await loadTradeWarStatus();
+  await loadTradeWarMyEntry();
+  await loadTradeWarLB();
+}
+async function loadTradeWarStatus() {
+  const el = document.getElementById('trade-war-status-card');
+  if (!el) return;
+  const r = await fetch('/api/trade-war/status');
+  const d = await r.json();
+  if (!d.war) {
+    el.innerHTML = '<div style="color:#555; text-align:center; padding:24px;">No Trade War scheduled yet. Check back Sunday night!</div>';
+    return;
+  }
+  const w = d.war;
+  const now = Date.now();
+  const timeLabel = w.status === 'upcoming'
+    ? `Starts ${new Date(w.starts_at).toLocaleString()}`
+    : w.status === 'active'
+    ? `Ends ${new Date(w.ends_at).toLocaleString()} · ${Math.max(0, Math.ceil((w.ends_at - now)/60000))} min left`
+    : 'Ended';
+  const sess = localStorage.getItem('sml_session');
+  el.innerHTML = `
+    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h2 style="color:#ff6b6b; margin:0 0 6px;">⚔️ Trade War ${w.status === 'active' ? '🔴 LIVE' : w.status === 'upcoming' ? '📅 Upcoming' : '✅ Ended'}</h2>
+        <div style="color:#aaa; font-size:0.88em;">${timeLabel}</div>
+        <div style="color:#888; font-size:0.82em; margin-top:4px;">${d.entryCount} players entered · Entry: ${w.entry_credits} credits · Starting cash: $100,000</div>
+        <div style="color:#888; font-size:0.82em; margin-top:2px;">Prizes: 🥇 10,000 cr · 🥈 5,000 cr · 🥉 2,500 cr</div>
+      </div>
+      ${sess && w.status === 'upcoming' ? `<button onclick="enterTradeWar()" style="background:linear-gradient(135deg,#ff6b6b,#ff4444); color:#fff; border:none; border-radius:10px; padding:12px 24px; font-weight:bold; cursor:pointer;">⚔️ Enter War (${w.entry_credits} cr)</button>` : ''}
+    </div>`;
+}
+async function enterTradeWar() {
+  const sess = localStorage.getItem('sml_session');
+  const r = await fetch('/api/trade-war/enter', { method:'POST', headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  if (d.ok) { showToast('⚔️', 'Entered!', `You\'re in! War starts ${new Date(d.startsAt).toLocaleString()}`, '#ff6b6b'); loadTradeWarTab(); }
+  else showToast('❌', 'Error', d.error || 'Failed', '#ff6b6b');
+}
+async function loadTradeWarMyEntry() {
+  const sess = localStorage.getItem('sml_session');
+  const entryEl = document.getElementById('trade-war-my-entry');
+  if (!sess || !entryEl) return;
+  const r = await fetch('/api/trade-war/my-entry', { headers:{ 'x-session-id': sess } });
+  const d = await r.json();
+  if (!d.entry || d.war?.status !== 'active') { entryEl.style.display = 'none'; return; }
+  entryEl.style.display = '';
+  const port = d.portfolio || {};
+  const portVal = d.entry.totalValue - d.entry.cash;
+  document.getElementById('tw-cash').textContent = '$' + (d.entry.cash||0).toLocaleString();
+  document.getElementById('tw-portfolio-val').textContent = '$' + portVal.toLocaleString();
+  document.getElementById('tw-total-val').textContent = '$' + (d.entry.totalValue||0).toLocaleString();
+}
+async function twTrade(type) {
+  const sess = localStorage.getItem('sml_session');
+  const symbol = (document.getElementById('tw-symbol').value||'').trim().toUpperCase();
+  const qty = parseFloat(document.getElementById('tw-qty').value||'0');
+  const resEl = document.getElementById('tw-trade-result');
+  if (!symbol || !qty || qty <= 0) { resEl.textContent = 'Enter symbol and quantity.'; return; }
+  const r = await fetch('/api/trade-war/trade', { method:'POST', headers:{ 'Content-Type':'application/json', 'x-session-id': sess }, body: JSON.stringify({ symbol, type, quantity: qty }) });
+  const d = await r.json();
+  if (d.ok) {
+    resEl.style.color = '#00ff88';
+    resEl.textContent = `${type === 'buy' ? 'Bought' : 'Sold'} ${qty} ${symbol} · Total Value: $${d.totalValue.toLocaleString()}`;
+    document.getElementById('tw-cash').textContent = '$' + d.cash.toLocaleString();
+    document.getElementById('tw-portfolio-val').textContent = '$' + (d.portfolioValue||0).toLocaleString();
+    document.getElementById('tw-total-val').textContent = '$' + d.totalValue.toLocaleString();
+  } else {
+    resEl.style.color = '#ff6b6b';
+    resEl.textContent = d.error || 'Trade failed';
+  }
+}
+async function loadTradeWarLB() {
+  const el = document.getElementById('trade-war-lb');
+  if (!el) return;
+  const r = await fetch('/api/trade-war/leaderboard');
+  const d = await r.json();
+  if (!d.entries || !d.entries.length) { el.innerHTML = '<span style="color:#555">No entries yet.</span>'; return; }
+  const medals = ['🥇','🥈','🥉'];
+  el.innerHTML = d.entries.slice(0,10).map((e, i) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1e3a5f;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span style="font-size:1.1em; min-width:24px;">${medals[i] || `#${i+1}`}</span>
+        <span style="color:#e0e0e0;">${e.full_name || 'Player'}</span>
+      </div>
+      <span style="color:${i===0?'#ffd700':i===1?'#aaa':i===2?'#cd7f32':'#888'}; font-weight:bold;">$${(e.totalValue||0).toLocaleString()}</span>
+    </div>`).join('');
+}
 </script>
 </body>
 </html>
