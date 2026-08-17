@@ -282,7 +282,7 @@ Jason Brown
 Founder, Self-Made Legends LLC
 
 ---
-Self-Made Legends LLC | PO Box [ADDRESS] | Unsubscribe | Privacy Policy
+Self-Made Legends LLC | 18615 E Arrowhead Pl, Independence, MO 64056 | Unsubscribe | Privacy Policy
 This is a promotional email. Self-Made Legends is a simulated trading game — no real money is at risk. Virtual SML Bucks have no cash value. See our Terms of Service for full details.`;
   }
 
