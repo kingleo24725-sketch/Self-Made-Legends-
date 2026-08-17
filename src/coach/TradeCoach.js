@@ -113,7 +113,10 @@ class TradeCoach {
 
   _suggest(userId, payload) {
     if (!this._io) return;
-    this._io.to(`user:${userId}`).emit('coach_suggestion', payload);
+    this._io.to(`user:${userId}`).emit('coach_suggestion', {
+      ...payload,
+      disclaimer: '📋 For entertainment only — not real financial advice.',
+    });
   }
 
   _broadcastTip() {

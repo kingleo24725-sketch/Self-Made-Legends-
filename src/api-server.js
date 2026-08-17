@@ -404,14 +404,34 @@ const TRADE_WAR_START_CASH    = 100000;
 const TRADE_WAR_DURATION_MS   = 60 * 60 * 1000; // 1 hour
 const TRADE_WAR_PRIZES        = [10000, 5000, 2500]; // credits for top 3
 
+const BLOCKED_NAMES = [
+  'elon musk','warren buffett','jeff bezos','bill gates','mark zuckerberg',
+  'oprah winfrey','donald trump','joe biden','barack obama','tim cook',
+  'steve jobs','larry ellison','michael bloomberg','larry page','sergey brin',
+  'satoshi nakamoto','kanye west','jay z','beyonce','taylor swift',
+];
+
 app.post("/api/auth/register", (req, res) => {
-  const { email, password, fullName, referralCode } = req.body;
+  const { email, password, fullName, dateOfBirth, referralCode } = req.body;
 
   if (!email || !password || !fullName) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const result = accountManager.createAccount(email, password, fullName);
+  // Age gate — must be 18+
+  if (!dateOfBirth) return res.status(400).json({ error: 'Date of birth is required.' });
+  const dob = new Date(dateOfBirth);
+  if (isNaN(dob.getTime())) return res.status(400).json({ error: 'Invalid date of birth.' });
+  const ageMs = Date.now() - dob.getTime();
+  const age = Math.floor(ageMs / (365.25 * 24 * 3600 * 1000));
+  if (age < 18) return res.status(400).json({ error: 'You must be 18 or older to create an account.' });
+
+  // Impersonation block
+  if (BLOCKED_NAMES.includes(fullName.toLowerCase().trim())) {
+    return res.status(400).json({ error: 'That name is not allowed. Please use your real name.' });
+  }
+
+  const result = accountManager.createAccount(email, password, fullName, dateOfBirth);
 
   if (result.success) {
     socialNetwork.createProfile(result.userId, email, fullName);
@@ -763,9 +783,9 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         const tournamentId = meta.tournamentId || 'current';
         await db.run('UPDATE tournament_entries SET paid = 1, stripe_session = ? WHERE tournament_id = ? AND user_id = ?',
           [obj.id, tournamentId, userId]);
-        // $4 (80%) goes to prize pool per entry
+        // $8 (80%) goes to prize pool per entry
         await db.run(
-          'INSERT INTO tournament_prize_pools (tournament_id, entry_count, total_cents, distributed, updated_at) VALUES (?, 1, 400, 0, ?) ON CONFLICT(tournament_id) DO UPDATE SET entry_count = entry_count + 1, total_cents = total_cents + 400, updated_at = ?',
+          'INSERT INTO tournament_prize_pools (tournament_id, entry_count, total_cents, distributed, updated_at) VALUES (?, 1, 800, 0, ?) ON CONFLICT(tournament_id) DO UPDATE SET entry_count = entry_count + 1, total_cents = total_cents + 800, updated_at = ?',
           [tournamentId, Date.now(), Date.now()]
         );
         emitToUser(userId, 'purchase_complete', { type: 'tournament_entry', message: '⚔️ Tournament entry confirmed! Good luck!' });
@@ -1721,20 +1741,18 @@ app.post("/api/game/dice", authenticateUser, async (req, res) => {
   if (isNaN(wager) || wager <= 0) return res.status(400).json({ error: 'wager must be a positive number' });
   const MAX_WAGER = 10000;
   try {
-    const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    const cash = portfolio ? portfolio.cash_balance : 0;
-    const actualWager = Math.min(wager, cash, MAX_WAGER);
-    if (actualWager < wager) return res.status(400).json({ error: `Wager capped at $${MAX_WAGER.toLocaleString()} max or your balance`, max: MAX_WAGER });
-    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient SML Bucks' });
+    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [uid]);
+    const chips = chipRow ? (chipRow.casino_chips ?? 0) : 0;
+    const actualWager = Math.min(wager, chips, MAX_WAGER);
+    if (actualWager < wager) return res.status(400).json({ error: `Wager capped at ${MAX_WAGER.toLocaleString()} max or your chip balance`, max: MAX_WAGER });
+    if (chips < actualWager) return res.status(400).json({ error: 'Insufficient Casino Chips' });
     const roll1 = Math.floor(Math.random() * 6) + 1;
     const roll2 = Math.floor(Math.random() * 6) + 1;
     const sum = roll1 + roll2;
     const won = sum >= 8; // 8–12 wins (house-favorable: 41.7% win rate)
     const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0;
     const net = won ? payout - actualWager : -actualWager;
-    const now = Date.now();
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [net, now, uid]);
-    await _syncLeaderboard(uid);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [net, uid]);
     res.json({ success: true, roll1, roll2, sum, won, wager: actualWager, payout, net });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1745,18 +1763,16 @@ app.post("/api/game/card-flip", authenticateUser, async (req, res) => {
   if (isNaN(wager) || wager <= 0) return res.status(400).json({ error: 'wager must be a positive number' });
   const MAX_WAGER = 10000;
   try {
-    const portfolio = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    const cash = portfolio ? portfolio.cash_balance : 0;
-    const actualWager = Math.min(wager, cash, MAX_WAGER);
-    if (actualWager < wager) return res.status(400).json({ error: `Wager capped at $${MAX_WAGER.toLocaleString()} max or your balance`, max: MAX_WAGER });
-    if (cash < actualWager) return res.status(400).json({ error: 'Insufficient SML Bucks' });
+    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [uid]);
+    const chips = chipRow ? (chipRow.casino_chips ?? 0) : 0;
+    const actualWager = Math.min(wager, chips, MAX_WAGER);
+    if (actualWager < wager) return res.status(400).json({ error: `Wager capped at ${MAX_WAGER.toLocaleString()} max or your chip balance`, max: MAX_WAGER });
+    if (chips < actualWager) return res.status(400).json({ error: 'Insufficient Casino Chips' });
     const color = Math.random() < 0.5 ? 'Red' : 'Black';
     const won = color === 'Red';
     const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0; // 1.8× (house +10% EV)
     const net = won ? payout - actualWager : -actualWager;
-    const now = Date.now();
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [net, now, uid]);
-    await _syncLeaderboard(uid);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [net, uid]);
     res.json({ success: true, color, won, wager: actualWager, payout, net });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -2065,7 +2081,10 @@ app.post("/api/rewards/daily-claim", authenticateUser, async (req, res) => {
       [uid, amount, now, amount, now]
     );
     await _syncLeaderboard(uid);
+    // Award free casino chips on daily login
+    await db.run('UPDATE accounts SET casino_chips = casino_chips + 5000 WHERE id = ?', [uid]);
     emitToUser(uid, 'reward_claimed', { amount, streak: newStreak });
+    emitToUser(uid, 'casino_chips_update', { chips: 5000, source: 'daily_login' });
     res.json({
       success: true,
       amount,
@@ -2335,6 +2354,7 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
         }
       }
       await _awardBox(uid, 'heist_win');
+      await db.run('UPDATE accounts SET casino_chips = casino_chips + 2000 WHERE id = ?', [uid]);
 
       // Grant weapon XP to best weapon on heist success
       const _wKey = await _getBestWeaponKey(uid);
@@ -3383,17 +3403,15 @@ app.post("/api/casino/blackjack/start", authenticateUser, async (req, res) => {
     const uid = req.user.userId;
     const { bet } = req.body;
     if (!bet || bet < CASINO_MIN_BET) return res.status(400).json({ error: `Minimum bet is $${CASINO_MIN_BET.toLocaleString()}` });
-    const acct = await db.get('SELECT casino_vip FROM accounts WHERE id = ?', [uid]);
-    if (bet >= CASINO_VIP_MIN && !acct?.casino_vip) return res.status(403).json({ error: 'VIP Casino access required for bets $500k+' });
-    const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough SML Bucks' });
+    const acct = await db.get('SELECT casino_vip, casino_chips FROM accounts WHERE id = ?', [uid]);
+    if (bet >= CASINO_VIP_MIN && !acct?.casino_vip) return res.status(403).json({ error: 'VIP Casino access required for bets 500k+ chips' });
+    if (!acct || (acct.casino_chips ?? 0) < bet) return res.status(400).json({ error: 'Not enough Casino Chips' });
     // Cancel any active game first
     await db.run("UPDATE casino_blackjack SET status='forfeited' WHERE user_id = ? AND status = 'active'", [uid]);
     const deck = _buildDeck();
     const player = [deck.pop(), deck.pop()];
     const dealer = [deck.pop(), deck.pop()];
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [bet, uid]);
-    await _syncLeaderboard(uid);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips - ? WHERE id = ?', [bet, uid]);
     const result = await db.run(
       "INSERT INTO casino_blackjack (user_id, bet_paper, player_hand, dealer_hand, deck, status, created_at) VALUES (?,?,?,?,?,'active',?)",
       [uid, bet, JSON.stringify(player), JSON.stringify(dealer), JSON.stringify(deck), Date.now()]
@@ -3405,13 +3423,12 @@ app.post("/api/casino/blackjack/start", authenticateUser, async (req, res) => {
       const dealerTotal = _handTotal(dealer);
       if (dealerTotal === 21) {
         await db.run("UPDATE casino_blackjack SET status='push', outcome='push', payout=?, resolved_at=? WHERE id=?", [bet, Date.now(), result.lastID]);
-        await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [bet, uid]);
+        await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [bet, uid]);
         return res.json({ gameId: result.lastID, player, dealer, playerTotal: 21, dealerTotal: 21, outcome: 'push', payout: 0, message: 'Push! Both have Blackjack.' });
       }
       const payout = Math.floor(bet * 2.5);
       await db.run("UPDATE casino_blackjack SET status='blackjack', outcome='win', payout=?, resolved_at=? WHERE id=?", [payout, Date.now(), result.lastID]);
-      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [payout, uid]);
-      await _syncLeaderboard(uid);
+      await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [payout, uid]);
       return res.json({ gameId: result.lastID, player, dealer, playerTotal: 21, dealerVisible, outcome: 'blackjack', payout, message: '🃏 Blackjack! You win 2.5x!' });
     }
     res.json({ gameId: result.lastID, player, dealer: [dealerVisible], playerTotal, status: 'active' });
@@ -3466,8 +3483,7 @@ app.post("/api/casino/blackjack/stand", authenticateUser, async (req, res) => {
     await db.run("UPDATE casino_blackjack SET status='done', outcome=?, payout=?, player_hand=?, dealer_hand=?, deck=?, resolved_at=? WHERE id=?",
       [outcome, payout, JSON.stringify(player), JSON.stringify(dealer), JSON.stringify(deck), Date.now(), gameId]);
     if (payout > 0) {
-      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [payout, uid]);
-      await _syncLeaderboard(uid);
+      await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [payout, uid]);
     }
     res.json({ gameId, player, dealer, playerTotal, dealerTotal, outcome, payout, message });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -3503,14 +3519,13 @@ app.post("/api/casino/horses/bet", authenticateUser, async (req, res) => {
     const race = await db.get("SELECT * FROM horse_races WHERE id=? AND status='betting'", [raceId]);
     if (!race) return res.status(404).json({ error: 'Race not in betting phase' });
     if (Date.now() >= race.starts_at) return res.status(400).json({ error: 'Betting window closed' });
-    const port = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [uid]);
-    if (!port || port.cash_balance < bet) return res.status(400).json({ error: 'Not enough SML Bucks' });
+    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [uid]);
+    if (!chipRow || (chipRow.casino_chips ?? 0) < bet) return res.status(400).json({ error: 'Not enough Casino Chips' });
     const existingBet = await db.get('SELECT id FROM horse_bets WHERE race_id=? AND user_id=?', [raceId, uid]);
     if (existingBet) return res.status(400).json({ error: 'Already placed a bet in this race' });
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [bet, uid]);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips - ? WHERE id = ?', [bet, uid]);
     await db.run('INSERT INTO horse_bets (race_id, user_id, horse_num, bet_paper, placed_at) VALUES (?,?,?,?,?)',
       [raceId, uid, horseNum, bet, Date.now()]);
-    await _syncLeaderboard(uid);
     res.json({ ok: true, raceId, horseNum, horseName: HORSE_NAMES[horseNum - 1], bet });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3522,6 +3537,13 @@ app.get("/api/casino/horses/my-bet", authenticateUser, async (req, res) => {
     if (!race) return res.json({ bet: null });
     const bet = await db.get('SELECT * FROM horse_bets WHERE race_id=? AND user_id=?', [race.id, uid]);
     res.json({ bet, race });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.get("/api/casino/chips", authenticateUser, async (req, res) => {
+  try {
+    const row = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [req.user.userId]);
+    res.json({ chips: row?.casino_chips ?? 10000 });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -6142,11 +6164,10 @@ async function startServer() {
         for (const b of winBets) {
           const payout = totalWinBets > 0 ? Math.floor((b.bet_paper / totalWinBets) * totalPool * 0.9) : 0;
           if (payout > 0) {
-            await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [payout, b.user_id]);
+            await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [payout, b.user_id]);
             await db.run('UPDATE horse_bets SET payout=? WHERE id=?', [payout, b.id]);
-            await _syncLeaderboard(b.user_id);
             emitToUser(b.user_id, 'horse_win', { raceid: race.id, horseName: HORSE_NAMES[winner - 1], payout });
-            await _notify(b.user_id, 'horse_win', `🏇 ${HORSE_NAMES[winner - 1]} Wins!`, `You won $${payout.toLocaleString()} from the horse race!`);
+            await _notify(b.user_id, 'horse_win', `🏇 ${HORSE_NAMES[winner - 1]} Wins!`, `You won ${payout.toLocaleString()} Casino Chips from the horse race!`);
           }
         }
         io.emit('horse_race_result', { raceId: race.id, winner, horseName: HORSE_NAMES[winner - 1] });

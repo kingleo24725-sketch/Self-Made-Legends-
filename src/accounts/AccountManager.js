@@ -39,8 +39,9 @@ class AccountManager {
     db.run(
       `INSERT INTO accounts
         (email, user_id, full_name, password_hash, api_key, avatar, avatar_name,
-         tagline, gender, tier, is_creator, status, wallets, balances, settings, created_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+         tagline, gender, tier, is_creator, status, wallets, balances, settings, created_at,
+         date_of_birth)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
        ON CONFLICT(email) DO UPDATE SET
          full_name=excluded.full_name, password_hash=excluded.password_hash,
          api_key=excluded.api_key, avatar=excluded.avatar,
@@ -58,12 +59,13 @@ class AccountManager {
         JSON.stringify(account.balances || { usd: 1, crypto: {}, nft: {} }),
         JSON.stringify(account.settings || {}),
         account.createdAt instanceof Date ? account.createdAt.getTime() : Date.now(),
+        account.dateOfBirth || null,
       ]
     ).catch(e => console.error('AccountManager persist error:', e.message));
   }
 
   // ── Core CRUD ───────────────────────────────────────────────────────────
-  createAccount(email, password, fullName) {
+  createAccount(email, password, fullName, dateOfBirth) {
     if (this.accounts.has(email)) return { success: false, error: 'Account already exists' };
 
     const userId      = crypto.randomBytes(16).toString('hex');
@@ -72,6 +74,7 @@ class AccountManager {
 
     const account = {
       userId, email, fullName, passwordHash, apiKey,
+      dateOfBirth: dateOfBirth || null,
       createdAt: new Date(),
       status: 'active', verified: false,
       balances: { usd: 1, crypto: {}, nft: {} },

@@ -1076,7 +1076,8 @@
           <span style="color:#00d4ff; font-weight:bold; font-size:0.9em;">AI Coach</span>
           <button onclick="dismissCoach()" style="margin-left:auto; background:none; border:none; color:#444; cursor:pointer; font-size:1.1em; line-height:1;">✕</button>
         </div>
-        <p id="coach-message" style="color:#ccc; font-size:0.88em; line-height:1.5; margin-bottom:14px;"></p>
+        <p id="coach-message" style="color:#ccc; font-size:0.88em; line-height:1.5; margin-bottom:6px;"></p>
+        <p id="coach-disclaimer" style="color:#555; font-size:0.75em; font-style:italic; margin-bottom:14px;"></p>
         <div id="coach-actions" style="display:flex; gap:8px;">
           <button id="coach-yes-btn" onclick="coachAccept()" style="flex:1; background:#00c853; color:#000; border:none; border-radius:8px; padding:9px; font-weight:700; font-size:0.85em; cursor:pointer;">Yes, do it!</button>
           <button onclick="dismissCoach()" style="flex:1; background:rgba(255,255,255,0.07); color:#aaa; border:1px solid #333; border-radius:8px; padding:9px; font-size:0.85em; cursor:pointer;">No thanks</button>
@@ -1676,9 +1677,12 @@
 
     <!-- Casino Section -->
     <section class="section" id="casino">
-      <div style="text-align:center; margin-bottom:28px;">
+      <div style="text-align:center; margin-bottom:16px;">
         <h2 style="color:#ffd700; font-size:1.8em;">🎰 Underground Casino</h2>
         <p style="color:#aaa; font-size:0.95em;">High-stakes games for legends only. Play smart — or lose everything.</p>
+      </div>
+      <div style="background:rgba(0,200,83,0.1); border:1px solid rgba(0,200,83,0.3); border-radius:10px; padding:10px 16px; margin-bottom:20px; text-align:center;">
+        <p style="color:#00c853; font-size:0.88em; margin:0;">🎰 Casino uses <strong>free chips only</strong> — no real money wagered. Chips are earned through gameplay and have no cash value.</p>
       </div>
 
       <div class="grid">
@@ -1707,8 +1711,8 @@
           </div>
           <div id="bj-start" style="">
             <div class="form-group" style="margin-bottom:12px;">
-              <label style="color:#aaa; font-size:0.82em;">Your Bet (SML Bucks)</label>
-              <input id="bj-bet" type="number" placeholder="min $1,000" min="1000" step="1000" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box; margin-top:6px;">
+              <label style="color:#aaa; font-size:0.82em;">Your Bet (Casino Chips)</label>
+              <input id="bj-bet" type="number" placeholder="min 1,000 chips" min="1000" step="1000" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box; margin-top:6px;">
             </div>
             <button onclick="bjStart()" style="background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:12px; font-weight:bold; cursor:pointer; width:100%; font-size:1em;">🃏 Deal</button>
           </div>
@@ -2549,6 +2553,7 @@
             <div style="color:#00d4ff; font-weight:700; margin-bottom:8px;">300 Credits or $9.99</div>
             <button onclick="openCardPack('rare')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em; margin-bottom:6px;">Open (Credits)</button>
             <button onclick="buyCardPackStripe('rare')" style="background:transparent; border:1px solid #00d4ff; color:#00d4ff; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy ($9.99)</button>
+            <p style="color:#555; font-size:0.72em; font-style:italic; margin:8px 0 0;">No purchase necessary. Complete daily missions to earn free packs. <a href="/terms.html" style="color:#444;">Terms</a></p>
           </div>
           <div style="background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(0,0,0,0.3)); border:1px solid rgba(255,215,0,0.4); border-radius:10px; padding:16px; text-align:center;">
             <div style="font-size:2em; margin-bottom:6px;">👑</div>
@@ -2557,6 +2562,7 @@
             <div style="color:#ffd700; font-weight:700; margin-bottom:8px;">1,000 Credits or $19.99</div>
             <button onclick="openCardPack('legendary')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em; margin-bottom:6px;">Open (Credits)</button>
             <button onclick="buyCardPackStripe('legendary')" style="background:transparent; border:1px solid #ffd700; color:#ffd700; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy ($19.99)</button>
+            <p style="color:#555; font-size:0.72em; font-style:italic; margin:8px 0 0;">No purchase necessary. Complete daily missions to earn free packs. <a href="/terms.html" style="color:#444;">Terms</a></p>
           </div>
         </div>
 
@@ -3222,6 +3228,8 @@
     function showCoachBubble(payload) {
       _coachPayload = payload;
       document.getElementById('coach-message').textContent = payload.message;
+      const disc = document.getElementById('coach-disclaimer');
+      if (disc) disc.textContent = payload.disclaimer || '';
       const coachIcon   = document.getElementById('coach-icon');
       const coachBubble = document.getElementById('coach-bubble');
       if (coachIcon)   coachIcon.style.display   = 'none';
@@ -3321,11 +3329,12 @@
       const fullName = prompt('Enter your full name:');
       const email = prompt('Enter your email:');
       const password = prompt('Create a password (min 8 characters):');
-      if (!fullName || !email || !password) return;
+      const dateOfBirth = prompt('Enter your date of birth (MM/DD/YYYY) — you must be 18 or older:');
+      if (!fullName || !email || !password || !dateOfBirth) return;
       fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName, email, password })
+        body: JSON.stringify({ fullName, email, password, dateOfBirth })
       }).then(r => r.json()).then(data => {
         if (data.success) {
           return fetch('/api/auth/login', {
@@ -3427,9 +3436,10 @@
         const fullName = prompt('Enter your full name:');
         const email = prompt('Enter your email:');
         const password = prompt('Create a password (min 8 characters):');
-        if (!fullName || !email || !password) return;
+        const dateOfBirth = prompt('Enter your date of birth (MM/DD/YYYY) — you must be 18 or older:');
+        if (!fullName || !email || !password || !dateOfBirth) return;
 
-        apiCall('/api/auth/register', 'POST', { fullName, email, password })
+        apiCall('/api/auth/register', 'POST', { fullName, email, password, dateOfBirth })
           .then(data => {
             if (data.success) {
               alert('✅ Account created! Welcome to Self-Made Legends!');

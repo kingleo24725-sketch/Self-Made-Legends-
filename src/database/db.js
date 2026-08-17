@@ -60,7 +60,9 @@ class DB {
         wallets       TEXT DEFAULT '[]',
         balances      TEXT DEFAULT '{"usd":1,"crypto":{},"nft":{}}',
         settings      TEXT DEFAULT '{}',
-        created_at    INTEGER
+        created_at    INTEGER,
+        casino_chips  INTEGER DEFAULT 10000,
+        date_of_birth TEXT
       )`,
 
       // User stats (badge system)
@@ -913,6 +915,8 @@ class DB {
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_elite INTEGER DEFAULT 0'); } catch (_) {}
     await db.run(`ALTER TABLE accounts ADD COLUMN heat_level INTEGER NOT NULL DEFAULT 0`).catch(() => {});
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_vip INTEGER DEFAULT 0'); } catch (_) {}
+    try { await this.run('ALTER TABLE accounts ADD COLUMN casino_chips INTEGER DEFAULT 10000'); } catch (_) {}
+    try { await this.run('ALTER TABLE accounts ADD COLUMN date_of_birth TEXT'); } catch (_) {}
 
     // Seed crew_territories with all 10 neighborhoods (uncontrolled)
     const terrCount = await db.get('SELECT COUNT(*) as c FROM crew_territories');
