@@ -222,6 +222,62 @@ const PETS = {
   dragon: { key:'dragon', label:'Dragon', icon:'🐉', price_cents: 3499, rarity:'legendary', daily_income:10000,  guard_bonus:0.35, desc:'Absolute legend status.' },
 };
 
+// ── Weapon Ability Unlocks (level 10) ────────────────────────────────────────
+const WEAPON_ABILITIES = {
+  rusty_shiv:       { ability:'First Blood',     desc:'First heist each day gets +5% success rate' },
+  switchblade:      { ability:'Silent Strike',    desc:'Catch rate reduced extra 5% on every heist' },
+  baseball_bat:     { ability:'Intimidation',     desc:'Target loses 10% more cash per heist' },
+  crowbar:          { ability:'Safe Cracker',     desc:'+3% max steal percentage on all heists' },
+  brass_knuckles:   { ability:'Iron Will',        desc:'On failed heist escape with 50% loot instead of 0%' },
+  taser:            { ability:'Overcharge',       desc:'Defender guard dog bite reduced 50%' },
+  smoke_grenade:    { ability:'Ghost Protocol',   desc:'20% chance heist leaves no trace — no heat gain' },
+  glock:            { ability:'Head of the Pack', desc:'Team heists: +3% success per extra teammate' },
+  ak47:             { ability:'War Economy',      desc:'+10% value when converted from heist payout' },
+  military_arsenal: { ability:'Full Arsenal',     desc:'All heist bonuses stack; +5% across success/steal/catch' },
+};
+
+const WEAPON_MODS_CATALOG = {
+  silencer: { key:'silencer', label:'Silencer',      icon:'🔇', desc:'Catch rate -8%',    price_credits:300, catchReduction:0.08 },
+  scope:    { key:'scope',    label:'Scope',          icon:'🔭', desc:'Success rate +5%',  price_credits:300, successBonus:0.05 },
+  laser:    { key:'laser',    label:'Laser Sight',    icon:'🔴', desc:'Max steal +3%',     price_credits:400, maxPctBonus:0.03 },
+  grip:     { key:'grip',     label:'Tactical Grip',  icon:'🖐️', desc:'Escape speed +5%', price_credits:250, bailReduction:0.05 },
+};
+
+const WEAPON_SKINS_CATALOG = {
+  gold:    { key:'gold',    label:'Gold Plated',    icon:'🏆', desc:'Drip so hard.',           price_credits:500 },
+  diamond: { key:'diamond', label:'Diamond Coated', icon:'💎', desc:'For the real legends.',   price_credits:800 },
+  crimson: { key:'crimson', label:'Crimson Blaze',  icon:'🔴', desc:"They'll see you coming.", price_credits:400 },
+  phantom: { key:'phantom', label:'Phantom Black',  icon:'🖤', desc:'Darkness personified.',   price_credits:600 },
+};
+
+const WEAPON_XP_PER_HEIST = 15;
+
+// ── Crew Territory ────────────────────────────────────────────────────────────
+const NEIGHBORHOODS = [
+  { id:'downtown',   name:'Downtown',          icon:'🏙️', baseIncome:5000 },
+  { id:'harbor',     name:'Harbor District',   icon:'⚓',  baseIncome:4000 },
+  { id:'eastside',   name:'East Side',         icon:'🏚️', baseIncome:3000 },
+  { id:'westside',   name:'West Side',         icon:'🏘️', baseIncome:3000 },
+  { id:'uptown',     name:'Uptown',            icon:'🏰', baseIncome:7000 },
+  { id:'strip',      name:'The Strip',         icon:'🎰', baseIncome:6000 },
+  { id:'industrial', name:'Industrial Zone',   icon:'🏭', baseIncome:2500 },
+  { id:'airport',    name:'Airport',           icon:'✈️', baseIncome:5500 },
+  { id:'financial',  name:'Financial District',icon:'📊', baseIncome:8000 },
+  { id:'projects',   name:'The Projects',      icon:'🏗️', baseIncome:2000 },
+];
+
+// ── Seasonal Story Mode ───────────────────────────────────────────────────────
+const CURRENT_SEASON = 'S1';
+const SEASON_CHAPTERS = {
+  S1: [
+    { num:1, title:'First Dollar',  icon:'💵', xp_required:0,    reward_credits:500,  reward_paper:10000,   reward_badge:'Chapter1', body:"Every legend starts broke. You scraped together your first trade, watched the market, and made your first dollar. The journey begins." },
+    { num:2, title:'First Deal',    icon:'🤝', xp_required:500,  reward_credits:1000, reward_paper:50000,   reward_badge:'Chapter2', body:"Word got out. Someone needed a plug and you were there. Your first real deal went down — no middleman, no safety net. Pure hustle." },
+    { num:3, title:'First Enemy',   icon:'⚔️', xp_required:1500, reward_credits:2000, reward_paper:100000,  reward_badge:'Chapter3', body:"You moved into someone else's territory. They noticed. Your first enemy made themselves known — and you realized this game has real stakes." },
+    { num:4, title:'First Crew',    icon:'👥', xp_required:3000, reward_credits:3000, reward_paper:250000,  reward_badge:'Chapter4', body:"Lone wolves don't build empires. You linked up with riders who move like you move. The crew is official. Now you operate as one." },
+    { num:5, title:'The Come Up',   icon:'👑', xp_required:5000, reward_credits:5000, reward_paper:1000000, reward_badge:'SelfMade', body:"From nothing to something. Every bet, every trade, every risk paid off. You're not the same person who started. You're Self-Made." },
+  ],
+};
+
 // ── Loot Box drop table ───────────────────────────────────────────────────────
 const LOOT_DROPS = {
   common:    [
@@ -2040,6 +2096,11 @@ function _displayName(userId) {
   return acct ? (acct.fullName || acct.email || 'A Legend') : 'A Legend';
 }
 
+async function _getBestWeaponKey(userId) {
+  const rows = await db.all('SELECT weapon_key FROM player_weapons WHERE user_id = ?', [userId]);
+  return rows.filter(r => WEAPONS[r.weapon_key]).sort((a, b) => WEAPONS[b.weapon_key].tier - WEAPONS[a.weapon_key].tier)[0]?.weapon_key || null;
+}
+
 async function _getBestWeapon(userId) {
   const rows = await db.all('SELECT weapon_key FROM player_weapons WHERE user_id = ?', [userId]);
   if (!rows.length) return null;
@@ -2274,6 +2335,21 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
         }
       }
       await _awardBox(uid, 'heist_win');
+
+      // Grant weapon XP to best weapon on heist success
+      const _wKey = await _getBestWeaponKey(uid);
+      if (_wKey) {
+        const curXpRow = await db.get('SELECT xp, level FROM weapon_xp WHERE user_id=? AND weapon_key=?', [uid, _wKey]);
+        const newXp = Math.min(999, (curXpRow?.xp || 0) + WEAPON_XP_PER_HEIST);
+        const newLevel = Math.min(10, Math.floor(newXp / 100) + 1);
+        await db.run('INSERT INTO weapon_xp (user_id, weapon_key, xp, level) VALUES (?,?,?,?) ON CONFLICT(user_id, weapon_key) DO UPDATE SET xp=?, level=?',
+          [uid, _wKey, newXp, newLevel, newXp, newLevel]);
+        if (newLevel > (curXpRow?.level || 1)) {
+          await _notify(uid, 'weapon_level', '⚔️ Weapon Level Up!', `${WEAPONS[_wKey]?.label} reached Level ${newLevel}!${newLevel === 10 ? ' 🔥 Ability unlocked!' : ''}`);
+          emitToUser(uid, 'weapon_xp_update', { weaponKey: _wKey, xp: newXp, level: newLevel, abilityUnlocked: newLevel === 10 });
+        }
+      }
+
       res.json({ success: true, amountStolen: share, message: `${config.icon} ${config.label} succeeded! You stole $${share.toFixed(2)}` });
     } else {
       await db.run(
@@ -3533,6 +3609,237 @@ app.get("/api/trade-war/my-entry", authenticateUser, async (req, res) => {
     const port = JSON.parse(entry.portfolio_json || '{}');
     const portVal = Object.entries(port).reduce((s, [sym, qty]) => s + (priceEngine.getPrice(sym) || 0) * qty, 0);
     res.json({ entry: { ...entry, totalValue: entry.cash + portVal }, war, portfolio: port });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== CREW TERRITORY =====
+
+app.get('/api/territory/map', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const territories = await db.all('SELECT * FROM crew_territories');
+    const memberRow = await db.get('SELECT team_id FROM team_members WHERE user_id=?', [uid]);
+    const crewId = memberRow?.team_id || null;
+    const crewRow = crewId ? await db.get('SELECT name FROM teams WHERE id=?', [crewId]) : null;
+    const map = NEIGHBORHOODS.map(n => {
+      const t = territories.find(x => x.neighborhood === n.id) || {};
+      return { ...n, crew_id: t.crew_id || null, captured_at: t.captured_at || null };
+    });
+    const crewCount = crewId ? map.filter(n => n.crew_id === crewId).length : 0;
+    const totalIncome = NEIGHBORHOODS.filter(n => map.find(m => m.id === n.id)?.crew_id === crewId).reduce((s, n) => s + n.baseIncome, 0);
+    res.json({ map, crewId, crewName: crewRow?.name || null, crewCount, totalIncome });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/territory/raid/:neighborhoodId', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { neighborhoodId } = req.params;
+    const neighborhood = NEIGHBORHOODS.find(n => n.id === neighborhoodId);
+    if (!neighborhood) return res.status(400).json({ error: 'Unknown neighborhood' });
+
+    const memberRow = await db.get('SELECT team_id FROM team_members WHERE user_id=?', [uid]);
+    if (!memberRow) return res.status(400).json({ error: 'You must be in a crew to raid territories' });
+    const crewId = memberRow.team_id;
+
+    const territory = await db.get('SELECT * FROM crew_territories WHERE neighborhood=?', [neighborhoodId]);
+    if (territory?.crew_id === crewId) return res.status(400).json({ error: 'Your crew already controls this neighborhood' });
+
+    // 4-hour cooldown per crew per neighborhood
+    const cooldown = 4 * 60 * 60 * 1000;
+    const lastRaid = await db.get('SELECT created_at FROM territory_raids WHERE neighborhood=? AND attacker_crew=? ORDER BY created_at DESC LIMIT 1', [neighborhoodId, crewId]);
+    if (lastRaid && Date.now() - lastRaid.created_at < cooldown) {
+      const mins = Math.ceil((cooldown - (Date.now() - lastRaid.created_at)) / 60000);
+      return res.status(429).json({ error: `Raid cooldown: ${mins} minutes remaining` });
+    }
+
+    const acct = await db.get('SELECT heat_level FROM accounts WHERE id=?', [uid]);
+    const heatPenalty = (acct?.heat_level || 0) >= 4 ? 0.10 : 0;
+    const success = Math.random() < (0.55 - heatPenalty);
+    const now = Date.now();
+
+    await db.run('INSERT INTO territory_raids (neighborhood, attacker_crew, defender_crew, success, created_at) VALUES (?,?,?,?,?)',
+      [neighborhoodId, crewId, territory?.crew_id || null, success ? 1 : 0, now]);
+    await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE id=?', [uid]);
+
+    if (success) {
+      const oldCrew = territory?.crew_id;
+      await db.run('UPDATE crew_territories SET crew_id=?, captured_at=? WHERE neighborhood=?', [crewId, now, neighborhoodId]);
+      // Notify attackers
+      const attackers = await db.all('SELECT user_id FROM team_members WHERE team_id=?', [crewId]);
+      for (const m of attackers) {
+        await _notify(m.user_id, 'territory', '🗺️ Territory Captured!', `Your crew seized ${neighborhood.icon} ${neighborhood.name}!`);
+        emitToUser(m.user_id, 'territory_captured', { neighborhood: neighborhoodId, icon: neighborhood.icon, name: neighborhood.name, crewId });
+      }
+      // Notify defenders
+      if (oldCrew) {
+        const defenders = await db.all('SELECT user_id FROM team_members WHERE team_id=?', [oldCrew]);
+        for (const m of defenders) {
+          await _notify(m.user_id, 'territory_lost', '⚠️ Territory Lost!', `Enemy crew took ${neighborhood.icon} ${neighborhood.name}!`);
+          emitToUser(m.user_id, 'territory_lost', { neighborhood: neighborhoodId });
+        }
+      }
+      io.emit('territory_update', { neighborhood: neighborhoodId, crewId, icon: neighborhood.icon, name: neighborhood.name });
+      return res.json({ success: true, message: `${neighborhood.icon} ${neighborhood.name} is now yours!` });
+    }
+    res.json({ success: false, message: `Raid on ${neighborhood.icon} ${neighborhood.name} failed. Try again later.` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== SEASON STORY MODE =====
+
+app.get('/api/season/story', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const chapters = SEASON_CHAPTERS[CURRENT_SEASON] || [];
+    const xpRow = await db.get('SELECT total_xp FROM user_xp WHERE user_id=?', [uid]);
+    const totalXp = xpRow?.total_xp || 0;
+    const progress = await db.all('SELECT chapter_num FROM season_progress WHERE user_id=? AND season_key=?', [uid, CURRENT_SEASON]);
+    const completed = new Set(progress.map(r => r.chapter_num));
+    const result = chapters.map(ch => ({
+      ...ch,
+      completed: completed.has(ch.num),
+      unlocked: totalXp >= ch.xp_required,
+      claimable: totalXp >= ch.xp_required && !completed.has(ch.num) && (ch.num === 1 || completed.has(ch.num - 1)),
+    }));
+    res.json({ season: CURRENT_SEASON, chapters: result, totalXp });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/season/story/complete/:chapterNum', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const chapterNum = parseInt(req.params.chapterNum, 10);
+    const chapter = (SEASON_CHAPTERS[CURRENT_SEASON] || []).find(c => c.num === chapterNum);
+    if (!chapter) return res.status(400).json({ error: 'Chapter not found' });
+
+    const xpRow = await db.get('SELECT total_xp FROM user_xp WHERE user_id=?', [uid]);
+    if ((xpRow?.total_xp || 0) < chapter.xp_required) {
+      return res.status(400).json({ error: `Need ${chapter.xp_required} XP (you have ${xpRow?.total_xp || 0})` });
+    }
+    if (chapterNum > 1) {
+      const prev = await db.get('SELECT id FROM season_progress WHERE user_id=? AND season_key=? AND chapter_num=?', [uid, CURRENT_SEASON, chapterNum - 1]);
+      if (!prev) return res.status(400).json({ error: 'Complete the previous chapter first' });
+    }
+    const existing = await db.get('SELECT id FROM season_progress WHERE user_id=? AND season_key=? AND chapter_num=?', [uid, CURRENT_SEASON, chapterNum]);
+    if (existing) return res.status(400).json({ error: 'Chapter already completed' });
+
+    const now = Date.now();
+    await db.run('INSERT INTO season_progress (user_id, season_key, chapter_num, completed_at) VALUES (?,?,?,?)', [uid, CURRENT_SEASON, chapterNum, now]);
+
+    if (chapter.reward_credits > 0) await _addCredits(uid, chapter.reward_credits, 'season_story', `Season story Ch.${chapterNum}: ${chapter.title}`);
+    if (chapter.reward_paper > 0) {
+      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id=?', [chapter.reward_paper, uid]);
+      await _syncLeaderboard(uid);
+    }
+    if (chapter.reward_badge) {
+      await db.run('INSERT OR IGNORE INTO badge_awards (user_id, badge_key, awarded_at) VALUES (?,?,?)', [uid, chapter.reward_badge, now]).catch(() => {});
+    }
+
+    await _notify(uid, 'season_chapter', `📖 Chapter ${chapterNum} Complete!`, `"${chapter.title}" — ${chapter.reward_credits} Credits & $${chapter.reward_paper.toLocaleString()} paper money!`);
+    emitToUser(uid, 'season_chapter_complete', { chapterNum, title: chapter.title, rewards: { credits: chapter.reward_credits, paper: chapter.reward_paper } });
+
+    res.json({ ok: true, chapter: { ...chapter, completed: true }, rewards: { credits: chapter.reward_credits, paper: chapter.reward_paper, badge: chapter.reward_badge } });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ===== WEAPONS ARMORY =====
+
+app.get('/api/weapons/armory', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const ownedRows = await db.all('SELECT weapon_key FROM player_weapons WHERE user_id=?', [uid]);
+    const xpRows    = await db.all('SELECT weapon_key, xp, level FROM weapon_xp WHERE user_id=?', [uid]);
+    const modRows   = await db.all('SELECT weapon_key, mod_key, equipped FROM weapon_mods WHERE user_id=?', [uid]);
+    const skinRows  = await db.all('SELECT weapon_key, skin_key, active FROM weapon_skins WHERE user_id=?', [uid]);
+
+    const xpMap = Object.fromEntries(xpRows.map(r => [r.weapon_key, r]));
+    const modsByKey = {};
+    for (const r of modRows) { if (!modsByKey[r.weapon_key]) modsByKey[r.weapon_key] = []; modsByKey[r.weapon_key].push(r); }
+    const skinsByKey = {};
+    for (const r of skinRows) { if (!skinsByKey[r.weapon_key]) skinsByKey[r.weapon_key] = []; skinsByKey[r.weapon_key].push(r); }
+
+    const weapons = ownedRows.map(r => {
+      const w = WEAPONS[r.weapon_key];
+      if (!w) return null;
+      const xpData = xpMap[r.weapon_key] || { xp: 0, level: 1 };
+      const activeSkin = (skinsByKey[r.weapon_key] || []).find(s => s.active);
+      const equippedMods = (modsByKey[r.weapon_key] || []).filter(m => m.equipped).map(m => ({ key: m.mod_key, ...WEAPON_MODS_CATALOG[m.mod_key] }));
+      const ownedMods  = (modsByKey[r.weapon_key] || []).map(m => ({ key: m.mod_key, equipped: m.equipped, ...WEAPON_MODS_CATALOG[m.mod_key] }));
+      const ownedSkins = (skinsByKey[r.weapon_key] || []).map(s => ({ key: s.skin_key, active: s.active, ...WEAPON_SKINS_CATALOG[s.skin_key] }));
+      const ability = xpData.level >= 10 ? WEAPON_ABILITIES[r.weapon_key] : null;
+      return {
+        key: r.weapon_key, ...w,
+        xp: xpData.xp, level: xpData.level,
+        xpToNext: xpData.level < 10 ? (xpData.level * 100) - xpData.xp : null,
+        equippedMods, ownedMods, ownedSkins,
+        activeSkin: activeSkin ? { key: activeSkin.skin_key, ...WEAPON_SKINS_CATALOG[activeSkin.skin_key] } : null,
+        ability, abilityHint: WEAPON_ABILITIES[r.weapon_key],
+      };
+    }).filter(Boolean).sort((a, b) => b.tier - a.tier);
+
+    res.json({ weapons, WEAPON_MODS_CATALOG, WEAPON_SKINS_CATALOG });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/weapons/mods/buy', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { weaponKey, modKey } = req.body;
+    if (!WEAPONS[weaponKey]) return res.status(400).json({ error: 'Invalid weapon' });
+    const mod = WEAPON_MODS_CATALOG[modKey];
+    if (!mod) return res.status(400).json({ error: 'Invalid mod' });
+    if (!await db.get('SELECT id FROM player_weapons WHERE user_id=? AND weapon_key=?', [uid, weaponKey]))
+      return res.status(400).json({ error: "You don't own this weapon" });
+    if (await db.get('SELECT id FROM weapon_mods WHERE user_id=? AND weapon_key=? AND mod_key=?', [uid, weaponKey, modKey]))
+      return res.status(400).json({ error: 'Mod already owned' });
+    const acct = await db.get('SELECT sml_credits FROM accounts WHERE id=?', [uid]);
+    if ((acct?.sml_credits || 0) < mod.price_credits) return res.status(400).json({ error: 'Insufficient credits' });
+    await db.run('UPDATE accounts SET sml_credits = sml_credits - ? WHERE id=?', [mod.price_credits, uid]);
+    await db.run('INSERT INTO weapon_mods (user_id, weapon_key, mod_key, equipped, purchased_at) VALUES (?,?,?,0,?)', [uid, weaponKey, modKey, Date.now()]);
+    res.json({ ok: true, message: `${mod.icon} ${mod.label} purchased!` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/weapons/mods/equip', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { weaponKey, modKey } = req.body;
+    const owned = await db.get('SELECT id, equipped FROM weapon_mods WHERE user_id=? AND weapon_key=? AND mod_key=?', [uid, weaponKey, modKey]);
+    if (!owned) return res.status(400).json({ error: 'Mod not owned' });
+    await db.run('UPDATE weapon_mods SET equipped = 1 - equipped WHERE id=?', [owned.id]);
+    res.json({ ok: true, equipped: owned.equipped === 0 });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/weapons/skins/buy', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { weaponKey, skinKey } = req.body;
+    if (!WEAPONS[weaponKey]) return res.status(400).json({ error: 'Invalid weapon' });
+    const skin = WEAPON_SKINS_CATALOG[skinKey];
+    if (!skin) return res.status(400).json({ error: 'Invalid skin' });
+    if (!await db.get('SELECT id FROM player_weapons WHERE user_id=? AND weapon_key=?', [uid, weaponKey]))
+      return res.status(400).json({ error: "You don't own this weapon" });
+    if (await db.get('SELECT id FROM weapon_skins WHERE user_id=? AND weapon_key=? AND skin_key=?', [uid, weaponKey, skinKey]))
+      return res.status(400).json({ error: 'Skin already owned' });
+    const acct = await db.get('SELECT sml_credits FROM accounts WHERE id=?', [uid]);
+    if ((acct?.sml_credits || 0) < skin.price_credits) return res.status(400).json({ error: 'Insufficient credits' });
+    await db.run('UPDATE accounts SET sml_credits = sml_credits - ? WHERE id=?', [skin.price_credits, uid]);
+    await db.run('INSERT INTO weapon_skins (user_id, weapon_key, skin_key, active, purchased_at) VALUES (?,?,?,0,?)', [uid, weaponKey, skinKey, Date.now()]);
+    res.json({ ok: true, message: `${skin.icon} ${skin.label} skin unlocked!` });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+app.post('/api/weapons/skins/equip', authenticateUser, async (req, res) => {
+  try {
+    const uid = req.user.userId;
+    const { weaponKey, skinKey } = req.body;
+    if (!await db.get('SELECT id FROM weapon_skins WHERE user_id=? AND weapon_key=? AND skin_key=?', [uid, weaponKey, skinKey]))
+      return res.status(400).json({ error: 'Skin not owned' });
+    await db.run('UPDATE weapon_skins SET active=0 WHERE user_id=? AND weapon_key=?', [uid, weaponKey]);
+    await db.run('UPDATE weapon_skins SET active=1 WHERE user_id=? AND weapon_key=? AND skin_key=?', [uid, weaponKey, skinKey]);
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -5910,6 +6217,30 @@ async function startServer() {
   };
   await _ensureTradeWar();
   setInterval(_tickTradeWar, 60 * 1000); // check every minute
+
+  // Territory passive income — pay crew members for each controlled neighborhood every 30 min
+  const _payTerritoryIncome = async () => {
+    try {
+      const now = Date.now();
+      const INCOME_INTERVAL = 30 * 60 * 1000;
+      const territories = await db.all("SELECT * FROM crew_territories WHERE crew_id IS NOT NULL");
+      for (const t of territories) {
+        if (now - (t.last_income_at || 0) < INCOME_INTERVAL) continue;
+        const hood = NEIGHBORHOODS.find(n => n.id === t.neighborhood);
+        if (!hood) continue;
+        const members = await db.all('SELECT user_id FROM team_members WHERE team_id=?', [t.crew_id]);
+        if (!members.length) continue;
+        const share = Math.floor(hood.baseIncome / members.length);
+        for (const m of members) {
+          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id=?', [share, m.user_id]);
+          await _syncLeaderboard(m.user_id);
+          emitToUser(m.user_id, 'territory_income', { neighborhood: hood.name, icon: hood.icon, income: share });
+        }
+        await db.run('UPDATE crew_territories SET last_income_at=? WHERE neighborhood=?', [now, t.neighborhood]);
+      }
+    } catch (e) { console.error('[Territory]', e.message); }
+  };
+  setInterval(_payTerritoryIncome, 10 * 60 * 1000); // check every 10 min
 
   // Limit Order checker — every 30 seconds
   setInterval(async () => {

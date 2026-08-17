@@ -653,6 +653,9 @@
       <button class="nav-tab" onclick="switchTab('garage'); loadGarageTab()">🚗 Garage</button>
       <button class="nav-tab" onclick="switchTab('casino'); loadCasinoTab()">🎰 Casino</button>
       <button class="nav-tab" onclick="switchTab('trade-war'); loadTradeWarTab()">⚔️ Trade War</button>
+      <button class="nav-tab" onclick="switchTab('territory'); loadTerritoryTab()">🗺️ Territory</button>
+      <button class="nav-tab" onclick="switchTab('season'); loadSeasonTab()">📖 Season</button>
+      <button class="nav-tab" onclick="switchTab('arsenal'); loadArsenalTab()">🔫 Arsenal</button>
       <button class="nav-tab" id="creator-hub-tab" style="display:none;" onclick="switchTab('creator-hub'); loadCreatorHub()">👑 Creator Hub</button>
     </div>
     <div class="nav-right">
@@ -1768,6 +1771,89 @@
           <button onclick="loadTradeWarLB()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
         </div>
         <div id="trade-war-lb" style="color:#555; text-align:center; padding:16px;">Loading…</div>
+      </div>
+    </section>
+
+    <!-- Territory Section -->
+    <section class="section" id="territory">
+      <div style="max-width:900px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <h2 style="color:#ffd700;font-size:1.8em;">🗺️ Crew Territory</h2>
+          <p style="color:#aaa;font-size:0.95em;">Control neighborhoods. Collect passive income every 30 minutes. Raid rivals to expand your empire.</p>
+        </div>
+
+        <div id="territory-crew-card" class="card" style="margin-bottom:18px;display:none;">
+          <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="color:#888;font-size:0.78em;text-transform:uppercase;letter-spacing:0.1em;">Your Crew</div>
+              <div id="territory-crew-name" style="color:#ffd700;font-size:1.3em;font-weight:700;"></div>
+            </div>
+            <div style="text-align:center;">
+              <div id="territory-count" style="color:#00ff88;font-size:2em;font-weight:900;">0</div>
+              <div style="color:#555;font-size:0.78em;">Territories</div>
+            </div>
+            <div style="text-align:center;">
+              <div id="territory-income" style="color:#ffd700;font-size:1.5em;font-weight:700;">$0</div>
+              <div style="color:#555;font-size:0.78em;">Income/30min</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="territory-no-crew" class="card" style="text-align:center;padding:32px;display:none;">
+          <div style="font-size:2em;margin-bottom:10px;">👥</div>
+          <div style="color:#aaa;">Join or create a crew in the <strong style="color:#ffd700;">Teams</strong> tab to raid territories and earn passive income.</div>
+        </div>
+
+        <div id="territory-map" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;"></div>
+      </div>
+    </section>
+
+    <!-- Season Story Section -->
+    <section class="section" id="season">
+      <div style="max-width:760px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:28px;">
+          <div style="color:#888;font-size:0.78em;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:6px;">Season 1</div>
+          <h2 style="color:#ffd700;font-size:1.9em;margin-bottom:6px;">📖 The Come Up</h2>
+          <p style="color:#aaa;font-size:0.95em;">Five chapters. One story. Complete chapters by earning XP in the game — then claim your rewards.</p>
+        </div>
+
+        <div id="season-xp-bar" style="background:#111;border:1px solid #333;border-radius:10px;padding:14px 20px;margin-bottom:24px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span style="color:#aaa;font-size:0.82em;">Your Season XP</span>
+            <span id="season-xp-value" style="color:#ffd700;font-weight:700;">0 XP</span>
+          </div>
+          <div style="background:#222;border-radius:4px;height:8px;overflow:hidden;">
+            <div id="season-xp-fill" style="height:100%;background:linear-gradient(90deg,#ffd700,#ff8c00);border-radius:4px;transition:width 0.5s;width:0%;"></div>
+          </div>
+        </div>
+
+        <div id="season-chapters" style="display:flex;flex-direction:column;gap:16px;"></div>
+      </div>
+    </section>
+
+    <!-- Arsenal Section -->
+    <section class="section" id="arsenal">
+      <div style="max-width:900px;margin:0 auto;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <h2 style="color:#ff4444;font-size:1.8em;">🔫 Weapons Arsenal</h2>
+          <p style="color:#aaa;font-size:0.95em;">Your weapons level up through heists. Reach Level 10 to unlock a unique ability. Add mods and skins to dominate.</p>
+        </div>
+
+        <div id="arsenal-no-weapons" class="card" style="text-align:center;padding:32px;display:none;">
+          <div style="font-size:2em;margin-bottom:10px;">🔪</div>
+          <div style="color:#aaa;margin-bottom:14px;">No weapons yet. Buy weapons in the <strong style="color:#ff4444;">Underworld → Payments</strong> section.</div>
+        </div>
+
+        <div id="arsenal-weapons" style="display:flex;flex-direction:column;gap:18px;"></div>
+
+        <div class="card" style="margin-top:24px;">
+          <h3 style="color:#ffd700;margin-bottom:16px;">🛠️ Mod Shop</h3>
+          <p style="color:#888;font-size:0.85em;margin-bottom:14px;">Mods apply to a specific weapon. Select a weapon above, then buy the mod.</p>
+          <div id="arsenal-mod-target" style="color:#aaa;font-size:0.88em;margin-bottom:12px;">No weapon selected — click a weapon card above.</div>
+          <div id="arsenal-mod-shop" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+          <h3 style="color:#ffd700;margin:20px 0 14px;">🎨 Skin Shop</h3>
+          <div id="arsenal-skin-shop" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;"></div>
+        </div>
       </div>
     </section>
 
@@ -9402,6 +9488,293 @@ async function loadTradeWarLB() {
       <span style="color:${i===0?'#ffd700':i===1?'#aaa':i===2?'#cd7f32':'#888'}; font-weight:bold;">$${(e.totalValue||0).toLocaleString()}</span>
     </div>`).join('');
 }
+
+// ══════════════════════════════════════════════════════════════════
+// TIER 2 FEATURES: Territory, Season Story, Weapons Arsenal
+// ══════════════════════════════════════════════════════════════════
+
+// ── Crew Territory ────────────────────────────────────────────────
+let _selectedTerritoryHood = null;
+
+async function loadTerritoryTab() {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  try {
+    const r = await fetch('/api/territory/map', { headers: { 'X-Session-Id': sess } });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️','Error',d.error,'#f44'); return; }
+
+    const crewCard = document.getElementById('territory-crew-card');
+    const noCrew   = document.getElementById('territory-no-crew');
+    if (d.crewId) {
+      crewCard.style.display = '';
+      noCrew.style.display = 'none';
+      document.getElementById('territory-crew-name').textContent = d.crewName || 'Your Crew';
+      document.getElementById('territory-count').textContent = d.crewCount;
+      document.getElementById('territory-income').textContent = '$' + (d.totalIncome || 0).toLocaleString() + '/30min';
+    } else {
+      crewCard.style.display = 'none';
+      noCrew.style.display = '';
+    }
+
+    const mapEl = document.getElementById('territory-map');
+    mapEl.innerHTML = d.map.map(n => {
+      const mine = d.crewId && n.crew_id === d.crewId;
+      const controlled = !!n.crew_id;
+      const border = mine ? '#00ff88' : controlled ? '#ff4444' : '#333';
+      const bg = mine ? 'rgba(0,255,136,0.06)' : controlled ? 'rgba(255,68,68,0.06)' : 'rgba(255,255,255,0.03)';
+      const statusLabel = mine ? `<span style="color:#00ff88;font-size:0.78em;font-weight:700;">YOUR CREW</span>` :
+        controlled ? `<span style="color:#ff4444;font-size:0.78em;">Enemy Controlled</span>` :
+        `<span style="color:#555;font-size:0.78em;">Unclaimed</span>`;
+      const raidBtn = d.crewId && !mine ? `<button onclick="raidTerritory('${n.id}')" style="margin-top:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.4);color:#ff8888;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">⚔️ Raid</button>` :
+        mine ? `<div style="margin-top:10px;color:#00ff88;font-size:0.8em;text-align:center;">✅ Yours</div>` :
+        d.crewId ? '' : '';
+      return `<div style="background:${bg};border:1px solid ${border};border-radius:12px;padding:16px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-size:1.6em;">${n.icon}</span>
+          <div>
+            <div style="color:#e0e0e0;font-weight:700;">${n.name}</div>
+            ${statusLabel}
+          </div>
+        </div>
+        <div style="color:#888;font-size:0.82em;">Income: <strong style="color:#ffd700;">$${n.baseIncome.toLocaleString()}/30min</strong></div>
+        ${raidBtn}
+      </div>`;
+    }).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function raidTerritory(neighborhoodId) {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  try {
+    const r = await fetch(`/api/territory/raid/${neighborhoodId}`, { method:'POST', headers:{ 'X-Session-Id': sess } });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️','Raid Blocked',d.error,'#f44'); return; }
+    if (d.success) {
+      showToast('🗺️','Territory Seized!',d.message,'#00ff88');
+    } else {
+      showToast('💨','Raid Failed',d.message,'#aaa');
+    }
+    loadTerritoryTab();
+  } catch (e) { showToast('⚠️','Error',e.message,'#f44'); }
+}
+
+// ── Season Story Mode ─────────────────────────────────────────────
+async function loadSeasonTab() {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  try {
+    const r = await fetch('/api/season/story', { headers: { 'X-Session-Id': sess } });
+    const d = await r.json();
+    if (d.error) return;
+
+    document.getElementById('season-xp-value').textContent = (d.totalXp || 0).toLocaleString() + ' XP';
+    const maxXp = 5000;
+    const fillPct = Math.min(100, Math.round(((d.totalXp || 0) / maxXp) * 100));
+    document.getElementById('season-xp-fill').style.width = fillPct + '%';
+
+    const chapEl = document.getElementById('season-chapters');
+    chapEl.innerHTML = (d.chapters || []).map(ch => {
+      const locked = !ch.unlocked;
+      const claimable = ch.claimable;
+      const done = ch.completed;
+      const bg = done ? 'rgba(0,255,136,0.06)' : claimable ? 'rgba(255,215,0,0.06)' : 'rgba(255,255,255,0.02)';
+      const border = done ? '#00ff88' : claimable ? '#ffd700' : '#222';
+      const icon = done ? '✅' : locked ? '🔒' : ch.icon;
+      const btnHtml = claimable
+        ? `<button onclick="completeSeasonChapter(${ch.num})" style="background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;color:#000;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:800;font-size:0.9em;">📖 Complete Chapter</button>`
+        : done ? `<span style="color:#00ff88;font-weight:700;">✅ Completed</span>`
+        : `<span style="color:#555;font-size:0.85em;">🔒 Need ${ch.xp_required.toLocaleString()} XP</span>`;
+      return `<div style="background:${bg};border:1px solid ${border};border-radius:14px;padding:20px 24px;display:flex;gap:18px;align-items:flex-start;opacity:${locked?'0.6':'1'};">
+        <div style="font-size:2.2em;min-width:48px;text-align:center;">${icon}</div>
+        <div style="flex:1;">
+          <div style="color:#888;font-size:0.75em;text-transform:uppercase;letter-spacing:0.1em;">Chapter ${ch.num}</div>
+          <div style="color:#ffd700;font-size:1.15em;font-weight:700;margin:4px 0;">${ch.title}</div>
+          <div style="color:#aaa;font-size:0.88em;margin-bottom:14px;line-height:1.5;">${ch.body}</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:space-between;">
+            <div style="display:flex;gap:12px;font-size:0.82em;">
+              <span style="color:#00d4ff;">💰 ${ch.reward_credits.toLocaleString()} Credits</span>
+              <span style="color:#00ff88;">💵 $${ch.reward_paper.toLocaleString()}</span>
+              <span style="color:#ffd700;">🎖️ ${ch.reward_badge} Badge</span>
+            </div>
+            ${btnHtml}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (e) { console.error(e); }
+}
+
+async function completeSeasonChapter(num) {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  try {
+    const r = await fetch(`/api/season/story/complete/${num}`, { method:'POST', headers:{ 'X-Session-Id': sess } });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️','Cannot Complete',d.error,'#f44'); return; }
+    showToast('📖','Chapter Complete!',`"${d.chapter.title}" — ${d.rewards.credits} Credits + $${(d.rewards.paper||0).toLocaleString()} paper!`,'#ffd700');
+    loadSeasonTab();
+  } catch (e) { showToast('⚠️','Error',e.message,'#f44'); }
+}
+
+// ── Weapons Arsenal ───────────────────────────────────────────────
+let _arsenalSelectedWeapon = null;
+
+async function loadArsenalTab() {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  try {
+    const r = await fetch('/api/weapons/armory', { headers: { 'X-Session-Id': sess } });
+    const d = await r.json();
+    if (d.error) return;
+
+    const noWep = document.getElementById('arsenal-no-weapons');
+    const wepEl = document.getElementById('arsenal-weapons');
+
+    if (!d.weapons || d.weapons.length === 0) {
+      noWep.style.display = '';
+      wepEl.innerHTML = '';
+    } else {
+      noWep.style.display = 'none';
+      wepEl.innerHTML = d.weapons.map(w => {
+        const lvlPct = Math.round((w.xp % 100));
+        const skinBadge = w.activeSkin ? `<span style="background:rgba(255,215,0,0.15);border:1px solid #ffd700;border-radius:20px;padding:2px 10px;color:#ffd700;font-size:0.75em;">${w.activeSkin.icon} ${w.activeSkin.label}</span>` : '';
+        const abilityHtml = w.level >= 10 && w.ability
+          ? `<div style="margin-top:10px;background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);border-radius:8px;padding:8px 12px;color:#ff8888;font-size:0.82em;">🔥 <strong>${w.ability.ability}</strong> — ${w.ability.desc}</div>`
+          : w.abilityHint && w.level < 10
+          ? `<div style="margin-top:8px;color:#555;font-size:0.78em;">Ability at Lv.10: <em>${w.abilityHint.ability}</em></div>`
+          : '';
+        const modBadges = w.equippedMods.length ? w.equippedMods.map(m => `<span style="background:rgba(0,212,255,0.1);border:1px solid #00d4ff44;border-radius:20px;padding:2px 8px;color:#00d4ff;font-size:0.75em;">${m.icon} ${m.label}</span>`).join('') : '';
+        return `<div class="card" style="border:1px solid ${_arsenalSelectedWeapon===w.key?'#ffd700':'#333'};cursor:pointer;" onclick="selectArsenalWeapon('${w.key}',this)">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;">
+            <span style="font-size:2em;">${w.activeSkin?.icon || w.icon}</span>
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="color:#ffd700;font-size:1.1em;font-weight:700;">${w.label}</span>
+                <span style="color:#888;font-size:0.8em;">Tier ${w.tier}</span>
+                ${skinBadge}
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">${modBadges}</div>
+            </div>
+            <div style="text-align:right;min-width:60px;">
+              <div style="color:${w.level>=10?'#ff4444':'#00ff88'};font-size:1.3em;font-weight:900;">Lv.${w.level}</div>
+              <div style="color:#555;font-size:0.72em;">${w.xp}/999 XP</div>
+            </div>
+          </div>
+          <div style="background:#111;border-radius:4px;height:6px;overflow:hidden;margin-bottom:10px;">
+            <div style="height:100%;background:${w.level>=10?'#ff4444':'linear-gradient(90deg,#00ff88,#00d4ff)'};border-radius:4px;width:${w.level>=10?100:lvlPct}%;transition:width 0.5s;"></div>
+          </div>
+          ${abilityHtml}
+        </div>`;
+      }).join('');
+    }
+
+    _renderModShop(d.WEAPON_MODS_CATALOG, d.weapons);
+    _renderSkinShop(d.WEAPON_SKINS_CATALOG, d.weapons);
+  } catch (e) { console.error(e); }
+}
+
+function selectArsenalWeapon(key, el) {
+  _arsenalSelectedWeapon = key;
+  document.querySelectorAll('#arsenal-weapons .card').forEach(c => c.style.border = '1px solid #333');
+  el.style.border = '1px solid #ffd700';
+  document.getElementById('arsenal-mod-target').textContent = `Buying mods for: ${key.replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase())}`;
+}
+
+function _renderModShop(catalog, myWeapons) {
+  const el = document.getElementById('arsenal-mod-shop');
+  if (!catalog) return;
+  const myMods = myWeapons.flatMap(w => (w.ownedMods || []).map(m => w.key + '|' + m.key));
+  el.innerHTML = Object.values(catalog).map(m => {
+    return `<div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:1.3em;">${m.icon}</span>
+        <strong style="color:#e0e0e0;">${m.label}</strong>
+      </div>
+      <div style="color:#888;font-size:0.82em;margin-bottom:10px;">${m.desc}</div>
+      <button onclick="buyWeaponMod('${m.key}')" style="background:rgba(0,212,255,0.15);border:1px solid #00d4ff44;color:#00d4ff;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">💎 ${m.price_credits} Credits</button>
+    </div>`;
+  }).join('');
+}
+
+function _renderSkinShop(catalog, myWeapons) {
+  const el = document.getElementById('arsenal-skin-shop');
+  if (!catalog) return;
+  el.innerHTML = Object.values(catalog).map(s => {
+    return `<div style="background:#0d1b2a;border:1px solid #1e3a5f;border-radius:10px;padding:14px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:1.3em;">${s.icon}</span>
+        <strong style="color:#e0e0e0;">${s.label}</strong>
+      </div>
+      <div style="color:#888;font-size:0.82em;margin-bottom:10px;">${s.desc}</div>
+      <button onclick="buyWeaponSkin('${s.key}')" style="background:rgba(255,215,0,0.12);border:1px solid #ffd70044;color:#ffd700;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">🏆 ${s.price_credits} Credits</button>
+    </div>`;
+  }).join('');
+}
+
+async function buyWeaponMod(modKey) {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  if (!_arsenalSelectedWeapon) { showToast('⚠️','Select a Weapon','Click a weapon card above first to choose which weapon gets the mod.','#f44'); return; }
+  try {
+    const r = await fetch('/api/weapons/mods/buy', {
+      method:'POST', headers:{ 'X-Session-Id':sess,'Content-Type':'application/json' },
+      body: JSON.stringify({ weaponKey: _arsenalSelectedWeapon, modKey })
+    });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️','Cannot Buy',d.error,'#f44'); return; }
+    showToast('🔧','Mod Installed!',d.message,'#00d4ff');
+    loadArsenalTab();
+  } catch (e) { showToast('⚠️','Error',e.message,'#f44'); }
+}
+
+async function buyWeaponSkin(skinKey) {
+  const sess = localStorage.getItem('sml_session');
+  if (!sess) return;
+  if (!_arsenalSelectedWeapon) { showToast('⚠️','Select a Weapon','Click a weapon card above first to choose which weapon gets the skin.','#f44'); return; }
+  try {
+    const r = await fetch('/api/weapons/skins/buy', {
+      method:'POST', headers:{ 'X-Session-Id':sess,'Content-Type':'application/json' },
+      body: JSON.stringify({ weaponKey: _arsenalSelectedWeapon, skinKey })
+    });
+    const d = await r.json();
+    if (d.error) { showToast('⚠️','Cannot Buy',d.error,'#f44'); return; }
+    showToast('🎨','Skin Unlocked!',d.message,'#ffd700');
+    loadArsenalTab();
+  } catch (e) { showToast('⚠️','Error',e.message,'#f44'); }
+}
+
+// Socket handlers for new features
+(function() {
+  const _origHookSocket = window._hookSocket;
+  if (typeof _origHookSocket === 'function') {
+    window._hookSocket = function(socket) {
+      _origHookSocket(socket);
+      socket.on('territory_captured', data => {
+        showToast('🗺️','Territory Seized!',`${data.icon} ${data.name} is now yours!`,'#00ff88');
+      });
+      socket.on('territory_lost', data => {
+        showToast('⚠️','Territory Lost!','Enemy crew took one of your neighborhoods!','#ff4444');
+      });
+      socket.on('territory_income', data => {
+        showToast('💰','Territory Income',`${data.icon} ${data.neighborhood}: +$${data.income.toLocaleString()}`,'#ffd700');
+      });
+      socket.on('territory_update', () => {
+        const active = document.getElementById('territory')?.classList.contains('active');
+        if (active) loadTerritoryTab();
+      });
+      socket.on('weapon_xp_update', data => {
+        if (data.abilityUnlocked) {
+          showToast('🔥','Ability Unlocked!',`Your weapon reached Level 10 — new ability active!`,'#ff4444');
+        }
+      });
+      socket.on('season_chapter_complete', data => {
+        showToast('📖','Chapter Complete!',`"${data.title}" — rewards claimed!`,'#ffd700');
+      });
+    };
+  }
+})();
 </script>
 </body>
 </html>

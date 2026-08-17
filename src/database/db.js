@@ -849,6 +849,61 @@ class DB {
         entered_at     INTEGER NOT NULL,
         UNIQUE(war_id, user_id)
       )`,
+
+      // ── Crew Territory System ────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS crew_territories (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        neighborhood   TEXT NOT NULL UNIQUE,
+        crew_id        TEXT,
+        captured_at    INTEGER DEFAULT 0,
+        last_income_at INTEGER DEFAULT 0
+      )`,
+      `CREATE TABLE IF NOT EXISTS territory_raids (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        neighborhood   TEXT NOT NULL,
+        attacker_crew  TEXT NOT NULL,
+        defender_crew  TEXT,
+        success        INTEGER NOT NULL DEFAULT 0,
+        created_at     INTEGER NOT NULL
+      )`,
+
+      // ── Seasonal Story Mode ──────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS season_progress (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        season_key   TEXT NOT NULL,
+        chapter_num  INTEGER NOT NULL,
+        completed_at INTEGER NOT NULL,
+        UNIQUE(user_id, season_key, chapter_num)
+      )`,
+
+      // ── Upgraded Weapons Tree ────────────────────────────────────────────
+      `CREATE TABLE IF NOT EXISTS weapon_xp (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        weapon_key TEXT NOT NULL,
+        xp         INTEGER NOT NULL DEFAULT 0,
+        level      INTEGER NOT NULL DEFAULT 1,
+        UNIQUE(user_id, weapon_key)
+      )`,
+      `CREATE TABLE IF NOT EXISTS weapon_mods (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        weapon_key   TEXT NOT NULL,
+        mod_key      TEXT NOT NULL,
+        equipped     INTEGER NOT NULL DEFAULT 0,
+        purchased_at INTEGER NOT NULL,
+        UNIQUE(user_id, weapon_key, mod_key)
+      )`,
+      `CREATE TABLE IF NOT EXISTS weapon_skins (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      TEXT NOT NULL,
+        weapon_key   TEXT NOT NULL,
+        skin_key     TEXT NOT NULL,
+        active       INTEGER NOT NULL DEFAULT 0,
+        purchased_at INTEGER NOT NULL,
+        UNIQUE(user_id, weapon_key, skin_key)
+      )`,
     ];
     for (const sql of stmts) await this.run(sql);
     // Add columns for existing deployments (no-op if already exists)
@@ -858,6 +913,15 @@ class DB {
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_elite INTEGER DEFAULT 0'); } catch (_) {}
     await db.run(`ALTER TABLE accounts ADD COLUMN heat_level INTEGER NOT NULL DEFAULT 0`).catch(() => {});
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_vip INTEGER DEFAULT 0'); } catch (_) {}
+
+    // Seed crew_territories with all 10 neighborhoods (uncontrolled)
+    const terrCount = await db.get('SELECT COUNT(*) as c FROM crew_territories');
+    if (terrCount.c === 0) {
+      const HOOD_IDS = ['downtown','harbor','eastside','westside','uptown','strip','industrial','airport','financial','projects'];
+      for (const h of HOOD_IDS) {
+        await db.run('INSERT OR IGNORE INTO crew_territories (neighborhood, crew_id, captured_at, last_income_at) VALUES (?,NULL,0,0)', [h]);
+      }
+    }
 
     // Seed card_definitions with initial cards if empty
     const cardCount = await db.get('SELECT COUNT(*) as c FROM card_definitions');
