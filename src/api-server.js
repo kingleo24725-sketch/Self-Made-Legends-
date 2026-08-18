@@ -2232,8 +2232,9 @@ async function _incrementCommunityChallenge(type, amount, userId) {
       const participants = await db.all('SELECT user_id FROM challenge_participants WHERE week_key = ? AND rewarded = 0', [wk]);
       for (const p of participants) {
         await db.run(
-          'UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?',
-          [COMMUNITY_CHALLENGE_REWARD, now, p.user_id]
+          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+           ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+          [p.user_id, COMMUNITY_CHALLENGE_REWARD, now, COMMUNITY_CHALLENGE_REWARD, now]
         );
         await db.run('UPDATE challenge_participants SET rewarded = 1 WHERE week_key = ? AND user_id = ?', [wk, p.user_id]);
         await _syncLeaderboard(p.user_id);
@@ -3284,7 +3285,12 @@ app.post("/api/referrals/claim-milestone", authenticateUser, async (req, res) =>
         await db.run('INSERT OR IGNORE INTO referral_milestones (user_id, milestone, claimed_at) VALUES (?,?,?)', [uid, m.count, Date.now()]);
         if (m.credits) await _addCredits(uid, m.credits, 'referral_milestone', `Referral milestone: ${m.label}`);
         if (m.paper) {
-          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [m.paper, uid]);
+          const claimNow = Date.now();
+          await db.run(
+            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+             ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+            [uid, m.paper, claimNow, m.paper, claimNow]
+          );
           await _syncLeaderboard(uid);
         }
         await _notify(uid, 'badge', `🏆 ${m.badge} Badge Unlocked!`, `You earned the ${m.badge} badge + ${m.credits.toLocaleString()} credits for ${m.label}!`);
@@ -3802,7 +3808,11 @@ app.post('/api/season/story/complete/:chapterNum', authenticateUser, async (req,
 
     if (chapter.reward_credits > 0) await _addCredits(uid, chapter.reward_credits, 'season_story', `Season story Ch.${chapterNum}: ${chapter.title}`);
     if (chapter.reward_paper > 0) {
-      await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id=?', [chapter.reward_paper, uid]);
+      await db.run(
+        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+         ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+        [uid, chapter.reward_paper, now, chapter.reward_paper, now]
+      );
       await _syncLeaderboard(uid);
     }
     if (chapter.reward_badge) {
@@ -5672,7 +5682,11 @@ app.post('/api/boxes/open', authenticateUser, async (req, res) => {
   const drop = _lootDraw(box.rarity);
   await db.run('UPDATE mystery_boxes SET opened_at = ? WHERE id = ?', [Date.now(), boxId]);
   if (drop.type === 'paper') {
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [drop.value, req.user.userId]);
+    await db.run(
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+       ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+      [req.user.userId, drop.value, Date.now(), drop.value, Date.now()]
+    );
     await _syncLeaderboard(req.user.userId);
   } else if (drop.type === 'credits') {
     await _addCredits(req.user.userId, drop.value, 'loot_box', 'Loot box reward');
@@ -5705,7 +5719,11 @@ app.post('/api/flash-challenge/claim', authenticateUser, async (req, res) => {
   if (already) return res.status(400).json({ error: 'Already claimed' });
   await db.run('INSERT INTO flash_challenge_completions (challenge_id, user_id, completed_at) VALUES (?, ?, ?)', [challengeId, uid, now]);
   if (ch.reward_type === 'paper') {
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [ch.reward_value, uid]);
+    await db.run(
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+       ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+      [uid, ch.reward_value, now, ch.reward_value, now]
+    );
     await _syncLeaderboard(uid);
   } else if (ch.reward_type === 'credits') {
     await _addCredits(uid, ch.reward_value, 'flash_challenge', ch.title);

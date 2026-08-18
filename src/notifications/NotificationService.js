@@ -47,7 +47,7 @@ class NotificationService {
         <h1 style="color:#00d4ff;">Welcome to Come Up, ${name}!</h1>
         <p style="color:#aaa;line-height:1.7;">You just joined the AI trading game where legends are made. Here's how to get started:</p>
         <div style="background:#1a1f2e;border-radius:8px;padding:20px;margin:20px 0;">
-          <p style="margin:8px 0;">🤖 <strong style="color:#00ff88;">AI trades for you</strong> — just start the engine and watch</p>
+          <p style="margin:8px 0;">🤖 <strong style="color:#00ff88;">AI coach suggests trades</strong> — you're always in control, trade manually anytime</p>
           <p style="margin:8px 0;">🏆 <strong style="color:#00ff88;">Top 10 leaderboard</strong> — compete against players nationwide</p>
           <p style="margin:8px 0;">🪙 <strong style="color:#00ff88;">Create your own crypto token</strong> — launch it and let others trade it</p>
           <p style="margin:8px 0;">🎖️ <strong style="color:#00ff88;">Earn achievement badges</strong> — unlock milestones as you play</p>
