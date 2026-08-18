@@ -209,7 +209,8 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Tournament Entry ($10.00 one-time)
+  // DEPRECATED — tournament entry now uses SML Credits (1,000 Credits), not Stripe.
+  // This method is superseded by the Credits-based flow in POST /api/stripe/tournament-entry.
   async createTournamentEntryCheckout(userId, userEmail, tournamentId) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -465,8 +466,11 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Card pack direct purchase checkout
+  // DISABLED — card packs are now Credits-only. Real-money direct purchase removed.
   async createCardPackCheckout(userId, userEmail, packType) {
+    throw new Error('Card packs are purchased with SML Credits only. Buy Credits above, then open packs in the Cards tab.');
+  }
+  async _createCardPackCheckout_disabled(userId, userEmail, packType) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const PACKS = {
       rare:      { label: 'Rare Card Pack',      desc: '5 virtual collectible cards. Odds: Uncommon 50%, Rare 40%, Epic 9%, Legendary 1%. Virtual items only — no cash value.',       amount: 999 },
@@ -488,8 +492,11 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Premium Loot Box 5-pack checkout
+  // DISABLED — loot boxes are now Credits-only. Real-money direct purchase removed.
   async createLootBoxCheckout(userId, userEmail) {
+    throw new Error('Loot boxes are purchased with SML Credits only. Buy Credits above, then open boxes in-game.');
+  }
+  async _createLootBoxCheckout_disabled(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],

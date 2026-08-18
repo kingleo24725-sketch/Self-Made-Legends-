@@ -1090,6 +1090,9 @@
 
     <!-- Stocks Section -->
     <section class="section" id="stocks">
+      <div style="background:rgba(255,200,0,0.08); border:1px solid rgba(255,200,0,0.3); border-radius:6px; padding:10px 14px; margin-bottom:16px; font-size:0.8em; color:#ccc;">
+        📊 <strong style="color:#ffd700;">Simulated prices only</strong> — prices shown do not reflect real market data and are for educational purposes only. Not financial advice.
+      </div>
       <div style="text-align: center; margin-bottom: 30px;">
         <h2 style="color: #00d4ff; font-size: 1.6em;">📈 Professional Stock Trading</h2>
         <p style="color: #00ff88; font-size: 0.95em;">Powered by Self Made Legends Entertainment AI</p>
@@ -1368,7 +1371,7 @@
         <div class="card" style="border:1px solid #ff6b6b; position:relative; overflow:hidden;">
           <div style="position:absolute;top:-14px;right:-8px;font-size:4em;opacity:0.07;pointer-events:none;">⚔️</div>
           <div style="color:#ff6b6b; font-weight:bold; font-size:1.05em; margin-bottom:4px;">⚔️ Tournament Entry</div>
-          <div style="color:#ff6b6b; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">$10 <span style="font-size:0.42em; color:#555; font-weight:normal;">/tournament</span></div>
+          <div style="color:#ff6b6b; font-size:1.9em; font-weight:bold; margin-bottom:12px; font-variant-numeric:tabular-nums;">1,000 <span style="font-size:0.42em; color:#555; font-weight:normal;">Credits /tournament</span></div>
           <ul style="color:#bbb; font-size:0.86em; list-style:none; padding:0; margin:0 0 12px; line-height:2.1;">
             <li>🏆 Compete for SML Bucks prizes</li>
             <li>💰 80% of pool pays top 3 players in SML Bucks</li>
@@ -1378,7 +1381,7 @@
             <div style="color:#666; font-size:0.68em; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">Current Prize Pool (80%)</div>
             <div id="prize-pool-amount" style="color:#ff6b6b; font-size:1.7em; font-weight:bold; font-variant-numeric:tabular-nums;">—</div>
           </div>
-          <button class="btn btn-danger" id="tournament-entry-btn" onclick="enterTournament()" style="width:100%;">⚔️ Enter Tournament — $10</button>
+          <button class="btn btn-danger" id="tournament-entry-btn" onclick="enterTournament()" style="width:100%;">⚔️ Enter Tournament — 1,000 Credits</button>
           <div id="tournament-entry-status" style="color:#777; font-size:0.78em; margin-top:8px; text-align:center; min-height:18px;"></div>
         </div>
 
@@ -2550,18 +2553,16 @@
             <div style="font-size:2em; margin-bottom:6px;">💫</div>
             <div style="color:#00d4ff; font-weight:700;">Rare Pack</div>
             <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · rare guaranteed</div>
-            <div style="color:#00d4ff; font-weight:700; margin-bottom:8px;">300 Credits or $9.99</div>
-            <button onclick="openCardPack('rare')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em; margin-bottom:6px;">Open (Credits)</button>
-            <button onclick="buyCardPackStripe('rare')" style="background:transparent; border:1px solid #00d4ff; color:#00d4ff; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy ($9.99)</button>
+            <div style="color:#00d4ff; font-weight:700; margin-bottom:8px;">400 Credits</div>
+            <button onclick="openCardPack('rare')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack — 400 Credits</button>
             <p style="color:#555; font-size:0.72em; font-style:italic; margin:8px 0 0;">No purchase necessary. Complete daily missions to earn free packs. <a href="/terms.html" style="color:#444;">Terms</a></p>
           </div>
           <div style="background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(0,0,0,0.3)); border:1px solid rgba(255,215,0,0.4); border-radius:10px; padding:16px; text-align:center;">
             <div style="font-size:2em; margin-bottom:6px;">👑</div>
             <div style="color:#ffd700; font-weight:700;">Legendary Pack</div>
             <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · legendary+ pool</div>
-            <div style="color:#ffd700; font-weight:700; margin-bottom:8px;">1,000 Credits or $19.99</div>
-            <button onclick="openCardPack('legendary')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em; margin-bottom:6px;">Open (Credits)</button>
-            <button onclick="buyCardPackStripe('legendary')" style="background:transparent; border:1px solid #ffd700; color:#ffd700; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy ($19.99)</button>
+            <div style="color:#ffd700; font-weight:700; margin-bottom:8px;">1,200 Credits</div>
+            <button onclick="openCardPack('legendary')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack — 1,200 Credits</button>
             <p style="color:#555; font-size:0.72em; font-style:italic; margin:8px 0 0;">No purchase necessary. Complete daily missions to earn free packs. <a href="/terms.html" style="color:#444;">Terms</a></p>
           </div>
         </div>
@@ -3811,26 +3812,27 @@
       if (!sessionId) { alert('Please log in first.'); return; }
       const btn = document.getElementById('tournament-entry-btn');
       const statusEl = document.getElementById('tournament-entry-status');
-      btn.disabled = true; btn.textContent = '⏳ Setting up...';
+      btn.disabled = true; btn.textContent = '⏳ Entering...';
       statusEl.textContent = '';
       apiCall('/api/stripe/tournament-entry', 'POST', {})
         .then(data => {
-          if (data.checkoutUrl) {
-            window.location.href = data.checkoutUrl;
+          if (data.success) {
+            btn.textContent = '✅ Entered!';
+            statusEl.textContent = data.message || 'You\'re in! Good luck!';
           } else if (data.alreadyEntered) {
             btn.textContent = '✅ Already Entered';
             statusEl.textContent = "You're already in this tournament!";
           } else if (data.noTournament) {
-            btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — $5';
+            btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — 1,000 Credits';
             statusEl.textContent = 'No active tournament right now. Check back soon!';
           } else {
-            btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — $5';
-            alert(data.error || 'Could not create payment session');
+            btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — 1,000 Credits';
+            alert(data.error || 'Could not enter tournament');
           }
         })
         .catch(() => {
-          btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — $5';
-          alert('Payment setup failed. Please try again.');
+          btn.disabled = false; btn.textContent = '⚔️ Enter Tournament — 1,000 Credits';
+          alert('Entry failed. Please try again.');
         });
     }
 
