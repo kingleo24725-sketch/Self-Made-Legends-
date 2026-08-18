@@ -1397,11 +1397,17 @@ app.post("/api/transfer/send-paper", authenticateUser, async (req, res) => {
 app.post("/api/stripe/gift-paper-money", authenticateUser, async (req, res) => {
   if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
   const uid = req.user.userId;
-  const { recipientId, packageKey } = req.body;
-  if (!recipientId || !packageKey) return res.status(400).json({ error: 'recipientId and packageKey required' });
+  let { recipientId, recipientEmail, packageKey } = req.body;
+  // Support lookup by email when recipientId is not provided
+  if (!recipientId && recipientEmail) {
+    const row = await db.get('SELECT user_id FROM accounts WHERE LOWER(email) = LOWER(?)', [recipientEmail.trim()]);
+    if (!row) return res.status(404).json({ error: 'No account found for that email address' });
+    recipientId = row.user_id;
+  }
+  if (!recipientId || !packageKey) return res.status(400).json({ error: 'recipientId (or recipientEmail) and packageKey required' });
   if (recipientId === uid) return res.status(400).json({ error: 'Cannot gift to yourself' });
   const pkg = PAPER_MONEY_PACKAGES[packageKey];
-  if (!pkg) return res.status(400).json({ error: 'Unknown package' });
+  if (!pkg) return res.status(400).json({ error: `Unknown package. Valid options: ${Object.keys(PAPER_MONEY_PACKAGES).join(', ')}` });
   const recipient = accountManager.getAccountById(recipientId);
   if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
   try {
@@ -5676,8 +5682,8 @@ app.post('/api/boxes/open', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/loot-box-premium', authenticateUser, async (req, res) => {
-  // Real-money loot boxes removed. Purchase Credits above, then open boxes in-game.
-  res.status(400).json({ error: 'Loot boxes are purchased with SML Credits only. Buy Credits above, then open boxes in the game.' });
+  // Real-money loot boxes removed. Boxes are earned through gameplay.
+  res.status(400).json({ error: 'Loot boxes are earned through gameplay — complete daily missions, win heists, and finish flash challenges to earn boxes.' });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════

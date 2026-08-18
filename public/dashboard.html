@@ -15,6 +15,7 @@
   <meta name="twitter:title" content="Self-Made Legends — AI Trading Game">
   <meta name="twitter:description" content="AI-powered stock trading game. Compete nationally. Create crypto. Build your legend.">
   <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
   <meta name="theme-color" content="#00d4ff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -226,7 +227,8 @@
       letter-spacing: 2px;
     }
 
-    .nav-center { display: flex; gap: 20px; }
+    .nav-center { display: flex; gap: 20px; position: relative; }
+    .nav-center::after { content: ''; position: absolute; right: 0; top: 0; height: 100%; width: 40px; background: linear-gradient(to left, #0c1018, transparent); pointer-events: none; z-index: 1; }
 
     .nav-tab {
       padding: 10px 20px;
@@ -552,6 +554,36 @@
 </head>
 <body>
 
+  <canvas id="bg-stars" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none;"></canvas>
+  <script>
+  (function(){
+    var c = document.getElementById('bg-stars');
+    if (!c) return;
+    var ctx = c.getContext('2d');
+    var stars = [];
+    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
+    resize();
+    window.addEventListener('resize', resize);
+    for (var i = 0; i < 120; i++) {
+      stars.push({ x: Math.random(), y: Math.random(), r: Math.random() * 1.2 + 0.4, s: Math.random() * 0.2 + 0.1, o: Math.random() * 0.25 + 0.15 });
+    }
+    function draw() {
+      ctx.clearRect(0, 0, c.width, c.height);
+      for (var i = 0; i < stars.length; i++) {
+        var st = stars[i];
+        st.y -= st.s / c.height;
+        if (st.y < 0) { st.y = 1; st.x = Math.random(); }
+        ctx.beginPath();
+        ctx.arc(st.x * c.width, st.y * c.height, st.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,212,255,' + st.o + ')';
+        ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    draw();
+  })();
+  </script>
+
   <!-- ── Onboarding Modal ─────────────────────────────────────── -->
   <div class="modal-overlay" id="onboarding-modal">
     <div class="modal">
@@ -560,6 +592,11 @@
           <div style="font-size:3em;">👑</div>
           <h2>Welcome to Self-Made Legends!</h2>
           <p style="color:#aaa; margin-top:8px;">The AI trading game where legends are made. Here's how it works in 3 steps.</p>
+          <div style="display:flex; gap:24px; justify-content:center; margin-top:20px;">
+            <div style="text-align:center;"><div style="font-size:2em;">📈</div><div style="color:#888; font-size:0.78em;">Trade</div></div>
+            <div style="text-align:center;"><div style="font-size:2em;">🏆</div><div style="color:#888; font-size:0.78em;">Compete</div></div>
+            <div style="text-align:center;"><div style="font-size:2em;">💰</div><div style="color:#888; font-size:0.78em;">Earn</div></div>
+          </div>
         </div>
       </div>
       <div class="modal-step" id="step-1">
@@ -1214,7 +1251,7 @@
       <!-- Real NFT Collections -->
       <div class="card">
         <h2>🖼️ Trending NFT Collections (Real Market)</h2>
-        <div id="trending-nfts"></div>
+        <div id="trending-nfts"><p style="color:#555; text-align:center; padding:20px;">No trending NFTs yet. Mint the first one below.</p></div>
       </div>
     </section>
 
@@ -1475,11 +1512,11 @@
             <div style="color:#aaa; font-size:0.83em; margin-bottom:8px;">Gift SML Bucks</div>
             <input id="gift-pm-email" type="email" placeholder="Recipient email" style="width:100%; box-sizing:border-box; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:8px 12px; font-size:0.85em; outline:none; margin-bottom:8px;">
             <select id="gift-pm-tier" style="width:100%; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:8px 12px; font-size:0.85em; outline:none; margin-bottom:8px;">
-              <option value="starter">$5,000 — $5</option>
-              <option value="basic">$15,000 — $10</option>
-              <option value="pro">$50,000 — $25</option>
-              <option value="elite">$150,000 — $50</option>
-              <option value="legend">$500,000 — $100</option>
+              <option value="hustle">$1,000 SML Bucks — $9.99</option>
+              <option value="grind">$5,000 SML Bucks — $15.99</option>
+              <option value="investor">$25,000 SML Bucks — $20.00</option>
+              <option value="whale">$50,000 SML Bucks — $25.00</option>
+              <option value="ultimate">$200,000 SML Bucks — $80.00</option>
             </select>
             <button onclick="giftPaperMoney()" style="width:100%; background:rgba(0,212,255,0.15); border:1px solid #00d4ff; border-radius:8px; color:#00d4ff; padding:9px; font-weight:700; cursor:pointer; font-size:0.85em;">🎁 Send SML Bucks Gift</button>
           </div>
@@ -1722,6 +1759,23 @@
           <div id="bj-new-game" style="display:none; margin-top:12px;">
             <button onclick="bjReset()" style="background:rgba(0,212,255,0.15); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:10px 20px; cursor:pointer; width:100%; font-weight:bold;">🔄 New Hand</button>
           </div>
+        </div>
+
+        <!-- VIP Game Pass -->
+        <div class="card" style="min-width:300px; border:1px solid rgba(255,215,0,0.4); background:rgba(255,215,0,0.04);">
+          <h2 style="color:#ffd700;">🔒 VIP Room</h2>
+          <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Unlock VIP game modes, higher-stakes simulated tables, and exclusive member features.</p>
+          <div style="background:rgba(255,215,0,0.08); border:1px solid rgba(255,215,0,0.2); border-radius:8px; padding:12px; margin-bottom:16px; text-align:center;">
+            <div style="color:#ffd700; font-size:1.4em; font-weight:bold;">$14.99 / month</div>
+            <div style="color:#888; font-size:0.78em; margin-top:4px;">VIP Game Pass — cancel anytime</div>
+          </div>
+          <ul style="color:#aaa; font-size:0.85em; margin:0 0 16px 0; padding-left:18px; line-height:1.8;">
+            <li>High-stakes simulated tables (10× chip limits)</li>
+            <li>VIP-only weekly jackpot event</li>
+            <li>Exclusive VIP badge on your profile</li>
+            <li>Priority AI coach responses</li>
+          </ul>
+          <button onclick="joinCasinoVIP()" style="background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:13px; font-weight:bold; cursor:pointer; width:100%; font-size:1em;">🔓 Join VIP Room — $14.99/mo</button>
         </div>
 
         <!-- Horse Racing -->
@@ -3372,9 +3426,9 @@
           window.location.href = data.checkoutUrl;
         } else {
           alert(data.error || 'Payment setup failed. Please try again.');
-          btn.disabled = false; btn.textContent = 'Get Season Pass — $1.00';
+          btn.disabled = false; btn.textContent = 'Get Season Pass — $14.99';
         }
-      }).catch(() => { btn.disabled = false; btn.textContent = 'Get Season Pass — $2.99'; });
+      }).catch(() => { btn.disabled = false; btn.textContent = 'Get Season Pass — $14.99'; });
     }
 
     function paywallLogout() {
@@ -3695,7 +3749,7 @@
             setTimeout(() => { window.location.href = data.checkoutUrl; }, 800);
           } else {
             btn.disabled = false;
-            btn.textContent = '💳 Subscribe — $10/month';
+            btn.textContent = '💳 Subscribe — $15/month';
             alert('Error: ' + (data.error || 'Could not create payment session'));
           }
         })
@@ -3773,9 +3827,9 @@
     function buySMLCredits(pkg) {
       if (!sessionId) { alert('Please log in first.'); return; }
       const labels = {
-        starter:  'Starter Pack (500 Credits) — $5',
-        legends:  'Legends Pack (2,500 Credits) — $20',
-        champion: 'Champion Pack (7,000 Credits) — $50',
+        starter:  'Starter Pack (500 Credits) — $10',
+        legends:  'Legends Pack (2,500 Credits) — $25',
+        champion: 'Champion Pack (7,000 Credits) — $55',
       };
       if (!confirm('Purchase ' + (labels[pkg] || pkg) + '?\n\nYou\'ll be taken to Stripe secure checkout.')) return;
       apiCall('/api/stripe/credits/topup', 'POST', { package: pkg })
@@ -3787,6 +3841,16 @@
           }
         })
         .catch(() => alert('Payment setup failed. Please try again.'));
+    }
+
+    async function joinCasinoVIP() {
+      if (!sessionId) { alert('Please log in first.'); return; }
+      if (!confirm('Join VIP Game Pass — $14.99/month?\n\nRenews automatically. Cancel anytime in Account Settings.\n\nYou\'ll be taken to Stripe secure checkout.')) return;
+      try {
+        const data = await apiCall('/api/stripe/casino-vip', 'POST', {});
+        if (data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+        else { alert(data.error || 'Could not create payment session'); }
+      } catch (e) { alert('Payment setup failed. Please try again.'); }
     }
 
     function buyCoachPro() {
@@ -8214,11 +8278,11 @@ window.buyLegendBundle = async function() {
 
 window.giftPaperMoney = async function() {
   if (!sesh()) return;
-  const email = (document.getElementById('gift-pm-email') || {}).value || '';
-  const tier  = (document.getElementById('gift-pm-tier')  || {}).value || 'starter';
+  const email      = (document.getElementById('gift-pm-email') || {}).value || '';
+  const packageKey = (document.getElementById('gift-pm-tier')  || {}).value || 'hustle';
   if (!email) { showToast('⚠️','Missing Email','Enter the recipient email.','#ffd700'); return; }
   try {
-    const r = await fetch('/api/stripe/gift-paper-money', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ recipientEmail: email, tier }) });
+    const r = await fetch('/api/stripe/gift-paper-money', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ recipientEmail: email, packageKey }) });
     const d = await r.json();
     if (d.checkoutUrl) { window.location.href = d.checkoutUrl; }
     else showToast('❌','Error',d.error||'Gift setup failed','#ff4444');
@@ -8716,20 +8780,6 @@ async function openCardPack(packType) {
     }
     showToast('🃏', 'Pack Opened!', `Got ${d.cards?.length || 0} cards!`, '#ffd700');
     setTimeout(loadCardsTab, 1500);
-  } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
-}
-
-async function buyCardPackStripe(packType) {
-  const sid = localStorage.getItem('sml_session');
-  if (!sid) return;
-  try {
-    const r = await fetch('/api/stripe/card-pack', {
-      method: 'POST',
-      headers: { 'x-session-id': sid, 'content-type': 'application/json' },
-      body: JSON.stringify({ packType })
-    });
-    const d = await r.json();
-    if (d.checkoutUrl) window.location.href = d.checkoutUrl;
   } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
 }
 
