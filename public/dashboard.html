@@ -2982,7 +2982,7 @@
   </footer>
 
   <script>
-    let sessionId = null;
+    let sessionId = localStorage.getItem('sessionId') || null;
     let currentUser = null;
     let isDemo = false;
 
@@ -3357,6 +3357,9 @@
     function setSessionId(id) {
       sessionId = id;
       localStorage.setItem('sessionId', id);
+      // Many features (spin wheel, loot boxes, heists, races, casino, etc.)
+      // read the session under this separate key -- keep both in sync.
+      localStorage.setItem('sml_session', id);
     }
 
     function getSessionId() {
@@ -3373,6 +3376,7 @@
       if (check.error) {
         sessionId = null;
         localStorage.removeItem('sessionId');
+        localStorage.removeItem('sml_session');
         return; // stay on guest paywall
       }
       // Any logged-in user gets full access — Season Pass is an optional upgrade
@@ -3463,6 +3467,7 @@
       if (sid) fetch('/api/auth/logout', { method: 'POST', headers: { 'X-Session-Id': sid } });
       sessionId = null;
       localStorage.removeItem('sessionId');
+      localStorage.removeItem('sml_session');
       currentUser = null;
       document.getElementById('paywall-overlay').style.display = 'flex';
       document.getElementById('paywall-guest').style.display = 'flex';
@@ -3604,6 +3609,7 @@
         .then(() => {
           sessionId = null;
           localStorage.removeItem('sessionId');
+          localStorage.removeItem('sml_session');
           currentUser = null;
           document.getElementById('user-info').textContent = '🔑 Log In';
           document.getElementById('user-info').classList.add('logged-out');
@@ -7489,7 +7495,16 @@ async function claimDailyReward() {
 
 // ── Shared helpers for new features ──────────────────────────────────────────
 function _smlSesh() {
-  try { return JSON.parse(localStorage.getItem('sml_session') || 'null'); } catch(_) { return null; }
+  const raw = localStorage.getItem('sml_session');
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    // Stored as a plain session-id string (the common case) rather than a
+    // JSON object -- wrap it so callers can still read .sessionId off it.
+    return (parsed && typeof parsed === 'object') ? parsed : { sessionId: raw };
+  } catch(_) {
+    return { sessionId: raw };
+  }
 }
 function _smlHdrs() {
   const s = _smlSesh();
