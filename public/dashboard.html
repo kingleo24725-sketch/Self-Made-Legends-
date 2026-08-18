@@ -853,6 +853,7 @@
             <span class="metric-value" id="active-assets">0</span>
           </div>
           <button class="btn btn-primary" style="width:100%; margin-top:10px;" id="toggle-btn" onclick="toggleTrading()">Start Trading</button>
+          <p style="color:#666; font-size:0.72em; margin-top:6px; text-align:center; line-height:1.4;">This runs a separate market simulation for the AI coach to learn from — it never buys or sells anything in your own portfolio. Use the Trade tab to trade manually.</p>
           <div id="share-rank-bar" style="display:none; margin-top:14px; padding:12px; background:rgba(255,215,0,0.07); border:1px solid rgba(255,215,0,0.2); border-radius:8px;"></div>
         </div>
 
@@ -8613,6 +8614,7 @@ async function openNextBox() {
       segs.forEach((id, i) => { document.getElementById(id).textContent = i === 1 ? (d.icon || '🎁') : '✨'; });
     }
     refreshBoxCount();
+    refreshPortfolio();
   } catch (e) {
     clearInterval(spinInterval);
     modal.style.display = 'none';
@@ -8667,6 +8669,7 @@ async function claimFlashChallenge() {
     const d = await r.json();
     if (d.error) { showToast('⚠️', 'Challenge', d.error, '#ff6400'); return; }
     showToast('⚡', 'Flash Challenge!', d.message || 'Reward claimed!', '#ff6400');
+    refreshPortfolio();
   } catch (e) { showToast('⚠️', 'Error', e.message, '#ff4444'); }
 }
 
