@@ -144,36 +144,36 @@ const CHALLENGE_ACCEPT_WIN   = 3_600_000;
 
 // ── Underworld Armory ─────────────────────────────────────────────────────────
 const WEAPONS = {
-  rusty_shiv:       { tier:1,  label:'Rusty Shiv',          icon:'🔪', price_cents:  599, successBonus:0.03, maxPctBonus:0.01, catchReduction:0.00 },
-  switchblade:      { tier:2,  label:'Switchblade',         icon:'⚔️', price_cents:  699, successBonus:0.05, maxPctBonus:0.02, catchReduction:0.00 },
-  baseball_bat:     { tier:3,  label:'Baseball Bat',        icon:'🏏', price_cents:  799, successBonus:0.08, maxPctBonus:0.03, catchReduction:0.00 },
-  crowbar:          { tier:4,  label:'Crowbar',             icon:'🪝', price_cents:  999, successBonus:0.10, maxPctBonus:0.05, catchReduction:0.03 },
-  brass_knuckles:   { tier:5,  label:'Brass Knuckles',      icon:'👊', price_cents: 1299, successBonus:0.12, maxPctBonus:0.07, catchReduction:0.05 },
-  taser:            { tier:6,  label:'Taser',               icon:'⚡', price_cents: 1499, successBonus:0.15, maxPctBonus:0.09, catchReduction:0.08 },
-  smoke_grenade:    { tier:7,  label:'Smoke Grenade',       icon:'💨', price_cents: 1999, successBonus:0.18, maxPctBonus:0.12, catchReduction:0.10 },
-  glock:            { tier:8,  label:'Glock 19',            icon:'🔫', price_cents: 2499, successBonus:0.22, maxPctBonus:0.15, catchReduction:0.13 },
-  ak47:             { tier:9,  label:'AK-47',               icon:'🪖', price_cents: 3999, successBonus:0.28, maxPctBonus:0.20, catchReduction:0.18 },
-  military_arsenal: { tier:10, label:'Military Arsenal',    icon:'💣', price_cents: 5499, successBonus:0.35, maxPctBonus:0.25, catchReduction:0.22 },
+  rusty_shiv:       { tier:1,  label:'Rusty Shiv',          icon:'🔪', price_cents:  300, successBonus:0.03, maxPctBonus:0.01, catchReduction:0.00 },
+  switchblade:      { tier:2,  label:'Switchblade',         icon:'⚔️', price_cents:  350, successBonus:0.05, maxPctBonus:0.02, catchReduction:0.00 },
+  baseball_bat:     { tier:3,  label:'Baseball Bat',        icon:'🏏', price_cents:  400, successBonus:0.08, maxPctBonus:0.03, catchReduction:0.00 },
+  crowbar:          { tier:4,  label:'Crowbar',             icon:'🪝', price_cents:  500, successBonus:0.10, maxPctBonus:0.05, catchReduction:0.03 },
+  brass_knuckles:   { tier:5,  label:'Brass Knuckles',      icon:'👊', price_cents: 650, successBonus:0.12, maxPctBonus:0.07, catchReduction:0.05 },
+  taser:            { tier:6,  label:'Taser',               icon:'⚡', price_cents: 750, successBonus:0.15, maxPctBonus:0.09, catchReduction:0.08 },
+  smoke_grenade:    { tier:7,  label:'Smoke Grenade',       icon:'💨', price_cents: 1000, successBonus:0.18, maxPctBonus:0.12, catchReduction:0.10 },
+  glock:            { tier:8,  label:'Glock 19',            icon:'🔫', price_cents: 1250, successBonus:0.22, maxPctBonus:0.15, catchReduction:0.13 },
+  ak47:             { tier:9,  label:'AK-47',               icon:'🪖', price_cents: 2000, successBonus:0.28, maxPctBonus:0.20, catchReduction:0.18 },
+  military_arsenal: { tier:10, label:'Military Arsenal',    icon:'💣', price_cents: 2750, successBonus:0.35, maxPctBonus:0.25, catchReduction:0.22 },
 };
 
 const GUARD_DOGS = {
-  chihuahua:        { tier:1,  label:'Chihuahua',           icon:'🐕', price_cents:  599, biteChance:0.15, biteDamagePct:0.03 },
-  pomeranian:       { tier:2,  label:'Pomeranian',          icon:'🐩', price_cents:  699, biteChance:0.20, biteDamagePct:0.05 },
-  beagle:           { tier:3,  label:'Beagle',              icon:'🦴', price_cents:  899, biteChance:0.25, biteDamagePct:0.07 },
-  pit_bull:         { tier:4,  label:'Pit Bull',            icon:'🐾', price_cents: 1099, biteChance:0.30, biteDamagePct:0.10 },
-  german_shepherd:  { tier:5,  label:'German Shepherd',     icon:'🦮', price_cents: 1499, biteChance:0.35, biteDamagePct:0.13 },
-  doberman:         { tier:6,  label:'Doberman',            icon:'🐕', price_cents: 1999, biteChance:0.40, biteDamagePct:0.16 },
-  rottweiler:       { tier:7,  label:'Rottweiler',          icon:'🐕', price_cents: 2499, biteChance:0.45, biteDamagePct:0.20 },
-  belgian_malinois: { tier:8,  label:'Belgian Malinois',    icon:'🐆', price_cents: 3499, biteChance:0.50, biteDamagePct:0.24 },
-  wolf_hybrid:      { tier:9,  label:'Wolf Hybrid',         icon:'🐺', price_cents: 4499, biteChance:0.55, biteDamagePct:0.28 },
-  hellhounds:       { tier:10, label:'Pack of Hellhounds',  icon:'🔥', price_cents: 6499, biteChance:0.65, biteDamagePct:0.35 },
+  chihuahua:        { tier:1,  label:'Chihuahua',           icon:'🐕', price_cents:  300, biteChance:0.15, biteDamagePct:0.03 },
+  pomeranian:       { tier:2,  label:'Pomeranian',          icon:'🐩', price_cents:  350, biteChance:0.20, biteDamagePct:0.05 },
+  beagle:           { tier:3,  label:'Beagle',              icon:'🦴', price_cents:  450, biteChance:0.25, biteDamagePct:0.07 },
+  pit_bull:         { tier:4,  label:'Pit Bull',            icon:'🐾', price_cents: 550, biteChance:0.30, biteDamagePct:0.10 },
+  german_shepherd:  { tier:5,  label:'German Shepherd',     icon:'🦮', price_cents: 750, biteChance:0.35, biteDamagePct:0.13 },
+  doberman:         { tier:6,  label:'Doberman',            icon:'🐕', price_cents: 1000, biteChance:0.40, biteDamagePct:0.16 },
+  rottweiler:       { tier:7,  label:'Rottweiler',          icon:'🐕', price_cents: 1250, biteChance:0.45, biteDamagePct:0.20 },
+  belgian_malinois: { tier:8,  label:'Belgian Malinois',    icon:'🐆', price_cents: 1750, biteChance:0.50, biteDamagePct:0.24 },
+  wolf_hybrid:      { tier:9,  label:'Wolf Hybrid',         icon:'🐺', price_cents: 2250, biteChance:0.55, biteDamagePct:0.28 },
+  hellhounds:       { tier:10, label:'Pack of Hellhounds',  icon:'🔥', price_cents: 3250, biteChance:0.65, biteDamagePct:0.35 },
 };
 
 // Durability decrements on every heist attempt against the owner; row deleted at 0
 const SHIELDS = {
   iron:     { tier:1, label:'Iron Shield',     icon:'🛡️',   price_cents:   0, maxDurability:  3, successReduction:0.10, maxPctReduction:0.00 },
-  steel:    { tier:2, label:'Steel Shield',    icon:'⚡🛡️',  price_cents: 800, maxDurability:  7, successReduction:0.25, maxPctReduction:0.10 },
-  titanium: { tier:3, label:'Titanium Shield', icon:'💎🛡️',  price_cents:1100, maxDurability: 12, successReduction:0.40, maxPctReduction:0.20 },
+  steel:    { tier:2, label:'Steel Shield',    icon:'⚡🛡️',  price_cents: 400, maxDurability:  7, successReduction:0.25, maxPctReduction:0.10 },
+  titanium: { tier:3, label:'Titanium Shield', icon:'💎🛡️',  price_cents:550, maxDurability: 12, successReduction:0.40, maxPctReduction:0.20 },
 };
 
 // Daily perk amounts by streak day (index 0 = day 1). Days 7+ hold at $100.
@@ -184,42 +184,42 @@ function _dailyPerkAmount(streak) {
 
 // ── Getaway Vehicles ──────────────────────────────────────────────────────────
 const GETAWAY_VEHICLES = {
-  bicycle:    { tier:1, label:'Bicycle',    icon:'🚲', price_cents:  649, catchReduction:0.05, bailReduction:0.05 },
-  moped:      { tier:2, label:'Moped',      icon:'🛵', price_cents:  799, catchReduction:0.10, bailReduction:0.10 },
-  motorcycle: { tier:3, label:'Motorcycle', icon:'🏍️', price_cents:  999, catchReduction:0.18, bailReduction:0.15 },
-  sports_car: { tier:4, label:'Sports Car', icon:'🚗', price_cents: 1299, catchReduction:0.25, bailReduction:0.20 },
-  supercar:   { tier:5, label:'Supercar',   icon:'🏎️', price_cents: 1799, catchReduction:0.33, bailReduction:0.30 },
-  helicopter: { tier:6, label:'Helicopter', icon:'🚁', price_cents: 2499, catchReduction:0.42, bailReduction:0.40 },
+  bicycle:    { tier:1, label:'Bicycle',    icon:'🚲', price_cents:  325, catchReduction:0.05, bailReduction:0.05 },
+  moped:      { tier:2, label:'Moped',      icon:'🛵', price_cents:  400, catchReduction:0.10, bailReduction:0.10 },
+  motorcycle: { tier:3, label:'Motorcycle', icon:'🏍️', price_cents:  500, catchReduction:0.18, bailReduction:0.15 },
+  sports_car: { tier:4, label:'Sports Car', icon:'🚗', price_cents: 650, catchReduction:0.25, bailReduction:0.20 },
+  supercar:   { tier:5, label:'Supercar',   icon:'🏎️', price_cents: 900, catchReduction:0.33, bailReduction:0.30 },
+  helicopter: { tier:6, label:'Helicopter', icon:'🚁', price_cents: 1250, catchReduction:0.42, bailReduction:0.40 },
 };
 
 // ── Virtual Real Estate ───────────────────────────────────────────────────────
 const REAL_ESTATE = {
-  corner_store: { tier:1, label:'Corner Store', icon:'🏪', price_cents:  999, daily_income:   50 },
-  apartment:    { tier:2, label:'Apartment',    icon:'🏢', price_cents: 1499, daily_income:  150 },
-  restaurant:   { tier:3, label:'Restaurant',   icon:'🍽️', price_cents: 2499, daily_income:  400 },
-  nightclub:    { tier:4, label:'Nightclub',    icon:'🎭', price_cents: 3999, daily_income:  900 },
-  casino:       { tier:5, label:'Casino',       icon:'🎰', price_cents: 6499, daily_income: 2000 },
-  skyscraper:   { tier:6, label:'Skyscraper',   icon:'🏙️', price_cents:10499, daily_income: 5000 },
+  corner_store: { tier:1, label:'Corner Store', icon:'🏪', price_cents:  500, daily_income:   50 },
+  apartment:    { tier:2, label:'Apartment',    icon:'🏢', price_cents: 750, daily_income:  150 },
+  restaurant:   { tier:3, label:'Restaurant',   icon:'🍽️', price_cents: 1250, daily_income:  400 },
+  nightclub:    { tier:4, label:'Nightclub',    icon:'🎭', price_cents: 2000, daily_income:  900 },
+  casino:       { tier:5, label:'Casino',       icon:'🎰', price_cents: 3250, daily_income: 2000 },
+  skyscraper:   { tier:6, label:'Skyscraper',   icon:'🏙️', price_cents:5250, daily_income: 5000 },
 };
 
 // ── Cars / Garage ─────────────────────────────────────────────────────────────
 const CARS = {
-  beater:    { tier:1, label:'Beater',        icon:'🚘', price_cents:  999, speed:20, stealth:10, style:5,  desc:'Gets you from A to B. Barely.' },
-  street:    { tier:2, label:'Street Racer',  icon:'🚗', price_cents: 1499, speed:40, stealth:20, style:20, desc:'A solid street-level runner.' },
-  sports:    { tier:3, label:'Sports Car',    icon:'🏎️', price_cents: 2499, speed:60, stealth:35, style:45, desc:'Turns heads and outrruns cops.' },
-  luxury:    { tier:4, label:'Luxury Sedan',  icon:'🚙', price_cents: 4499, speed:65, stealth:60, style:70, desc:'Low-key rich. The dream.' },
-  supercar:  { tier:5, label:'Supercar',      icon:'🏎️', price_cents: 7499, speed:85, stealth:50, style:85, desc:'0-60 in the time it takes to blink.' },
-  hypercar:  { tier:6, label:'Hypercar',      icon:'🚀', price_cents:10499, speed:99, stealth:70, style:99, desc:'The pinnacle. Legends only.' },
+  beater:    { tier:1, label:'Beater',        icon:'🚘', price_cents:  500, speed:20, stealth:10, style:5,  desc:'Gets you from A to B. Barely.' },
+  street:    { tier:2, label:'Street Racer',  icon:'🚗', price_cents: 750, speed:40, stealth:20, style:20, desc:'A solid street-level runner.' },
+  sports:    { tier:3, label:'Sports Car',    icon:'🏎️', price_cents: 1250, speed:60, stealth:35, style:45, desc:'Turns heads and outrruns cops.' },
+  luxury:    { tier:4, label:'Luxury Sedan',  icon:'🚙', price_cents: 2250, speed:65, stealth:60, style:70, desc:'Low-key rich. The dream.' },
+  supercar:  { tier:5, label:'Supercar',      icon:'🏎️', price_cents: 3750, speed:85, stealth:50, style:85, desc:'0-60 in the time it takes to blink.' },
+  hypercar:  { tier:6, label:'Hypercar',      icon:'🚀', price_cents:5250, speed:99, stealth:70, style:99, desc:'The pinnacle. Legends only.' },
 };
 
 // ── Pets ─────────────────────────────────────────────────────────────────────
 const PETS = {
-  dog:    { key:'dog',    label:'Dog',    icon:'🐕', price_cents: 999,  rarity:'common',    daily_income: 500,   guard_bonus:0.05, desc:'Man\'s best friend.' },
-  cat:    { key:'cat',    label:'Cat',    icon:'🐈', price_cents: 999,  rarity:'common',    daily_income: 400,   guard_bonus:0.03, desc:'Does what it wants.' },
-  snake:  { key:'snake',  label:'Snake',  icon:'🐍', price_cents: 1999, rarity:'uncommon',  daily_income: 1500,  guard_bonus:0.08, desc:'Intimidates trespassers.' },
-  hawk:   { key:'hawk',   label:'Hawk',   icon:'🦅', price_cents: 1999, rarity:'uncommon',  daily_income: 2000,  guard_bonus:0.10, desc:'Watches your back from above.' },
-  tiger:  { key:'tiger',  label:'Tiger',  icon:'🐯', price_cents: 1999, rarity:'rare',      daily_income: 5000,  guard_bonus:0.20, desc:'Nobody tests a tiger owner.' },
-  dragon: { key:'dragon', label:'Dragon', icon:'🐉', price_cents: 3499, rarity:'legendary', daily_income:10000,  guard_bonus:0.35, desc:'Absolute legend status.' },
+  dog:    { key:'dog',    label:'Dog',    icon:'🐕', price_cents: 500,  rarity:'common',    daily_income: 500,   guard_bonus:0.05, desc:'Man\'s best friend.' },
+  cat:    { key:'cat',    label:'Cat',    icon:'🐈', price_cents: 500,  rarity:'common',    daily_income: 400,   guard_bonus:0.03, desc:'Does what it wants.' },
+  snake:  { key:'snake',  label:'Snake',  icon:'🐍', price_cents: 1000, rarity:'uncommon',  daily_income: 1500,  guard_bonus:0.08, desc:'Intimidates trespassers.' },
+  hawk:   { key:'hawk',   label:'Hawk',   icon:'🦅', price_cents: 1000, rarity:'uncommon',  daily_income: 2000,  guard_bonus:0.10, desc:'Watches your back from above.' },
+  tiger:  { key:'tiger',  label:'Tiger',  icon:'🐯', price_cents: 1000, rarity:'rare',      daily_income: 5000,  guard_bonus:0.20, desc:'Nobody tests a tiger owner.' },
+  dragon: { key:'dragon', label:'Dragon', icon:'🐉', price_cents: 1750, rarity:'legendary', daily_income:10000,  guard_bonus:0.35, desc:'Absolute legend status.' },
 };
 
 // ── Weapon Ability Unlocks (level 10) ────────────────────────────────────────
@@ -322,7 +322,7 @@ const SPIN_PRIZES = [
 
 // ── Battle Pass ───────────────────────────────────────────────────────────────
 const BATTLE_PASS_SEASON = 'S1';
-const BATTLE_PASS_PRICE_CENTS = 499;
+const BATTLE_PASS_PRICE_CENTS = 250;
 const BATTLE_PASS_TIERS = [
   { tier:1,  xp:  100, free:{ type:'paper',   amount:  50 }, paid:{ type:'paper',   amount:  150 } },
   { tier:2,  xp:  250, free:{ type:'paper',   amount:  75 }, paid:{ type:'credits', amount:  200 } },
@@ -5418,7 +5418,7 @@ app.post("/api/stripe/elite-membership", authenticateUser, async (req, res) => {
 app.post("/api/stripe/gift-credits", authenticateUser, async (req, res) => {
   const { recipientEmail, packageKey } = req.body;
   if (!recipientEmail || !packageKey) return res.status(400).json({ error: 'recipientEmail and packageKey required' });
-  const CREDIT_PACKAGES_MAP = { starter: { credits: 500, amount_cents: 500, label: 'Starter Pack (500 Credits)' }, legends: { credits: 2500, amount_cents: 2000, label: 'Legends Pack (2,500 Credits)' }, champion: { credits: 7000, amount_cents: 5000, label: 'Champion Pack (7,000 Credits)' } };
+  const CREDIT_PACKAGES_MAP = { starter: { credits: 500, amount_cents: 250, label: 'Starter Pack (500 Credits)' }, legends: { credits: 2500, amount_cents: 1000, label: 'Legends Pack (2,500 Credits)' }, champion: { credits: 7000, amount_cents: 2500, label: 'Champion Pack (7,000 Credits)' } };
   const pkg = CREDIT_PACKAGES_MAP[packageKey];
   if (!pkg) return res.status(400).json({ error: 'Invalid package' });
   const recipient = accountManager.getAccount(recipientEmail);
