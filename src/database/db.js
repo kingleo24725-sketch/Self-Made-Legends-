@@ -921,22 +921,22 @@ class DB {
     try { await this.run('ALTER TABLE heist_attempts ADD COLUMN charges INTEGER DEFAULT 0'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_creator INTEGER DEFAULT 0'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN is_elite INTEGER DEFAULT 0'); } catch (_) {}
-    await db.run(`ALTER TABLE accounts ADD COLUMN heat_level INTEGER NOT NULL DEFAULT 0`).catch(() => {});
+    await this.run(`ALTER TABLE accounts ADD COLUMN heat_level INTEGER NOT NULL DEFAULT 0`).catch(() => {});
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_vip INTEGER DEFAULT 0'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_chips INTEGER DEFAULT 10000'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN date_of_birth TEXT'); } catch (_) {}
 
     // Seed crew_territories with all 10 neighborhoods (uncontrolled)
-    const terrCount = await db.get('SELECT COUNT(*) as c FROM crew_territories');
+    const terrCount = await this.get('SELECT COUNT(*) as c FROM crew_territories');
     if (terrCount.c === 0) {
       const HOOD_IDS = ['downtown','harbor','eastside','westside','uptown','strip','industrial','airport','financial','projects'];
       for (const h of HOOD_IDS) {
-        await db.run('INSERT OR IGNORE INTO crew_territories (neighborhood, crew_id, captured_at, last_income_at) VALUES (?,NULL,0,0)', [h]);
+        await this.run('INSERT OR IGNORE INTO crew_territories (neighborhood, crew_id, captured_at, last_income_at) VALUES (?,NULL,0,0)', [h]);
       }
     }
 
     // Seed card_definitions with initial cards if empty
-    const cardCount = await db.get('SELECT COUNT(*) as c FROM card_definitions');
+    const cardCount = await this.get('SELECT COUNT(*) as c FROM card_definitions');
     if (cardCount.c === 0) {
       const INITIAL_CARDS = [
         { card_key:'the_trader',      name:'The Trader',            rarity:'common',    archetype:'finance',    icon:'📈', attack:40, defense:30, hustle:70, luck:50 },
@@ -951,7 +951,7 @@ class DB {
         { card_key:'self_made',       name:'Self-Made',             rarity:'legendary', archetype:'prestige',   icon:'💎', attack:95, defense:95, hustle:99, luck:95 },
       ];
       for (const c of INITIAL_CARDS) {
-        await db.run(
+        await this.run(
           'INSERT OR IGNORE INTO card_definitions (card_key,name,rarity,archetype,icon,attack,defense,hustle,luck,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)',
           [c.card_key, c.name, c.rarity, c.archetype, c.icon, c.attack, c.defense, c.hustle, c.luck, Date.now()]
         );
