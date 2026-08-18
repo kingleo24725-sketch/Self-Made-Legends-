@@ -803,16 +803,9 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         console.log(`Coach Pro activated — user ${userId}`);
 
       } else if (type === 'tournament_entry') {
-        const tournamentId = meta.tournamentId || 'current';
-        await db.run('UPDATE tournament_entries SET paid = 1, stripe_session = ? WHERE tournament_id = ? AND user_id = ?',
-          [obj.id, tournamentId, userId]);
-        // $8 (80%) goes to prize pool per entry
-        await db.run(
-          'INSERT INTO tournament_prize_pools (tournament_id, entry_count, total_cents, distributed, updated_at) VALUES (?, 1, 800, 0, ?) ON CONFLICT(tournament_id) DO UPDATE SET entry_count = entry_count + 1, total_cents = total_cents + 800, updated_at = ?',
-          [tournamentId, Date.now(), Date.now()]
-        );
-        emitToUser(userId, 'purchase_complete', { type: 'tournament_entry', message: '⚔️ Tournament entry confirmed! Good luck!' });
-        console.log(`Tournament entry paid — user ${userId}, tournament ${tournamentId}`);
+        // SUPERSEDED — tournament entry is now Credits-based; Stripe webhook path kept for legacy
+        // session completion events only (should not occur for new entries).
+        console.log(`Legacy Stripe tournament_entry webhook — user ${userId} (Credits path is now primary)`);
 
       } else if (type.startsWith('paper_money_')) {
         const packageKey = type.slice('paper_money_'.length);
@@ -1224,32 +1217,61 @@ app.post("/api/stripe/coach-pro", authenticateUser, async (req, res) => {
   }
 });
 
-// ===== STRIPE — TOURNAMENT ENTRY =====
+// ===== TOURNAMENT ENTRY (Credits-based — 1,000 SML Credits) =====
+// Real-money Stripe path removed. Entry now costs 1,000 Credits; 800 go to prize pool.
 
 app.post("/api/stripe/tournament-entry", authenticateUser, async (req, res) => {
-  if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
+  const uid = req.user.userId;
+  const ENTRY_COST = 1000;
+  const POOL_SHARE = 800;
+
   const tourneyStatus = tournamentManager.getStatus();
   if (!tourneyStatus || !tourneyStatus.active) {
     return res.json({ success: false, noTournament: true });
   }
   const tournamentId = String(tourneyStatus.tournament?.id || 'current');
+
   const existing = await db.get(
     'SELECT id FROM tournament_entries WHERE tournament_id = ? AND user_id = ? AND paid = 1',
-    [tournamentId, req.user.userId]
+    [tournamentId, uid]
   );
   if (existing) return res.json({ success: false, alreadyEntered: true });
+
+  const creditRow = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [uid]);
+  const creditBalance = creditRow ? creditRow.balance : 0;
+  if (creditBalance < ENTRY_COST) {
+    return res.status(400).json({ error: `You need ${ENTRY_COST.toLocaleString()} SML Credits to enter. Purchase Credits above.`, creditBalance });
+  }
+
   try {
-    const account = accountManager.getAccountById(req.user.userId);
-    const userEmail = account?.email || '';
-    const result = await stripeProcessor.createTournamentEntryCheckout(req.user.userId, userEmail, tournamentId);
+    // Deduct entry credits
+    const newBalance = creditBalance - ENTRY_COST;
     await db.run(
-      'INSERT OR IGNORE INTO tournament_entries (tournament_id, user_id, stripe_session, paid, created_at) VALUES (?, ?, ?, 0, ?)',
-      [tournamentId, req.user.userId, result.sessionId, Date.now()]
+      'INSERT INTO sml_credits (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = ?, updated_at = ?',
+      [uid, newBalance, Date.now(), newBalance, Date.now()]
     );
-    res.json({ success: true, ...result });
+    await db.run(
+      'INSERT INTO credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?)',
+      [uid, -ENTRY_COST, 'tournament_entry', `Tournament #${tournamentId} entry fee`, Date.now()]
+    );
+
+    // Add share to prize pool
+    await db.run(
+      'INSERT INTO tournament_prize_pools (tournament_id, entry_count, total_cents, distributed, updated_at) VALUES (?, 1, ?, 0, ?) ON CONFLICT(tournament_id) DO UPDATE SET entry_count = entry_count + 1, total_cents = total_cents + ?, updated_at = ?',
+      [tournamentId, POOL_SHARE, Date.now(), POOL_SHARE, Date.now()]
+    );
+
+    // Mark as entered
+    await db.run(
+      'INSERT OR IGNORE INTO tournament_entries (tournament_id, user_id, stripe_session, paid, created_at) VALUES (?, ?, ?, 1, ?)',
+      [tournamentId, uid, 'credits', Date.now()]
+    );
+
+    emitToUser(uid, 'purchase_complete', { type: 'tournament_entry', message: '⚔️ Tournament entry confirmed! 800 Credits added to prize pool. Good luck!' });
+    res.json({ success: true, creditsSpent: ENTRY_COST, newBalance, message: 'Entered! 800 Credits added to prize pool.' });
   } catch (err) {
-    console.error("Tournament entry checkout error:", err.message);
-    res.status(500).json({ error: 'Tournament entry checkout failed: ' + err.message });
+    console.error("Tournament entry error:", err.message);
+    res.status(500).json({ error: 'Tournament entry failed: ' + err.message });
   }
 });
 
@@ -1375,11 +1397,17 @@ app.post("/api/transfer/send-paper", authenticateUser, async (req, res) => {
 app.post("/api/stripe/gift-paper-money", authenticateUser, async (req, res) => {
   if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
   const uid = req.user.userId;
-  const { recipientId, packageKey } = req.body;
-  if (!recipientId || !packageKey) return res.status(400).json({ error: 'recipientId and packageKey required' });
+  let { recipientId, recipientEmail, packageKey } = req.body;
+  // Support lookup by email when recipientId is not provided
+  if (!recipientId && recipientEmail) {
+    const row = await db.get('SELECT user_id FROM accounts WHERE LOWER(email) = LOWER(?)', [recipientEmail.trim()]);
+    if (!row) return res.status(404).json({ error: 'No account found for that email address' });
+    recipientId = row.user_id;
+  }
+  if (!recipientId || !packageKey) return res.status(400).json({ error: 'recipientId (or recipientEmail) and packageKey required' });
   if (recipientId === uid) return res.status(400).json({ error: 'Cannot gift to yourself' });
   const pkg = PAPER_MONEY_PACKAGES[packageKey];
-  if (!pkg) return res.status(400).json({ error: 'Unknown package' });
+  if (!pkg) return res.status(400).json({ error: `Unknown package. Valid options: ${Object.keys(PAPER_MONEY_PACKAGES).join(', ')}` });
   const recipient = accountManager.getAccountById(recipientId);
   if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
   try {
@@ -5654,11 +5682,8 @@ app.post('/api/boxes/open', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/loot-box-premium', authenticateUser, async (req, res) => {
-  try {
-    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
-    const { checkoutUrl } = await stripeProcessor.createLootBoxCheckout(req.user.userId, acc.email);
-    res.json({ checkoutUrl });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  // Real-money loot boxes removed. Boxes are earned through gameplay.
+  res.status(400).json({ error: 'Loot boxes are earned through gameplay — complete daily missions, win heists, and finish flash challenges to earn boxes.' });
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -5748,13 +5773,8 @@ app.post('/api/cards/pack/open', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/card-pack', authenticateUser, async (req, res) => {
-  const { packType } = req.body;
-  if (!['rare', 'legendary'].includes(packType)) return res.status(400).json({ error: 'Invalid pack type' });
-  try {
-    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
-    const { checkoutUrl } = await stripeProcessor.createCardPackCheckout(req.user.userId, acc.email, packType);
-    res.json({ checkoutUrl });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+  // Real-money card packs removed. Purchase Credits above, then open packs in the Cards tab.
+  res.status(400).json({ error: 'Card packs are purchased with SML Credits only. Buy Credits above, then open packs in the Cards tab.' });
 });
 
 app.get('/api/cards/market', async (req, res) => {

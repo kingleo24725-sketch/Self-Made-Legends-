@@ -1,4 +1,4 @@
-# Self-Made Legends — AI Trading Game
+# Come Up — AI Trading Game
 
 **A simulated stock, crypto & NFT trading game with AI coaching, social features, and live competitions.**
 
@@ -6,7 +6,7 @@
 
 ## What Is It?
 
-Self-Made Legends is a web-based trading simulation game where players compete on a live national leaderboard. An AI coach provides trade suggestions, players earn virtual SML Bucks, and dozens of game systems (loot boxes, heists, card collecting, racing, pets, and more) keep things engaging.
+Come Up is a web-based trading simulation game where players compete on a live national leaderboard. An AI coach provides trade suggestions, players earn virtual SML Bucks, and dozens of game systems (loot boxes, heists, card collecting, racing, pets, and more) keep things engaging.
 
 ## Features
 
