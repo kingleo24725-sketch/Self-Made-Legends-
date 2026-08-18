@@ -1,20 +1,20 @@
 const stripe = require("stripe");
 
-const CREATOR_FEE_CENTS = 1500; // $15.00/month
+const CREATOR_FEE_CENTS = 750; // $7.50/month
 
 const CREDIT_PACKAGES = {
-  starter:  { credits: 500,  amount_cents: 1000, label: 'SML Credits — Starter Pack (500 Credits)' },
-  legends:  { credits: 2500, amount_cents: 2500, label: 'SML Credits — Legends Pack (2,500 Credits)' },
-  champion: { credits: 7000, amount_cents: 5500, label: 'SML Credits — Champion Pack (7,000 Credits)' },
+  starter:  { credits: 500,  amount_cents: 500, label: 'SML Credits — Starter Pack (500 Credits)' },
+  legends:  { credits: 2500, amount_cents: 1250, label: 'SML Credits — Legends Pack (2,500 Credits)' },
+  champion: { credits: 7000, amount_cents: 2750, label: 'SML Credits — Champion Pack (7,000 Credits)' },
 };
 
 // SML Bucks packages — real money → virtual paper trading capital
 const PAPER_MONEY_PACKAGES = {
-  hustle:   { paper: 1000,   amount_cents: 999,  label: 'Hustle Pack — $1,000 SML Bucks' },
-  grind:    { paper: 5000,   amount_cents: 1599, label: 'Grind Pack — $5,000 SML Bucks' },
-  investor: { paper: 25000,  amount_cents: 2000, label: 'Investor Pack — $25,000 SML Bucks' },
-  whale:    { paper: 50000,  amount_cents: 2500, label: 'Whale Pack — $50,000 SML Bucks' },
-  ultimate: { paper: 200000, amount_cents: 8000, label: 'Ultimate Pack — $200,000 SML Bucks' },
+  hustle:   { paper: 1000,   amount_cents: 500,  label: 'Hustle Pack — $1,000 SML Bucks' },
+  grind:    { paper: 5000,   amount_cents: 800, label: 'Grind Pack — $5,000 SML Bucks' },
+  investor: { paper: 25000,  amount_cents: 1000, label: 'Investor Pack — $25,000 SML Bucks' },
+  whale:    { paper: 50000,  amount_cents: 1250, label: 'Whale Pack — $50,000 SML Bucks' },
+  ultimate: { paper: 200000, amount_cents: 4000, label: 'Ultimate Pack — $200,000 SML Bucks' },
 };
 
 // Returns Unix timestamp for midnight UTC on the 1st of next month
@@ -28,17 +28,17 @@ class StripeProcessor {
   constructor() {
     this.stripe = stripe(process.env.STRIPE_SECRET_KEY);
     this.publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
-    // Cached Stripe Price ID for the $15/month subscription
+    // Cached Stripe Price ID for the $7.50/month subscription
     this._priceId = process.env.STRIPE_CREATOR_PRICE_ID || null;
   }
 
-  // Get or create the recurring $15/month Price on Stripe
+  // Get or create the recurring $7.50/month Price on Stripe
   async getOrCreatePrice() {
     if (this._priceId) return this._priceId;
 
     const product = await this.stripe.products.create({
       name: "Self-Made Legends Creator Subscription",
-      description: "$15/month creator membership — billed on the 1st of each month",
+      description: "$7.50/month creator membership — billed on the 1st of each month",
     });
 
     const price = await this.stripe.prices.create({
@@ -52,7 +52,7 @@ class StripeProcessor {
     return price.id;
   }
 
-  // Create a Stripe Checkout Session for the $15/month subscription
+  // Create a Stripe Checkout Session for the $7.50/month subscription
   async createCheckoutSession(userId, userEmail, successUrl, cancelUrl) {
     const priceId = await this.getOrCreatePrice();
 
@@ -108,7 +108,7 @@ class StripeProcessor {
     return { cancelled: sub.status === "canceled", status: sub.status };
   }
 
-  // Create a Stripe Checkout Session for the Season Pass ($14.99 one-time)
+  // Create a Stripe Checkout Session for the Season Pass ($7.50 one-time)
   async createSeasonPassCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -118,7 +118,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Season Pass', description: 'Premium badge frames, 1.5× XP multiplier, private leaderboard tier' },
-          unit_amount: 1499,
+          unit_amount: 750,
         },
         quantity: 1,
       }],
@@ -154,17 +154,17 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Premium Coach Pro ($9.99/month recurring)
+  // Create a Stripe Checkout Session for Premium Coach Pro ($5.00/month recurring)
   async createCoachProCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     if (!this._coachProPriceId) {
       const product = await this.stripe.products.create({
         name: 'SML Premium AI Coach',
-        description: '$9.99/month — Deeper AI responses, weekly personalized reports',
+        description: '$5.00/month — Deeper AI responses, weekly personalized reports',
       });
       const price = await this.stripe.prices.create({
         product: product.id,
-        unit_amount: 999,
+        unit_amount: 500,
         currency: 'usd',
         recurring: { interval: 'month' },
       });
@@ -220,7 +220,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Tournament Entry', description: '80% of entry pool pays top-3 players in SML Bucks (virtual currency — no cash value). Tournament prizes are not real money.' },
-          unit_amount: 1000,
+          unit_amount: 500,
         },
         quantity: 1,
       }],
@@ -232,7 +232,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Jail Buyout ($10.00 one-time → release + $1k SML Bucks)
+  // Create a Stripe Checkout Session for Jail Buyout ($5.00 one-time → release + $1k SML Bucks)
   async createJailBuyoutCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -242,7 +242,7 @@ class StripeProcessor {
         price_data: {
           currency: 'usd',
           product_data: { name: 'SML Jail Buyout', description: 'Pay your way out of jail + receive $1,000 SML Bucks' },
-          unit_amount: 1000,
+          unit_amount: 500,
         },
         quantity: 1,
       }],
@@ -356,7 +356,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for Battle Pass Season 1 ($9.99)
+  // Create a Stripe Checkout Session for Battle Pass Season 1 ($5.00)
   async createBattlePassCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -364,7 +364,7 @@ class StripeProcessor {
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
         product_data: { name: 'SML Battle Pass — Season 1', description: 'Unlock premium tier rewards across all 10 Battle Pass tiers' },
-        unit_amount: 999 }, quantity: 1 }],
+        unit_amount: 500 }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=battle_pass`,
       cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
@@ -373,16 +373,16 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for VIP Elite Membership ($29.99/month recurring)
+  // Create a Stripe Checkout Session for VIP Elite Membership ($15.00/month recurring)
   async createEliteCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const product = await this.stripe.products.create({
       name: 'Self-Made Legends Elite Membership',
-      description: '$29.99/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
+      description: '$15.00/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
     });
     const price = await this.stripe.prices.create({
       product: product.id,
-      unit_amount: 2999,
+      unit_amount: 1500,
       currency: 'usd',
       recurring: { interval: 'month' },
     });
@@ -415,7 +415,7 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // Create a Stripe Checkout Session for the Legend Starter Bundle ($19.99 one-time)
+  // Create a Stripe Checkout Session for the Legend Starter Bundle ($10.00 one-time)
   async createLegendBundleCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     const session = await this.stripe.checkout.sessions.create({
@@ -423,7 +423,7 @@ class StripeProcessor {
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
         product_data: { name: 'SML Legend Starter Bundle', description: '2,500 Credits + $5,000 SML Bucks + Neon Frame + Season XP Boost' },
-        unit_amount: 1999 }, quantity: 1 }],
+        unit_amount: 1000 }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=legend_bundle`,
       cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
@@ -503,7 +503,7 @@ class StripeProcessor {
       customer_email: userEmail || undefined,
       line_items: [{ price_data: { currency: 'usd',
         product_data: { name: 'SML Premium Loot Box (5-pack)', description: '5 premium virtual loot boxes. Odds per box: Common 40%, Rare 35%, Epic 20%, Legendary 5%. All items are virtual with no cash value.' },
-        unit_amount: 999 }, quantity: 1 }],
+        unit_amount: 500 }, quantity: 1 }],
       mode: 'payment',
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=loot_box_premium`,
       cancel_url: `${BASE}/dashboard.html?payment=cancelled`,
@@ -512,17 +512,17 @@ class StripeProcessor {
     return { checkoutUrl: session.url, sessionId: session.id };
   }
 
-  // VIP Game Pass ($14.99/month)
+  // VIP Game Pass ($7.50/month)
   async createCasinoVIPCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
     if (!this._casinoVIPPriceId) {
       const product = await this.stripe.products.create({
         name: 'SML VIP Game Pass',
-        description: '$14.99/month — Unlocks VIP game modes, high-stakes simulated tables, 10× in-game rewards, and VIP room features. All gameplay uses virtual Casino Chips — no real money is wagered. Renews automatically. Cancel anytime.',
+        description: '$7.50/month — Unlocks VIP game modes, high-stakes simulated tables, 10× in-game rewards, and VIP room features. All gameplay uses virtual Casino Chips — no real money is wagered. Renews automatically. Cancel anytime.',
       });
       const price = await this.stripe.prices.create({
         product: product.id,
-        unit_amount: 1499,
+        unit_amount: 750,
         currency: 'usd',
         recurring: { interval: 'month' },
       });
