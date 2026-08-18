@@ -589,11 +589,11 @@
     const styleId  = hairStyleId || (gender === 'female' ? 'long_straight' : 'fade');
 
     const bg       = svgBg(bgId);
-    const hairBack = svgHairBack(styleId, hc);
     const clothes  = svgClothes(outfitId, outfitColorId, gender);
     const neck     = svgNeck(skin);
-    const ears     = svgEars(skin);
     const head     = svgHead(skin);
+    const ears     = svgEars(skin);
+    const hairBack = svgHairBack(styleId, hc);
     const face     = svgFace(skin, gender, ec);
     const hairFront = svgHairFront(styleId, hc);
     const acc      = svgAccessory(accessoryId);
@@ -601,11 +601,11 @@
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
   ${bg}
   <g clip-path="url(#abClip)">
-    ${hairBack}
     ${clothes}
     ${neck}
-    ${ears}
     ${head}
+    ${ears}
+    ${hairBack}
     ${hairFront}
     ${face}
     ${acc}
