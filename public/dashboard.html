@@ -256,6 +256,20 @@
     }
 
     .user-info { color: #00ff00; font-weight: bold; }
+    .user-info.logged-out {
+      color: #000;
+      background: linear-gradient(135deg,#00ff88,#00d4ff);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 14px rgba(0,255,136,0.35);
+      animation: loginPulse 2.2s ease-in-out infinite;
+    }
+    .user-info.logged-out:hover { filter: brightness(1.08); }
+    @keyframes loginPulse {
+      0%, 100% { box-shadow: 0 0 14px rgba(0,255,136,0.35); }
+      50% { box-shadow: 0 0 22px rgba(0,255,136,0.6); }
+    }
 
     .container {
       max-width: 1400px;
@@ -703,7 +717,7 @@
         <div id="nav-avatar" onclick="switchTab('account'); event.stopPropagation();" title="Edit profile photo" style="display:none; width:36px; height:36px; border-radius:50%; overflow:hidden; border:2px solid #00d4ff; cursor:pointer; flex-shrink:0; background:#1a1f2e;">
           <img id="nav-avatar-img" src="" alt="" style="width:100%; height:100%; object-fit:cover; display:block;">
         </div>
-        <div class="user-info" id="user-info">Not Logged In</div>
+        <div class="user-info logged-out" id="user-info" onclick="handleUserInfoClick()" title="Log in or create an account">🔑 Log In</div>
       </div>
       <button id="boxes-btn" onclick="switchTab('dashboard')" title="My Mystery Boxes" style="display:none; background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:0.9em; color:#ffd700; font-weight:700;">🎁 <span id="boxes-count">0</span></button>
       <a href="/profile.html" id="profile-link" style="display:none;color:#aaa;text-decoration:none;font-size:0.8em;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.07);">👤 Profile</a>
@@ -2149,7 +2163,7 @@
   <div id="paywall-overlay" style="display:flex; position:fixed; inset:0; z-index:9999; background:radial-gradient(ellipse 80% 40% at 50% 110%,rgba(255,180,0,0.18) 0%,transparent 70%),linear-gradient(150deg,#0c1018 0%,#131820 40%,#0a0e16 100%); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
     <div style="text-align:center; max-width:480px; width:100%;">
       <div style="font-size:3.5em; margin-bottom:12px;">👑</div>
-      <h1 style="color:#ffd700; font-size:1.9em; font-weight:900; letter-spacing:0.02em; margin-bottom:8px;">Self-Made Legends</h1>
+      <h1 style="color:#ffd700; font-size:1.9em; font-weight:900; letter-spacing:0.02em; margin-bottom:8px;">Come Up</h1>
       <p style="color:#888; font-size:0.95em; line-height:1.7; margin-bottom:8px;">The AI-powered stock trading game. Compete on the national leaderboard. Build your legend.</p>
       <p style="color:#00ff88; font-size:0.88em; font-weight:600; margin-bottom:28px;">Play Free — No Subscription Needed</p>
 
@@ -2951,7 +2965,7 @@
   <div id="demo-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:200; background:linear-gradient(90deg,#1a1f2e,#0d1b2a); border-top:2px solid #ffd700; padding:12px 20px; display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
     <div style="color:#ffd700; font-weight:bold;">👑 Demo Mode — Your progress won't be saved</div>
     <div style="display:flex; gap:10px;">
-      <button onclick="login()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 18px; font-weight:bold; cursor:pointer;">Create Account</button>
+      <button onclick="login()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 18px; font-weight:bold; cursor:pointer;">🔑 Log In / Sign Up</button>
       <button onclick="document.getElementById('demo-banner').style.display='none'" style="background:transparent; border:1px solid #555; color:#888; border-radius:6px; padding:8px 12px; cursor:pointer;">✕ Dismiss</button>
     </div>
   </div>
@@ -3352,6 +3366,15 @@
     async function checkAndReveal() {
       const sid = getSessionId();
       if (!sid) return; // stay on guest paywall
+      // Verify the session is still valid before trusting it — a stale/expired
+      // sessionId left in localStorage would otherwise hide the paywall while
+      // leaving the user effectively logged out with no way back to it.
+      const check = await apiCall('/api/account/profile');
+      if (check.error) {
+        sessionId = null;
+        localStorage.removeItem('sessionId');
+        return; // stay on guest paywall
+      }
       // Any logged-in user gets full access — Season Pass is an optional upgrade
       document.getElementById('paywall-overlay').style.display = 'none';
       loadAccountData();
@@ -3459,6 +3482,11 @@
       return fetch(endpoint, options).then(r => r.json());
     }
 
+    function handleUserInfoClick() {
+      if (sessionId || isDemo) { switchTab('account'); return; }
+      login();
+    }
+
     function login() {
       const choice = prompt('What would you like to do?\n\n1 — Login\n2 — Create New Account\n3 — Forgot Password\n\nType 1, 2, or 3:');
 
@@ -3473,6 +3501,7 @@
               setSessionId(data.sessionId);
               currentUser = email;
               document.getElementById('user-info').textContent = `👤 ${email}`;
+              document.getElementById('user-info').classList.remove('logged-out');
               document.getElementById('logout-btn').style.display = 'block';
               document.getElementById('profile-link').style.display = 'inline-block';
               if (window.SMLSounds) SMLSounds.coin();
@@ -3510,6 +3539,7 @@
                     setSessionId(loginData.sessionId);
                     currentUser = email;
                     document.getElementById('user-info').textContent = `👤 ${email}`;
+              document.getElementById('user-info').classList.remove('logged-out');
                     document.getElementById('logout-btn').style.display = 'block';
                     loadAccountData();
                     loadBadges();
@@ -3537,6 +3567,7 @@
       isDemo = true;
       currentUser = 'demo';
       document.getElementById('user-info').textContent = '👤 Demo User';
+      document.getElementById('user-info').classList.remove('logged-out');
       document.getElementById('logout-btn').style.display = 'block';
       document.getElementById('demo-banner').style.display = 'flex';
 
@@ -3560,10 +3591,13 @@
       if (isDemo) {
         isDemo = false;
         currentUser = null;
-        document.getElementById('user-info').textContent = 'Not Logged In';
+        document.getElementById('user-info').textContent = '🔑 Log In';
+        document.getElementById('user-info').classList.add('logged-out');
         document.getElementById('logout-btn').style.display = 'none';
         document.getElementById('profile-link').style.display = 'none';
         document.getElementById('demo-banner').style.display = 'none';
+        document.getElementById('paywall-overlay').style.display = 'flex';
+        document.getElementById('paywall-guest').style.display = 'flex';
         return;
       }
       apiCall('/api/auth/logout', 'POST')
@@ -3571,8 +3605,11 @@
           sessionId = null;
           localStorage.removeItem('sessionId');
           currentUser = null;
-          document.getElementById('user-info').textContent = 'Not Logged In';
+          document.getElementById('user-info').textContent = '🔑 Log In';
+          document.getElementById('user-info').classList.add('logged-out');
           document.getElementById('logout-btn').style.display = 'none';
+          document.getElementById('paywall-overlay').style.display = 'flex';
+          document.getElementById('paywall-guest').style.display = 'flex';
           alert('Logged out');
         });
     }
