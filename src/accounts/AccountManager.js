@@ -13,9 +13,10 @@ class AccountManager {
   async restore() {
     const rows = await db.all('SELECT * FROM accounts');
     for (const row of rows) {
-      this.accounts.set(row.email, {
+      const email = String(row.email || '').trim().toLowerCase();
+      this.accounts.set(email, {
         userId:          row.user_id,
-        email:           row.email,
+        email,
         fullName:        row.full_name,
         passwordHash:    row.password_hash,
         apiKey:          row.api_key,
@@ -66,6 +67,7 @@ class AccountManager {
 
   // ── Core CRUD ───────────────────────────────────────────────────────────
   createAccount(email, password, fullName, dateOfBirth) {
+    email = String(email || '').trim().toLowerCase();
     if (this.accounts.has(email)) return { success: false, error: 'Account already exists' };
 
     const userId      = crypto.randomBytes(16).toString('hex');
@@ -89,6 +91,7 @@ class AccountManager {
   }
 
   login(email, password) {
+    email = String(email || '').trim().toLowerCase();
     const account = this.accounts.get(email);
     if (!account) return { success: false, error: 'Account not found' };
     if (!this.verifyPassword(password, account.passwordHash)) return { success: false, error: 'Invalid password' };
@@ -119,7 +122,7 @@ class AccountManager {
     return { success: true, message: 'Logged out successfully' };
   }
 
-  getAccount(email) { return this.accounts.get(email) || null; }
+  getAccount(email) { return this.accounts.get(String(email || '').trim().toLowerCase()) || null; }
 
   getAccountById(userId) {
     for (const a of this.accounts.values()) {
@@ -181,7 +184,7 @@ class AccountManager {
 
   // ── Wallets & Balances ──────────────────────────────────────────────────
   addWallet(email, walletType, walletAddress, label) {
-    const account = this.accounts.get(email);
+    const account = this.getAccount(email);
     if (!account) return { success: false, error: 'Account not found' };
     const wallet = {
       id: crypto.randomBytes(8).toString('hex'),
@@ -194,12 +197,12 @@ class AccountManager {
   }
 
   getWallets(email) {
-    const account = this.accounts.get(email);
+    const account = this.getAccount(email);
     return account ? account.wallets : [];
   }
 
   updateBalance(email, assetType, amount) {
-    const account = this.accounts.get(email);
+    const account = this.getAccount(email);
     if (!account) return { success: false, error: 'Account not found' };
     if (assetType === 'usd') {
       account.balances.usd += amount;
@@ -215,13 +218,13 @@ class AccountManager {
   }
 
   getBalance(email) {
-    const account = this.accounts.get(email);
+    const account = this.getAccount(email);
     if (!account) return { success: false, error: 'Account not found' };
     return { success: true, balances: account.balances };
   }
 
   setCreatorMember(email, isCreator = true) {
-    const account = this.accounts.get(email);
+    const account = this.getAccount(email);
     if (!account) return { success: false, error: 'Account not found' };
     account.isCreatorMember = isCreator;
     account.tier = isCreator ? 'creator' : 'free';
@@ -259,7 +262,7 @@ class AccountManager {
   generateApiKey() { return 'sk_' + crypto.randomBytes(32).toString('hex'); }
 
   getTotalPortfolioValue(email, currentPrices = {}) {
-    const account = this.accounts.get(email);
+    const account = this.getAccount(email);
     if (!account) return 0;
     let total = account.balances.usd || 0;
     for (const [sym, amt] of Object.entries(account.balances.crypto || {})) {
