@@ -1,4 +1,4 @@
-const CACHE = 'sml-v18';
+const CACHE = 'sml-v19';
 const STATIC = [
   '/dashboard.html',
   '/manifest.json',
