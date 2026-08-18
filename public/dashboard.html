@@ -241,8 +241,10 @@
       color: #888;
       font-weight: bold;
       border-bottom: 2px solid transparent;
-      transition: all 0.3s;
+      transition: color 150ms ease-out, border-bottom-color 200ms ease-out;
     }
+
+    .nav-tab:hover:not(.active) { color: #bbb; }
 
     .nav-tab.active {
       color: #00d4ff;
@@ -299,7 +301,20 @@
 
     .card:hover {
       border-color: rgba(0, 212, 255, 0.5);
-      box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 20px rgba(0, 212, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    /* Featured card variant — set --accent inline (style="--accent:#ffd700") to retint */
+    .card-featured {
+      --accent: #00d4ff;
+      border: 1px solid var(--accent);
+      background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 100%);
+      box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 18%, transparent);
+    }
+    .card-featured:hover {
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 26px color-mix(in srgb, var(--accent) 30%, transparent);
+      transform: translateY(-2px);
     }
 
     .card h2 {
@@ -354,6 +369,27 @@
       background: #ff4444;
       color: #fff;
     }
+
+    /* Shared feedback tier — .btn already has transition:all, .btn-quick is a
+       drop-in for inline-styled buttons that layers feedback without
+       touching their existing color/background. */
+    .btn:hover, .btn-quick:hover {
+      filter: brightness(1.1);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      transform: translateY(-1px);
+    }
+    .btn:active, .btn-quick:active {
+      transform: translateY(0) scale(0.97);
+      filter: brightness(0.95);
+      transition-duration: 60ms;
+    }
+    .btn:focus-visible, .btn-quick:focus-visible {
+      outline: 2px solid #00d4ff;
+      outline-offset: 2px;
+    }
+    .btn-quick { transition: transform 150ms ease-out, box-shadow 150ms ease-out, filter 150ms ease-out; }
+    .btn-success:hover { filter: brightness(1.12); box-shadow: 0 4px 14px rgba(0,255,0,0.25); }
+    .btn-danger:hover  { filter: brightness(1.12); box-shadow: 0 4px 14px rgba(255,68,68,0.3); }
 
     table {
       width: 100%;
@@ -465,13 +501,25 @@
       display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
       z-index: 1000; align-items: center; justify-content: center; padding: 16px;
     }
-    .modal-overlay.open { display: flex; }
+    .modal-overlay.open { display: flex; animation: overlayFadeIn 200ms ease-out; }
     .modal {
       background: #1a1f2e; border: 2px solid #00d4ff; border-radius: 16px;
       padding: 32px; max-width: 520px; width: 100%; position: relative;
-      animation: fadeIn 0.3s ease;
+      animation: modalPopIn 300ms cubic-bezier(.34,1.56,.64,1);
     }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(-20px); } to { opacity:1; transform:none; } }
+    @keyframes overlayFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes modalPopIn {
+      from { opacity: 0; transform: translateY(14px) scale(0.96); }
+      to   { opacity: 1; transform: none; }
+    }
+    /* Drop-in classes for the hand-rolled modals toggled via inline style.display
+       rather than this shared .modal-overlay/.modal pair. */
+    .modal-anim-overlay { animation: overlayFadeIn 200ms ease-out; }
+    .modal-anim-box      { animation: modalPopIn 300ms cubic-bezier(.34,1.56,.64,1); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
     .modal h2 { color: #00d4ff; font-size: 1.4em; margin-bottom: 8px; }
     .modal-step { display: none; }
     .modal-step.active { display: block; }
@@ -496,6 +544,12 @@
     }
     .badge-card.earned { border-color: rgba(0,212,255,0.4); background: rgba(0,212,255,0.06); }
     .badge-card.locked { opacity: 0.4; filter: grayscale(1); }
+    @keyframes badgeUnlock {
+      0%   { transform: scale(0.85); filter: grayscale(1) brightness(0.7); }
+      60%  { transform: scale(1.12); }
+      100% { transform: scale(1); filter: none; }
+    }
+    .badge-card.earned.just-unlocked { animation: badgeUnlock 400ms cubic-bezier(.34,1.56,.64,1); }
     .badge-icon { font-size: 2.2em; display: block; margin-bottom: 6px; }
     .badge-name { font-size: 0.78em; font-weight: bold; color: #e0e0e0; margin-bottom: 3px; }
     .badge-desc { font-size: 0.7em; color: #666; }
@@ -660,7 +714,7 @@
         <button class="btn btn-success" onclick="submitReset()" style="width:100%;">Update Password</button>
         <div id="reset-newpass-msg" style="margin-top:12px; color:#00ff88; display:none;"></div>
       </div>
-      <button onclick="closeResetModal()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:16px; font-size:0.85em;">✕ Close</button>
+      <button class="btn-quick" onclick="closeResetModal()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:16px; font-size:0.85em;">✕ Close</button>
     </div>
   </div>
 
@@ -719,9 +773,9 @@
         </div>
         <div class="user-info logged-out" id="user-info" onclick="handleUserInfoClick()" title="Log in or create an account">🔑 Log In</div>
       </div>
-      <button id="boxes-btn" onclick="switchTab('dashboard')" title="My Mystery Boxes" style="display:none; background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:0.9em; color:#ffd700; font-weight:700;">🎁 <span id="boxes-count">0</span></button>
+      <button class="btn-quick" id="boxes-btn" onclick="switchTab('dashboard')" title="My Mystery Boxes" style="display:none; background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3); border-radius:8px; padding:6px 10px; cursor:pointer; font-size:0.9em; color:#ffd700; font-weight:700;">🎁 <span id="boxes-count">0</span></button>
       <a href="/profile.html" id="profile-link" style="display:none;color:#aaa;text-decoration:none;font-size:0.8em;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.07);">👤 Profile</a>
-      <button id="notif-bell" onclick="toggleNotifPanel()" title="Notifications" style="display:none;position:relative;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;color:#e0e0e0;cursor:pointer;font-size:1em;">
+      <button class="btn-quick" id="notif-bell" onclick="toggleNotifPanel()" title="Notifications" style="display:none;position:relative;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 10px;color:#e0e0e0;cursor:pointer;font-size:1em;">
         🔔 <span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ff4444;color:#fff;border-radius:50%;width:16px;height:16px;font-size:10px;font-weight:700;line-height:16px;text-align:center;"></span>
       </button>
       <button class="btn btn-danger" id="logout-btn" style="display:none;" onclick="logout()">Logout</button>
@@ -732,7 +786,7 @@
   <div id="notif-panel" style="display:none;position:fixed;top:70px;right:16px;z-index:9000;width:340px;max-height:500px;overflow-y:auto;background:#10161f;border:1px solid rgba(255,215,0,0.25);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.6);">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.08);">
       <span style="color:#ffd700;font-weight:700;">🔔 Notifications</span>
-      <button onclick="markAllNotifsRead()" style="background:none;border:none;color:#00d4ff;cursor:pointer;font-size:0.8em;">Mark all read</button>
+      <button class="btn-quick" onclick="markAllNotifsRead()" style="background:none;border:none;color:#00d4ff;cursor:pointer;font-size:0.8em;">Mark all read</button>
     </div>
     <div id="notif-list" style="padding:8px;"></div>
   </div>
@@ -791,7 +845,7 @@
           <div style="text-align:right;">
             <div id="flash-timer" style="color:#ff6400; font-weight:900; font-size:1.3em; font-variant-numeric:tabular-nums;">—</div>
             <div style="color:#888; font-size:0.75em;">remaining</div>
-            <button id="flash-claim-btn" onclick="claimFlashChallenge()" style="margin-top:6px; background:#ff6400; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.82em; display:none;">Claim Reward</button>
+            <button class="btn-quick" id="flash-claim-btn" onclick="claimFlashChallenge()" style="margin-top:6px; background:#ff6400; color:#fff; border:none; border-radius:8px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.82em; display:none;">Claim Reward</button>
           </div>
         </div>
       </div>
@@ -816,7 +870,7 @@
           <div style="color:#555; font-size:0.72em; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Your Rank This Week</div>
           <div id="my-rank-text" style="color:#ffd700; font-weight:700; font-size:1.1em;">—</div>
         </div>
-        <button onclick="shareMyWeek()" style="background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3); color:#ffd700; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.82em;">📤 Share My Week</button>
+        <button class="btn-quick" onclick="shareMyWeek()" style="background:rgba(255,215,0,0.12); border:1px solid rgba(255,215,0,0.3); color:#ffd700; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.82em;">📤 Share My Week</button>
       </div>
 
       <div class="grid">
@@ -879,14 +933,14 @@
             <label style="color:#aaa; font-size:0.78em; display:block; margin-bottom:6px;">Your Referral Link</label>
             <div style="display:flex; gap:8px;">
               <input id="crew-referral-input" type="text" readonly style="flex:1; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#00d4ff; font-size:0.82em; padding:8px 12px; outline:none;" placeholder="Loading…">
-              <button onclick="copyCrewLink()" style="background:#00ff88; color:#000; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:0.82em; cursor:pointer; white-space:nowrap;" title="Copy link">📋 Copy</button>
+              <button class="btn-quick" onclick="copyCrewLink()" style="background:#00ff88; color:#000; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:0.82em; cursor:pointer; white-space:nowrap;" title="Copy link">📋 Copy</button>
             </div>
           </div>
           <div style="margin-bottom:4px;">
             <label style="color:#aaa; font-size:0.78em; display:block; margin-bottom:6px;">Add a Friend by Email</label>
             <div style="display:flex; gap:8px;">
               <input id="crew-friend-email" type="email" placeholder="friend@email.com" style="flex:1; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#e0e0e0; font-size:0.82em; padding:8px 12px; outline:none;">
-              <button onclick="sendCrewInvite()" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:0.82em; cursor:pointer; white-space:nowrap;">Add</button>
+              <button class="btn-quick" onclick="sendCrewInvite()" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 14px; font-weight:700; font-size:0.82em; cursor:pointer; white-space:nowrap;">Add</button>
             </div>
           </div>
         </div>
@@ -965,7 +1019,7 @@
             <div style="font-size:1.1em;">🔥</div><div style="margin-top:3px; font-weight:600; color:#ffd700;">$100</div><div style="color:#888; font-size:0.75em;">Day 7+</div>
           </div>
         </div>
-        <button id="dr-claim-btn" onclick="claimDailyReward()" style="width:100%; padding:13px; background:linear-gradient(135deg,#ffd700,#ffaa00); color:#000; font-weight:700; font-size:1em; border:none; border-radius:8px; cursor:pointer; letter-spacing:.04em;">
+        <button class="btn-quick" id="dr-claim-btn" onclick="claimDailyReward()" style="width:100%; padding:13px; background:linear-gradient(135deg,#ffd700,#ffaa00); color:#000; font-weight:700; font-size:1em; border:none; border-radius:8px; cursor:pointer; letter-spacing:.04em;">
           Claim Today's Reward
         </button>
         <div id="dr-status" style="margin-top:10px; text-align:center; font-size:0.85em; color:#888;"></div>
@@ -1019,8 +1073,8 @@
           </div>
 
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <button onclick="executeTrade('BUY')" id="trade-buy-btn" style="background:#00c853; color:#000; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:0.95em; cursor:pointer; transition:opacity .2s;" disabled>BUY</button>
-            <button onclick="executeTrade('SELL')" id="trade-sell-btn" style="background:#f44336; color:#fff; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:0.95em; cursor:pointer; transition:opacity .2s;" disabled>SELL</button>
+            <button class="btn-quick" onclick="executeTrade('BUY')" id="trade-buy-btn" style="background:#00c853; color:#000; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:0.95em; cursor:pointer; transition:opacity .2s;" disabled>BUY</button>
+            <button class="btn-quick" onclick="executeTrade('SELL')" id="trade-sell-btn" style="background:#f44336; color:#fff; border:none; border-radius:8px; padding:13px; font-weight:700; font-size:0.95em; cursor:pointer; transition:opacity .2s;" disabled>SELL</button>
           </div>
 
           <div id="trade-result" style="margin-top:12px; font-size:0.85em; text-align:center; min-height:20px; color:#00ff88;"></div>
@@ -1044,7 +1098,7 @@
           <div id="port-holdings" style="font-size:0.82em; max-height:260px; overflow-y:auto;">
             <div style="color:#444; text-align:center; padding:12px;">No positions yet</div>
           </div>
-          <button onclick="refreshPortfolio()" style="margin-top:12px; width:100%; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:#00d4ff; border-radius:6px; padding:8px; cursor:pointer; font-size:0.8em;">↻ Refresh</button>
+          <button class="btn-quick" onclick="refreshPortfolio()" style="margin-top:12px; width:100%; background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:#00d4ff; border-radius:6px; padding:8px; cursor:pointer; font-size:0.8em;">↻ Refresh</button>
         </div>
       </div>
 
@@ -1081,7 +1135,7 @@
             <option value="above">Above</option>
             <option value="below">Below</option>
           </select>
-          <button onclick="setAlert()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Set Alert</button>
+          <button class="btn-quick" onclick="setAlert()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Set Alert</button>
         </div>
         <div id="alerts-list"><div style="color:#555; font-size:0.88em; text-align:center; padding:10px;">No active alerts.</div></div>
       </div>
@@ -1101,7 +1155,7 @@
           </select>
           <input id="tip-cost" type="number" value="50" min="10" placeholder="Credits cost" style="flex:1; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
           <input id="tip-note" placeholder="Your analysis (optional)" style="flex:3; min-width:200px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
-          <button onclick="createTip()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">List Tip</button>
+          <button class="btn-quick" onclick="createTip()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">List Tip</button>
         </div>
       </div>
 
@@ -1117,7 +1171,7 @@
           </select>
           <input id="lo-qty" type="number" placeholder="Qty" min="1" style="flex:1; min-width:70px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
           <input id="lo-price" type="number" placeholder="Limit price" style="flex:2; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
-          <button onclick="placeLimitOrder()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Place Order</button>
+          <button class="btn-quick" onclick="placeLimitOrder()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Place Order</button>
         </div>
         <div id="limit-orders-list"><div style="color:#555; font-size:0.88em; text-align:center; padding:10px;">No pending limit orders.</div></div>
       </div>
@@ -1129,13 +1183,13 @@
         <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
           <span style="font-size:1.4em;">🤖</span>
           <span style="color:#00d4ff; font-weight:bold; font-size:0.9em;">AI Coach</span>
-          <button onclick="dismissCoach()" style="margin-left:auto; background:none; border:none; color:#444; cursor:pointer; font-size:1.1em; line-height:1;">✕</button>
+          <button class="btn-quick" onclick="dismissCoach()" style="margin-left:auto; background:none; border:none; color:#444; cursor:pointer; font-size:1.1em; line-height:1;">✕</button>
         </div>
         <p id="coach-message" style="color:#ccc; font-size:0.88em; line-height:1.5; margin-bottom:6px;"></p>
         <p id="coach-disclaimer" style="color:#555; font-size:0.75em; font-style:italic; margin-bottom:14px;"></p>
         <div id="coach-actions" style="display:flex; gap:8px;">
-          <button id="coach-yes-btn" onclick="coachAccept()" style="flex:1; background:#00c853; color:#000; border:none; border-radius:8px; padding:9px; font-weight:700; font-size:0.85em; cursor:pointer;">Yes, do it!</button>
-          <button onclick="dismissCoach()" style="flex:1; background:rgba(255,255,255,0.07); color:#aaa; border:1px solid #333; border-radius:8px; padding:9px; font-size:0.85em; cursor:pointer;">No thanks</button>
+          <button class="btn-quick" id="coach-yes-btn" onclick="coachAccept()" style="flex:1; background:#00c853; color:#000; border:none; border-radius:8px; padding:9px; font-weight:700; font-size:0.85em; cursor:pointer;">Yes, do it!</button>
+          <button class="btn-quick" onclick="dismissCoach()" style="flex:1; background:rgba(255,255,255,0.07); color:#aaa; border:1px solid #333; border-radius:8px; padding:9px; font-size:0.85em; cursor:pointer;">No thanks</button>
         </div>
       </div>
     </div>
@@ -1216,11 +1270,11 @@
                 <input id="tk-desc" type="text" placeholder="The hustle token" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box;">
               </div>
             </div>
-            <button onclick="createToken()" style="background:linear-gradient(135deg,#7c3aed,#00d4ff); color:#fff; border:none; border-radius:10px; padding:11px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; width:100%;">🚀 Launch Token</button>
+            <button class="btn-quick" onclick="createToken()" style="background:linear-gradient(135deg,#7c3aed,#00d4ff); color:#fff; border:none; border-radius:10px; padding:11px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; width:100%;">🚀 Launch Token</button>
             <div id="token-create-result" style="margin-top:12px;"></div>
           </div>
           <div id="token-create-locked" style="color:#888; font-size:0.88em;">
-            🔒 Requires Creator or Elite membership. <button onclick="switchTab('payments')" style="background:none; border:none; color:#00d4ff; cursor:pointer; text-decoration:underline; font-size:1em;">Upgrade →</button>
+            🔒 Requires Creator or Elite membership. <button class="btn-quick" onclick="switchTab('payments')" style="background:none; border:none; color:#00d4ff; cursor:pointer; text-decoration:underline; font-size:1em;">Upgrade →</button>
           </div>
         </div>
 
@@ -1228,7 +1282,7 @@
         <div class="card" style="margin-top:14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
             <h2 style="margin:0;">📊 My Tokens</h2>
-            <button onclick="loadMyTokens()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+            <button class="btn-quick" onclick="loadMyTokens()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
           </div>
           <div id="my-tokens-list" style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
         </div>
@@ -1237,7 +1291,7 @@
         <div class="card" style="margin-top:14px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
             <h2 style="margin:0;">🏪 Token Marketplace</h2>
-            <button onclick="loadTokenMarket()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+            <button class="btn-quick" onclick="loadTokenMarket()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
           </div>
           <div id="token-market-list" style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
         </div>
@@ -1261,7 +1315,7 @@
       <div class="card" style="margin-bottom:18px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
           <h2 style="margin:0;">🏪 Legend NFT Marketplace</h2>
-          <button onclick="loadNFTMarket()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+          <button class="btn-quick" onclick="loadNFTMarket()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
         </div>
         <div id="nft-market-list" style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
       </div>
@@ -1296,16 +1350,16 @@
               <div style="position:absolute; bottom:4px; right:4px; background:linear-gradient(135deg,#00d4ff,#7c3aed); color:#fff; border-radius:50%; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-size:0.9em; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,0.5);" onclick="openAvatarBuilder()" title="Design avatar">🎨</div>
             </div>
 
-            <button onclick="openAvatarBuilder()" style="background:linear-gradient(135deg,#00d4ff,#7c3aed); color:#fff; border:none; border-radius:10px; padding:11px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; display:block; width:100%; max-width:230px; margin:0 auto 10px; box-shadow:0 4px 12px rgba(0,212,255,0.25);">🎨 Design Your Avatar</button>
+            <button class="btn-quick" onclick="openAvatarBuilder()" style="background:linear-gradient(135deg,#00d4ff,#7c3aed); color:#fff; border:none; border-radius:10px; padding:11px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; display:block; width:100%; max-width:230px; margin:0 auto 10px; box-shadow:0 4px 12px rgba(0,212,255,0.25);">🎨 Design Your Avatar</button>
             <div style="color:#444; font-size:0.78em; margin-bottom:10px;">All nationalities · Male &amp; Female · SML designer outfits</div>
 
             <div style="color:#444; font-size:0.75em; margin-bottom:8px;">— or upload a photo —</div>
-            <button onclick="document.getElementById('avatar-file-input').click()" style="background:rgba(255,255,255,0.05); color:#777; border:1px solid #2a2a3a; border-radius:8px; padding:7px 18px; cursor:pointer; font-size:0.8em;">📷 Upload Photo</button>
+            <button class="btn-quick" onclick="document.getElementById('avatar-file-input').click()" style="background:rgba(255,255,255,0.05); color:#777; border:1px solid #2a2a3a; border-radius:8px; padding:7px 18px; cursor:pointer; font-size:0.8em;">📷 Upload Photo</button>
             <input type="file" id="avatar-file-input" accept="image/*" style="display:none;" onchange="handleAvatarFile(this)">
 
             <div id="avatar-upload-actions" style="display:none; margin-top:10px;">
-              <button onclick="uploadAvatar()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 20px; font-weight:bold; cursor:pointer; margin-right:8px;">✅ Save Photo</button>
-              <button onclick="cancelAvatarUpload()" style="background:#333; color:#ccc; border:none; border-radius:6px; padding:8px 14px; cursor:pointer;">Cancel</button>
+              <button class="btn-quick" onclick="uploadAvatar()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 20px; font-weight:bold; cursor:pointer; margin-right:8px;">✅ Save Photo</button>
+              <button class="btn-quick" onclick="cancelAvatarUpload()" style="background:#333; color:#ccc; border:none; border-radius:6px; padding:8px 14px; cursor:pointer;">Cancel</button>
             </div>
             <div id="avatar-status" style="font-size:0.85em; margin-top:8px; display:none;"></div>
           </div>
@@ -1395,13 +1449,13 @@
           <div style="color:#d4a7f5; font-weight:bold; font-size:1.05em; margin-bottom:8px;">💎 SML Credits</div>
           <p style="color:#777; font-size:0.83em; margin-bottom:16px; line-height:1.5;">Spend on cosmetics, emote packs &amp; special features. Credits never expire.</p>
           <div style="display:flex; flex-direction:column; gap:10px;">
-            <button onclick="buySMLCredits('starter')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
+            <button class="btn-quick" onclick="buySMLCredits('starter')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
               <span>⚡ Starter Pack</span><strong style="color:#9b59b6;">500 Credits · $5</strong>
             </button>
-            <button onclick="buySMLCredits('legends')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
+            <button class="btn-quick" onclick="buySMLCredits('legends')" style="background:#150a2e; border:1px solid #9b59b6; color:#d4a7f5; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#1f1040'" onmouseout="this.style.background='#150a2e'">
               <span>🌟 Legends Pack</span><strong style="color:#9b59b6;">2,500 Credits · $12.50</strong>
             </button>
-            <button onclick="buySMLCredits('champion')" style="background:#1a1000; border:2px solid #ffd700; color:#ffd700; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#251700'" onmouseout="this.style.background='#1a1000'">
+            <button class="btn-quick" onclick="buySMLCredits('champion')" style="background:#1a1000; border:2px solid #ffd700; color:#ffd700; padding:12px 16px; border-radius:8px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; font-size:0.87em; transition:background .15s;" onmouseover="this.style.background='#251700'" onmouseout="this.style.background='#1a1000'">
               <span>👑 Champion Pack</span><strong>7,000 Credits · $27.50</strong>
             </button>
           </div>
@@ -1501,7 +1555,7 @@
           <span style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); border-radius:20px; padding:3px 10px; font-size:0.78em; color:#00ff88;">🎖️ Exclusive Badges</span>
         </div>
         <button class="btn" onclick="buyBattlePass()" style="width:100%; background:linear-gradient(135deg,#ffd700,#ff8c00); border:none; color:#000; font-weight:700;">🎫 Unlock Premium Battle Pass — $5.00</button>
-        <div style="text-align:center; margin-top:8px;"><button onclick="switchTab('battlepass'); loadBattlePass()" style="background:none; border:none; color:#555; font-size:0.8em; cursor:pointer; text-decoration:underline;">View all tiers →</button></div>
+        <div style="text-align:center; margin-top:8px;"><button class="btn-quick" onclick="switchTab('battlepass'); loadBattlePass()" style="background:none; border:none; color:#555; font-size:0.8em; cursor:pointer; text-decoration:underline;">View all tiers →</button></div>
       </div>
 
       <!-- XP Booster -->
@@ -1536,7 +1590,7 @@
               <option value="whale">$50,000 SML Bucks — $12.50</option>
               <option value="ultimate">$200,000 SML Bucks — $40.00</option>
             </select>
-            <button onclick="giftPaperMoney()" style="width:100%; background:rgba(0,212,255,0.15); border:1px solid #00d4ff; border-radius:8px; color:#00d4ff; padding:9px; font-weight:700; cursor:pointer; font-size:0.85em;">🎁 Send SML Bucks Gift</button>
+            <button class="btn-quick" onclick="giftPaperMoney()" style="width:100%; background:rgba(0,212,255,0.15); border:1px solid #00d4ff; border-radius:8px; color:#00d4ff; padding:9px; font-weight:700; cursor:pointer; font-size:0.85em;">🎁 Send SML Bucks Gift</button>
           </div>
           <div>
             <div style="color:#aaa; font-size:0.83em; margin-bottom:8px;">Gift SML Credits</div>
@@ -1546,7 +1600,7 @@
               <option value="legends">2,500 Credits — $12.50</option>
               <option value="champion">7,000 Credits — $27.50</option>
             </select>
-            <button onclick="giftCredits()" style="width:100%; background:rgba(155,89,182,0.2); border:1px solid #9b59b6; border-radius:8px; color:#d4a7f5; padding:9px; font-weight:700; cursor:pointer; font-size:0.85em;">🎁 Send Credits Gift</button>
+            <button class="btn-quick" onclick="giftCredits()" style="width:100%; background:rgba(155,89,182,0.2); border:1px solid #9b59b6; border-radius:8px; color:#d4a7f5; padding:9px; font-weight:700; cursor:pointer; font-size:0.85em;">🎁 Send Credits Gift</button>
           </div>
         </div>
       </div>
@@ -1679,11 +1733,11 @@
             <input id="referral-link-input" type="text" readonly
               style="flex:1; min-width:200px; background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:10px 14px; color:#00d4ff; font-size:0.9em; outline:none;"
               placeholder="Log in to get your referral link">
-            <button onclick="copyReferralLink()"
+            <button class="btn-quick" onclick="copyReferralLink()"
               style="background:#00d4ff; color:#000; border:none; border-radius:6px; padding:10px 20px; font-weight:bold; cursor:pointer; white-space:nowrap;">
               📋 Copy Link
             </button>
-            <button onclick="shareReferralLink()"
+            <button class="btn-quick" onclick="shareReferralLink()"
               style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:10px 20px; font-weight:bold; cursor:pointer; white-space:nowrap;">
               📤 Share
             </button>
@@ -1713,12 +1767,12 @@
         <div class="card" style="margin-bottom:20px;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
             <h3 style="color:#ffd700; margin:0;">🏆 Milestone Rewards</h3>
-            <button onclick="loadReferralMilestones()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+            <button class="btn-quick" onclick="loadReferralMilestones()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
           </div>
           <div id="referral-milestones" style="display:flex; flex-direction:column; gap:10px;">
             <div style="color:#555; text-align:center; padding:16px;">Loading milestones…</div>
           </div>
-          <button id="claim-milestones-btn" onclick="claimReferralMilestones()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:12px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; width:100%; margin-top:14px;">🎁 Claim Rewards</button>
+          <button class="btn-quick" id="claim-milestones-btn" onclick="claimReferralMilestones()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:12px 28px; font-weight:bold; cursor:pointer; font-size:0.95em; width:100%; margin-top:14px;">🎁 Claim Rewards</button>
         </div>
 
         <div class="card" style="background:rgba(0,212,255,0.05); border:1px solid rgba(0,212,255,0.2);">
@@ -1763,8 +1817,8 @@
             </div>
             <div id="bj-result" style="text-align:center; font-size:1.1em; font-weight:bold; min-height:28px; margin-bottom:12px;"></div>
             <div id="bj-actions" style="display:flex; gap:10px;">
-              <button onclick="bjHit()" id="bj-hit-btn" style="flex:1; background:#00ff88; color:#000; border:none; border-radius:8px; padding:12px; font-weight:bold; cursor:pointer;">Hit</button>
-              <button onclick="bjStand()" id="bj-stand-btn" style="flex:1; background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:12px; font-weight:bold; cursor:pointer;">Stand</button>
+              <button class="btn-quick" onclick="bjHit()" id="bj-hit-btn" style="flex:1; background:#00ff88; color:#000; border:none; border-radius:8px; padding:12px; font-weight:bold; cursor:pointer;">Hit</button>
+              <button class="btn-quick" onclick="bjStand()" id="bj-stand-btn" style="flex:1; background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:12px; font-weight:bold; cursor:pointer;">Stand</button>
             </div>
           </div>
           <div id="bj-start" style="">
@@ -1772,10 +1826,10 @@
               <label style="color:#aaa; font-size:0.82em;">Your Bet (Casino Chips)</label>
               <input id="bj-bet" type="number" placeholder="min 1,000 chips" min="1000" step="1000" style="background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; width:100%; font-size:0.9em; box-sizing:border-box; margin-top:6px;">
             </div>
-            <button onclick="bjStart()" style="background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:12px; font-weight:bold; cursor:pointer; width:100%; font-size:1em;">🃏 Deal</button>
+            <button class="btn-quick" onclick="bjStart()" style="background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:12px; font-weight:bold; cursor:pointer; width:100%; font-size:1em;">🃏 Deal</button>
           </div>
           <div id="bj-new-game" style="display:none; margin-top:12px;">
-            <button onclick="bjReset()" style="background:rgba(0,212,255,0.15); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:10px 20px; cursor:pointer; width:100%; font-weight:bold;">🔄 New Hand</button>
+            <button class="btn-quick" onclick="bjReset()" style="background:rgba(0,212,255,0.15); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:10px 20px; cursor:pointer; width:100%; font-weight:bold;">🔄 New Hand</button>
           </div>
         </div>
 
@@ -1793,7 +1847,7 @@
             <li>Exclusive VIP badge on your profile</li>
             <li>Priority AI coach responses</li>
           </ul>
-          <button onclick="joinCasinoVIP()" style="background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:13px; font-weight:bold; cursor:pointer; width:100%; font-size:1em;">🔓 Join VIP Room — $7.50/mo</button>
+          <button class="btn-quick" onclick="joinCasinoVIP()" style="background:linear-gradient(135deg,#ffd700,#ff6400); color:#000; border:none; border-radius:10px; padding:13px; font-weight:bold; cursor:pointer; width:100%; font-size:1em;">🔓 Join VIP Room — $7.50/mo</button>
         </div>
 
         <!-- Horse Racing -->
@@ -1837,8 +1891,8 @@
         <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
           <input id="tw-symbol" type="text" placeholder="Symbol (e.g. AAPL)" style="flex:1; min-width:120px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; font-size:0.9em;">
           <input id="tw-qty" type="number" placeholder="Qty" min="1" style="width:90px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; padding:9px 12px; color:#e0e0e0; font-size:0.9em;">
-          <button onclick="twTrade('buy')" style="background:#00ff88; color:#000; border:none; border-radius:8px; padding:9px 18px; font-weight:bold; cursor:pointer;">Buy</button>
-          <button onclick="twTrade('sell')" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:9px 18px; font-weight:bold; cursor:pointer;">Sell</button>
+          <button class="btn-quick" onclick="twTrade('buy')" style="background:#00ff88; color:#000; border:none; border-radius:8px; padding:9px 18px; font-weight:bold; cursor:pointer;">Buy</button>
+          <button class="btn-quick" onclick="twTrade('sell')" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:9px 18px; font-weight:bold; cursor:pointer;">Sell</button>
         </div>
         <div id="tw-trade-result" style="color:#aaa; font-size:0.85em; min-height:20px;"></div>
       </div>
@@ -1847,7 +1901,7 @@
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
           <h2 style="margin:0;">🏆 War Leaderboard</h2>
-          <button onclick="loadTradeWarLB()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
+          <button class="btn-quick" onclick="loadTradeWarLB()" style="background:rgba(0,212,255,0.1); border:1px solid #1e3a5f; color:#00d4ff; border-radius:8px; padding:6px 14px; cursor:pointer; font-size:0.82em;">🔄 Refresh</button>
         </div>
         <div id="trade-war-lb" style="color:#555; text-align:center; padding:16px;">Loading…</div>
       </div>
@@ -1970,7 +2024,7 @@
         <div style="background:#13161f;border:1px solid #2a3050;border-radius:16px;overflow:hidden;">
           <div style="padding:14px 18px;border-bottom:1px solid #2a3050;display:flex;justify-content:space-between;align-items:center;">
             <span style="font-weight:700;color:#e0e0e0;font-size:.95em;">Recent Activity</span>
-            <button onclick="loadCommunityFeed()" style="background:none;border:1px solid #2a3050;color:#aaa;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:.78em;transition:.15s;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#aaa'">🔄 Refresh</button>
+            <button class="btn-quick" onclick="loadCommunityFeed()" style="background:none;border:1px solid #2a3050;color:#aaa;border-radius:8px;padding:4px 12px;cursor:pointer;font-size:.78em;transition:.15s;" onmouseover="this.style.color='#00d4ff'" onmouseout="this.style.color='#aaa'">🔄 Refresh</button>
           </div>
           <div id="community-feed" style="padding:12px;display:flex;flex-direction:column;gap:8px;max-height:520px;overflow-y:auto;">
             <div style="color:#555;text-align:center;padding:32px;">Loading community…</div>
@@ -1990,7 +2044,7 @@
           <p style="color:#888; font-size:0.85em; margin:0 0 14px;">Attack the weekly boss once per hour. When HP hits zero, the $50,000 loot pool splits among all attackers proportionally by damage dealt.</p>
           <div id="boss-status"><div style="color:#555; font-size:0.88em; text-align:center; padding:12px;">Loading…</div></div>
           <div id="boss-hp-bar" style="margin:12px 0;"></div>
-          <button onclick="attackBoss()" id="boss-attack-btn" style="background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">⚔️ Attack Boss (1/hr)</button>
+          <button class="btn-quick" onclick="attackBoss()" id="boss-attack-btn" style="background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">⚔️ Attack Boss (1/hr)</button>
         </div>
 
         <!-- Leaderboard Snapshot -->
@@ -2050,7 +2104,7 @@
               </div>
             </div>
             <div id="ai-status" style="text-align:center; padding:10px; border-radius:8px; font-weight:bold; font-size:0.9em; background:rgba(0,0,0,0.3); color:#888;">Log in to check your status</div>
-            <button onclick="loadAIChallenge()" style="width:100%; margin-top:12px; background:#1a1f2e; border:1px solid #333; color:#00d4ff; border-radius:6px; padding:8px; cursor:pointer; font-size:0.85em;">🔄 Refresh</button>
+            <button class="btn-quick" onclick="loadAIChallenge()" style="width:100%; margin-top:12px; background:#1a1f2e; border:1px solid #333; color:#00d4ff; border-radius:6px; padding:8px; cursor:pointer; font-size:0.85em;">🔄 Refresh</button>
           </div>
 
           <!-- Season Countdown -->
@@ -2114,11 +2168,11 @@
             <input id="tc-symbol" type="text" placeholder="Ticker (e.g. AAPL)" style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:10px 12px; color:#e0e0e0; font-size:0.9em; outline:none;">
             <input id="tc-gain" type="number" step="0.01" placeholder="Gain % (e.g. 8.4)" style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:10px 12px; color:#e0e0e0; font-size:0.9em; outline:none;">
           </div>
-          <button onclick="generateTradeCard()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:10px 22px; font-weight:bold; cursor:pointer;">Generate Card</button>
+          <button class="btn-quick" onclick="generateTradeCard()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:10px 22px; font-weight:bold; cursor:pointer;">Generate Card</button>
           <div id="trade-card-result" style="margin-top:16px; display:none;">
             <div id="trade-card-box" style="background:linear-gradient(135deg,#0d1b2a,#1a1f2e); border:1px solid #333; border-radius:10px; padding:20px;"></div>
-            <button onclick="copyTradeCard()" style="margin-top:10px; background:#333; border:none; color:#00ff88; border-radius:6px; padding:8px 18px; cursor:pointer; font-size:0.85em;">📋 Copy Share Text</button>
-            <button onclick="shareTradeCard()" style="margin-top:10px; margin-left:8px; background:#00d4ff; border:none; color:#000; border-radius:6px; padding:8px 18px; cursor:pointer; font-size:0.85em; font-weight:bold;">📤 Share</button>
+            <button class="btn-quick" onclick="copyTradeCard()" style="margin-top:10px; background:#333; border:none; color:#00ff88; border-radius:6px; padding:8px 18px; cursor:pointer; font-size:0.85em;">📋 Copy Share Text</button>
+            <button class="btn-quick" onclick="shareTradeCard()" style="margin-top:10px; margin-left:8px; background:#00d4ff; border:none; color:#000; border-radius:6px; padding:8px 18px; cursor:pointer; font-size:0.85em; font-weight:bold;">📤 Share</button>
           </div>
         </div>
 
@@ -2160,8 +2214,8 @@
   </div>
 
   <!-- ── Paywall Overlay ──────────────────────────────────────────────── -->
-  <div id="paywall-overlay" style="display:flex; position:fixed; inset:0; z-index:9999; background:radial-gradient(ellipse 80% 40% at 50% 110%,rgba(255,180,0,0.18) 0%,transparent 70%),linear-gradient(150deg,#0c1018 0%,#131820 40%,#0a0e16 100%); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
-    <div style="text-align:center; max-width:480px; width:100%;">
+  <div id="paywall-overlay" class="modal-anim-overlay" style="display:flex; position:fixed; inset:0; z-index:9999; background:radial-gradient(ellipse 80% 40% at 50% 110%,rgba(255,180,0,0.18) 0%,transparent 70%),linear-gradient(150deg,#0c1018 0%,#131820 40%,#0a0e16 100%); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
+    <div class="modal-anim-box" style="text-align:center; max-width:480px; width:100%;">
       <div style="font-size:3.5em; margin-bottom:12px;">👑</div>
       <h1 style="color:#ffd700; font-size:1.9em; font-weight:900; letter-spacing:0.02em; margin-bottom:8px;">Come Up</h1>
       <p style="color:#888; font-size:0.95em; line-height:1.7; margin-bottom:8px;">The AI-powered stock trading game. Compete on the national leaderboard. Build your legend.</p>
@@ -2169,9 +2223,9 @@
 
       <!-- Not logged in state -->
       <div id="paywall-guest" style="display:flex; flex-direction:column; gap:12px; max-width:300px; margin:0 auto;">
-        <button onclick="paywallLogin()" style="background:#ffd700; color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Login</button>
-        <button onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign Up Free</button>
-        <button onclick="openForgotPassword()" style="background:transparent; border:none; color:#888; font-size:0.82em; cursor:pointer; text-decoration:underline; margin-top:2px;">Forgot Password?</button>
+        <button class="btn-quick" onclick="paywallLogin()" style="background:#ffd700; color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Login</button>
+        <button class="btn-quick" onclick="paywallRegister()" style="background:linear-gradient(135deg,#00d4ff,#00ff88); color:#000; border:none; border-radius:10px; padding:14px 24px; font-weight:700; font-size:1em; cursor:pointer; transition:opacity .2s;" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">Sign Up Free</button>
+        <button class="btn-quick" onclick="openForgotPassword()" style="background:transparent; border:none; color:#888; font-size:0.82em; cursor:pointer; text-decoration:underline; margin-top:2px;">Forgot Password?</button>
         <a href="/leaderboard.html" style="color:#555; font-size:0.82em; text-align:center; text-decoration:none; margin-top:4px;">View Leaderboard (Public) →</a>
       </div>
     </div>
@@ -2195,7 +2249,7 @@
           </div>
           <div style="text-align:right;">
             <div id="heat-level-desc" style="color:#aaa; font-size:0.82em;"></div>
-            <button id="heat-bribe-btn" onclick="heatBribe()" style="margin-top:6px; background:rgba(255,68,68,0.15); border:1px solid rgba(255,68,68,0.3); color:#ff8888; border-radius:6px; padding:5px 12px; cursor:pointer; font-size:0.78em; display:none;">💸 Bribe (-500 Credits)</button>
+            <button class="btn-quick" id="heat-bribe-btn" onclick="heatBribe()" style="margin-top:6px; background:rgba(255,68,68,0.15); border:1px solid rgba(255,68,68,0.3); color:#ff8888; border-radius:6px; padding:5px 12px; cursor:pointer; font-size:0.78em; display:none;">💸 Bribe (-500 Credits)</button>
           </div>
         </div>
       </div>
@@ -2229,8 +2283,8 @@
             <div id="uw-bail-info" style="color:#aaa; font-size:0.85em; margin-bottom:14px;"></div>
           </div>
           <div style="display:flex; gap:12px; flex-wrap:wrap;">
-            <button onclick="payBail('cash')" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; min-width:160px;">💰 Pay $50,000 Cash Bail</button>
-            <button onclick="payBail('stripe')" style="flex:1; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; min-width:160px;">💳 Pay $5 Real Money → +$1k Paper</button>
+            <button class="btn-quick" onclick="payBail('cash')" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; min-width:160px;">💰 Pay $50,000 Cash Bail</button>
+            <button class="btn-quick" onclick="payBail('stripe')" style="flex:1; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; min-width:160px;">💳 Pay $5 Real Money → +$1k Paper</button>
           </div>
         </div>
       </div>
@@ -2279,7 +2333,7 @@
           </div>
         </div>
 
-        <button onclick="initiateHeist()" style="background:linear-gradient(135deg,#ff4444,#cc2200); color:#fff; border:none; border-radius:8px; padding:12px 24px; font-weight:700; cursor:pointer; font-size:0.95em; width:100%;">🥷 Initiate Heist</button>
+        <button class="btn-quick" onclick="initiateHeist()" style="background:linear-gradient(135deg,#ff4444,#cc2200); color:#fff; border:none; border-radius:8px; padding:12px 24px; font-weight:700; cursor:pointer; font-size:0.95em; width:100%;">🥷 Initiate Heist</button>
       </div>
 
       <!-- Card 3: PvP Challenge -->
@@ -2343,14 +2397,14 @@
           <div id="uw-active-challenge-info" style="color:#aaa; font-size:0.85em;"></div>
         </div>
 
-        <button onclick="sendChallenge()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:12px 24px; font-weight:700; cursor:pointer; font-size:0.95em; width:100%;">⚔️ Send Challenge</button>
+        <button class="btn-quick" onclick="sendChallenge()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:12px 24px; font-weight:700; cursor:pointer; font-size:0.95em; width:100%;">⚔️ Send Challenge</button>
       </div>
 
       <!-- Card 4: Pending Notifications -->
       <div class="card" style="margin-bottom:20px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
           <h3 style="color:#ff8c00; margin:0;">🔔 Pending Actions</h3>
-          <button onclick="loadHeistNotifications()" style="background:transparent; border:1px solid #333; color:#555; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:0.78em;">↻ Refresh</button>
+          <button class="btn-quick" onclick="loadHeistNotifications()" style="background:transparent; border:1px solid #333; color:#555; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:0.78em;">↻ Refresh</button>
         </div>
         <div id="uw-notifications" style="display:flex; flex-direction:column; gap:10px;">
           <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
@@ -2361,7 +2415,7 @@
       <div class="card" style="margin-bottom:20px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
           <h3 style="color:#aaa; margin:0;">📋 Heist Log</h3>
-          <button onclick="loadHeistLog()" style="background:transparent; border:1px solid #333; color:#555; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:0.78em;">↻ Refresh</button>
+          <button class="btn-quick" onclick="loadHeistLog()" style="background:transparent; border:1px solid #333; color:#555; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:0.78em;">↻ Refresh</button>
         </div>
         <div id="uw-heist-log" style="overflow-x:auto;">
           <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">No heist history yet.</div>
@@ -2383,8 +2437,8 @@
         <p style="color:#888; font-size:0.82em; margin-bottom:16px;">Guard dogs permanently bite robbers. Shields degrade with each hit — repurchase when destroyed.</p>
         <!-- Defense Shop tabs -->
         <div style="display:flex; gap:8px; margin-bottom:16px;">
-          <button id="def-tab-dogs" onclick="switchDefTab('dogs')" style="background:rgba(0,255,136,.15); border:1px solid #00ff88; border-radius:20px; color:#00ff88; padding:6px 16px; font-size:0.82em; font-weight:700; cursor:pointer;">🐕 Guard Dogs</button>
-          <button id="def-tab-shields" onclick="switchDefTab('shields')" style="background:transparent; border:1px solid #333; border-radius:20px; color:#555; padding:6px 16px; font-size:0.82em; font-weight:700; cursor:pointer;">🛡️ Shields</button>
+          <button class="btn-quick" id="def-tab-dogs" onclick="switchDefTab('dogs')" style="background:rgba(0,255,136,.15); border:1px solid #00ff88; border-radius:20px; color:#00ff88; padding:6px 16px; font-size:0.82em; font-weight:700; cursor:pointer;">🐕 Guard Dogs</button>
+          <button class="btn-quick" id="def-tab-shields" onclick="switchDefTab('shields')" style="background:transparent; border:1px solid #333; border-radius:20px; color:#555; padding:6px 16px; font-size:0.82em; font-weight:700; cursor:pointer;">🛡️ Shields</button>
         </div>
         <div id="uw-dogs-store">
           <div style="color:#555; font-size:0.88em; text-align:center; padding:16px;">Loading…</div>
@@ -2402,7 +2456,7 @@
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
           <input id="bounty-target" placeholder="Target user ID or email" style="flex:2; min-width:180px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
           <input id="bounty-amount" type="number" placeholder="Amount ($, min $10)" min="10" style="flex:1; min-width:120px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
-          <button onclick="placeBounty()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Place Bounty</button>
+          <button class="btn-quick" onclick="placeBounty()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer; font-size:0.88em;">Place Bounty</button>
         </div>
         <div id="uw-bounty-list">
           <div style="color:#555; font-size:0.88em; text-align:center; padding:12px;">Loading bounties…</div>
@@ -2419,7 +2473,7 @@
             <div style="color:#4fc3f7; font-weight:700; margin-bottom:2px;">🔒 Witness Protection</div>
             <div id="uw-wp-status" style="color:#888; font-size:0.82em;">24h immunity — 200 SML Credits</div>
           </div>
-          <button onclick="activateWitnessProtection()" style="background:rgba(79,195,247,.15); border:1px solid rgba(79,195,247,.4); color:#4fc3f7; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.85em;">Activate (200 Credits)</button>
+          <button class="btn-quick" onclick="activateWitnessProtection()" style="background:rgba(79,195,247,.15); border:1px solid rgba(79,195,247,.4); color:#4fc3f7; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.85em;">Activate (200 Credits)</button>
         </div>
         <hr style="border-color:#222; margin:12px 0;">
         <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
@@ -2427,7 +2481,7 @@
             <div style="color:#00ff88; font-weight:700; margin-bottom:2px;">🛡️ Heist Insurance</div>
             <div id="uw-insurance-status" style="color:#888; font-size:0.82em;">50% refund if robbed — 150 SML Credits</div>
           </div>
-          <button onclick="activateInsurance()" style="background:rgba(0,255,136,.1); border:1px solid rgba(0,255,136,.3); color:#00ff88; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.85em;">Activate (150 Credits)</button>
+          <button class="btn-quick" onclick="activateInsurance()" style="background:rgba(0,255,136,.1); border:1px solid rgba(0,255,136,.3); color:#00ff88; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.85em;">Activate (150 Credits)</button>
         </div>
       </div>
 
@@ -2451,7 +2505,7 @@
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <input id="sf-recipient" placeholder="Recipient user ID or email" style="flex:2; min-width:180px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
             <input id="sf-amount" type="number" placeholder="Amount ($)" min="1" style="flex:1; min-width:100px; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.88em; outline:none;">
-            <button onclick="sendPaperMoney()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.88em;">Send</button>
+            <button class="btn-quick" onclick="sendPaperMoney()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.88em;">Send</button>
           </div>
         </div>
 
@@ -2467,7 +2521,7 @@
               <option value="whale">Whale — $50,000 ($12.50)</option>
               <option value="ultimate">Ultimate — $200,000 ($40)</option>
             </select>
-            <button onclick="giftRealMoney()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.88em;">Buy Gift</button>
+            <button class="btn-quick" onclick="giftRealMoney()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.88em;">Buy Gift</button>
           </div>
         </div>
       </div>
@@ -2487,8 +2541,8 @@
         <div id="spin-status" style="color:#888; font-size:0.88em; margin-bottom:14px;">Loading…</div>
         <canvas id="spin-canvas" width="280" height="280" style="max-width:100%; border-radius:50%; border:3px solid #333;"></canvas>
         <div style="margin-top:14px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-          <button id="spin-btn" onclick="doSpin()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:12px 28px; font-weight:700; cursor:pointer; font-size:0.95em;">🎡 Spin (Free Daily)</button>
-          <button onclick="buyExtraSpin()" style="background:rgba(255,215,0,.12); border:1px solid rgba(255,215,0,.3); color:#ffd700; border-radius:8px; padding:12px 20px; font-weight:700; cursor:pointer; font-size:0.9em;">+1 Spin (100 Credits)</button>
+          <button class="btn-quick" id="spin-btn" onclick="doSpin()" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:12px 28px; font-weight:700; cursor:pointer; font-size:0.95em;">🎡 Spin (Free Daily)</button>
+          <button class="btn-quick" onclick="buyExtraSpin()" style="background:rgba(255,215,0,.12); border:1px solid rgba(255,215,0,.3); color:#ffd700; border-radius:8px; padding:12px 20px; font-weight:700; cursor:pointer; font-size:0.9em;">+1 Spin (100 Credits)</button>
         </div>
         <div id="spin-result" style="margin-top:12px; font-size:0.95em; min-height:20px;"></div>
       </div>
@@ -2499,7 +2553,7 @@
           <h3 style="color:#00ff88; margin-bottom:8px;">⚡ XP Booster</h3>
           <p style="color:#888; font-size:0.85em; margin-bottom:12px;">Activate a 2× XP multiplier for 24 hours. Costs 500 SML Credits.</p>
           <div id="boost-status-games" style="color:#555; font-size:0.82em; margin-bottom:12px; min-height:16px;"></div>
-          <button onclick="activateBoost()" style="width:100%; background:rgba(0,100,50,0.3); border:1px solid #00ff88; border-radius:8px; color:#00ff88; padding:10px; font-weight:700; cursor:pointer;">⚡ Activate — 500 Credits</button>
+          <button class="btn-quick" onclick="activateBoost()" style="width:100%; background:rgba(0,100,50,0.3); border:1px solid #00ff88; border-radius:8px; color:#00ff88; padding:10px; font-weight:700; cursor:pointer;">⚡ Activate — 500 Credits</button>
         </div>
 
         <!-- Dice Game -->
@@ -2508,7 +2562,7 @@
           <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Roll 2 dice. Sum 8–12 wins <strong style="color:#00ff88;">1.8×</strong>. Sum 2–7 loses.</p>
           <div style="display:flex; gap:10px; margin-bottom:12px;">
             <input id="dice-wager" type="number" placeholder="Wager ($)" min="1" style="flex:1; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none;">
-            <button onclick="playDice()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Roll</button>
+            <button class="btn-quick" onclick="playDice()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Roll</button>
           </div>
           <div id="dice-result" style="font-size:0.9em; min-height:20px; text-align:center; color:#aaa;"></div>
         </div>
@@ -2519,7 +2573,7 @@
           <p style="color:#888; font-size:0.85em; margin-bottom:14px;">Flip a card. <strong style="color:#ff4444;">Red</strong> wins <strong style="color:#00ff88;">1.8×</strong>. <strong style="color:#555;">Black</strong> loses.</p>
           <div style="display:flex; gap:10px; margin-bottom:12px;">
             <input id="card-wager" type="number" placeholder="Wager ($)" min="1" style="flex:1; background:#0d1b2a; border:1px solid #333; border-radius:8px; color:#e0e0e0; padding:10px 12px; font-size:0.9em; outline:none;">
-            <button onclick="playCardFlip()" style="background:linear-gradient(135deg,#ff6b6b,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Flip</button>
+            <button class="btn-quick" onclick="playCardFlip()" style="background:linear-gradient(135deg,#ff6b6b,#cc0000); color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:700; cursor:pointer;">Flip</button>
           </div>
           <div id="card-result" style="font-size:0.9em; min-height:20px; text-align:center; color:#aaa;"></div>
         </div>
@@ -2534,7 +2588,7 @@
       <p style="color:#aaa; margin-bottom:24px;">Own virtual properties that generate passive daily SML Bucks income. Click Collect to claim accumulated earnings (max 7 days).</p>
       <div class="card" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div id="realestate-income-total" style="color:#00ff88; font-size:1.1em; font-weight:700;">Loading…</div>
-        <button onclick="collectAllIncome()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Collect All Income</button>
+        <button class="btn-quick" onclick="collectAllIncome()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Collect All Income</button>
       </div>
       <div id="realestate-catalog" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px;">
         <div style="color:#555; font-size:0.88em; text-align:center; padding:20px;">Loading properties…</div>
@@ -2549,7 +2603,7 @@
       <p style="color:#aaa; margin-bottom:24px;">Earn XP through trades and heists to unlock rewards across 10 tiers. Upgrade to the Premium Pass for bonus prizes.</p>
       <div class="card" style="margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
         <div id="bp-pass-status" style="color:#aaa; font-size:0.95em;">Loading…</div>
-        <button id="bp-buy-btn" onclick="buyBattlePass()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Unlock Premium ($5.00)</button>
+        <button class="btn-quick" id="bp-buy-btn" onclick="buyBattlePass()" style="display:none; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer;">Unlock Premium ($5.00)</button>
       </div>
       <div id="bp-tiers" style="display:flex; flex-direction:column; gap:10px;">
         <div style="color:#555; font-size:0.88em; text-align:center; padding:20px;">Loading battle pass…</div>
@@ -2591,7 +2645,7 @@
         <p style="color:#888; font-size:0.85em; margin-bottom:12px;">Share your referral link. When someone you refer buys Credits, Elite, or a Battle Pass, you earn <strong style="color:#ffd700;">10% in SML Credits</strong>.</p>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <input id="ch-referral-input" type="text" readonly style="flex:1; min-width:200px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#00d4ff; font-size:0.82em; padding:10px 14px; outline:none;" placeholder="Loading your link…">
-          <button onclick="copyCreatorLink()" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.85em; cursor:pointer;">📋 Copy Link</button>
+          <button class="btn-quick" onclick="copyCreatorLink()" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; font-size:0.85em; cursor:pointer;">📋 Copy Link</button>
         </div>
       </div>
 
@@ -2619,14 +2673,14 @@
             <div style="color:#e0e0e0; font-weight:700;">Common Pack</div>
             <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · common/uncommon</div>
             <div style="color:#00d4ff; font-weight:700; margin-bottom:8px;">100 Credits</div>
-            <button onclick="openCardPack('common')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack</button>
+            <button class="btn-quick" onclick="openCardPack('common')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack</button>
           </div>
           <div style="background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,0,0,0.3)); border:1px solid rgba(0,212,255,0.3); border-radius:10px; padding:16px; text-align:center;">
             <div style="font-size:2em; margin-bottom:6px;">💫</div>
             <div style="color:#00d4ff; font-weight:700;">Rare Pack</div>
             <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · rare guaranteed</div>
             <div style="color:#00d4ff; font-weight:700; margin-bottom:8px;">400 Credits</div>
-            <button onclick="openCardPack('rare')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack — 400 Credits</button>
+            <button class="btn-quick" onclick="openCardPack('rare')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack — 400 Credits</button>
             <p style="color:#555; font-size:0.72em; font-style:italic; margin:8px 0 0;">No purchase necessary. Complete daily missions to earn free packs. <a href="/terms.html" style="color:#444;">Terms</a></p>
           </div>
           <div style="background:linear-gradient(135deg,rgba(255,215,0,0.1),rgba(0,0,0,0.3)); border:1px solid rgba(255,215,0,0.4); border-radius:10px; padding:16px; text-align:center;">
@@ -2634,7 +2688,7 @@
             <div style="color:#ffd700; font-weight:700;">Legendary Pack</div>
             <div style="color:#888; font-size:0.8em; margin:4px 0 10px;">5 cards · legendary+ pool</div>
             <div style="color:#ffd700; font-weight:700; margin-bottom:8px;">1,200 Credits</div>
-            <button onclick="openCardPack('legendary')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack — 1,200 Credits</button>
+            <button class="btn-quick" onclick="openCardPack('legendary')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 18px; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Open Pack — 1,200 Credits</button>
             <p style="color:#555; font-size:0.72em; font-style:italic; margin:8px 0 0;">No purchase necessary. Complete daily missions to earn free packs. <a href="/terms.html" style="color:#444;">Terms</a></p>
           </div>
         </div>
@@ -2650,7 +2704,7 @@
       <div class="card" style="margin-bottom:20px;">
         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
           <h3 style="color:#00d4ff; margin:0;">📚 My Collection</h3>
-          <button onclick="loadCardsTab()" style="background:none; border:1px solid #333; color:#aaa; border-radius:6px; padding:4px 12px; cursor:pointer; font-size:0.8em;">↻ Refresh</button>
+          <button class="btn-quick" onclick="loadCardsTab()" style="background:none; border:1px solid #333; color:#aaa; border-radius:6px; padding:4px 12px; cursor:pointer; font-size:0.8em;">↻ Refresh</button>
         </div>
         <div id="cards-collection" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px;">
           <div style="color:#555; font-size:0.88em; padding:20px; text-align:center; grid-column:1/-1;">Loading your collection…</div>
@@ -2672,7 +2726,7 @@
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
           <input id="duel-opponent" type="text" placeholder="Opponent's User ID" style="flex:1; min-width:200px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#e0e0e0; padding:10px 14px; outline:none; font-size:0.88em;">
           <input id="duel-bet" type="number" placeholder="Bet ($)" min="1000" style="width:120px; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:8px; color:#e0e0e0; padding:10px 14px; outline:none; font-size:0.88em;">
-          <button onclick="sendCardDuel()" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer;">⚔️ Challenge</button>
+          <button class="btn-quick" onclick="sendCardDuel()" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer;">⚔️ Challenge</button>
         </div>
         <div id="cards-duels-list" style="display:flex; flex-direction:column; gap:8px;">
           <div style="color:#555; font-size:0.85em; text-align:center; padding:12px;">No pending duels.</div>
@@ -2694,7 +2748,7 @@
 
       <!-- Collect Button -->
       <div style="text-align:center; margin-bottom:24px;">
-        <button onclick="collectPetIncome()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:10px; padding:12px 32px; font-weight:700; font-size:1em; cursor:pointer;">🐾 Collect All Pet Income</button>
+        <button class="btn-quick" onclick="collectPetIncome()" style="background:linear-gradient(135deg,#00ff88,#00cc6a); color:#000; border:none; border-radius:10px; padding:12px 32px; font-weight:700; font-size:1em; cursor:pointer;">🐾 Collect All Pet Income</button>
       </div>
 
       <!-- Pet Shop -->
@@ -2738,9 +2792,9 @@
   </section>
 
   <!-- Loot Box Reveal Modal -->
-  <div id="lootbox-modal" style="display:none; position:fixed; inset:0; z-index:9900; background:rgba(0,0,0,0.9); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px; flex-direction:column;">
-    <div style="background:linear-gradient(135deg,#0d1421,#1a1200); border:2px solid rgba(255,215,0,0.4); border-radius:20px; padding:32px; max-width:460px; width:100%; text-align:center; position:relative;">
-      <button onclick="document.getElementById('lootbox-modal').style.display='none'" style="position:absolute; top:12px; right:14px; background:none; border:none; color:#555; font-size:1.2em; cursor:pointer;">✕</button>
+  <div id="lootbox-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:9900; background:rgba(0,0,0,0.9); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px; flex-direction:column;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#0d1421,#1a1200); border:2px solid rgba(255,215,0,0.4); border-radius:20px; padding:32px; max-width:460px; width:100%; text-align:center; position:relative;">
+      <button class="btn-quick" onclick="document.getElementById('lootbox-modal').style.display='none'" style="position:absolute; top:12px; right:14px; background:none; border:none; color:#555; font-size:1.2em; cursor:pointer;">✕</button>
       <div style="font-size:4em; margin-bottom:12px; animation:float 2s ease-in-out infinite;">🎁</div>
       <h2 style="color:#ffd700; margin-bottom:8px;">Opening Box…</h2>
       <div id="lootbox-spinner" style="display:flex; gap:10px; justify-content:center; margin:20px 0; font-size:2.5em;">
@@ -2752,8 +2806,8 @@
         <div id="lootbox-icon" style="font-size:3em; margin-bottom:8px;"></div>
         <div id="lootbox-title" style="color:#ffd700; font-size:1.3em; font-weight:700; margin-bottom:4px;"></div>
         <div id="lootbox-subtitle" style="color:#aaa; font-size:0.9em; margin-bottom:16px;"></div>
-        <button onclick="openNextBox()" id="lootbox-next-btn" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; margin-right:8px;">Open Next</button>
-        <button onclick="document.getElementById('lootbox-modal').style.display='none'" style="background:none; border:1px solid #333; color:#888; border-radius:8px; padding:10px 18px; cursor:pointer;">Done</button>
+        <button class="btn-quick" onclick="openNextBox()" id="lootbox-next-btn" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; margin-right:8px;">Open Next</button>
+        <button class="btn-quick" onclick="document.getElementById('lootbox-modal').style.display='none'" style="background:none; border:1px solid #333; color:#888; border-radius:8px; padding:10px 18px; cursor:pointer;">Done</button>
       </div>
     </div>
   </div>
@@ -2764,8 +2818,8 @@
   </style>
 
   <!-- Profile Setup Modal (replaces prompt() for gender/division) -->
-  <div id="profile-setup-modal" style="display:none; position:fixed; inset:0; z-index:9800; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:linear-gradient(135deg,#0d1421,#111827); border:1px solid rgba(0,212,255,0.3); border-radius:16px; padding:28px 32px; max-width:420px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,0.7);">
+  <div id="profile-setup-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:9800; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#0d1421,#111827); border:1px solid rgba(0,212,255,0.3); border-radius:16px; padding:28px 32px; max-width:420px; width:100%; box-shadow:0 8px 40px rgba(0,0,0,0.7);">
       <div style="text-align:center; margin-bottom:20px;">
         <div style="font-size:2em; margin-bottom:8px;">👤</div>
         <h3 style="color:#00d4ff; font-size:1.2em; margin:0 0 6px;">One quick thing</h3>
@@ -2774,20 +2828,20 @@
       <div style="margin-bottom:20px;">
         <div style="color:#aaa; font-size:0.82em; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Gender</div>
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;" id="ps-gender-btns">
-          <button onclick="psSelectGender('male')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Male</button>
-          <button onclick="psSelectGender('female')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Female</button>
-          <button onclick="psSelectGender('other')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Prefer not</button>
+          <button class="btn-quick" onclick="psSelectGender('male')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Male</button>
+          <button class="btn-quick" onclick="psSelectGender('female')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Female</button>
+          <button class="btn-quick" onclick="psSelectGender('other')" style="padding:12px 8px; border-radius:8px; border:1px solid #2a2a3a; background:none; color:#aaa; cursor:pointer; font-size:0.9em; transition:all .15s;">Prefer not</button>
         </div>
       </div>
       <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:8px;">
-        <button onclick="closeProfileSetup()" style="background:none; border:1px solid #333; color:#666; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9em;">Skip</button>
-        <button id="ps-confirm-btn" onclick="confirmProfileSetup()" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; font-size:0.9em;">Save →</button>
+        <button class="btn-quick" onclick="closeProfileSetup()" style="background:none; border:1px solid #333; color:#666; border-radius:8px; padding:10px 20px; cursor:pointer; font-size:0.9em;">Skip</button>
+        <button class="btn-quick" id="ps-confirm-btn" onclick="confirmProfileSetup()" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:10px 24px; font-weight:700; cursor:pointer; font-size:0.9em;">Save →</button>
       </div>
     </div>
   </div>
 
   <!-- Global Milestone Celebration Overlay -->
-  <div id="celebration-overlay" style="display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:hidden;">
+  <div id="celebration-overlay" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:9999; pointer-events:none; overflow:hidden;">
     <div id="celebration-card" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-60%) scale(0.8); opacity:0; transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s ease; background:linear-gradient(135deg,#1a1f2e,#0d1118); border:2px solid #ffd700; border-radius:20px; padding:32px 40px; text-align:center; max-width:380px; width:90%; box-shadow:0 0 60px rgba(255,215,0,.35), 0 20px 60px rgba(0,0,0,.7); pointer-events:auto;">
       <div id="cel-icon" style="font-size:3.5em; margin-bottom:8px;"></div>
       <div id="cel-tier-badge" style="display:inline-block; border-radius:20px; padding:4px 14px; font-size:0.75em; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:12px;"></div>
@@ -2795,15 +2849,15 @@
       <div id="cel-badge" style="color:#fff; font-size:1.3em; font-weight:900; margin-bottom:4px;"></div>
       <div id="cel-desc" style="color:#aaa; font-size:0.88em;"></div>
       <div style="margin-top:18px; color:#555; font-size:0.75em;">Auto-closing in <span id="cel-countdown">5</span>s</div>
-      <button onclick="closeCelebration()" style="margin-top:10px; background:transparent; border:1px solid #333; color:#666; border-radius:8px; padding:6px 18px; cursor:pointer; font-size:0.8em;">Dismiss</button>
+      <button class="btn-quick" onclick="closeCelebration()" style="margin-top:10px; background:transparent; border:1px solid #333; color:#666; border-radius:8px; padding:6px 18px; cursor:pointer; font-size:0.8em;">Dismiss</button>
     </div>
     <!-- confetti canvas -->
     <canvas id="cel-canvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;"></canvas>
   </div>
 
   <!-- Bankruptcy Modal -->
-  <div id="bankruptcy-modal" style="display:none; position:fixed; inset:0; z-index:8888; background:rgba(0,0,0,.9); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:linear-gradient(135deg,#1a0a0a,#200d0d); border:2px solid #ff4444; border-radius:20px; padding:32px; max-width:560px; width:100%; box-shadow:0 0 60px rgba(255,68,68,.25);">
+  <div id="bankruptcy-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:8888; background:rgba(0,0,0,.9); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#1a0a0a,#200d0d); border:2px solid #ff4444; border-radius:20px; padding:32px; max-width:560px; width:100%; box-shadow:0 0 60px rgba(255,68,68,.25);">
       <div style="text-align:center; margin-bottom:24px;">
         <div style="font-size:3em; margin-bottom:8px;">💸</div>
         <h2 style="color:#ff4444; font-size:1.5em; font-weight:900; margin-bottom:8px;">You're Broke!</h2>
@@ -2816,7 +2870,7 @@
           <div style="font-size:2em; margin-bottom:8px;">📣</div>
           <h3 style="color:#00d4ff; font-size:1em; font-weight:700; margin-bottom:8px;">Shout Us Out</h3>
           <p style="color:#888; font-size:0.82em; margin-bottom:16px; line-height:1.5;">Post about Self-Made Legends on X (Twitter) and claim <strong style="color:#00ff88;">$100 SML Bucks</strong> back — once every 24 hours.</p>
-          <button id="bk-share-btn" onclick="initSocialClaim()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">📤 Share &amp; Claim $100</button>
+          <button class="btn-quick" id="bk-share-btn" onclick="initSocialClaim()" style="background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">📤 Share &amp; Claim $100</button>
           <div id="bk-share-status" style="margin-top:8px; font-size:0.78em; color:#666;"></div>
         </div>
         <!-- Buy SML Bucks -->
@@ -2824,24 +2878,24 @@
           <div style="font-size:2em; margin-bottom:8px;">💰</div>
           <h3 style="color:#ffd700; font-size:1em; font-weight:700; margin-bottom:8px;">Buy SML Bucks</h3>
           <p style="color:#888; font-size:0.82em; margin-bottom:16px; line-height:1.5;">Instantly restock your account with virtual SML Bucks — your Stripe payment supports platform development.</p>
-          <button onclick="closeBankruptcyModal(); openPaperMoneyStore();" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">🛒 Buy SML Bucks</button>
+          <button class="btn-quick" onclick="closeBankruptcyModal(); openPaperMoneyStore();" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 20px; font-weight:700; cursor:pointer; font-size:0.9em; width:100%;">🛒 Buy SML Bucks</button>
         </div>
       </div>
       <div style="text-align:center; margin-top:20px;">
-        <button onclick="closeBankruptcyModal()" style="background:transparent; border:1px solid #333; color:#555; border-radius:8px; padding:8px 24px; cursor:pointer; font-size:0.82em;">Maybe Later</button>
+        <button class="btn-quick" onclick="closeBankruptcyModal()" style="background:transparent; border:1px solid #333; color:#555; border-radius:8px; padding:8px 24px; cursor:pointer; font-size:0.82em;">Maybe Later</button>
       </div>
     </div>
   </div>
 
   <!-- SML Bucks Store Modal -->
-  <div id="paper-money-modal" style="display:none; position:fixed; inset:0; z-index:8889; background:rgba(0,0,0,.88); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:linear-gradient(135deg,#0d1b2a,#1a1f2e); border:2px solid #ffd700; border-radius:20px; padding:32px; max-width:600px; width:100%; box-shadow:0 0 60px rgba(255,215,0,.2);">
+  <div id="paper-money-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:8889; background:rgba(0,0,0,.88); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#0d1b2a,#1a1f2e); border:2px solid #ffd700; border-radius:20px; padding:32px; max-width:600px; width:100%; box-shadow:0 0 60px rgba(255,215,0,.2);">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
         <div>
           <h2 style="color:#ffd700; font-size:1.4em; font-weight:900; margin:0;">💰 SML Bucks Store</h2>
           <p style="color:#888; font-size:0.82em; margin:4px 0 0;">Virtual trading cash — real payment to creator</p>
         </div>
-        <button onclick="closePaperMoneyStore()" style="background:transparent; border:1px solid #333; color:#666; border-radius:8px; padding:6px 12px; cursor:pointer;">✕</button>
+        <button class="btn-quick" onclick="closePaperMoneyStore()" style="background:transparent; border:1px solid #333; color:#666; border-radius:8px; padding:6px 12px; cursor:pointer;">✕</button>
       </div>
       <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr)); gap:12px;">
         <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
@@ -2849,35 +2903,35 @@
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$1,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Hustle Pack</div>
           <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$5.00</div>
-          <button onclick="buyPaperMoney('hustle')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+          <button class="btn-quick" onclick="buyPaperMoney('hustle')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">💸</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$5,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Grind Pack</div>
           <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$8.00</div>
-          <button onclick="buyPaperMoney('grind')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+          <button class="btn-quick" onclick="buyPaperMoney('grind')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:rgba(255,215,0,.08); border:1px solid rgba(255,215,0,.4); border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">📈</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$25,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Investor Pack</div>
           <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$10.00</div>
-          <button onclick="buyPaperMoney('investor')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+          <button class="btn-quick" onclick="buyPaperMoney('investor')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:rgba(255,255,255,.05); border:1px solid #333; border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">🐋</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$50,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Whale Pack</div>
           <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$12.50</div>
-          <button onclick="buyPaperMoney('whale')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+          <button class="btn-quick" onclick="buyPaperMoney('whale')" style="background:#ffd700; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
         <div style="background:linear-gradient(135deg,rgba(255,215,0,.12),rgba(255,140,0,.08)); border:2px solid #ffd700; border-radius:12px; padding:16px; text-align:center;">
           <div style="font-size:1.5em; margin-bottom:6px;">👑</div>
           <div style="color:#ffd700; font-weight:900; font-size:1.1em;">$200,000</div>
           <div style="color:#888; font-size:0.78em; margin:4px 0 12px;">Ultimate Pack</div>
           <div style="color:#00ff88; font-weight:700; font-size:0.9em; margin-bottom:12px;">$40.00</div>
-          <button onclick="buyPaperMoney('ultimate')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
+          <button class="btn-quick" onclick="buyPaperMoney('ultimate')" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; width:100%; font-size:0.85em;">Buy</button>
         </div>
       </div>
       <div style="text-align:center; margin-top:16px;">
@@ -2887,8 +2941,8 @@
   </div>
 
   <!-- Heist Incoming Modal (victim sees this when robbed) -->
-  <div id="heist-incoming-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:linear-gradient(135deg,#1a0808,#200a0a); border:2px solid #ff4444; border-radius:20px; padding:32px; max-width:480px; width:100%; box-shadow:0 0 60px rgba(255,68,68,.3);">
+  <div id="heist-incoming-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#1a0808,#200a0a); border:2px solid #ff4444; border-radius:20px; padding:32px; max-width:480px; width:100%; box-shadow:0 0 60px rgba(255,68,68,.3);">
       <div style="text-align:center; margin-bottom:20px;">
         <div style="font-size:3em; margin-bottom:8px;">💸</div>
         <h2 style="color:#ff4444; font-weight:900; margin-bottom:6px;">You've Been Robbed!</h2>
@@ -2901,37 +2955,37 @@
         <div style="color:#666; font-size:0.75em; margin-top:6px;">You have 24 hours to press charges</div>
       </div>
       <div style="display:flex; gap:12px;">
-        <button id="hi-charges-btn" onclick="pressChargesFromModal()" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">🚔 Press Charges</button>
-        <button onclick="document.getElementById('heist-incoming-modal').style.display='none'" style="flex:1; background:#1a1f2e; border:1px solid #333; color:#888; border-radius:8px; padding:12px; cursor:pointer;">😤 Let It Go</button>
+        <button class="btn-quick" id="hi-charges-btn" onclick="pressChargesFromModal()" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">🚔 Press Charges</button>
+        <button class="btn-quick" onclick="document.getElementById('heist-incoming-modal').style.display='none'" style="flex:1; background:#1a1f2e; border:1px solid #333; color:#888; border-radius:8px; padding:12px; cursor:pointer;">😤 Let It Go</button>
       </div>
     </div>
   </div>
 
   <!-- Investigation Result Modal (victim sees outcome of press charges) -->
-  <div id="investigation-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:linear-gradient(135deg,#0a1a0a,#0d200d); border:2px solid #00ff88; border-radius:20px; padding:32px; max-width:480px; width:100%; box-shadow:0 0 60px rgba(0,255,136,.2);">
+  <div id="investigation-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#0a1a0a,#0d200d); border:2px solid #00ff88; border-radius:20px; padding:32px; max-width:480px; width:100%; box-shadow:0 0 60px rgba(0,255,136,.2);">
       <div id="invest-caught-state" style="display:none; text-align:center;">
         <div style="font-size:3em; margin-bottom:10px;">🚔</div>
         <h2 style="color:#00ff88; font-weight:900; margin-bottom:8px;">They've Been Caught!</h2>
         <p id="invest-caught-msg" style="color:#aaa; font-size:0.9em; margin-bottom:20px;"></p>
         <p style="color:#ffd700; font-size:0.88em; margin-bottom:20px;">Choose your sentence:</p>
         <div style="display:flex; gap:12px;">
-          <button id="invest-fine-btn" onclick="chooseOutcome('fine')" style="flex:1; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">💰 Demand $10k Fine</button>
-          <button id="invest-jail-btn" onclick="chooseOutcome('jail')" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">🚔 Send to Jail</button>
+          <button class="btn-quick" id="invest-fine-btn" onclick="chooseOutcome('fine')" style="flex:1; background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">💰 Demand $10k Fine</button>
+          <button class="btn-quick" id="invest-jail-btn" onclick="chooseOutcome('jail')" style="flex:1; background:linear-gradient(135deg,#ff4444,#cc0000); color:#fff; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">🚔 Send to Jail</button>
         </div>
       </div>
       <div id="invest-escaped-state" style="display:none; text-align:center;">
         <div style="font-size:3em; margin-bottom:10px;">😤</div>
         <h2 style="color:#ff8c00; font-weight:900; margin-bottom:8px;">They Got Away!</h2>
         <p style="color:#aaa; font-size:0.9em; margin-bottom:20px;">The investigation came up empty. Better luck next time.</p>
-        <button onclick="document.getElementById('investigation-modal').style.display='none'" style="background:#1a1f2e; border:1px solid #333; color:#aaa; border-radius:8px; padding:10px 24px; cursor:pointer;">Close</button>
+        <button class="btn-quick" onclick="document.getElementById('investigation-modal').style.display='none'" style="background:#1a1f2e; border:1px solid #333; color:#aaa; border-radius:8px; padding:10px 24px; cursor:pointer;">Close</button>
       </div>
     </div>
   </div>
 
   <!-- Challenge Incoming Modal -->
-  <div id="challenge-incoming-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:linear-gradient(135deg,#0a0d1a,#0d1220); border:2px solid #00d4ff; border-radius:20px; padding:32px; max-width:460px; width:100%; box-shadow:0 0 60px rgba(0,212,255,.25);">
+  <div id="challenge-incoming-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#0a0d1a,#0d1220); border:2px solid #00d4ff; border-radius:20px; padding:32px; max-width:460px; width:100%; box-shadow:0 0 60px rgba(0,212,255,.25);">
       <div style="text-align:center; margin-bottom:20px;">
         <div style="font-size:3em; margin-bottom:8px;">⚔️</div>
         <h2 style="color:#00d4ff; font-weight:900; margin-bottom:6px;">You've Been Challenged!</h2>
@@ -2944,20 +2998,20 @@
         <div style="color:#555; font-size:0.78em; margin-top:6px;">Winner takes 20% of loser's cash balance</div>
       </div>
       <div style="display:flex; gap:12px;">
-        <button id="ci-accept-btn" onclick="respondToChallenge(true)" style="flex:1; background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">✅ Accept</button>
-        <button onclick="respondToChallenge(false)" style="flex:1; background:#1a1f2e; border:1px solid #333; color:#888; border-radius:8px; padding:12px; cursor:pointer;">❌ Decline</button>
+        <button class="btn-quick" id="ci-accept-btn" onclick="respondToChallenge(true)" style="flex:1; background:linear-gradient(135deg,#00d4ff,#0099cc); color:#000; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer;">✅ Accept</button>
+        <button class="btn-quick" onclick="respondToChallenge(false)" style="flex:1; background:#1a1f2e; border:1px solid #333; color:#888; border-radius:8px; padding:12px; cursor:pointer;">❌ Decline</button>
       </div>
     </div>
   </div>
 
   <!-- Challenge Result Modal -->
-  <div id="challenge-result-modal" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
-    <div style="background:linear-gradient(135deg,#0d1220,#1a1f2e); border:2px solid #ffd700; border-radius:20px; padding:32px; max-width:460px; width:100%; text-align:center; box-shadow:0 0 60px rgba(255,215,0,.2);">
+  <div id="challenge-result-modal" class="modal-anim-overlay" style="display:none; position:fixed; inset:0; z-index:8900; background:rgba(0,0,0,.92); backdrop-filter:blur(12px); align-items:center; justify-content:center; padding:20px;">
+    <div class="modal-anim-box" style="background:linear-gradient(135deg,#0d1220,#1a1f2e); border:2px solid #ffd700; border-radius:20px; padding:32px; max-width:460px; width:100%; text-align:center; box-shadow:0 0 60px rgba(255,215,0,.2);">
       <div id="cr-icon" style="font-size:3.5em; margin-bottom:8px;"></div>
       <h2 id="cr-title" style="font-weight:900; margin-bottom:8px;"></h2>
       <p id="cr-body" style="color:#aaa; font-size:0.9em; margin-bottom:20px;"></p>
       <div id="cr-prize" style="font-size:1.5em; font-weight:900; margin-bottom:20px;"></div>
-      <button onclick="document.getElementById('challenge-result-modal').style.display='none'; refreshPortfolio();" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 28px; font-weight:700; cursor:pointer;">OK</button>
+      <button class="btn-quick" onclick="document.getElementById('challenge-result-modal').style.display='none'; refreshPortfolio();" style="background:linear-gradient(135deg,#ffd700,#ff8c00); color:#000; border:none; border-radius:8px; padding:10px 28px; font-weight:700; cursor:pointer;">OK</button>
     </div>
   </div>
 
@@ -2965,8 +3019,8 @@
   <div id="demo-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:200; background:linear-gradient(90deg,#1a1f2e,#0d1b2a); border-top:2px solid #ffd700; padding:12px 20px; display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
     <div style="color:#ffd700; font-weight:bold;">👑 Demo Mode — Your progress won't be saved</div>
     <div style="display:flex; gap:10px;">
-      <button onclick="login()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 18px; font-weight:bold; cursor:pointer;">🔑 Log In / Sign Up</button>
-      <button onclick="document.getElementById('demo-banner').style.display='none'" style="background:transparent; border:1px solid #555; color:#888; border-radius:6px; padding:8px 12px; cursor:pointer;">✕ Dismiss</button>
+      <button class="btn-quick" onclick="login()" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:8px 18px; font-weight:bold; cursor:pointer;">🔑 Log In / Sign Up</button>
+      <button class="btn-quick" onclick="document.getElementById('demo-banner').style.display='none'" style="background:transparent; border:1px solid #555; color:#888; border-radius:6px; padding:8px 12px; cursor:pointer;">✕ Dismiss</button>
     </div>
   </div>
 
@@ -3652,8 +3706,8 @@
                 ${handleHtml}
                 ${taglineHtml}
                 <p style="margin-top:6px;"><strong>Joined:</strong> ${new Date(data.createdAt).toLocaleDateString()}</p>
-                <p><strong>Division:</strong> ${gLabel} <button onclick="changeGender()" style="margin-left:8px;font-size:0.78em;padding:2px 8px;border-radius:4px;border:1px solid #333;background:rgba(255,255,255,0.05);color:#aaa;cursor:pointer;">Change</button></p>
-                <button onclick="openAvatarBuilder(); setTimeout(()=>abCat('identity'),200);" style="margin-top:10px;font-size:0.8em;padding:5px 12px;border-radius:6px;border:1px solid #2a3040;background:rgba(0,212,255,0.06);color:#00d4ff;cursor:pointer;">✏️ Edit Handle &amp; Tagline</button>
+                <p><strong>Division:</strong> ${gLabel} <button class="btn-quick" onclick="changeGender()" style="margin-left:8px;font-size:0.78em;padding:2px 8px;border-radius:4px;border:1px solid #333;background:rgba(255,255,255,0.05);color:#aaa;cursor:pointer;">Change</button></p>
+                <button class="btn-quick" onclick="openAvatarBuilder(); setTimeout(()=>abCat('identity'),200);" style="margin-top:10px;font-size:0.8em;padding:5px 12px;border-radius:6px;border:1px solid #2a3040;background:rgba(0,212,255,0.06);color:#00d4ff;cursor:pointer;">✏️ Edit Handle &amp; Tagline</button>
               `;
             });
           }
@@ -4404,6 +4458,7 @@
     }
 
     let _lastBadgeCount = 0;
+    let _prevEarnedBadges = new Set();
     function renderBadges(data) {
       const summary = document.getElementById('badge-summary');
       if (summary && data.earned !== undefined) {
@@ -4424,15 +4479,19 @@
         if (!a.earned && b.earned) return 1;
         return (tierOrder[a.tier] || 3) - (tierOrder[b.tier] || 3);
       });
-      gallery.innerHTML = sorted.map(b => `
-        <div class="badge-card ${b.earned ? 'earned' : 'locked'} tier-${b.tier || 'bronze'}">
+      gallery.innerHTML = sorted.map(b => {
+        const justUnlocked = b.earned && !_prevEarnedBadges.has(b.name);
+        return `
+        <div class="badge-card ${b.earned ? 'earned' : 'locked'}${justUnlocked ? ' just-unlocked' : ''} tier-${b.tier || 'bronze'}">
           <span class="badge-icon">${b.icon}</span>
           <div class="badge-name">${b.name}</div>
           <div class="badge-desc">${b.description}</div>
           <div class="badge-tier" style="color:${b.tierColor || '#888'}">${b.tier}</div>
           ${b.earned ? '<div style="color:#00ff88; font-size:0.7em; margin-top:4px;">✅ Earned</div>' : ''}
         </div>
-      `).join('');
+      `;
+      }).join('');
+      _prevEarnedBadges = new Set(sorted.filter(b => b.earned).map(b => b.name));
     }
 
     // ===== SHARE YOUR RANK =====
@@ -4513,7 +4572,7 @@
               <div style="background:#0d1b2a; border-radius:8px; padding:14px; margin-bottom:12px;">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
                   <strong style="color:#00d4ff;">${platformIcons[platform] || '📱'} ${platform.charAt(0).toUpperCase() + platform.slice(1)}</strong>
-                  <button onclick="copyText('post-${platform}')" style="background:#333; border:none; color:#00ff88; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8em;">📋 Copy</button>
+                  <button class="btn-quick" onclick="copyText('post-${platform}')" style="background:#333; border:none; color:#00ff88; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8em;">📋 Copy</button>
                 </div>
                 <pre id="post-${platform}" style="white-space:pre-wrap; word-break:break-word; color:#ccc; font-size:0.82em; margin:0; font-family:inherit;">${escapeHtml(post.content)}</pre>
                 <div style="color:#888; font-size:0.75em; margin-top:8px;">⏰ Best time: ${post.bestPostTime}</div>
@@ -4587,7 +4646,7 @@
             <div style="background:#0d1b2a; border-radius:8px; padding:16px;">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <strong style="color:#00d4ff;">${name} — ${o.tier.toUpperCase()} tier · ${platform}</strong>
-                <button onclick="copyText('influencer-msg')" style="background:#333; border:none; color:#00ff88; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8em;">📋 Copy</button>
+                <button class="btn-quick" onclick="copyText('influencer-msg')" style="background:#333; border:none; color:#00ff88; padding:4px 10px; border-radius:4px; cursor:pointer; font-size:0.8em;">📋 Copy</button>
               </div>
               <div style="color:#ffd700; font-size:0.85em; margin-bottom:10px;">💰 Offer: ${o.offer}</div>
               <pre id="influencer-msg" style="white-space:pre-wrap; word-break:break-word; color:#ccc; font-size:0.83em; margin:0; font-family:inherit;">${escapeHtml(o.message)}</pre>
@@ -5110,15 +5169,15 @@
   <script src="/js/music.js"></script>
 
   <!-- Avatar Builder Modal -->
-  <div id="avatar-builder-modal">
-    <div class="ab-wrap">
+  <div id="avatar-builder-modal" class="modal-anim-overlay">
+    <div class="ab-wrap modal-anim-box">
       <!-- Header -->
       <div style="background:linear-gradient(90deg,rgba(0,212,255,0.1),rgba(124,58,237,0.08)); padding:16px 22px; border-bottom:1px solid #1a2030; display:flex; justify-content:space-between; align-items:center;">
         <div>
           <h2 style="color:#00d4ff; margin:0; font-size:1.15em;">🎨 Design Your SML Avatar</h2>
           <div style="color:#555; font-size:0.75em; margin-top:3px;">All nationalities · Male &amp; Female · Designer outfits &amp; accessories</div>
         </div>
-        <button onclick="closeAvatarBuilder()" style="background:none; border:none; color:#555; font-size:1.6em; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
+        <button class="btn-quick" onclick="closeAvatarBuilder()" style="background:none; border:none; color:#555; font-size:1.6em; cursor:pointer; line-height:1; padding:4px 8px;">✕</button>
       </div>
 
       <div class="ab-layout">
@@ -5130,8 +5189,8 @@
             <button id="ab-g-male" class="ab-gender-btn active" onclick="abGender('male')">♂ Male</button>
             <button id="ab-g-female" class="ab-gender-btn" onclick="abGender('female')">♀ Female</button>
           </div>
-          <button onclick="abRandomize()" style="width:100%; padding:9px; background:rgba(0,255,136,0.07); color:#00ff88; border:1px solid rgba(0,255,136,0.2); border-radius:8px; cursor:pointer; font-size:0.82em; margin-bottom:7px;">🎲 Randomize</button>
-          <button onclick="abSave()" style="width:100%; padding:11px; background:linear-gradient(135deg,#00d4ff,#0088bb); color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.92em;">Save Avatar ✓</button>
+          <button class="btn-quick" onclick="abRandomize()" style="width:100%; padding:9px; background:rgba(0,255,136,0.07); color:#00ff88; border:1px solid rgba(0,255,136,0.2); border-radius:8px; cursor:pointer; font-size:0.82em; margin-bottom:7px;">🎲 Randomize</button>
+          <button class="btn-quick" onclick="abSave()" style="width:100%; padding:11px; background:linear-gradient(135deg,#00d4ff,#0088bb); color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.92em;">Save Avatar ✓</button>
           <div id="ab-save-status" style="font-size:0.78em; text-align:center; margin-top:8px; min-height:18px;"></div>
         </div>
 
@@ -5673,7 +5732,7 @@
       </div>
     </div>
   </div>
-  <button id="dm-toggle" onclick="toggleDM()" title="Friends & Messages">
+  <button class="btn-quick" id="dm-toggle" onclick="toggleDM()" title="Friends & Messages">
     💬
     <span id="dm-badge"></span>
   </button>
@@ -5898,7 +5957,7 @@
               <div class="dm-row-name">${esc(u.fullName)}</div>
               <div class="dm-row-sub">${esc(u.email)}</div>
             </div>
-            <button onclick="dmAddFriend('${esc(u.email)}',this)" style="background:rgba(0,188,212,.15);border:1px solid rgba(0,188,212,.3);color:#00bcd4;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">+ Add</button>
+            <button class="btn-quick" onclick="dmAddFriend('${esc(u.email)}',this)" style="background:rgba(0,188,212,.15);border:1px solid rgba(0,188,212,.3);color:#00bcd4;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;">+ Add</button>
           </div>
         `).join('');
       } catch(_) {}
@@ -6008,7 +6067,7 @@ function renderFeedItems(feed, el) {
   const RXNS = ['🔥','💀','👑','😂'];
   el.innerHTML = feed.map(e => {
     const postId = e.id || (e.type + '_' + (e.tradeId || e.badgeId || e.timestamp || Math.random()));
-    const rxnBar = `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">${RXNS.map(r => `<button onclick="reactToPost('${esc(postId)}','${r}')" style="background:rgba(255,255,255,.06);border:1px solid #222;border-radius:20px;padding:3px 10px;cursor:pointer;font-size:0.8em;color:#aaa;">${r} <span id="rxn-${esc(postId)}-${encodeURIComponent(r)}">0</span></button>`).join('')}</div>`;
+    const rxnBar = `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">${RXNS.map(r => `<button class="btn-quick" onclick="reactToPost('${esc(postId)}','${r}')" style="background:rgba(255,255,255,.06);border:1px solid #222;border-radius:20px;padding:3px 10px;cursor:pointer;font-size:0.8em;color:#aaa;">${r} <span id="rxn-${esc(postId)}-${encodeURIComponent(r)}">0</span></button>`).join('')}</div>`;
     if (e.type === 'trade') {
       const up = parseFloat(e.gainPct) >= 0;
       return `<div class="comm-card" data-post-id="${esc(postId)}">
@@ -6150,7 +6209,7 @@ window.loadCommunityFeed = async function() {
     <div id="cp-path" style="display:none;border-bottom:1px solid #2a3050;padding:10px 14px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
         <span style="font-size:11px;font-weight:700;color:#00d4ff;letter-spacing:.05em;">🗺️ YOUR LEARNING PATH</span>
-        <button id="cp-path-gen" onclick="generateLearningPath()" style="background:none;border:1px solid #2a3050;color:#888;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;" title="Generate new plan">↻ New</button>
+        <button class="btn-quick" id="cp-path-gen" onclick="generateLearningPath()" style="background:none;border:1px solid #2a3050;color:#888;border-radius:6px;padding:2px 8px;font-size:10px;cursor:pointer;" title="Generate new plan">↻ New</button>
       </div>
       <div id="cp-path-steps" style="display:flex;flex-direction:column;gap:5px;"></div>
       <div id="cp-path-bar-wrap" style="margin-top:8px;height:3px;background:#2a3050;border-radius:2px;">
@@ -6163,10 +6222,10 @@ window.loadCommunityFeed = async function() {
     <div class="cp-qs" id="cp-qs"></div>
     <div class="cp-input-row">
       <input id="coach-input" placeholder="Ask the coach…" maxlength="400" autocomplete="off"/>
-      <button id="coach-send" onclick="coachSend()">➤</button>
+      <button class="btn-quick" id="coach-send" onclick="coachSend()">➤</button>
     </div>
   </div>
-  <button id="coach-toggle" onclick="toggleCoach()" title="Ask the Trading Coach">🤖</button>
+  <button class="btn-quick" id="coach-toggle" onclick="toggleCoach()" title="Ask the Trading Coach">🤖</button>
 </div>
 
 <script>
@@ -6365,7 +6424,7 @@ window.loadCommunityFeed = async function() {
           <div style="font-size:11px;font-weight:700;color:${s.completed ? '#00ff88' : '#e0e0e0'};text-decoration:${s.completed ? 'line-through' : 'none'};opacity:${s.completed ? '.7' : '1'}">${s.title}</div>
           ${!s.completed ? `<div style="font-size:10px;color:#666;margin-top:2px;line-height:1.3;">${s.description}</div>` : ''}
         </div>
-        ${!s.completed ? `<button onclick="completePathStep('${s.id}','${(s.action||'').replace(/'/g,'\\\'')}')" style="background:rgba(156,39,176,.2);border:1px solid rgba(156,39,176,.4);color:#ce93d8;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;" title="Mark done">Done ✓</button>` : ''}
+        ${!s.completed ? `<button class="btn-quick" onclick="completePathStep('${s.id}','${(s.action||'').replace(/'/g,'\\\'')}')" style="background:rgba(156,39,176,.2);border:1px solid rgba(156,39,176,.4);color:#ce93d8;border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;white-space:nowrap;flex-shrink:0;" title="Mark done">Done ✓</button>` : ''}
       </div>
     `).join('');
     const pct = steps.length ? (done / steps.length) * 100 : 0;
@@ -7084,7 +7143,7 @@ async function loadHeistNotifications() {
               <div style="color:#888; font-size:0.82em;">${fmtMoney(d.amount)} stolen · Expires in ${fmtDuration(d.expires_at - Date.now())}</div>
             </div>
             <div style="display:flex; gap:8px;">
-              <button onclick="pressCharges(${n.id})" style="background:#ff4444; color:#fff; border:none; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em; font-weight:700;">🚔 Press Charges</button>
+              <button class="btn-quick" onclick="pressCharges(${n.id})" style="background:#ff4444; color:#fff; border:none; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em; font-weight:700;">🚔 Press Charges</button>
             </div>
           </div>`);
       }
@@ -7099,8 +7158,8 @@ async function loadHeistNotifications() {
             <div style="color:#888; font-size:0.82em;">${(ch.type||'').replace('_',' ')} · ${fmtDuration(ch.duration_ms || 3600000)}</div>
           </div>
           <div style="display:flex; gap:8px;">
-            <button onclick="_uwChallengeId=${ch.id}; respondToChallenge(true)" style="background:#00d4ff; color:#000; border:none; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em; font-weight:700;">✅ Accept</button>
-            <button onclick="_uwChallengeId=${ch.id}; respondToChallenge(false)" style="background:#1a1f2e; border:1px solid #333; color:#888; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em;">❌ Decline</button>
+            <button class="btn-quick" onclick="_uwChallengeId=${ch.id}; respondToChallenge(true)" style="background:#00d4ff; color:#000; border:none; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em; font-weight:700;">✅ Accept</button>
+            <button class="btn-quick" onclick="_uwChallengeId=${ch.id}; respondToChallenge(false)" style="background:#1a1f2e; border:1px solid #333; color:#888; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.82em;">❌ Decline</button>
           </div>
         </div>`);
     }
@@ -7202,7 +7261,7 @@ function renderWeaponStore(inv) {
       <div style="text-align:right; flex-shrink:0;">
         ${owned
           ? `<span style="color:#00ff88; font-size:0.8em; font-weight:700;">✅ Owned</span>`
-          : `<button onclick="buyWeapon('${key}')" style="background:linear-gradient(135deg,#ff4444,#cc2200); color:#fff; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">$${price}</button>`
+          : `<button class="btn-quick" onclick="buyWeapon('${key}')" style="background:linear-gradient(135deg,#ff4444,#cc2200); color:#fff; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">$${price}</button>`
         }
       </div>
     </div>`;
@@ -7229,7 +7288,7 @@ function renderDogStore(inv) {
       <div style="text-align:right; flex-shrink:0;">
         ${owned
           ? `<span style="color:#00ff88; font-size:0.8em; font-weight:700;">✅ Owned</span>`
-          : `<button onclick="buyGuardDog('${key}')" style="background:linear-gradient(135deg,#00cc6a,#009944); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">$${price}</button>`
+          : `<button class="btn-quick" onclick="buyGuardDog('${key}')" style="background:linear-gradient(135deg,#00cc6a,#009944); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">$${price}</button>`
         }
       </div>
     </div>`;
@@ -7258,8 +7317,8 @@ function renderShieldStore(inv) {
         ${isActive
           ? `<span style="color:#4fc3f7; font-size:0.8em; font-weight:700;">🛡️ Active</span>`
           : isFree
-            ? `<button onclick="claimFreeShield()" ${activeShield ? 'disabled style="opacity:.4; cursor:not-allowed;"' : ''} style="background:linear-gradient(135deg,#4fc3f7,#0288d1); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">Claim Free</button>`
-            : `<button onclick="buyShield('${key}')" ${activeShield ? 'disabled title="Destroy current shield first" style="opacity:.4; cursor:not-allowed;"' : ''} style="background:linear-gradient(135deg,#4fc3f7,#0288d1); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">${price}</button>`
+            ? `<button class="btn-quick" onclick="claimFreeShield()" ${activeShield ? 'disabled style="opacity:.4; cursor:not-allowed;"' : ''} style="background:linear-gradient(135deg,#4fc3f7,#0288d1); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">Claim Free</button>`
+            : `<button class="btn-quick" onclick="buyShield('${key}')" ${activeShield ? 'disabled title="Destroy current shield first" style="opacity:.4; cursor:not-allowed;"' : ''} style="background:linear-gradient(135deg,#4fc3f7,#0288d1); color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em;">${price}</button>`
         }
       </div>
     </div>`;
@@ -7784,7 +7843,7 @@ window.loadGetaway = async function() {
         </div>
         ${owned
           ? `<span style="color:#00ff88;font-size:0.85em;font-weight:700;">✓ Owned</span>`
-          : `<button onclick="buyGetaway('${v.key}')" style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:0.82em;">$${(v.price_cents/100).toFixed(2)}</button>`}
+          : `<button class="btn-quick" onclick="buyGetaway('${v.key}')" style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:0.82em;">$${(v.price_cents/100).toFixed(2)}</button>`}
       </div>`;
     }).join('');
   } catch(_) {}
@@ -7832,7 +7891,7 @@ window.loadAlerts = async function() {
     el.innerHTML = d.alerts.map(a => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #1a1f2e;">
         <span style="color:#aaa;font-size:0.85em;">🔔 <strong style="color:#e0e0e0;">${a.symbol}</strong> ${a.direction} ${fmtMoney(a.target_price)}</span>
-        <button onclick="deleteAlert(${a.id})" style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);color:#ff6666;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.78em;">✕</button>
+        <button class="btn-quick" onclick="deleteAlert(${a.id})" style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);color:#ff6666;border-radius:6px;padding:3px 10px;cursor:pointer;font-size:0.78em;">✕</button>
       </div>`).join('');
   } catch(_) {}
 };
@@ -7865,7 +7924,7 @@ window.loadTips = async function() {
         ${t.note ? `<div style="color:#888;font-size:0.82em;margin-bottom:8px;">${t.note}</div>` : ''}
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <span style="color:#555;font-size:0.75em;">by ${t.authorName || 'Legend'}</span>
-          ${t.owned ? '<span style="color:#00ff88;font-size:0.78em;">✓ Purchased</span>' : `<button onclick="buyTip(${t.id})" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:#00ff88;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:0.8em;">Buy (${t.credits_cost} Credits)</button>`}
+          ${t.owned ? '<span style="color:#00ff88;font-size:0.78em;">✓ Purchased</span>' : `<button class="btn-quick" onclick="buyTip(${t.id})" style="background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.3);color:#00ff88;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:0.8em;">Buy (${t.credits_cost} Credits)</button>`}
         </div>
       </div>`).join('');
   } catch(_) {}
@@ -7924,7 +7983,7 @@ window.loadRealEstate = async function() {
         ${p.owned
           ? `<div style="color:#ffd700;font-size:0.82em;margin-bottom:8px;">Pending: ${fmtMoney(p.pendingIncome)}</div>
              <div style="background:rgba(0,255,136,.1);border-radius:6px;padding:3px 10px;color:#00ff88;font-size:0.78em;text-align:center;display:inline-block;">✓ Owned</div>`
-          : `<button onclick="buyRealEstate('${p.key}')" style="background:linear-gradient(135deg,#00ff88,#00cc6a);color:#000;border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;font-size:0.85em;width:100%;">Buy ($${(p.price_cents/100).toFixed(2)})</button>`}
+          : `<button class="btn-quick" onclick="buyRealEstate('${p.key}')" style="background:linear-gradient(135deg,#00ff88,#00cc6a);color:#000;border:none;border-radius:8px;padding:8px 18px;font-weight:700;cursor:pointer;font-size:0.85em;width:100%;">Buy ($${(p.price_cents/100).toFixed(2)})</button>`}
       </div>`).join('');
   } catch(_) {}
 };
@@ -7983,7 +8042,7 @@ window.loadBattlePass = async function() {
         ${isClaimed
           ? '<span style="color:#00ff88;font-size:0.82em;font-weight:700;">✓ Claimed</span>'
           : unlocked
-            ? `<button onclick="claimBPTier(${t.tier})" style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:0.82em;">Claim</button>`
+            ? `<button class="btn-quick" onclick="claimBPTier(${t.tier})" style="background:linear-gradient(135deg,#ffd700,#ff8c00);color:#000;border:none;border-radius:8px;padding:7px 14px;font-weight:700;cursor:pointer;font-size:0.82em;">Claim</button>`
             : `<span style="color:#333;font-size:0.78em;">Locked</span>`}
       </div>`;
     }).join('');
@@ -8117,7 +8176,7 @@ window.loadNotifications = async function() {
           <div style="color:#e0e0e0; font-size:0.85em; font-weight:600;">${esc(n.title)}</div>
           <div style="color:#888; font-size:0.78em; margin-top:2px;">${esc(n.body)}</div>
         </div>
-        <button onclick="deleteNotif(${n.id})" style="background:none; border:none; color:#333; cursor:pointer; font-size:0.9em; flex-shrink:0; padding:2px 4px;" title="Dismiss">✕</button>
+        <button class="btn-quick" onclick="deleteNotif(${n.id})" style="background:none; border:none; color:#333; cursor:pointer; font-size:0.9em; flex-shrink:0; padding:2px 4px;" title="Dismiss">✕</button>
       </div>`).join('');
     if (notifs.some(n => !n.read)) {
       fetch('/api/notifications/read', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ ids: notifs.filter(n=>!n.read).map(n=>n.id) }) }).catch(()=>{});
@@ -8289,7 +8348,7 @@ window.loadSubscriptions = async function() {
           <div style="color:#e0e0e0; font-size:0.88em;">${s.label}</div>
           <div style="color:#555; font-size:0.75em;">${s.active ? 'Active · ' + s.price : 'Not subscribed'}</div>
         </div>
-        ${s.active ? `<button onclick="cancelSub('${s.key}')" style="background:none; border:1px solid #333; color:#555; border-radius:6px; padding:4px 12px; cursor:pointer; font-size:0.75em;">Cancel</button>` : ''}
+        ${s.active ? `<button class="btn-quick" onclick="cancelSub('${s.key}')" style="background:none; border:1px solid #333; color:#555; border-radius:6px; padding:4px 12px; cursor:pointer; font-size:0.75em;">Cancel</button>` : ''}
       </div>`).join('');
   } catch(_) {}
 };
@@ -8400,7 +8459,7 @@ window.loadLimitOrders = async function() {
         <td style="padding:8px 4px; color:${o.order_type==='buy'?'#00ff88':'#ff6b6b'};">${(o.order_type||'').toUpperCase()}</td>
         <td style="padding:8px 4px; text-align:right; color:#aaa;">${o.quantity}</td>
         <td style="padding:8px 4px; text-align:right; font-variant-numeric:tabular-nums; color:#ffd700;">$${parseFloat(o.limit_price).toFixed(2)}</td>
-        <td style="padding:8px 4px; text-align:right;"><button onclick="cancelLimitOrder(${o.id})" style="background:none; border:1px solid #333; color:#555; border-radius:4px; padding:3px 10px; cursor:pointer; font-size:0.75em;">Cancel</button></td>
+        <td style="padding:8px 4px; text-align:right;"><button class="btn-quick" onclick="cancelLimitOrder(${o.id})" style="background:none; border:1px solid #333; color:#555; border-radius:4px; padding:3px 10px; cursor:pointer; font-size:0.75em;">Cancel</button></td>
       </tr>`).join('')}
       </tbody></table>`;
   } catch(_) {}
@@ -8776,7 +8835,7 @@ function _cardHTML(card) {
     <div style="display:flex; gap:4px; justify-content:center; margin-top:6px; font-size:0.7em; color:#666;">
       <span>ATK ${card.attack||0}</span><span>·</span><span>DEF ${card.defense||0}</span>
     </div>
-    ${card.player_card_id ? `<button onclick="listCardForSale(${card.player_card_id}, '${card.card_key}')" style="margin-top:8px; background:transparent; border:1px solid #333; color:#888; border-radius:6px; padding:3px 8px; cursor:pointer; font-size:0.72em;">List for Sale</button>` : ''}
+    ${card.player_card_id ? `<button class="btn-quick" onclick="listCardForSale(${card.player_card_id}, '${card.card_key}')" style="margin-top:8px; background:transparent; border:1px solid #333; color:#888; border-radius:6px; padding:3px 8px; cursor:pointer; font-size:0.72em;">List for Sale</button>` : ''}
   </div>`;
 }
 
@@ -8808,7 +8867,7 @@ async function loadCardsTab() {
               <div style="color:#e0e0e0; font-weight:700; font-size:0.85em; margin:4px 0;">${l.name||l.card_key}</div>
               <div style="color:${c}; font-size:0.75em; margin-bottom:8px;">${l.rarity}</div>
               <div style="color:#ffd700; font-weight:700; margin-bottom:8px;">${Number(l.price).toLocaleString()} Credits</div>
-              <button onclick="buyMarketCard(${l.id})" style="background:#ffd700; color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em; width:100%;">Buy</button>
+              <button class="btn-quick" onclick="buyMarketCard(${l.id})" style="background:#ffd700; color:#000; border:none; border-radius:6px; padding:6px 14px; font-weight:700; cursor:pointer; font-size:0.8em; width:100%;">Buy</button>
             </div>`;
           }).join('')
         : '<div style="color:#555; font-size:0.85em; padding:16px; text-align:center; grid-column:1/-1;">No cards listed for sale.</div>';
@@ -8910,8 +8969,8 @@ async function loadPetsTab() {
             </div>
             <div style="color:#ffd700; font-size:0.78em; margin-bottom:10px;">💰 $${(p.daily_income_cached||0).toLocaleString()}/day</div>
             <div style="display:flex; gap:6px; justify-content:center; flex-wrap:wrap;">
-              ${!fed ? `<button onclick="feedPet(${p.id})" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:6px 12px; font-weight:700; cursor:pointer; font-size:0.78em;">🍖 Feed</button>` : ''}
-              <button onclick="renamePet(${p.id})" style="background:transparent; border:1px solid #333; color:#888; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:0.78em;">✏️ Rename</button>
+              ${!fed ? `<button class="btn-quick" onclick="feedPet(${p.id})" style="background:#00ff88; color:#000; border:none; border-radius:6px; padding:6px 12px; font-weight:700; cursor:pointer; font-size:0.78em;">🍖 Feed</button>` : ''}
+              <button class="btn-quick" onclick="renamePet(${p.id})" style="background:transparent; border:1px solid #333; color:#888; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:0.78em;">✏️ Rename</button>
             </div>
           </div>`;
         }).join('');
@@ -8933,7 +8992,7 @@ async function loadPetsTab() {
           <div style="color:${c}; font-size:0.72em; text-transform:uppercase; margin:3px 0 8px;">${p.rarity}</div>
           <div style="color:#00ff88; font-size:0.82em; margin-bottom:10px;">$${p.daily_income.toLocaleString()}/day</div>
           <div style="color:#ffd700; font-weight:700; margin-bottom:10px;">$${(p.price_cents/100).toFixed(2)}</div>
-          <button onclick="buyPet('${p.key}')" style="background:${c}; color:#000; border:none; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.82em; width:100%;">Buy</button>
+          <button class="btn-quick" onclick="buyPet('${p.key}')" style="background:${c}; color:#000; border:none; border-radius:8px; padding:8px 16px; font-weight:700; cursor:pointer; font-size:0.82em; width:100%;">Buy</button>
         </div>`;
       }).join('');
     }
@@ -9004,7 +9063,7 @@ async function loadGarageTab() {
             <div style="color:#ffd700; font-weight:700;">Race Open — ${d.race.entrants || 0} entrants</div>
             <div style="color:#888; font-size:0.82em; margin-top:2px;">Entry fee: $${(d.race.entry_fee||10000).toLocaleString()} · Prize pool: $${(d.race.prize_pool||0).toLocaleString()}</div>
           </div>
-          <button onclick="enterRace()" style="background:linear-gradient(135deg,#ff6400,#ffd700); color:#000; border:none; border-radius:8px; padding:10px 22px; font-weight:700; cursor:pointer; font-size:0.9em;">🏁 Enter Race</button>
+          <button class="btn-quick" onclick="enterRace()" style="background:linear-gradient(135deg,#ff6400,#ffd700); color:#000; border:none; border-radius:8px; padding:10px 22px; font-weight:700; cursor:pointer; font-size:0.9em;">🏁 Enter Race</button>
         </div>`;
       } else {
         statusEl.innerHTML = '<div style="color:#555; font-size:0.88em;">No race open right now. Check back in a few hours!</div>';
@@ -9044,7 +9103,7 @@ async function loadGarageTab() {
           <span>&#9889; Speed ${c.speed}</span><span>&#129399; Stealth ${c.stealth}</span><span>&#10024; Style ${c.style}</span>
         </div>
         <div style="color:#ffd700; font-weight:700; margin-bottom:10px;">$${(c.price_cents/100).toFixed(2)}</div>
-        <button onclick="buyCar('${key}')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; font-size:0.85em; width:100%;">Buy</button>
+        <button class="btn-quick" onclick="buyCar('${key}')" style="background:#00d4ff; color:#000; border:none; border-radius:8px; padding:8px 0; font-weight:700; cursor:pointer; font-size:0.85em; width:100%;">Buy</button>
       </div>`).join('');
     }
   } catch (_) {}
@@ -9240,7 +9299,7 @@ async function loadTokenMarket() {
           <div style="color:#00ff88; font-size:0.9em;">$${(t.currentPrice||0.01).toFixed(4)}</div>
           <div style="color:#aaa; font-size:0.78em;">Cap: $${((t.currentPrice||0)*(t.totalSupply||0)).toLocaleString()}</div>
         </div>
-        ${sess ? `<button onclick="buyToken('${t.tokenAddress}')" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:0.8em;">Buy</button>` : ''}
+        ${sess ? `<button class="btn-quick" onclick="buyToken('${t.tokenAddress}')" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:0.8em;">Buy</button>` : ''}
       </div>
     </div>`).join('');
 }
@@ -9275,7 +9334,7 @@ async function loadMyNFT() {
       <div style="padding:20px;">
         <p style="color:#888; margin-bottom:16px;">You haven't minted your Legend NFT yet. Mint it to represent your journey on-chain.</p>
         <p style="color:#aaa; font-size:0.85em; margin-bottom:16px;">Cost: <strong style="color:#ffd700">500 Credits</strong> • Rarity based on your XP &amp; Heat Level</p>
-        <button onclick="mintLegendNFT()" style="background:linear-gradient(135deg,#7c3aed,#00d4ff); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-weight:bold; cursor:pointer; font-size:1em;">🎨 Mint My Legend NFT</button>
+        <button class="btn-quick" onclick="mintLegendNFT()" style="background:linear-gradient(135deg,#7c3aed,#00d4ff); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-weight:bold; cursor:pointer; font-size:1em;">🎨 Mint My Legend NFT</button>
       </div>`;
   } else {
     const rc = RARITY_COLORS[d.nft.rarity] || '#aaa';
@@ -9293,9 +9352,9 @@ async function loadMyNFT() {
           ${!listed
             ? `<div style="display:flex; gap:8px;">
                 <input id="nft-list-price" type="number" placeholder="Price (paper)" min="1000" style="flex:1; background:#0d1b2a; border:1px solid #1e3a5f; border-radius:6px; padding:8px; color:#e0e0e0; font-size:0.85em;">
-                <button onclick="listMyNFT()" style="background:#ffd700; color:#000; border:none; border-radius:6px; padding:8px 14px; font-weight:bold; cursor:pointer; font-size:0.82em;">List</button>
+                <button class="btn-quick" onclick="listMyNFT()" style="background:#ffd700; color:#000; border:none; border-radius:6px; padding:8px 14px; font-weight:bold; cursor:pointer; font-size:0.82em;">List</button>
               </div>`
-            : `<button onclick="delistMyNFT()" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:bold; cursor:pointer;">Remove Listing</button>`}
+            : `<button class="btn-quick" onclick="delistMyNFT()" style="background:#ff6b6b; color:#fff; border:none; border-radius:8px; padding:10px 18px; font-weight:bold; cursor:pointer;">Remove Listing</button>`}
         </div>
       </div>`;
   }
@@ -9349,7 +9408,7 @@ async function loadNFTMarket() {
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
         <span style="color:#ffd700; font-weight:bold;">$${l.price_paper.toLocaleString()}</span>
-        <button onclick="buyNFT(${l.id})" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:7px 14px; cursor:pointer; font-size:0.82em; font-weight:bold;">Buy</button>
+        <button class="btn-quick" onclick="buyNFT(${l.id})" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:7px 14px; cursor:pointer; font-size:0.82em; font-weight:bold;">Buy</button>
       </div>
     </div>`).join('');
 }
@@ -9498,7 +9557,7 @@ async function loadHorseRace() {
           <span style="color:#e0e0e0; flex:1;">🐎 ${h.name}</span>
           <span style="color:#aaa; font-size:0.82em;">Odds ${h.odds}x</span>
           <span style="color:#888; font-size:0.78em;">$${(h.totalBets||0).toLocaleString()} bet</span>
-          ${bettingOpen && !myBetHorse ? `<button onclick="placeBet(${h.num})" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; font-size:0.78em;">Bet</button>` : ''}
+          ${bettingOpen && !myBetHorse ? `<button class="btn-quick" onclick="placeBet(${h.num})" style="background:#7c3aed; color:#fff; border:none; border-radius:6px; padding:5px 10px; cursor:pointer; font-size:0.78em;">Bet</button>` : ''}
           ${isMyBet ? '<span style="color:#ffd700; font-size:0.78em;">← Your pick</span>' : ''}
         </div>`;
       }).join('')}
@@ -9551,7 +9610,7 @@ async function loadTradeWarStatus() {
         <div style="color:#888; font-size:0.82em; margin-top:4px;">${d.entryCount} players entered · Entry: ${w.entry_credits} credits · Starting cash: $100,000</div>
         <div style="color:#888; font-size:0.82em; margin-top:2px;">Prizes: 🥇 10,000 cr · 🥈 5,000 cr · 🥉 2,500 cr</div>
       </div>
-      ${sess && w.status === 'upcoming' ? `<button onclick="enterTradeWar()" style="background:linear-gradient(135deg,#ff6b6b,#ff4444); color:#fff; border:none; border-radius:10px; padding:12px 24px; font-weight:bold; cursor:pointer;">⚔️ Enter War (${w.entry_credits} cr)</button>` : ''}
+      ${sess && w.status === 'upcoming' ? `<button class="btn-quick" onclick="enterTradeWar()" style="background:linear-gradient(135deg,#ff6b6b,#ff4444); color:#fff; border:none; border-radius:10px; padding:12px 24px; font-weight:bold; cursor:pointer;">⚔️ Enter War (${w.entry_credits} cr)</button>` : ''}
     </div>`;
 }
 async function enterTradeWar() {
@@ -9648,7 +9707,7 @@ async function loadTerritoryTab() {
       const statusLabel = mine ? `<span style="color:#00ff88;font-size:0.78em;font-weight:700;">YOUR CREW</span>` :
         controlled ? `<span style="color:#ff4444;font-size:0.78em;">Enemy Controlled</span>` :
         `<span style="color:#555;font-size:0.78em;">Unclaimed</span>`;
-      const raidBtn = d.crewId && !mine ? `<button onclick="raidTerritory('${n.id}')" style="margin-top:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.4);color:#ff8888;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">⚔️ Raid</button>` :
+      const raidBtn = d.crewId && !mine ? `<button class="btn-quick" onclick="raidTerritory('${n.id}')" style="margin-top:10px;background:rgba(255,68,68,0.15);border:1px solid rgba(255,68,68,0.4);color:#ff8888;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">⚔️ Raid</button>` :
         mine ? `<div style="margin-top:10px;color:#00ff88;font-size:0.8em;text-align:center;">✅ Yours</div>` :
         d.crewId ? '' : '';
       return `<div style="background:${bg};border:1px solid ${border};border-radius:12px;padding:16px;">
@@ -9705,7 +9764,7 @@ async function loadSeasonTab() {
       const border = done ? '#00ff88' : claimable ? '#ffd700' : '#222';
       const icon = done ? '✅' : locked ? '🔒' : ch.icon;
       const btnHtml = claimable
-        ? `<button onclick="completeSeasonChapter(${ch.num})" style="background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;color:#000;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:800;font-size:0.9em;">📖 Complete Chapter</button>`
+        ? `<button class="btn-quick" onclick="completeSeasonChapter(${ch.num})" style="background:linear-gradient(135deg,#ffd700,#ff8c00);border:none;color:#000;border-radius:8px;padding:10px 22px;cursor:pointer;font-weight:800;font-size:0.9em;">📖 Complete Chapter</button>`
         : done ? `<span style="color:#00ff88;font-weight:700;">✅ Completed</span>`
         : `<span style="color:#555;font-size:0.85em;">🔒 Need ${ch.xp_required.toLocaleString()} XP</span>`;
       return `<div style="background:${bg};border:1px solid ${border};border-radius:14px;padding:20px 24px;display:flex;gap:18px;align-items:flex-start;opacity:${locked?'0.6':'1'};">
@@ -9815,7 +9874,7 @@ function _renderModShop(catalog, myWeapons) {
         <strong style="color:#e0e0e0;">${m.label}</strong>
       </div>
       <div style="color:#888;font-size:0.82em;margin-bottom:10px;">${m.desc}</div>
-      <button onclick="buyWeaponMod('${m.key}')" style="background:rgba(0,212,255,0.15);border:1px solid #00d4ff44;color:#00d4ff;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">💎 ${m.price_credits} Credits</button>
+      <button class="btn-quick" onclick="buyWeaponMod('${m.key}')" style="background:rgba(0,212,255,0.15);border:1px solid #00d4ff44;color:#00d4ff;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">💎 ${m.price_credits} Credits</button>
     </div>`;
   }).join('');
 }
@@ -9830,7 +9889,7 @@ function _renderSkinShop(catalog, myWeapons) {
         <strong style="color:#e0e0e0;">${s.label}</strong>
       </div>
       <div style="color:#888;font-size:0.82em;margin-bottom:10px;">${s.desc}</div>
-      <button onclick="buyWeaponSkin('${s.key}')" style="background:rgba(255,215,0,0.12);border:1px solid #ffd70044;color:#ffd700;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">🏆 ${s.price_credits} Credits</button>
+      <button class="btn-quick" onclick="buyWeaponSkin('${s.key}')" style="background:rgba(255,215,0,0.12);border:1px solid #ffd70044;color:#ffd700;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:0.82em;width:100%;">🏆 ${s.price_credits} Credits</button>
     </div>`;
   }).join('');
 }
