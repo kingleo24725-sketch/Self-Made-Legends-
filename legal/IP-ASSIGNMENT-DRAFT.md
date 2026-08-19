@@ -3,13 +3,13 @@
 > ## ⚠️ DRAFT — NOT LEGAL ADVICE — DO NOT SIGN AS-IS
 >
 > This is an unsigned working draft prepared to save time in an attorney
-> meeting. It was not written by a lawyer. It has not been reviewed against
-> the laws of any state.
+> meeting. It was not written by a lawyer, and it has not been reviewed by
+> one.
 >
-> **Take this to a licensed attorney in your state, have them revise it, and
-> sign the version they give you.** Bracketed fields `[LIKE THIS]` must be
-> filled in. The Attorney Checklist at the end lists the specific questions
-> to raise.
+> **Take this to a licensed Missouri attorney, have them revise it, and sign
+> the version they give you.** Bracketed fields `[LIKE THIS]` must be filled
+> in. Governing law is set to **Missouri**; see the **Missouri Notes**
+> section, and the **Attorney Checklist**, at the end.
 
 ---
 
@@ -22,7 +22,7 @@ by and between:
 **Jason D Brown Jr**, an individual residing at `[ADDRESS]` (the
 "**Assignor**"); and
 
-**Self-Made Legends LLC**, a `[STATE]` limited liability company with its
+**Self-Made Legends LLC**, a **Missouri** limited liability company with its
 principal place of business at `[ADDRESS]` (the "**Company**").
 
 The Assignor and the Company are referred to individually as a "**Party**"
@@ -233,7 +233,10 @@ benefit of the Company. This obligation survives indefinitely.
 ### 7. GENERAL PROVISIONS
 
 **7.1 Governing Law.** This Agreement is governed by the laws of the State
-of `[STATE]`, without regard to its conflict-of-laws principles.
+of **Missouri**, without regard to its conflict-of-laws principles.
+
+**7.1.1 Venue.** The Parties consent to exclusive jurisdiction and venue in
+the state and federal courts located in `[COUNTY]` County, Missouri.
 
 **7.2 Entire Agreement.** This Agreement, together with its Schedules,
 constitutes the entire agreement between the Parties regarding its subject
@@ -303,8 +306,8 @@ argue was never transferred.*
 ### Code repositories
 | Asset | Location / Identifier |
 |---|---|
-| Primary repository | `github.com/[OWNER]/[REPO]` |
-| Other repositories | `[LIST]` |
+| Primary repository | `github.com/kingleo24725-sketch/Self-Made-Legends-` |
+| Other repositories | `[LIST ANY OTHERS]` |
 
 ### Domain names
 | Domain | Registrar | Account holder |
@@ -324,9 +327,9 @@ argue was never transferred.*
 | Service | Purpose | Account holder |
 |---|---|---|
 | Stripe | Payment processing | `[NAME ON ACCOUNT]` |
-| `[HOSTING PROVIDER]` | Application hosting | `[NAME ON ACCOUNT]` |
-| GitHub | Source control | `[NAME ON ACCOUNT]` |
-| `[EMAIL PROVIDER]` | Transactional email | `[NAME ON ACCOUNT]` |
+| Railway | Application hosting | `[NAME ON ACCOUNT]` |
+| GitHub | Source control | `kingleo24725-sketch` — personal account |
+| `[EMAIL PROVIDER]` | Transactional email (nodemailer) | `[NAME ON ACCOUNT]` |
 | Social accounts | Marketing | `[LIST HANDLES]` |
 
 > **Check every "account holder" row.** Accounts opened in your personal
@@ -365,7 +368,7 @@ permission to the public to use, copy, modify, and commercially
 redistribute the licensed code.
 
 The license was changed to proprietary "all rights reserved" terms on
-`[DATE OF LICENSE CHANGE COMMIT]`. **However, any copy obtained by any
+**August 19, 2026** (commit `ab8a745`). **However, any copy obtained by any
 person while the MIT license was in effect remains licensed under those
 MIT terms permanently.** The change is forward-looking only.
 
@@ -430,43 +433,111 @@ list it.]
 ---
 ---
 
+## MISSOURI NOTES
+
+*Publicly available Missouri specifics, gathered to make the attorney
+meeting shorter. Verify current fees and forms with the Secretary of State
+before filing — these change.*
+
+### Keeping the LLC alive
+
+**Missouri does not require LLCs to file an annual report, and charges no
+annual fee.** Missouri is one of a small number of states like this. There
+is no annual deadline to miss and no late penalty.
+
+That is good news with one catch: because nothing forces you to check in
+once a year, it is easy to let the entity drift. Two things still matter:
+
+- **Registered agent and registered office.** Section 347.030, RSMo
+  requires every Missouri LLC to continuously maintain both, with no gap.
+  If your registered agent resigns or your address changes and you don't
+  update it, the LLC can fall out of good standing — and a company not in
+  good standing is a problem in exactly the moment you need it (a sale, a
+  dispute, a bank).
+- **Taxes and local licenses** still have their own deadlines. No annual
+  report does not mean no annual obligations.
+
+**Action:** confirm who the registered agent of record is and that the
+address on file is current.
+
+### Trademark — two separate filings, not one
+
+These are different registrations with different reach. Most people should
+do the federal one.
+
+| | Federal (USPTO) | Missouri (Secretary of State) |
+|---|---|---|
+| Protects in | All 50 states | Missouri only |
+| Governing law | Lanham Act | Ch. 417, RSMo |
+| Filing fee | Several hundred dollars per class | $50 per class (§ 417.016) |
+| Term | 10 years, renewable indefinitely | 10 years, renewable indefinitely |
+| Renewal fee | Higher | $15 |
+| Timeline | Many months | Faster |
+
+**For a website and game with players outside Missouri, the federal
+registration is the one that matters.** A Missouri-only registration
+doesn't stop someone in another state from using your name.
+
+The state filing is cheap enough to be worth asking about as a supplement,
+not a substitute — ask the attorney whether it's worth the $50 in your
+case, or just noise.
+
+**Note:** Missouri charges $50 **per class of goods or services**, and one
+application covers one class. A game with both software and entertainment
+services may span more than one class. The attorney will identify the
+right classes — this is the part worth paying for, because filing in the
+wrong class buys you protection you can't use.
+
+**Applicant on both filings: Self-Made Legends LLC — not you personally.**
+
+---
+---
+
 ## ATTORNEY CHECKLIST
 
 Bring this page to the meeting. These are the questions worth the hour.
 
 **On this agreement**
-1. Revise this draft for `[STATE]` law and for a single-member LLC.
+1. Revise this draft for Missouri law (Ch. 347, RSMo) and for a
+   single-member LLC.
 2. Is the consideration in Section 3 adequate and correctly documented in
    the operating agreement and the Company's books?
 3. What Effective Date should be used, given the code predates the LLC?
 4. Does the operating agreement need a matching provision?
+5. Confirm the registered agent and registered office on file are current
+   (§ 347.030, RSMo) and the LLC is in good standing.
 
 **On the disclosures**
-5. The prior MIT license period (Schedule C.1) — what is the real exposure,
+6. The prior MIT license period (Schedule C.1) — what is the real exposure,
    and what should be documented now?
-6. AI-assisted authorship (Schedule C.2) — how does this affect copyright
+7. AI-assisted authorship (Schedule C.2) — how does this affect copyright
    registration and enforceability, and what records should be kept?
-7. Are there contributors who need their own assignment? (Schedule C.3)
+8. Are there contributors who need their own assignment? (Schedule C.3)
 
 **On protection, in priority order**
-8. **File the trademark** for "Self-Made Legends" with the LLC as
-   applicant. Which classes? Search for conflicts first.
-9. **Register the copyright** in the software. What is registrable given
-   the AI-authorship question, and what gets disclaimed?
-10. Transfer domains, the Stripe account, and hosting into the LLC's name.
+9. **File the federal trademark** for "Self-Made Legends" with the USPTO,
+   applicant = Self-Made Legends LLC. Which classes? Conflict search first.
+10. Is a Missouri state registration (§ 417.016, RSMo — $50 per class)
+    worth adding alongside the federal filing, or redundant?
+11. **Register the copyright** in the software. What is registrable given
+    the AI-authorship question, and what gets disclaimed?
+12. Transfer domains, the Stripe account, and hosting into the LLC's name.
 
 **On the money mechanics — separate specialist, likely a separate meeting**
-11. The product combines loot boxes with published odds, a casino, virtual
+13. The product combines loot boxes with published odds, a casino, virtual
     currency sold for real money, an 18+ gate, and trading language. Which
-    state or federal gambling, sweepstakes, or virtual-currency rules are
-    implicated?
-12. Do the current Terms of Service and Privacy Policy hold up? Are the
+    Missouri or federal gambling, sweepstakes, or virtual-currency rules
+    are implicated? Note that players are nationwide, so Missouri law is
+    the floor, not the ceiling.
+14. Do the current Terms of Service and Privacy Policy hold up? Are the
     loot box odds disclosures adequate for every jurisdiction served?
-13. Review the payment processor's acceptable use policy against what the
+15. Review the payment processor's acceptable use policy against what the
     product actually does, **before** a compliance review happens.
 
-**On the legacy structure — estate attorney, after the above**
-14. Form a trust to hold the LLC membership units.
-15. Name the beneficiary and the successor beneficiaries.
-16. Name a successor manager who can actually operate the business, and
+**On the legacy structure — Missouri estate attorney, after the above**
+16. Form a Missouri trust to hold the LLC membership units.
+17. Name the beneficiary and the successor beneficiaries.
+18. Confirm the operating agreement permits the transfer of membership
+    units into the trust, and doesn't restrict transfer on death.
+19. Name a successor manager who can actually operate the business, and
     make sure an operations manual exists for them.
