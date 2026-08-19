@@ -134,10 +134,10 @@ For support, open an issue on GitHub.
 
 ## Copyright & License
 
-Copyright © 2026 Jason D Brown Jr. All Rights Reserved.
+Copyright © 2026 Self-Made Legends LLC. All Rights Reserved.
 
 This is proprietary software. No license to use, copy, modify, or distribute
 this code is granted. See [LICENSE](LICENSE) for full terms.
 
 "Self-Made Legends", "The Self-Made Legends Come Up", and "SML" are
-trademarks of Jason D Brown Jr.
+trademarks of Self-Made Legends LLC.
