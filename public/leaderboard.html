@@ -229,7 +229,7 @@
     function avatarEl(userId, size = 32) {
       const src = avatarCache[userId];
       if (!src) return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:50%;background:#1a1f2e;font-size:${Math.round(size*0.55)}px;flex-shrink:0;">👤</span>`;
-      return `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;flex-shrink:0;" alt="">`;
+      return `<img src="${src}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;object-position:top center;flex-shrink:0;" alt="">`;
     }
 
     // Pre-fetch avatars + taglines for top 10

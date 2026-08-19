@@ -144,31 +144,34 @@
 
   function svgBg(bgId) {
     const s = AB.BG_STYLES.find(b => b.id === bgId) || AB.BG_STYLES[0];
+    const groundShadow = `<ellipse cx="100" cy="392" rx="50" ry="8" fill="#000" opacity="0.25"/>`;
 
     // Prism background: rotating rainbow gradient overlay
     const prismOverlay = bgId === 'prism' ? `
       <defs>
-        <radialGradient id="abBG" cx="50%" cy="35%" r="70%">
+        <radialGradient id="abBG" cx="50%" cy="20%" r="75%">
           <stop offset="0%" stop-color="#300040"/>
           <stop offset="100%" stop-color="#001030"/>
         </radialGradient>
-        <clipPath id="abClip"><circle cx="100" cy="100" r="100"/></clipPath>
+        <clipPath id="abClip"><rect x="0" y="0" width="200" height="400"/></clipPath>
         ${RAINBOW_DEFS}
       </defs>
-      <circle cx="100" cy="100" r="100" fill="url(#abBG)"/>
-      <circle cx="100" cy="100" r="100" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <rect x="0" y="0" width="200" height="400" fill="url(#abBG)"/>
+      <rect x="1" y="1" width="198" height="398" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
       <ellipse cx="60" cy="60" rx="80" ry="60" fill="url(#abRainbow)" opacity="0.12" transform="rotate(-30 100 100)"/>
-      <ellipse cx="140" cy="140" rx="80" ry="60" fill="url(#abRainbow)" opacity="0.1" transform="rotate(30 100 100)"/>` : `
+      <ellipse cx="140" cy="140" rx="80" ry="60" fill="url(#abRainbow)" opacity="0.1" transform="rotate(30 100 100)"/>
+      ${groundShadow}` : `
       <defs>
-        <radialGradient id="abBG" cx="50%" cy="35%" r="70%">
+        <radialGradient id="abBG" cx="50%" cy="20%" r="75%">
           <stop offset="0%" stop-color="${s.colors[0]}"/>
           <stop offset="100%" stop-color="${s.colors[1]}"/>
         </radialGradient>
-        <clipPath id="abClip"><circle cx="100" cy="100" r="100"/></clipPath>
+        <clipPath id="abClip"><rect x="0" y="0" width="200" height="400"/></clipPath>
         ${RAINBOW_DEFS}
       </defs>
-      <circle cx="100" cy="100" r="100" fill="url(#abBG)"/>
-      <circle cx="100" cy="100" r="100" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+      <rect x="0" y="0" width="200" height="400" fill="url(#abBG)"/>
+      <rect x="1" y="1" width="198" height="398" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      ${groundShadow}`;
 
     return prismOverlay;
   }
@@ -573,6 +576,130 @@
     }
   }
 
+  // Full-body torso/arms/legs/shoes, drawn below the existing collar art
+  // (svgClothes) which already fills down to y=200. Standing pose: arms
+  // relaxed at sides, legs slightly apart, flat feet.
+  function svgBody(outfitId, colorId, gender, skin) {
+    const c = OUTFIT_PALETTES[colorId] || OUTFIT_PALETTES.black;
+
+    switch (outfitId) {
+      case 'hoodie': return `
+        <path d="M14,200 L186,200 Q190,230 176,252 Q140,264 100,264 Q60,264 24,252 Q10,230 14,200 Z" fill="${c.m}"/>
+        <rect x="52" y="250" width="96" height="14" rx="6" fill="${c.d}" opacity="0.5"/>
+        <path d="M10,150 Q2,180 4,220 Q6,244 16,256 L34,256 Q30,220 30,190 Q30,166 34,150 Z" fill="${c.m}"/>
+        <path d="M190,150 Q198,180 196,220 Q194,244 184,256 L166,256 Q170,220 170,190 Q170,166 166,150 Z" fill="${c.m}"/>
+        <rect x="10" y="248" width="22" height="10" rx="4" fill="${c.d}" opacity="0.5"/>
+        <rect x="168" y="248" width="22" height="10" rx="4" fill="${c.d}" opacity="0.5"/>
+        <ellipse cx="20" cy="266" rx="11" ry="13" fill="${skin.color}"/>
+        <ellipse cx="180" cy="266" rx="11" ry="13" fill="${skin.color}"/>
+        <path d="M40,250 L88,250 L86,368 Q76,374 64,374 Q54,374 46,368 Z" fill="${c.m}"/>
+        <path d="M160,250 L112,250 L114,368 Q124,374 136,374 Q146,374 154,368 Z" fill="${c.m}"/>
+        <rect x="46" y="360" width="36" height="10" rx="4" fill="${c.m}" opacity="0.4"/>
+        <rect x="118" y="360" width="36" height="10" rx="4" fill="${c.m}" opacity="0.4"/>
+        <path d="M44,368 L84,368 Q92,374 92,382 Q92,390 80,390 L40,390 Q34,390 34,382 Q34,372 44,368 Z" fill="#F0F0F0"/>
+        <path d="M116,368 L156,368 Q166,372 166,382 Q167,390 160,390 L120,390 Q108,390 108,382 Q108,374 116,368 Z" fill="#F0F0F0"/>
+        <rect x="34" y="384" width="58" height="6" rx="3" fill="${c.a}"/>
+        <rect x="108" y="384" width="58" height="6" rx="3" fill="${c.a}"/>`;
+
+      case 'suit': return `
+        <path d="M14,200 L186,200 Q188,226 182,250 Q140,260 100,260 Q60,260 18,250 Q12,226 14,200 Z" fill="${c.m}"/>
+        <path d="M84,200 L82,258 Q100,262 118,258 L116,200 Z" fill="white" opacity="0.92"/>
+        <path d="M96,200 L93,258" stroke="${c.l}" opacity="0.9"/>
+        <path d="M104,200 L107,258" stroke="${c.l}" opacity="0.9"/>
+        <rect x="88" y="244" width="24" height="10" rx="2" fill="${c.d}"/>
+        <path d="M12,150 Q4,178 6,216 Q8,240 14,254 L30,254 Q27,220 27,188 Q27,166 30,150 Z" fill="${c.m}"/>
+        <path d="M188,150 Q196,178 194,216 Q192,240 186,254 L170,254 Q173,220 173,188 Q173,166 170,150 Z" fill="${c.m}"/>
+        <rect x="10" y="246" width="20" height="9" rx="3" fill="white" opacity="0.9"/>
+        <rect x="170" y="246" width="20" height="9" rx="3" fill="white" opacity="0.9"/>
+        <ellipse cx="19" cy="262" rx="10" ry="12" fill="${skin.color}"/>
+        <ellipse cx="181" cy="262" rx="10" ry="12" fill="${skin.color}"/>
+        <path d="M42,246 L88,246 L85,368 Q75,373 65,373 Q56,373 48,368 Z" fill="${c.m}"/>
+        <path d="M158,246 L112,246 L115,368 Q125,373 135,373 Q144,373 152,368 Z" fill="${c.m}"/>
+        <line x1="65" y1="250" x2="63" y2="365" stroke="${c.l}" stroke-width="1" opacity="0.35"/>
+        <line x1="135" y1="250" x2="137" y2="365" stroke="${c.l}" stroke-width="1" opacity="0.35"/>
+        <path d="M46,368 L84,368 Q94,372 94,380 Q94,388 82,388 L38,388 Q32,388 33,380 Q34,372 46,368 Z" fill="#1A1410"/>
+        <path d="M114,368 L154,368 Q166,372 166,380 Q167,388 162,388 L118,388 Q112,388 112,380 Q112,372 114,368 Z" fill="#1A1410"/>`;
+
+      case 'street': return `
+        <path d="M14,200 L186,200 Q190,230 176,252 Q140,264 100,264 Q60,264 24,252 Q10,230 14,200 Z" fill="${c.m}"/>
+        <rect x="52" y="250" width="96" height="14" rx="6" fill="${c.d}" opacity="0.5"/>
+        <path d="M10,150 Q2,180 4,220 Q6,244 16,256 L34,256 Q30,220 30,190 Q30,166 34,150 Z" fill="${c.m}"/>
+        <path d="M190,150 Q198,180 196,220 Q194,244 184,256 L166,256 Q170,220 170,190 Q170,166 166,150 Z" fill="${c.m}"/>
+        <ellipse cx="20" cy="266" rx="11" ry="13" fill="${skin.color}"/>
+        <ellipse cx="180" cy="266" rx="11" ry="13" fill="${skin.color}"/>
+        <path d="M36,250 L92,250 L90,362 Q78,370 62,370 Q50,370 40,362 Z" fill="${c.m}"/>
+        <path d="M164,250 L108,250 L110,362 Q122,370 138,370 Q150,370 160,362 Z" fill="${c.m}"/>
+        <path d="M38,368 L92,368 Q100,374 100,384 Q100,392 86,392 L34,392 Q28,392 28,384 Q28,372 38,368 Z" fill="#0d0d0d"/>
+        <path d="M108,368 L162,368 Q172,372 172,384 Q173,392 164,392 L114,392 Q106,392 106,384 Q106,374 108,368 Z" fill="#0d0d0d"/>
+        <rect x="28" y="386" width="72" height="6" rx="3" fill="${c.a}"/>
+        <rect x="106" y="386" width="72" height="6" rx="3" fill="${c.a}"/>`;
+
+      case 'blazer': return `
+        <path d="M16,200 L184,200 Q186,224 180,246 Q140,256 100,256 Q60,256 20,246 Q14,224 16,200 Z" fill="${c.m}"/>
+        <path d="M86,200 L84,254 Q100,258 116,254 L114,200 Z" fill="#F0EEE8" opacity="0.92"/>
+        <circle cx="100" cy="228" r="2.4" fill="#FFD700"/>
+        <circle cx="100" cy="240" r="2.4" fill="#FFD700"/>
+        <path d="M14,150 Q6,176 8,212 Q10,236 16,250 L31,250 Q28,218 28,188 Q28,166 31,150 Z" fill="${c.m}"/>
+        <path d="M186,150 Q194,176 192,212 Q190,236 184,250 L169,250 Q172,218 172,188 Q172,166 169,150 Z" fill="${c.m}"/>
+        <rect x="11" y="242" width="20" height="9" rx="3" fill="#F0EEE8" opacity="0.9"/>
+        <rect x="169" y="242" width="20" height="9" rx="3" fill="#F0EEE8" opacity="0.9"/>
+        <ellipse cx="20" cy="258" rx="10" ry="12" fill="${skin.color}"/>
+        <ellipse cx="180" cy="258" rx="10" ry="12" fill="${skin.color}"/>
+        <path d="M44,242 L88,242 L86,366 Q76,371 66,371 Q57,371 49,366 Z" fill="${c.m}"/>
+        <path d="M156,242 L112,242 L114,366 Q124,371 133,371 Q142,371 150,366 Z" fill="${c.m}"/>
+        <path d="M48,366 L86,366 Q95,370 95,378 Q95,386 84,386 L42,386 Q36,386 37,378 Q38,370 48,366 Z" fill="#8A5A34"/>
+        <path d="M114,366 L152,366 Q163,370 163,378 Q164,386 159,386 L117,386 Q111,386 111,378 Q111,370 114,366 Z" fill="#8A5A34"/>`;
+
+      case 'tee': return `
+        <path d="M18,200 L182,200 Q186,214 178,230 Q140,240 100,240 Q60,240 22,230 Q14,214 18,200 Z" fill="${c.m}"/>
+        <rect x="70" y="226" width="60" height="12" rx="5" fill="#25405A"/>
+        <path d="M12,150 Q4,174 6,204 Q8,222 16,232 L32,232 Q29,206 29,186 Q29,166 32,150 Z" fill="${c.m}"/>
+        <path d="M188,150 Q196,174 194,204 Q192,222 184,232 L168,232 Q171,206 171,186 Q171,166 168,150 Z" fill="${c.m}"/>
+        <ellipse cx="20" cy="240" rx="11" ry="13" fill="${skin.color}"/>
+        <ellipse cx="180" cy="240" rx="11" ry="13" fill="${skin.color}"/>
+        <path d="M36,228 L92,228 L90,362 Q78,370 62,370 Q50,370 40,362 Z" fill="#3A5878"/>
+        <path d="M164,228 L108,228 L110,362 Q122,370 138,370 Q150,370 160,362 Z" fill="#3A5878"/>
+        <line x1="62" y1="232" x2="60" y2="365" stroke="#5878A0" stroke-width="1" opacity="0.4"/>
+        <line x1="138" y1="232" x2="140" y2="365" stroke="#5878A0" stroke-width="1" opacity="0.4"/>
+        <path d="M38,368 L92,368 Q100,374 100,384 Q100,392 86,392 L34,392 Q28,392 28,384 Q28,372 38,368 Z" fill="#F0F0F0"/>
+        <path d="M108,368 L162,368 Q172,372 172,384 Q173,392 164,392 L114,392 Q106,392 106,384 Q106,374 108,368 Z" fill="#F0F0F0"/>
+        <rect x="28" y="386" width="72" height="6" rx="3" fill="${c.a}"/>
+        <rect x="106" y="386" width="72" height="6" rx="3" fill="${c.a}"/>`;
+
+      case 'jersey': return `
+        <path d="M16,200 L184,200 Q188,220 180,240 Q140,250 100,250 Q60,250 20,240 Q12,220 16,200 Z" fill="${c.m}"/>
+        <path d="M10,150 Q2,176 4,208 Q6,228 16,240 L34,240 Q30,210 30,188 Q30,166 34,150 Z" fill="${c.m}"/>
+        <path d="M190,150 Q198,176 196,208 Q194,228 184,240 L166,240 Q170,210 170,188 Q170,166 166,150 Z" fill="${c.m}"/>
+        <ellipse cx="20" cy="248" rx="11" ry="13" fill="${skin.color}"/>
+        <ellipse cx="180" cy="248" rx="11" ry="13" fill="${skin.color}"/>
+        <path d="M42,238 L90,238 L86,286 Q76,292 64,292 Q56,292 48,286 Z" fill="${c.m}"/>
+        <path d="M158,238 L110,238 L114,286 Q124,292 136,292 Q144,292 152,286 Z" fill="${c.m}"/>
+        <rect x="42" y="278" width="46" height="12" rx="4" fill="${c.l}" opacity="0.7"/>
+        <rect x="112" y="278" width="46" height="12" rx="4" fill="${c.l}" opacity="0.7"/>
+        <path d="M52,290 L78,290 L74,356 Q66,360 58,360 Q52,360 48,356 Z" fill="${skin.color}"/>
+        <path d="M148,290 L122,290 L126,356 Q134,360 142,360 Q148,360 152,356 Z" fill="${skin.color}"/>
+        <path d="M52,290 L78,290 L76,320 Q65,324 58,320 Z" fill="${skin.shadow}" opacity="0.25"/>
+        <path d="M148,290 L122,290 L124,320 Q135,324 142,320 Z" fill="${skin.shadow}" opacity="0.25"/>
+        <rect x="46" y="350" width="36" height="10" rx="4" fill="white" opacity="0.85"/>
+        <rect x="118" y="350" width="36" height="10" rx="4" fill="white" opacity="0.85"/>
+        <path d="M44,358 L84,358 Q92,363 92,371 Q92,379 80,379 L40,379 Q34,379 34,371 Q34,362 44,358 Z" fill="#F0F0F0"/>
+        <path d="M116,358 L156,358 Q166,362 166,371 Q167,379 160,379 L120,379 Q108,379 108,371 Q108,363 116,358 Z" fill="#F0F0F0"/>
+        <rect x="34" y="374" width="58" height="6" rx="3" fill="${c.a}"/>
+        <rect x="108" y="374" width="58" height="6" rx="3" fill="${c.a}"/>`;
+
+      default: return `
+        <path d="M18,200 L182,200 Q186,224 180,246 Q140,256 100,256 Q60,256 20,246 Q14,224 18,200 Z" fill="${c.m}"/>
+        <path d="M12,150 Q4,178 6,216 Q8,240 16,252 L32,252 Q29,218 29,188 Q29,166 32,150 Z" fill="${c.m}"/>
+        <path d="M188,150 Q196,178 194,216 Q192,240 184,252 L168,252 Q171,218 171,188 Q171,166 168,150 Z" fill="${c.m}"/>
+        <ellipse cx="19" cy="260" rx="10" ry="12" fill="${skin.color}"/>
+        <ellipse cx="181" cy="260" rx="10" ry="12" fill="${skin.color}"/>
+        <path d="M44,248 L86,248 L84,368 Q74,373 64,373 Q55,373 47,368 Z" fill="${c.m}"/>
+        <path d="M156,248 L114,248 L116,368 Q126,373 136,373 Q145,373 153,368 Z" fill="${c.m}"/>
+        <path d="M46,368 L84,368 Q93,372 93,380 Q93,388 82,388 L40,388 Q34,388 35,380 Q36,372 46,368 Z" fill="#2A2A2A"/>
+        <path d="M116,368 L154,368 Q165,372 165,380 Q166,388 161,388 L119,388 Q113,388 113,380 Q113,372 116,368 Z" fill="#2A2A2A"/>`;
+    }
+  }
+
   // ── Public API ────────────────────────────────────────────────────────────
 
   AB.generate = function (cfg) {
@@ -590,6 +717,7 @@
 
     const bg       = svgBg(bgId);
     const clothes  = svgClothes(outfitId, outfitColorId, gender);
+    const body     = svgBody(outfitId, outfitColorId, gender, skin);
     const neck     = svgNeck(skin);
     const head     = svgHead(skin);
     const ears     = svgEars(skin);
@@ -598,10 +726,11 @@
     const hairFront = svgHairFront(styleId, hc);
     const acc      = svgAccessory(accessoryId);
 
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 400" width="200" height="400">
   ${bg}
   <g clip-path="url(#abClip)">
     ${clothes}
+    ${body}
     ${neck}
     ${head}
     ${ears}

@@ -520,6 +520,14 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
+
+    /* Full-body avatar display: the "hero" avatar boxes (dashboard account
+       preview, profile page) default to a square/circular crop sized for a
+       photo upload. When a generated full-body SVG avatar is loaded instead,
+       JS adds .is-fullbody so the box grows into a tall rounded rect that
+       shows the whole figure instead of cropping it. */
+    #avatar-preview.is-fullbody { width: 150px !important; height: 300px !important; border-radius: 16px !important; }
+    .avatar-circle.is-fullbody { width: 140px !important; height: 280px !important; border-radius: 16px !important; }
     .modal h2 { color: #00d4ff; font-size: 1.4em; margin-bottom: 8px; }
     .modal-step { display: none; }
     .modal-step.active { display: block; }
@@ -769,7 +777,7 @@
     <div class="nav-right">
       <div style="display:flex; align-items:center; gap:10px;">
         <div id="nav-avatar" onclick="switchTab('account'); event.stopPropagation();" title="Edit profile photo" style="display:none; width:36px; height:36px; border-radius:50%; overflow:hidden; border:2px solid #00d4ff; cursor:pointer; flex-shrink:0; background:#1a1f2e;">
-          <img id="nav-avatar-img" src="" alt="" style="width:100%; height:100%; object-fit:cover; display:block;">
+          <img id="nav-avatar-img" src="" alt="" style="width:100%; height:100%; object-fit:cover; object-position:top center; display:block;">
         </div>
         <div class="user-info logged-out" id="user-info" onclick="handleUserInfoClick()" title="Log in or create an account">🔑 Log In</div>
       </div>
@@ -5142,6 +5150,14 @@
       document.getElementById('nav-avatar').style.display = 'block';
     }
 
+    // Generated full-body avatars (SVG) get the tall "hero" box; uploaded
+    // photos (JPEG) keep the original square/circular crop.
+    function _applyAvatarBoxShape(dataUrl) {
+      const box = document.getElementById('avatar-preview');
+      if (!box) return;
+      box.classList.toggle('is-fullbody', dataUrl.startsWith('data:image/svg+xml'));
+    }
+
     function loadAvatarPreview() {
       if (!getSessionId() || isDemo) return;
       fetch('/api/account/avatar', { headers: { 'X-Session-Id': getSessionId() } })
@@ -5151,6 +5167,7 @@
             document.getElementById('avatar-preview-img').src = data.avatar;
             document.getElementById('avatar-preview-img').style.display = 'block';
             document.getElementById('avatar-placeholder').style.display = 'none';
+            _applyAvatarBoxShape(data.avatar);
             setNavAvatar(data.avatar);
           }
         })
@@ -5340,7 +5357,10 @@
     const svg = AB.generate(_abCfg);
     const dataUrl = AB.toDataURL(svg);
     const el = document.getElementById('ab-preview');
-    if (el) el.innerHTML = svg;
+    // Full-body art is 200x400; scale-and-crop to a head shot (top center,
+    // like object-fit:cover + object-position:top) for this small circular preview.
+    const headShot = svg.replace('width="200" height="400"', 'width="100%" height="100%" preserveAspectRatio="xMidYMin slice"');
+    if (el) el.innerHTML = headShot;
   }
 
   function abRandomize() {
@@ -5430,6 +5450,7 @@
     if (img) { img.src = dataUrl; img.style.display = 'block'; }
     const ph = document.getElementById('avatar-placeholder');
     if (ph) ph.style.display = 'none';
+    _applyAvatarBoxShape(dataUrl);
     setNavAvatar(dataUrl);
   }
 
