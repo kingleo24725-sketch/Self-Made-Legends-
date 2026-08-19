@@ -19,7 +19,7 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <link rel="apple-touch-icon" href="/icon.svg">
-  <meta name="theme-color" content="#00d4ff">
+  <meta name="theme-color" content="#d4a93f">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="SML Come Up">
@@ -30,12 +30,13 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background:
-        radial-gradient(ellipse 80% 40% at 50% 110%, rgba(255,180,0,0.13) 0%, transparent 70%),
-        linear-gradient(128deg, rgba(180,140,0,0.07) 0%, transparent 40%),
-        linear-gradient(47deg,  transparent 30%, rgba(180,140,0,0.04) 31%, rgba(180,140,0,0.04) 32%, transparent 33%),
-        linear-gradient(78deg,  transparent 55%, rgba(180,140,0,0.03) 56%, rgba(180,140,0,0.03) 57%, transparent 58%),
-        linear-gradient(163deg, transparent 20%, rgba(180,140,0,0.04) 21%, rgba(180,140,0,0.04) 22%, transparent 23%),
-        linear-gradient(150deg, #0c1018 0%, #131820 35%, #0a0e16 65%, #101520 100%);
+        url('/logo-s.svg') center 42% / min(80vmin, 620px) no-repeat,
+        radial-gradient(ellipse 80% 40% at 50% 110%, rgba(224,178,60,0.16) 0%, transparent 70%),
+        linear-gradient(128deg, rgba(200,155,40,0.08) 0%, transparent 40%),
+        linear-gradient(47deg,  transparent 30%, rgba(200,155,40,0.05) 31%, rgba(200,155,40,0.05) 32%, transparent 33%),
+        linear-gradient(78deg,  transparent 55%, rgba(200,155,40,0.04) 56%, rgba(200,155,40,0.04) 57%, transparent 58%),
+        linear-gradient(163deg, transparent 20%, rgba(200,155,40,0.05) 21%, rgba(200,155,40,0.05) 22%, transparent 23%),
+        linear-gradient(150deg, #0d1120 0%, #141a2e 35%, #0b0f1c 65%, #10152a 100%);
       background-attachment: fixed;
       color: #e0e0e0;
       min-height: 100vh;
@@ -2225,9 +2226,9 @@
   </div>
 
   <!-- ── Paywall Overlay ──────────────────────────────────────────────── -->
-  <div id="paywall-overlay" class="modal-anim-overlay" style="display:flex; position:fixed; inset:0; z-index:9999; background:radial-gradient(ellipse 80% 40% at 50% 110%,rgba(255,180,0,0.18) 0%,transparent 70%),linear-gradient(150deg,#0c1018 0%,#131820 40%,#0a0e16 100%); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
+  <div id="paywall-overlay" class="modal-anim-overlay" style="display:flex; position:fixed; inset:0; z-index:9999; background:radial-gradient(ellipse 80% 40% at 50% 110%,rgba(224,178,60,0.2) 0%,transparent 70%),linear-gradient(150deg,#0d1120 0%,#141a2e 40%,#0b0f1c 100%); align-items:center; justify-content:center; flex-direction:column; padding:24px;">
     <div class="modal-anim-box" style="text-align:center; max-width:480px; width:100%;">
-      <div style="font-size:3.5em; margin-bottom:12px;">👑</div>
+      <img src="/icon.svg" alt="SML Gold" style="width:170px; height:170px; margin-bottom:18px; border-radius:38px; box-shadow:0 0 44px rgba(224,178,60,0.35);">
       <h1 style="color:#ffd700; font-size:1.9em; font-weight:900; letter-spacing:0.02em; margin-bottom:8px;">The Self-Made Legends Come Up</h1>
       <p style="color:#888; font-size:0.95em; line-height:1.7; margin-bottom:8px;">The AI-powered stock trading game. Compete on the national leaderboard. Build your legend.</p>
       <p style="color:#00ff88; font-size:0.88em; font-weight:600; margin-bottom:28px;">Play Free — No Subscription Needed</p>
