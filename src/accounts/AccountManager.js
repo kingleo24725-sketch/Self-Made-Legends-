@@ -25,6 +25,7 @@ class AccountManager {
         tagline:         row.tagline || '',
         gender:          row.gender || null,
         tier:            row.tier || 'free',
+        dateOfBirth:     row.date_of_birth || null,
         isCreatorMember: !!row.is_creator,
         status:          row.status || 'active',
         wallets:         JSON.parse(row.wallets || '[]'),

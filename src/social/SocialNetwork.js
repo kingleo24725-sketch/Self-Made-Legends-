@@ -12,7 +12,7 @@ class SocialNetwork {
   createProfile(userId, email, fullName) {
     const profile = {
       userId,
-      email,
+      email: String(email || '').trim().toLowerCase(),
       fullName,
       bio: "",
       profilePicture: null,
@@ -35,10 +35,11 @@ class SocialNetwork {
       return { success: false, error: "User profile not found" };
     }
 
-    // Find friend by email
+    // Find friend by email (case-insensitive)
+    const wanted = String(friendEmail || '').trim().toLowerCase();
     let friendId = null;
     for (const [id, profile] of this.userProfiles) {
-      if (profile.email === friendEmail) {
+      if (profile.email === wanted) {
         friendId = id;
         break;
       }

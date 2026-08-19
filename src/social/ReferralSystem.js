@@ -90,7 +90,7 @@ class ReferralSystem {
           referrerId: referral.referrerId,
           referralId: referral.id,
           amount: this.REFERRAL_BONUS,
-          fromUser: newUserEmail,
+          fromUser: referral.referredEmail,
           status: "pending",
           createdAt: new Date(),
           paidAt: null,

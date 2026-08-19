@@ -40,6 +40,36 @@ class LeaderboardManager {
     console.log(`✅ LeaderboardManager: restored ${rows.length} score entries`);
   }
 
+  // Reload in-memory weekly scores/portfolios from the DB. Called after
+  // score syncs so the leaderboard endpoints serve live data instead of
+  // a frozen boot-time snapshot.
+  async refreshFromDB() {
+    const rows = await db.all('SELECT * FROM leaderboard_scores');
+    this.weeklyScores = [];
+    for (const row of rows) {
+      this.weeklyScores.push({
+        userId: row.user_id,
+        score: row.score || 0,
+        gains: row.gains || 0,
+        gainPercentage: row.gain_pct || 0,
+        winRate: row.win_rate || 0,
+        trades: row.trades || 0,
+        totalValue: row.total_value || 0,
+        week: this.currentWeek,
+      });
+      this.userPortfolios.set(row.user_id, {
+        userId: row.user_id,
+        totalValue: row.total_value || 0,
+        initialInvestment: 1,
+        gains: row.gains || 0,
+        gainPercentage: row.gain_pct || 0,
+        trades: row.trades || 0,
+        winRate: row.win_rate || 0,
+        lastUpdated: new Date(row.updated_at || Date.now()).toISOString(),
+      });
+    }
+  }
+
   _persist(userId) {
     const entry = this.weeklyScores.find(s => s.userId === userId);
     if (!entry) return;
@@ -109,6 +139,8 @@ class LeaderboardManager {
       this.weeklyScores[existingIndex].gains = gains;
       this.weeklyScores[existingIndex].winRate = winRate;
       this.weeklyScores[existingIndex].trades = trades;
+      this.weeklyScores[existingIndex].gainPercentage = gainPercentage;
+      this.weeklyScores[existingIndex].totalValue = totalValue;
     } else {
       this.weeklyScores.push({
         userId,

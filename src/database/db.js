@@ -925,6 +925,7 @@ class DB {
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_vip INTEGER DEFAULT 0'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_chips INTEGER DEFAULT 10000'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN date_of_birth TEXT'); } catch (_) {}
+    try { await this.run('ALTER TABLE player_pets ADD COLUMN last_collect_at INTEGER'); } catch (_) {}
 
     // Seed crew_territories with all 10 neighborhoods (uncontrolled)
     const terrCount = await this.get('SELECT COUNT(*) as c FROM crew_territories');
