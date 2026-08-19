@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "description": "The Self-Made Legends Come Up - a simulated stock, crypto and NFT trading game with AI coaching, social features, and live competitions",
   "private": true,
-  "main": "src/index.js",
+  "main": "src/api-server.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "server": "node src/server.js",
-    "backtest": "node src/backtest.js",
+    "start": "node src/api-server.js",
+    "web": "node src/api-server.js",
+    "dev": "nodemon src/api-server.js",
+    "legacy:bot": "node src/index.js",
+    "legacy:server": "node src/server.js",
     "test": "jest"
   },
   "keywords": [
