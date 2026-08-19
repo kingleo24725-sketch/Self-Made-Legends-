@@ -6269,13 +6269,17 @@ async function startServer() {
 
   // Race resolution — every 4 hours, close current race and pay winners
   const RACE_INTERVAL_MS = 4 * 60 * 60 * 1000;
+  // Half a new player's starting bankroll: affordable on day one, still a real
+  // stake. Set explicitly on insert rather than relying on the column default,
+  // which stays at its original value on databases created before this change.
+  const RACE_ENTRY_FEE = 500;
   const _resolveRace = async () => {
     try {
       const race = await db.get("SELECT * FROM race_events WHERE status = 'open' ORDER BY created_at ASC LIMIT 1");
       if (!race) {
         // Create a new race
         const now = Date.now();
-        await db.run("INSERT INTO race_events (status, prize_pool, starts_at, ends_at, created_at) VALUES ('open', 0, ?, ?, ?)", [now, now + RACE_INTERVAL_MS, now]);
+        await db.run("INSERT INTO race_events (status, entry_fee, prize_pool, starts_at, ends_at, created_at) VALUES ('open', ?, 0, ?, ?, ?)", [RACE_ENTRY_FEE, now, now + RACE_INTERVAL_MS, now]);
         console.log('[Race] New race opened');
         return;
       }
@@ -6301,7 +6305,7 @@ async function startServer() {
       }
       // Open the next race
       const _nextNow = Date.now();
-      await db.run("INSERT INTO race_events (status, prize_pool, starts_at, ends_at, created_at) VALUES ('open', 0, ?, ?, ?)", [_nextNow, _nextNow + RACE_INTERVAL_MS, _nextNow]);
+      await db.run("INSERT INTO race_events (status, entry_fee, prize_pool, starts_at, ends_at, created_at) VALUES ('open', ?, 0, ?, ?, ?)", [RACE_ENTRY_FEE, _nextNow, _nextNow + RACE_INTERVAL_MS, _nextNow]);
       console.log(`[Race] Resolved race ${race.id} — paid ${Math.min(3, entries.length)} winners from $${prizePool} pool`);
     } catch (e) { console.error('[Race]', e.message); }
   };

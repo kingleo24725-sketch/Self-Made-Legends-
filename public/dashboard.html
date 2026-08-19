@@ -9094,7 +9094,7 @@ async function loadGarageTab() {
         statusEl.innerHTML = `<div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
           <div>
             <div style="color:#ffd700; font-weight:700;">Race Open — ${d.race.entrants || 0} entrants</div>
-            <div style="color:#888; font-size:0.82em; margin-top:2px;">Entry fee: $${(d.race.entry_fee||10000).toLocaleString()} · Prize pool: $${(d.race.prize_pool||0).toLocaleString()}</div>
+            <div style="color:#888; font-size:0.82em; margin-top:2px;">Entry fee: $${(d.race.entry_fee||500).toLocaleString()} · Prize pool: $${(d.race.prize_pool||0).toLocaleString()}</div>
           </div>
           <button class="btn-quick" onclick="enterRace()" style="background:linear-gradient(135deg,#ff6400,#ffd700); color:#000; border:none; border-radius:8px; padding:10px 22px; font-weight:700; cursor:pointer; font-size:0.9em;">🏁 Enter Race</button>
         </div>`;
