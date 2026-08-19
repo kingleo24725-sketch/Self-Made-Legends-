@@ -3599,11 +3599,13 @@
         const password = prompt('Create a password (min 8 characters):');
         const dateOfBirth = prompt('Enter your date of birth (MM/DD/YYYY) — you must be 18 or older:');
         if (!fullName || !email || !password || !dateOfBirth) return;
+        const tosAgreed = confirm('By clicking OK you confirm you are 18 or older and agree to the Terms of Service (terms.html) and Privacy Policy (privacy-policy.html). All trading on this platform is simulated — no real money is invested.');
+        if (!tosAgreed) return;
 
-        apiCall('/api/auth/register', 'POST', { fullName, email, password, dateOfBirth })
+        apiCall('/api/auth/register', 'POST', { fullName, email, password, dateOfBirth, tos_agreed: true })
           .then(data => {
             if (data.success) {
-              alert('✅ Account created! Welcome to Self-Made Legends!');
+              alert('✅ Account created! Welcome to The Self-Made Legends Come Up!');
               apiCall('/api/auth/login', 'POST', { email, password })
                 .then(loginData => {
                   if (loginData.success) {
@@ -4749,7 +4751,7 @@
       if (!input) return;
       const sid = getSessionId();
       if (!sid) { input.placeholder = 'Log in to get your referral link'; return; }
-      fetch('/api/social/referral-link', { headers: { 'X-Session-Id': sid } })
+      fetch('/api/referrals/my-link', { headers: { 'X-Session-Id': sid } })
         .then(r => r.json())
         .then(d => { if (d.referralLink || d.link) input.value = d.referralLink || d.link; })
         .catch(() => {});
@@ -4769,7 +4771,7 @@
       fetch('/api/social/friends/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Session-Id': sid },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ friendEmail: email })
       }).then(r => r.json()).then(d => {
         if (d.success) {
           document.getElementById('crew-friend-email').value = '';
@@ -4797,7 +4799,7 @@
           document.getElementById('ch-tip-income').textContent = (d.totalTipIncome || 0).toLocaleString();
 
           const refInput = document.getElementById('ch-referral-input');
-          fetch('/api/social/referral-link', { headers: { 'X-Session-Id': sid } })
+          fetch('/api/referrals/my-link', { headers: { 'X-Session-Id': sid } })
             .then(r => r.json()).then(rd => { if (refInput && (rd.referralLink || rd.link)) refInput.value = rd.referralLink || rd.link; });
 
           const list = document.getElementById('ch-commissions-list');
@@ -5574,7 +5576,7 @@
       return;
     }
     try {
-      const data = await apiCall('/training/progress');
+      const data = await apiCall('/api/training/progress');
       const done = (data.completedLessons || []).length;
       const total = data.totalLessons || 6;
       const pct = Math.round((done / total) * 100);
@@ -5601,7 +5603,7 @@
       return;
     }
     try {
-      const data = await apiCall('/teams/my');
+      const data = await apiCall('/api/teams/my');
       const el = document.getElementById('my-team-content');
       if (!data.team) {
         el.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
@@ -5772,7 +5774,10 @@
   let dmUnreadTotal = 0;
 
   function sesh() {
-    try { return JSON.parse(localStorage.getItem('sml_session') || 'null'); } catch(_){ return null; }
+    const raw = localStorage.getItem('sml_session');
+    if (!raw) return null;
+    try { const p = JSON.parse(raw); return (p && typeof p === 'object') ? p : { sessionId: raw }; }
+    catch(_) { return { sessionId: raw }; }
   }
   function hdrs() {
     const s = sesh();
@@ -6260,11 +6265,10 @@ window.loadCommunityFeed = async function() {
   const coachHistory = [];
 
   function getSessionHeaders() {
-    try {
-      const s = JSON.parse(localStorage.getItem('sml_session') || 'null');
-      if (s && s.sessionId) return { 'Content-Type': 'application/json', 'x-session-id': s.sessionId };
-    } catch(_) {}
-    return { 'Content-Type': 'application/json' };
+    const raw = localStorage.getItem('sml_session');
+    let sid = null;
+    if (raw) { try { const p = JSON.parse(raw); sid = (p && typeof p === 'object') ? p.sessionId : raw; } catch(_) { sid = raw; } }
+    return sid ? { 'Content-Type': 'application/json', 'x-session-id': sid } : { 'Content-Type': 'application/json' };
   }
 
   window.toggleCoach = function() {
@@ -6519,7 +6523,10 @@ fetch('/api/live/prices').then(r => r.json()).then(d => updateTicker(d.prices)).
 (function(){
   let socket;
   function getSession() {
-    try { return JSON.parse(localStorage.getItem('sml_session') || 'null'); } catch(_){ return null; }
+    const raw = localStorage.getItem('sml_session');
+    if (!raw) return null;
+    try { const p = JSON.parse(raw); return (p && typeof p === 'object') ? p : { sessionId: raw }; }
+    catch(_) { return { sessionId: raw }; }
   }
 
   function initSocket() {
@@ -8452,7 +8459,7 @@ window.placeLimitOrder = async function() {
   const price  = parseFloat((document.getElementById('lo-price')||{}).value || '0');
   if (!symbol || qty <= 0 || price <= 0) { showToast('⚠️','Invalid Input','Fill in all limit order fields.','#ffd700'); return; }
   try {
-    const r = await fetch('/api/trade/limit-order', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ symbol, type, quantity: qty, limitPrice: price }) });
+    const r = await fetch('/api/trade/limit-order', { method:'POST', headers:{'Content-Type':'application/json',...hdrs()}, body: JSON.stringify({ symbol, order_type: type, quantity: qty, limit_price: price }) });
     const d = await r.json();
     if (d.error) { showToast('❌','Error',d.error,'#ff4444'); return; }
     showToast('📋','Limit Order Placed',`${type.toUpperCase()} ${qty} ${symbol} @ $${price.toFixed(2)}`,'#ffd700');
@@ -8960,7 +8967,7 @@ async function sendCardDuel() {
   const r = await fetch('/api/cards/duel/send', {
     method: 'POST',
     headers: { 'x-session-id': sid, 'content-type': 'application/json' },
-    body: JSON.stringify({ opponentId, bet })
+    body: JSON.stringify({ opponentId, wagerPaper: bet })
   });
   const d = await r.json();
   if (d.error) { showToast('⚠️', 'Duel', d.error, '#ff4444'); return; }
@@ -9068,8 +9075,9 @@ async function collectPetIncome() {
   const r = await fetch('/api/pets/collect', { method: 'POST', headers: { 'x-session-id': sid } });
   const d = await r.json();
   if (d.error) { showToast('⚠️', 'Pets', d.error, '#ff4444'); return; }
-  showToast('💰', 'Income Collected!', d.message || `+$${(d.totalIncome||0).toLocaleString()} from pets!`, '#00ff88');
+  showToast('💰', 'Income Collected!', d.message || `+$${(d.earned||d.totalIncome||0).toLocaleString()} from pets!`, '#00ff88');
   loadPetsTab();
+  if (typeof refreshPortfolio === 'function') refreshPortfolio();
 }
 
 // ── Garage Tab ─────────────────────────────────────────────
@@ -9259,14 +9267,14 @@ function loadCryptoTab() {
   const sess = localStorage.getItem('sml_session');
   if (!sess) return;
   // Check if Creator or Elite
-  fetch('/api/account', { headers:{ 'x-session-id': sess } })
+  fetch('/api/subscriptions/status', { headers:{ 'x-session-id': sess } })
     .then(r => r.json()).then(d => {
-      const unlocked = d.account && (d.account.is_creator || d.account.is_elite || d.account.subscription_tier === 'elite');
+      const unlocked = !!(d.isCreator || d.isElite);
       document.getElementById('token-create-gate').style.display = unlocked ? 'block' : 'none';
       document.getElementById('token-create-locked').style.display = unlocked ? 'none' : 'block';
-      loadMyTokens();
-      loadTokenMarket();
     }).catch(() => {});
+  loadMyTokens();
+  loadTokenMarket();
 }
 async function createToken() {
   const sess = localStorage.getItem('sml_session');

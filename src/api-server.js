@@ -1,5 +1,15 @@
 require("dotenv").config();
 
+// Async route handlers are not wrapped by Express 4, so a single rejected
+// promise in any endpoint would otherwise kill the whole process for every
+// player. Log and keep serving instead.
+process.on("unhandledRejection", (err) => {
+  console.error("UnhandledRejection:", err && err.stack ? err.stack : err);
+});
+process.on("uncaughtException", (err) => {
+  console.error("UncaughtException:", err && err.stack ? err.stack : err);
+});
+
 const db = require("./database/db");
 const express = require("express");
 const cors = require("cors");
@@ -453,10 +463,13 @@ app.post("/api/auth/register", (req, res) => {
             await db.run('UPDATE referral_links SET signups = signups + 1 WHERE code = ?', [referralCode]);
             await db.run('INSERT INTO referral_events (code, referrer_id, referee_id, event_type, bonus_paid, created_at) VALUES (?, ?, ?, ?, ?, ?)',
               [referralCode, referrerId, result.userId, 'signup', 500, now]);
-            // Give referee 500 SML Bucks immediately
-            await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 500, updated_at = ? WHERE user_id = ?', [now, result.userId]);
-            // Give referrer 500 SML Bucks immediately
-            await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 500, updated_at = ? WHERE user_id = ?', [now, referrerId]);
+            // Give referee and referrer 500 SML Bucks immediately (upsert:
+            // the referee never has a portfolio row yet, and a bare UPDATE
+            // would silently pay nothing)
+            const refBonus = `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1500, 1000, ?)
+               ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + 500, updated_at = ?`;
+            await db.run(refBonus, [result.userId, now, now]);
+            await db.run(refBonus, [referrerId, now, now]);
             await _syncLeaderboard(referrerId);
             emitToUser(referrerId, 'referral_bonus', { amount: 500, message: '🔗 +$500 SML Bucks — your referral just signed up!' });
           }
@@ -510,14 +523,13 @@ app.post("/api/auth/logout", authenticateUser, (req, res) => {
 app.get("/api/account/export", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
   try {
-    const [account, portfolio, holdings, trades, messages] = await Promise.all([
+    const [account, portfolio, holdings, trades] = await Promise.all([
       db.get('SELECT user_id, email, full_name, created_at FROM accounts WHERE user_id = ?', [uid]),
       db.get('SELECT * FROM user_portfolios WHERE user_id = ?', [uid]),
       db.all('SELECT * FROM holdings WHERE user_id = ?', [uid]),
       db.all('SELECT * FROM trades WHERE user_id = ? ORDER BY timestamp DESC LIMIT 1000', [uid]),
-      db.all('SELECT * FROM chat_messages WHERE sender_id = ? ORDER BY created_at DESC LIMIT 500', [uid]),
     ]);
-    res.json({ exported_at: new Date().toISOString(), account, portfolio, holdings, trades, messages });
+    res.json({ exported_at: new Date().toISOString(), account, portfolio, holdings, trades });
   } catch (e) {
     res.status(500).json({ error: 'Export failed' });
   }
@@ -527,7 +539,6 @@ app.get("/api/account/export", authenticateUser, async (req, res) => {
 app.delete("/api/account", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
   try {
-    await db.run('DELETE FROM chat_messages WHERE sender_id = ?', [uid]);
     await db.run('DELETE FROM notifications WHERE user_id = ?', [uid]);
     await db.run('DELETE FROM holdings WHERE user_id = ?', [uid]);
     await db.run('DELETE FROM trades WHERE user_id = ?', [uid]);
@@ -682,10 +693,29 @@ app.post("/api/stripe/cancel-subscription", authenticateUser, async (req, res) =
   if (!stripeProcessor) {
     return res.status(503).json({ error: "Payment processing not configured" });
   }
-  const { subscriptionId } = req.body;
-  if (!subscriptionId) return res.status(400).json({ error: "subscriptionId required" });
+  const { subscriptionId, type } = req.body;
+  if (!subscriptionId && !type) return res.status(400).json({ error: "subscriptionId or type required" });
   try {
-    const result = await stripeProcessor.cancelSubscription(subscriptionId);
+    let subId = subscriptionId;
+    // The frontend only knows the subscription TYPE (creator/elite/coach/casino_vip),
+    // not the Stripe subscription id — look it up via subscription metadata.
+    if (!subId && type) {
+      const typeMap = { creator: 'creator_subscription', elite: 'elite_membership', coach: 'coach_pro', casino_vip: 'casino_vip' };
+      const metaType = typeMap[type] || type;
+      const found = await stripeProcessor.stripe.subscriptions.search({
+        query: `status:'active' AND metadata['userId']:'${req.user.userId}' AND metadata['type']:'${metaType}'`,
+        limit: 1,
+      });
+      if (!found.data.length) return res.status(404).json({ error: 'No active subscription of that type found' });
+      subId = found.data[0].id;
+    }
+    const result = await stripeProcessor.cancelSubscription(subId);
+    // Deactivate local entitlements immediately (webhook also covers this)
+    const uid = req.user.userId;
+    if (type === 'coach') await db.run('UPDATE premium_coach_subs SET active = 0 WHERE user_id = ?', [uid]).catch(() => {});
+    if (type === 'elite') { await db.run('UPDATE elite_memberships SET active = 0 WHERE user_id = ?', [uid]).catch(() => {}); await db.run('UPDATE accounts SET is_elite = 0 WHERE user_id = ?', [uid]).catch(() => {}); }
+    if (type === 'creator') { await db.run('UPDATE creator_memberships SET active = 0 WHERE user_id = ?', [uid]).catch(() => {}); await db.run('UPDATE accounts SET is_creator = 0 WHERE user_id = ?', [uid]).catch(() => {}); }
+    if (type === 'casino_vip') await db.run('UPDATE accounts SET casino_vip = 0 WHERE user_id = ?', [uid]).catch(() => {});
     res.json({ success: true, ...result });
   } catch (err) {
     res.status(500).json({ error: "Cancellation failed: " + err.message });
@@ -951,7 +981,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           const now = Date.now();
           await db.run('INSERT OR IGNORE INTO creator_memberships (user_id, activated_at, active) VALUES (?, ?, 1)', [userId, now]);
           await db.run('UPDATE creator_memberships SET active = 1, activated_at = ? WHERE user_id = ?', [now, userId]);
-          await db.run('UPDATE accounts SET is_creator = 1 WHERE id = ?', [userId]);
+          await db.run('UPDATE accounts SET is_creator = 1 WHERE user_id = ?', [userId]);
           emitToUser(userId, 'purchase_complete', { type: 'creator_membership', message: '👑 Creator Membership activated! Your exclusive perks are live.' });
         }
         console.log(`Creator Membership activated — user ${userId}`);
@@ -961,7 +991,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           const now = Date.now();
           await db.run('INSERT OR IGNORE INTO elite_memberships (user_id, activated_at, active) VALUES (?, ?, 1)', [userId, now]);
           await db.run('UPDATE elite_memberships SET active = 1, activated_at = ? WHERE user_id = ?', [now, userId]);
-          await db.run('UPDATE accounts SET is_elite = 1 WHERE id = ?', [userId]);
+          await db.run('UPDATE accounts SET is_elite = 1 WHERE user_id = ?', [userId]);
           emitToUser(userId, 'purchase_complete', { type: 'elite_membership', message: '💎 Elite Membership activated! You are in the top tier — exclusive perks unlocked.' });
           await _awardCreatorCommission(userId, 'elite_membership', 250);
         }
@@ -970,8 +1000,15 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         if (userId) {
           const now = Date.now();
           await _addCredits(userId, 2500, 'bundle', 'Legend Starter Bundle — 2,500 Credits');
-          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + 5000, updated_at = ? WHERE user_id = ?', [now, userId]);
-          await db.run('UPDATE accounts SET is_season_pass = 1 WHERE id = ?', [userId]);
+          await db.run(
+            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
+             ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + 5000, updated_at = ?`,
+            [userId, 5000, now, now]
+          );
+          await db.run(
+            'INSERT INTO season_passes (user_id, stripe_sub_id, season_id, active, activated_at) VALUES (?, ?, ?, 1, ?) ON CONFLICT(user_id) DO UPDATE SET active = 1, activated_at = ?',
+            [userId, 'legend_bundle', 'season1', now, now]
+          );
           await db.run('INSERT OR IGNORE INTO player_cosmetics (user_id, frame_style, updated_at) VALUES (?, ?, ?)', [userId, 'neon', now]);
           await db.run('UPDATE player_cosmetics SET frame_style = CASE WHEN frame_style = \'default\' THEN \'neon\' ELSE frame_style END, updated_at = ? WHERE user_id = ?', [now, userId]);
           await _syncLeaderboard(userId);
@@ -995,7 +1032,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           const p = PETS[petKey];
           const now = Date.now();
           await db.run(
-            'INSERT INTO player_pets (user_id, pet_key, pet_name, happiness, xp, level, last_fed, acquired_at) VALUES (?, ?, ?, 100, 0, 1, ?, ?)',
+            'INSERT INTO player_pets (user_id, pet_key, name, happiness, xp, level, last_fed_at, acquired_at) VALUES (?, ?, ?, 100, 0, 1, ?, ?)',
             [userId, petKey, p.label, now, now]
           );
           await _awardBox(userId, 'pet_bonus');
@@ -1010,7 +1047,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           const c = CARS[carKey];
           const now = Date.now();
           await db.run(
-            'INSERT INTO player_cars (user_id, car_key, car_name, paint_color, acquired_at) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO player_cars (user_id, car_key, name, paint_color, acquired_at) VALUES (?, ?, ?, ?, ?)',
             [userId, carKey, c.label, '#1a1a2e', now]
           );
           emitToUser(userId, 'purchase_complete', { type: 'car', message: `${c.icon} ${c.label} added to your garage! Speed: ${c.speed}, Stealth: ${c.stealth}.` });
@@ -1046,11 +1083,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
       } else if (type === 'casino_vip') {
         if (userId) {
           const now = Date.now();
-          await db.run(
-            'INSERT OR IGNORE INTO elite_memberships (user_id, activated_at, active) VALUES (?, ?, 1)',
-            [userId, now]
-          );
-          await db.run('UPDATE accounts SET casino_vip = 1 WHERE id = ?', [userId]);
+          await db.run('UPDATE accounts SET casino_vip = 1 WHERE user_id = ?', [userId]);
           emitToUser(userId, 'purchase_complete', { type: 'casino_vip', message: '🎰 VIP Casino Access activated! High-stakes tables unlocked.' });
           console.log(`Casino VIP activated — user ${userId}`);
         }
@@ -1063,6 +1096,20 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         await db.run('UPDATE premium_coach_subs SET active = 0 WHERE user_id = ?', [userId]);
         emitToUser(userId, 'subscription_cancelled', { type: 'coach_pro', message: 'Coach Pro cancelled' });
         console.log(`Coach Pro CANCELLED — user ${userId}`);
+      } else if (type === 'elite_membership' && userId) {
+        await db.run('UPDATE elite_memberships SET active = 0 WHERE user_id = ?', [userId]);
+        await db.run('UPDATE accounts SET is_elite = 0 WHERE user_id = ?', [userId]);
+        emitToUser(userId, 'subscription_cancelled', { type: 'elite_membership', message: 'Elite Membership cancelled' });
+        console.log(`Elite Membership CANCELLED — user ${userId}`);
+      } else if (type === 'casino_vip' && userId) {
+        await db.run('UPDATE accounts SET casino_vip = 0 WHERE user_id = ?', [userId]);
+        emitToUser(userId, 'subscription_cancelled', { type: 'casino_vip', message: 'VIP Game Pass cancelled' });
+        console.log(`Casino VIP CANCELLED — user ${userId}`);
+      } else if (type === 'creator_subscription' && userId) {
+        await db.run('UPDATE creator_memberships SET active = 0 WHERE user_id = ?', [userId]);
+        await db.run('UPDATE accounts SET is_creator = 0 WHERE user_id = ?', [userId]);
+        emitToUser(userId, 'subscription_cancelled', { type: 'creator_subscription', message: 'Creator Membership cancelled' });
+        console.log(`Creator Membership CANCELLED — user ${userId}`);
       } else if (userId) {
         console.log(`Subscription CANCELLED — user ${userId}, type ${type}`);
       }
@@ -1280,7 +1327,7 @@ app.post("/api/stripe/tournament-entry", authenticateUser, async (req, res) => {
 app.post("/api/stripe/jail-buyout", authenticateUser, async (req, res) => {
   if (!stripeProcessor) return res.status(503).json({ error: "Payment processing not configured" });
   const uid = req.user.userId;
-  const jail = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+  const jail = await db.get('SELECT user_id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
   if (!jail) return res.status(400).json({ error: 'You are not in jail' });
   try {
     const account = accountManager.getAccountById(uid);
@@ -1792,7 +1839,7 @@ app.post("/api/game/dice", authenticateUser, async (req, res) => {
   if (isNaN(wager) || wager <= 0) return res.status(400).json({ error: 'wager must be a positive number' });
   const MAX_WAGER = 10000;
   try {
-    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [uid]);
+    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE user_id = ?', [uid]);
     const chips = chipRow ? (chipRow.casino_chips ?? 0) : 0;
     const actualWager = Math.min(wager, chips, MAX_WAGER);
     if (actualWager < wager) return res.status(400).json({ error: `Wager capped at ${MAX_WAGER.toLocaleString()} max or your chip balance`, max: MAX_WAGER });
@@ -1803,7 +1850,7 @@ app.post("/api/game/dice", authenticateUser, async (req, res) => {
     const won = sum >= 8; // 8–12 wins (house-favorable: 41.7% win rate)
     const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0;
     const net = won ? payout - actualWager : -actualWager;
-    await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [net, uid]);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE user_id = ?', [net, uid]);
     res.json({ success: true, roll1, roll2, sum, won, wager: actualWager, payout, net });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1814,7 +1861,7 @@ app.post("/api/game/card-flip", authenticateUser, async (req, res) => {
   if (isNaN(wager) || wager <= 0) return res.status(400).json({ error: 'wager must be a positive number' });
   const MAX_WAGER = 10000;
   try {
-    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [uid]);
+    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE user_id = ?', [uid]);
     const chips = chipRow ? (chipRow.casino_chips ?? 0) : 0;
     const actualWager = Math.min(wager, chips, MAX_WAGER);
     if (actualWager < wager) return res.status(400).json({ error: `Wager capped at ${MAX_WAGER.toLocaleString()} max or your chip balance`, max: MAX_WAGER });
@@ -1823,7 +1870,7 @@ app.post("/api/game/card-flip", authenticateUser, async (req, res) => {
     const won = color === 'Red';
     const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0; // 1.8× (house +10% EV)
     const net = won ? payout - actualWager : -actualWager;
-    await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [net, uid]);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE user_id = ?', [net, uid]);
     res.json({ success: true, color, won, wager: actualWager, payout, net });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -1918,6 +1965,10 @@ app.post("/api/tips/buy/:tipId", authenticateUser, async (req, res) => {
       await db.run(
         'INSERT INTO sml_credits (user_id, balance, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET balance = balance + ?, updated_at = ?',
         [tip.author_id, authorShare, now, authorShare, now]
+      );
+      await db.run(
+        'INSERT INTO credit_transactions (user_id, amount, type, description, created_at) VALUES (?, ?, ?, ?, ?)',
+        [tip.author_id, authorShare, 'tip_income', `Tip sold: ${tip.symbol}`, now]
       );
     }
     await db.run('INSERT INTO stock_tip_purchases (tip_id, user_id, purchased_at) VALUES (?, ?, ?)', [tipId, uid, now]);
@@ -2127,13 +2178,13 @@ app.post("/api/rewards/daily-claim", authenticateUser, async (req, res) => {
       [uid, newStreak, now, amount, newStreak, now, amount]
     );
     await db.run(
-      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
        ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
       [uid, amount, now, amount, now]
     );
     await _syncLeaderboard(uid);
     // Award free casino chips on daily login
-    await db.run('UPDATE accounts SET casino_chips = casino_chips + 5000 WHERE id = ?', [uid]);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips + 5000 WHERE user_id = ?', [uid]);
     emitToUser(uid, 'reward_claimed', { amount, streak: newStreak });
     emitToUser(uid, 'casino_chips_update', { chips: 5000, source: 'daily_login' });
     res.json({
@@ -2232,7 +2283,7 @@ async function _incrementCommunityChallenge(type, amount, userId) {
       const participants = await db.all('SELECT user_id FROM challenge_participants WHERE week_key = ? AND rewarded = 0', [wk]);
       for (const p of participants) {
         await db.run(
-          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
            ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
           [p.user_id, COMMUNITY_CHALLENGE_REWARD, now, COMMUNITY_CHALLENGE_REWARD, now]
         );
@@ -2282,7 +2333,7 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
     if (!config) return res.status(400).json({ error: 'Invalid heist type' });
 
     // Jail check for robber
-    const jailRow = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+    const jailRow = await db.get('SELECT user_id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
     if (jailRow) return res.status(403).json({ error: 'You are in jail! Pay bail first.', jailed: true });
 
     // Cooldown check
@@ -2378,7 +2429,7 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
           const memberWeapon = teammateWeapons[teammates.indexOf(rid)];
           const memberCatchRate = memberWeapon ? Math.max(0.05, CATCH_RATE - memberWeapon.catchReduction) : CATCH_RATE;
           if (Math.random() < memberCatchRate) {
-            const alreadyJailed = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [rid]);
+            const alreadyJailed = await db.get('SELECT user_id FROM jail_status WHERE user_id = ? AND released = 0', [rid]);
             if (!alreadyJailed) {
               await db.run(
                 'INSERT OR REPLACE INTO jail_status (user_id, heist_id, victim_id, amount_owed, released, jailed_at) VALUES (?, ?, ?, ?, 0, ?)',
@@ -2399,14 +2450,14 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
       }
 
       // Raise heat level on successful heist (max 5)
-      await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE id = ?', [uid]);
+      await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE user_id = ?', [uid]);
       if (teamId && teammates.length > 1) {
         for (const rid of teammates) {
-          await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE id = ?', [rid]);
+          await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE user_id = ?', [rid]);
         }
       }
       await _awardBox(uid, 'heist_win');
-      await db.run('UPDATE accounts SET casino_chips = casino_chips + 2000 WHERE id = ?', [uid]);
+      await db.run('UPDATE accounts SET casino_chips = casino_chips + 2000 WHERE user_id = ?', [uid]);
 
       // Grant weapon XP to best weapon on heist success
       const _wKey = await _getBestWeaponKey(uid);
@@ -3004,7 +3055,11 @@ app.get("/api/nft/collection/:slug", async (req, res) => {
   res.json(data);
 });
 
-app.get("/api/portfolio", authenticateUser, (req, res) => {
+// Demo AI-engine portfolio (shared simulation the coach learns from).
+// NOTE: must NOT be registered as /api/portfolio — that shadowed the real
+// per-user portfolio route below and made every player's portfolio view
+// show the demo engine instead of their own money.
+app.get("/api/engine/portfolio", authenticateUser, (req, res) => {
   const currentPrices = {};
   for (const [symbol, data] of analysisResults) {
     currentPrices[symbol] = data.price;
@@ -3287,7 +3342,7 @@ app.post("/api/referrals/claim-milestone", authenticateUser, async (req, res) =>
         if (m.paper) {
           const claimNow = Date.now();
           await db.run(
-            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
              ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
             [uid, m.paper, claimNow, m.paper, claimNow]
           );
@@ -3330,9 +3385,9 @@ app.post("/api/market/pump-dump", authenticateUser, async (req, res) => {
     const { symbol, direction } = req.body;
     if (!symbol || !['up','down'].includes(direction)) return res.status(400).json({ error: 'symbol and direction (up/down) required' });
     if (!MARKET_SYMBOLS.includes(symbol)) return res.status(400).json({ error: 'Symbol not available for events' });
-    const acct = await db.get('SELECT credits FROM accounts WHERE id = ?', [uid]);
+    const acct = await db.get('SELECT balance AS credits FROM sml_credits WHERE user_id = ?', [uid]);
     if (!acct || acct.credits < 1000) return res.status(400).json({ error: 'Not enough credits (need 1,000)' });
-    await db.run('UPDATE accounts SET credits = credits - 1000 WHERE id = ?', [uid]);
+    await db.run('UPDATE sml_credits SET balance = balance - 1000 WHERE user_id = ?', [uid]);
     emitToUser(uid, 'credits_update', { credits: (acct.credits - 1000) });
     const pool = direction === 'up' ? MARKET_NEWS_UP : MARKET_NEWS_DOWN;
     const tpl = pool[Math.floor(Math.random() * pool.length)];
@@ -3366,15 +3421,16 @@ app.post("/api/nfts/legend/mint", authenticateUser, async (req, res) => {
     const uid = req.user.userId;
     const existing = await db.get('SELECT id FROM legend_nfts WHERE owner_id = ?', [uid]);
     if (existing) return res.status(400).json({ error: 'You already minted your Legend NFT. Trade the old one first.' });
-    const acct = await db.get('SELECT credits, heat_level, full_name FROM accounts WHERE id = ?', [uid]);
-    if (!acct || acct.credits < 500) return res.status(400).json({ error: 'Minting costs 500 credits' });
+    const acct = await db.get('SELECT heat_level, full_name FROM accounts WHERE user_id = ?', [uid]);
+    const credRow = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [uid]);
+    if (!acct || !credRow || credRow.balance < 500) return res.status(400).json({ error: 'Minting costs 500 credits' });
     const xpRow = await db.get('SELECT total_xp FROM user_xp WHERE user_id = ?', [uid]);
     const totalXp = xpRow ? xpRow.total_xp : 0;
     const rarity = _nftRarityFromStats(totalXp, acct.heat_level || 0);
     const icons = { common:'🥉', uncommon:'🥈', rare:'🥇', epic:'💎', legendary:'👑' };
     const nftName = `${acct.full_name || 'Legend'} #${Math.floor(Math.random() * 9000) + 1000}`;
     const mintStats = JSON.stringify({ xp: totalXp, heat: acct.heat_level || 0, mintedAt: Date.now() });
-    await db.run('UPDATE accounts SET credits = credits - 500 WHERE id = ?', [uid]);
+    await db.run('UPDATE sml_credits SET balance = balance - 500 WHERE user_id = ?', [uid]);
     const result = await db.run('INSERT INTO legend_nfts (owner_id, nft_name, nft_icon, rarity, mint_stats, minted_at) VALUES (?,?,?,?,?,?)',
       [uid, nftName, icons[rarity], rarity, mintStats, Date.now()]);
     await _notify(uid, 'nft_mint', '🎨 Legend NFT Minted!', `Your ${rarity} Legend NFT "${nftName}" is ready!`);
@@ -3445,7 +3501,7 @@ app.get("/api/nfts/legend/marketplace", async (req, res) => {
       SELECT nl.*, ln.nft_name, ln.nft_icon, ln.rarity, a.full_name AS seller_name
       FROM nft_listings nl
       JOIN legend_nfts ln ON ln.id = nl.nft_id
-      LEFT JOIN accounts a ON a.id = nl.seller_id
+      LEFT JOIN accounts a ON a.user_id = nl.seller_id
       WHERE nl.sold_at IS NULL
       ORDER BY nl.listed_at DESC LIMIT 50
     `);
@@ -3460,7 +3516,7 @@ app.post("/api/casino/blackjack/start", authenticateUser, async (req, res) => {
     const uid = req.user.userId;
     const { bet } = req.body;
     if (!bet || bet < CASINO_MIN_BET) return res.status(400).json({ error: `Minimum bet is $${CASINO_MIN_BET.toLocaleString()}` });
-    const acct = await db.get('SELECT casino_vip, casino_chips FROM accounts WHERE id = ?', [uid]);
+    const acct = await db.get('SELECT casino_vip, casino_chips FROM accounts WHERE user_id = ?', [uid]);
     if (bet >= CASINO_VIP_MIN && !acct?.casino_vip) return res.status(403).json({ error: 'VIP Casino access required for bets 500k+ chips' });
     if (!acct || (acct.casino_chips ?? 0) < bet) return res.status(400).json({ error: 'Not enough Casino Chips' });
     // Cancel any active game first
@@ -3468,7 +3524,7 @@ app.post("/api/casino/blackjack/start", authenticateUser, async (req, res) => {
     const deck = _buildDeck();
     const player = [deck.pop(), deck.pop()];
     const dealer = [deck.pop(), deck.pop()];
-    await db.run('UPDATE accounts SET casino_chips = casino_chips - ? WHERE id = ?', [bet, uid]);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips - ? WHERE user_id = ?', [bet, uid]);
     const result = await db.run(
       "INSERT INTO casino_blackjack (user_id, bet_paper, player_hand, dealer_hand, deck, status, created_at) VALUES (?,?,?,?,?,'active',?)",
       [uid, bet, JSON.stringify(player), JSON.stringify(dealer), JSON.stringify(deck), Date.now()]
@@ -3480,12 +3536,12 @@ app.post("/api/casino/blackjack/start", authenticateUser, async (req, res) => {
       const dealerTotal = _handTotal(dealer);
       if (dealerTotal === 21) {
         await db.run("UPDATE casino_blackjack SET status='push', outcome='push', payout=?, resolved_at=? WHERE id=?", [bet, Date.now(), result.lastID]);
-        await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [bet, uid]);
+        await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE user_id = ?', [bet, uid]);
         return res.json({ gameId: result.lastID, player, dealer, playerTotal: 21, dealerTotal: 21, outcome: 'push', payout: 0, message: 'Push! Both have Blackjack.' });
       }
       const payout = Math.floor(bet * 2.5);
       await db.run("UPDATE casino_blackjack SET status='blackjack', outcome='win', payout=?, resolved_at=? WHERE id=?", [payout, Date.now(), result.lastID]);
-      await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [payout, uid]);
+      await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE user_id = ?', [payout, uid]);
       return res.json({ gameId: result.lastID, player, dealer, playerTotal: 21, dealerVisible, outcome: 'blackjack', payout, message: '🃏 Blackjack! You win 2.5x!' });
     }
     res.json({ gameId: result.lastID, player, dealer: [dealerVisible], playerTotal, status: 'active' });
@@ -3540,7 +3596,7 @@ app.post("/api/casino/blackjack/stand", authenticateUser, async (req, res) => {
     await db.run("UPDATE casino_blackjack SET status='done', outcome=?, payout=?, player_hand=?, dealer_hand=?, deck=?, resolved_at=? WHERE id=?",
       [outcome, payout, JSON.stringify(player), JSON.stringify(dealer), JSON.stringify(deck), Date.now(), gameId]);
     if (payout > 0) {
-      await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [payout, uid]);
+      await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE user_id = ?', [payout, uid]);
     }
     res.json({ gameId, player, dealer, playerTotal, dealerTotal, outcome, payout, message });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -3576,11 +3632,11 @@ app.post("/api/casino/horses/bet", authenticateUser, async (req, res) => {
     const race = await db.get("SELECT * FROM horse_races WHERE id=? AND status='betting'", [raceId]);
     if (!race) return res.status(404).json({ error: 'Race not in betting phase' });
     if (Date.now() >= race.starts_at) return res.status(400).json({ error: 'Betting window closed' });
-    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [uid]);
+    const chipRow = await db.get('SELECT casino_chips FROM accounts WHERE user_id = ?', [uid]);
     if (!chipRow || (chipRow.casino_chips ?? 0) < bet) return res.status(400).json({ error: 'Not enough Casino Chips' });
     const existingBet = await db.get('SELECT id FROM horse_bets WHERE race_id=? AND user_id=?', [raceId, uid]);
     if (existingBet) return res.status(400).json({ error: 'Already placed a bet in this race' });
-    await db.run('UPDATE accounts SET casino_chips = casino_chips - ? WHERE id = ?', [bet, uid]);
+    await db.run('UPDATE accounts SET casino_chips = casino_chips - ? WHERE user_id = ?', [bet, uid]);
     await db.run('INSERT INTO horse_bets (race_id, user_id, horse_num, bet_paper, placed_at) VALUES (?,?,?,?,?)',
       [raceId, uid, horseNum, bet, Date.now()]);
     res.json({ ok: true, raceId, horseNum, horseName: HORSE_NAMES[horseNum - 1], bet });
@@ -3599,7 +3655,7 @@ app.get("/api/casino/horses/my-bet", authenticateUser, async (req, res) => {
 
 app.get("/api/casino/chips", authenticateUser, async (req, res) => {
   try {
-    const row = await db.get('SELECT casino_chips FROM accounts WHERE id = ?', [req.user.userId]);
+    const row = await db.get('SELECT casino_chips FROM accounts WHERE user_id = ?', [req.user.userId]);
     res.json({ chips: row?.casino_chips ?? 10000 });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -3622,9 +3678,9 @@ app.post("/api/trade-war/enter", authenticateUser, async (req, res) => {
     if (!war) return res.status(404).json({ error: 'No upcoming Trade War' });
     const existing = await db.get('SELECT id FROM trade_war_entries WHERE war_id=? AND user_id=?', [war.id, uid]);
     if (existing) return res.status(400).json({ error: 'Already entered' });
-    const acct = await db.get('SELECT credits FROM accounts WHERE id = ?', [uid]);
+    const acct = await db.get('SELECT balance AS credits FROM sml_credits WHERE user_id = ?', [uid]);
     if (!acct || acct.credits < TRADE_WAR_ENTRY_CREDITS) return res.status(400).json({ error: `Entry costs ${TRADE_WAR_ENTRY_CREDITS} credits` });
-    await db.run('UPDATE accounts SET credits = credits - ? WHERE id = ?', [TRADE_WAR_ENTRY_CREDITS, uid]);
+    await db.run('UPDATE sml_credits SET balance = balance - ? WHERE user_id = ?', [TRADE_WAR_ENTRY_CREDITS, uid]);
     await db.run('INSERT INTO trade_war_entries (war_id, user_id, cash, portfolio_json, entered_at) VALUES (?,?,?,?,?)',
       [war.id, uid, TRADE_WAR_START_CASH, '{}', Date.now()]);
     res.json({ ok: true, warId: war.id, startCash: TRADE_WAR_START_CASH, startsAt: war.starts_at });
@@ -3668,7 +3724,7 @@ app.get("/api/trade-war/leaderboard", async (req, res) => {
   try {
     const war = await db.get("SELECT * FROM trade_war_events WHERE status IN ('active','ended') ORDER BY starts_at DESC LIMIT 1");
     if (!war) return res.json({ entries: [] });
-    const entries = await db.all('SELECT te.*, a.full_name FROM trade_war_entries te LEFT JOIN accounts a ON a.id = te.user_id WHERE war_id=?', [war.id]);
+    const entries = await db.all('SELECT te.*, a.full_name FROM trade_war_entries te LEFT JOIN accounts a ON a.user_id = te.user_id WHERE war_id=?', [war.id]);
     const ranked = entries.map(e => {
       const port = JSON.parse(e.portfolio_json || '{}');
       const portVal = Object.entries(port).reduce((s, [sym, qty]) => s + (priceEngine.getPrice(sym) || 0) * qty, 0);
@@ -3732,14 +3788,14 @@ app.post('/api/territory/raid/:neighborhoodId', authenticateUser, async (req, re
       return res.status(429).json({ error: `Raid cooldown: ${mins} minutes remaining` });
     }
 
-    const acct = await db.get('SELECT heat_level FROM accounts WHERE id=?', [uid]);
+    const acct = await db.get('SELECT heat_level FROM accounts WHERE user_id=?', [uid]);
     const heatPenalty = (acct?.heat_level || 0) >= 4 ? 0.10 : 0;
     const success = Math.random() < (0.55 - heatPenalty);
     const now = Date.now();
 
     await db.run('INSERT INTO territory_raids (neighborhood, attacker_crew, defender_crew, success, created_at) VALUES (?,?,?,?,?)',
       [neighborhoodId, crewId, territory?.crew_id || null, success ? 1 : 0, now]);
-    await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE id=?', [uid]);
+    await db.run('UPDATE accounts SET heat_level = MIN(5, heat_level + 1) WHERE user_id=?', [uid]);
 
     if (success) {
       const oldCrew = territory?.crew_id;
@@ -3809,14 +3865,14 @@ app.post('/api/season/story/complete/:chapterNum', authenticateUser, async (req,
     if (chapter.reward_credits > 0) await _addCredits(uid, chapter.reward_credits, 'season_story', `Season story Ch.${chapterNum}: ${chapter.title}`);
     if (chapter.reward_paper > 0) {
       await db.run(
-        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
          ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
         [uid, chapter.reward_paper, now, chapter.reward_paper, now]
       );
       await _syncLeaderboard(uid);
     }
     if (chapter.reward_badge) {
-      await db.run('INSERT OR IGNORE INTO badge_awards (user_id, badge_key, awarded_at) VALUES (?,?,?)', [uid, chapter.reward_badge, now]).catch(() => {});
+      await db.run('INSERT OR IGNORE INTO user_badges (user_id, badge_id, earned_at) VALUES (?,?,?)', [uid, chapter.reward_badge, now]).catch(() => {});
     }
 
     await _notify(uid, 'season_chapter', `📖 Chapter ${chapterNum} Complete!`, `"${chapter.title}" — ${chapter.reward_credits} Credits & $${chapter.reward_paper.toLocaleString()} SML Bucks!`);
@@ -3876,9 +3932,9 @@ app.post('/api/weapons/mods/buy', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: "You don't own this weapon" });
     if (await db.get('SELECT id FROM weapon_mods WHERE user_id=? AND weapon_key=? AND mod_key=?', [uid, weaponKey, modKey]))
       return res.status(400).json({ error: 'Mod already owned' });
-    const acct = await db.get('SELECT sml_credits FROM accounts WHERE id=?', [uid]);
+    const acct = await db.get('SELECT balance AS sml_credits FROM sml_credits WHERE user_id=?', [uid]);
     if ((acct?.sml_credits || 0) < mod.price_credits) return res.status(400).json({ error: 'Insufficient credits' });
-    await db.run('UPDATE accounts SET sml_credits = sml_credits - ? WHERE id=?', [mod.price_credits, uid]);
+    await db.run('UPDATE sml_credits SET balance = balance - ? WHERE user_id=?', [mod.price_credits, uid]);
     await db.run('INSERT INTO weapon_mods (user_id, weapon_key, mod_key, equipped, purchased_at) VALUES (?,?,?,0,?)', [uid, weaponKey, modKey, Date.now()]);
     res.json({ ok: true, message: `${mod.icon} ${mod.label} purchased!` });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -3906,9 +3962,9 @@ app.post('/api/weapons/skins/buy', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: "You don't own this weapon" });
     if (await db.get('SELECT id FROM weapon_skins WHERE user_id=? AND weapon_key=? AND skin_key=?', [uid, weaponKey, skinKey]))
       return res.status(400).json({ error: 'Skin already owned' });
-    const acct = await db.get('SELECT sml_credits FROM accounts WHERE id=?', [uid]);
+    const acct = await db.get('SELECT balance AS sml_credits FROM sml_credits WHERE user_id=?', [uid]);
     if ((acct?.sml_credits || 0) < skin.price_credits) return res.status(400).json({ error: 'Insufficient credits' });
-    await db.run('UPDATE accounts SET sml_credits = sml_credits - ? WHERE id=?', [skin.price_credits, uid]);
+    await db.run('UPDATE sml_credits SET balance = balance - ? WHERE user_id=?', [skin.price_credits, uid]);
     await db.run('INSERT INTO weapon_skins (user_id, weapon_key, skin_key, active, purchased_at) VALUES (?,?,?,0,?)', [uid, weaponKey, skinKey, Date.now()]);
     res.json({ ok: true, message: `${skin.icon} ${skin.label} skin unlocked!` });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -4124,7 +4180,7 @@ app.get("/api/social/followers/me", authenticateUser, async (req, res) => {
     const count = await db.get('SELECT COUNT(*) AS c FROM creator_followers WHERE creator_id = ?', [uid]);
     const followers = await db.all(
       `SELECT a.id, a.full_name, a.email FROM creator_followers cf
-       JOIN accounts a ON a.id = cf.follower_id
+       JOIN accounts a ON a.user_id = cf.follower_id
        WHERE cf.creator_id = ? ORDER BY cf.created_at DESC LIMIT 50`,
       [uid]
     );
@@ -4137,7 +4193,7 @@ app.get("/api/social/following/me", authenticateUser, async (req, res) => {
   try {
     const following = await db.all(
       `SELECT a.id, a.full_name, a.email FROM creator_followers cf
-       JOIN accounts a ON a.id = cf.creator_id
+       JOIN accounts a ON a.user_id = cf.creator_id
        WHERE cf.follower_id = ? ORDER BY cf.created_at DESC LIMIT 50`,
       [uid]
     );
@@ -4166,7 +4222,7 @@ app.get("/api/creator/dashboard", authenticateUser, async (req, res) => {
       [uid]
     );
     const tipIncome = await db.get(
-      `SELECT COALESCE(SUM(cl.amount), 0) AS total FROM credit_ledger cl WHERE cl.user_id = ? AND cl.type = 'tip_income'`,
+      `SELECT COALESCE(SUM(cl.amount), 0) AS total FROM credit_transactions cl WHERE cl.user_id = ? AND cl.type = 'tip_income'`,
       [uid]
     );
     const creditBalance = await db.get('SELECT balance FROM sml_credits WHERE user_id = ?', [uid]);
@@ -5143,7 +5199,7 @@ app.get("/api/portfolio", authenticateUser, async (req, res) => {
 
 app.post("/api/trade/buy", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
-  const jailCheckBuy = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+  const jailCheckBuy = await db.get('SELECT user_id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
   if (jailCheckBuy) return res.status(403).json({ error: 'You are in jail! Pay bail to trade again.', jailed: true });
 
   const { symbol, quantity } = req.body;
@@ -5193,7 +5249,7 @@ app.post("/api/trade/buy", authenticateUser, async (req, res) => {
 
 app.post("/api/trade/sell", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
-  const jailCheckSell = await db.get('SELECT id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
+  const jailCheckSell = await db.get('SELECT user_id FROM jail_status WHERE user_id = ? AND released = 0', [uid]);
   if (jailCheckSell) return res.status(403).json({ error: 'You are in jail! Pay bail to trade again.', jailed: true });
 
   const { symbol, quantity } = req.body;
@@ -5418,14 +5474,15 @@ app.post("/api/stripe/elite-membership", authenticateUser, async (req, res) => {
 app.post("/api/stripe/gift-credits", authenticateUser, async (req, res) => {
   const { recipientEmail, packageKey } = req.body;
   if (!recipientEmail || !packageKey) return res.status(400).json({ error: 'recipientEmail and packageKey required' });
-  const CREDIT_PACKAGES_MAP = { starter: { credits: 500, amount_cents: 250, label: 'Starter Pack (500 Credits)' }, legends: { credits: 2500, amount_cents: 1000, label: 'Legends Pack (2,500 Credits)' }, champion: { credits: 7000, amount_cents: 2500, label: 'Champion Pack (7,000 Credits)' } };
+  // Same prices as buying credits for yourself (StripeProcessor.CREDIT_PACKAGES)
+  const CREDIT_PACKAGES_MAP = { starter: { credits: 500, amount_cents: 500, label: 'Starter Pack (500 Credits)' }, legends: { credits: 2500, amount_cents: 1250, label: 'Legends Pack (2,500 Credits)' }, champion: { credits: 7000, amount_cents: 2750, label: 'Champion Pack (7,000 Credits)' } };
   const pkg = CREDIT_PACKAGES_MAP[packageKey];
   if (!pkg) return res.status(400).json({ error: 'Invalid package' });
   const recipient = accountManager.getAccount(recipientEmail);
   if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
   const uid = req.user.userId;
   const senderAcct = accountManager.getAccountById(uid);
-  const { checkoutUrl } = await stripeProcessor.createGiftCreditsCheckout(uid, senderAcct ? senderAcct.email : null, recipient.id, packageKey, pkg);
+  const { checkoutUrl } = await stripeProcessor.createGiftCreditsCheckout(uid, senderAcct ? senderAcct.email : null, recipient.userId, packageKey, pkg);
   res.json({ checkoutUrl });
 });
 
@@ -5546,7 +5603,7 @@ app.get("/api/daily-checklist", authenticateUser, async (req, res) => {
     db.get('SELECT last_spin FROM spin_claims WHERE user_id = ?', [uid]),
     db.get('SELECT COUNT(*) as cnt FROM trades WHERE user_id = ? AND timestamp >= ?', [uid, todayTs]),
     db.get('SELECT COUNT(*) as cnt FROM heist_attempts WHERE robber_id = ? AND created_at >= ?', [uid, todayTs]),
-    db.get('SELECT COUNT(*) as cnt FROM user_missions WHERE user_id = ? AND status = ?', [uid, 'in_progress']),
+    db.get('SELECT COUNT(*) as cnt FROM mission_progress WHERE user_id = ? AND date = ?', [uid, new Date().toISOString().split('T')[0]]),
   ]);
   const loginBadge = badgeSystem.getLoginStreak ? badgeSystem.getLoginStreak(uid) : null;
   res.json({
@@ -5630,23 +5687,25 @@ app.post("/api/admin/tournament/payout", requireAdmin, async (req, res) => {
   if (!tournamentId || !Array.isArray(winners) || winners.length === 0) {
     return res.status(400).json({ error: 'tournamentId and winners array required' });
   }
-  const poolRow = await db.get('SELECT prize_pool FROM tournament_prize_pools WHERE tournament_id = ?', [tournamentId]);
-  if (!poolRow || poolRow.prize_pool <= 0) return res.status(400).json({ error: 'No prize pool for this tournament' });
-  const pool = poolRow.prize_pool;
-  const splits = [0.60, 0.25, 0.15];
-  const now = Date.now();
-  const payouts = [];
-  for (let i = 0; i < Math.min(winners.length, 3); i++) {
-    const { userId, placement } = winners[i];
-    const amount = parseFloat((pool * splits[i]).toFixed(2));
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [amount, now, userId]);
-    await _syncLeaderboard(userId);
-    emitToUser(userId, 'tournament_payout', { placement: placement || (i + 1), amount, tournamentId });
-    await _notify(userId, 'tournament_payout', '🏆 Tournament Payout!', `You earned $${amount.toLocaleString()} as placement #${placement || (i + 1)} in Tournament #${tournamentId}`);
-    payouts.push({ userId, placement: placement || (i + 1), amount });
-  }
-  await db.run('UPDATE tournament_prize_pools SET prize_pool = 0 WHERE tournament_id = ?', [tournamentId]);
-  res.json({ success: true, payouts, totalPaid: pool });
+  try {
+    // Pool is funded in SML Credits (stored in total_cents since the
+    // Credits-only tournament change) — pay winners in Credits.
+    const poolRow = await db.get('SELECT total_cents FROM tournament_prize_pools WHERE tournament_id = ?', [tournamentId]);
+    if (!poolRow || poolRow.total_cents <= 0) return res.status(400).json({ error: 'No prize pool for this tournament' });
+    const pool = poolRow.total_cents;
+    const splits = [0.60, 0.25, 0.15];
+    const payouts = [];
+    for (let i = 0; i < Math.min(winners.length, 3); i++) {
+      const { userId, placement } = winners[i];
+      const amount = Math.floor(pool * splits[i]);
+      await _addCredits(userId, amount, 'tournament_payout', `Tournament #${tournamentId} placement #${placement || (i + 1)}`);
+      emitToUser(userId, 'tournament_payout', { placement: placement || (i + 1), amount, tournamentId });
+      await _notify(userId, 'tournament_payout', '🏆 Tournament Payout!', `You earned ${amount.toLocaleString()} Credits as placement #${placement || (i + 1)} in Tournament #${tournamentId}`);
+      payouts.push({ userId, placement: placement || (i + 1), amount });
+    }
+    await db.run('UPDATE tournament_prize_pools SET total_cents = 0, distributed = 1 WHERE tournament_id = ?', [tournamentId]);
+    res.json({ success: true, payouts, totalPaid: pool });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.get("/api/tournament/my-winnings", authenticateUser, async (req, res) => {
@@ -5683,7 +5742,7 @@ app.post('/api/boxes/open', authenticateUser, async (req, res) => {
   await db.run('UPDATE mystery_boxes SET opened_at = ? WHERE id = ?', [Date.now(), boxId]);
   if (drop.type === 'paper') {
     await db.run(
-      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
        ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
       [req.user.userId, drop.value, Date.now(), drop.value, Date.now()]
     );
@@ -5720,7 +5779,7 @@ app.post('/api/flash-challenge/claim', authenticateUser, async (req, res) => {
   await db.run('INSERT INTO flash_challenge_completions (challenge_id, user_id, completed_at) VALUES (?, ?, ?)', [challengeId, uid, now]);
   if (ch.reward_type === 'paper') {
     await db.run(
-      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, 1000, ?)
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
        ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
       [uid, ch.reward_value, now, ch.reward_value, now]
     );
@@ -5775,12 +5834,13 @@ app.get('/api/cards/collection', authenticateUser, async (req, res) => {
 app.post('/api/cards/pack/open', authenticateUser, async (req, res) => {
   const { packType } = req.body; // 'common' | 'rare' | 'legendary'
   const uid = req.user.userId;
-  const COSTS = { common: 100, rare: 300, legendary: 1000 };
+  // Must match the advertised prices in the UI and Terms of Service
+  const COSTS = { common: 100, rare: 400, legendary: 1200 };
   const cost = COSTS[packType];
   if (!cost) return res.status(400).json({ error: 'Invalid pack type' });
-  const cred = await db.get('SELECT credits FROM sml_credits WHERE user_id = ?', [uid]);
+  const cred = await db.get('SELECT balance AS credits FROM sml_credits WHERE user_id = ?', [uid]);
   if (!cred || cred.credits < cost) return res.status(400).json({ error: 'Not enough SML Credits' });
-  await db.run('UPDATE sml_credits SET credits = credits - ? WHERE user_id = ?', [cost, uid]);
+  await db.run('UPDATE sml_credits SET balance = balance - ? WHERE user_id = ?', [cost, uid]);
   const drawn = [];
   for (let i = 0; i < 5; i++) {
     const card = await _drawCard(packType);
@@ -5802,7 +5862,7 @@ app.get('/api/cards/market', async (req, res) => {
             a.full_name AS seller_name
      FROM card_market_listings cml
      JOIN card_definitions cd ON cd.card_key = cml.card_key
-     JOIN accounts a ON a.id = cml.seller_id
+     JOIN accounts a ON a.user_id = cml.seller_id
      WHERE cml.sold_at IS NULL ORDER BY cml.listed_at DESC LIMIT 50`);
   res.json({ listings });
 });
@@ -5822,9 +5882,9 @@ app.post('/api/cards/market/buy/:listingId', authenticateUser, async (req, res) 
   const listing = await db.get('SELECT * FROM card_market_listings WHERE id = ? AND sold_at IS NULL', [req.params.listingId]);
   if (!listing) return res.status(404).json({ error: 'Listing not found or already sold' });
   if (listing.seller_id === uid) return res.status(400).json({ error: 'Cannot buy your own listing' });
-  const cred = await db.get('SELECT credits FROM sml_credits WHERE user_id = ?', [uid]);
+  const cred = await db.get('SELECT balance AS credits FROM sml_credits WHERE user_id = ?', [uid]);
   if (!cred || cred.credits < listing.price_credits) return res.status(400).json({ error: 'Not enough credits' });
-  await db.run('UPDATE sml_credits SET credits = credits - ? WHERE user_id = ?', [listing.price_credits, uid]);
+  await db.run('UPDATE sml_credits SET balance = balance - ? WHERE user_id = ?', [listing.price_credits, uid]);
   await _addCredits(listing.seller_id, listing.price_credits, 'card_sale', `Card sold: ${listing.card_key}`);
   await db.run('UPDATE player_cards SET user_id = ? WHERE id = ?', [uid, listing.player_card_id]);
   await db.run('UPDATE card_market_listings SET sold_at = ? WHERE id = ?', [Date.now(), listing.id]);
@@ -5845,9 +5905,18 @@ app.post('/api/cards/duel/send', authenticateUser, async (req, res) => {
 
 app.post('/api/cards/duel/resolve/:duelId', authenticateUser, async (req, res) => {
   const uid = req.user.userId;
-  const duel = await db.get('SELECT * FROM card_duels WHERE id = ? AND (challenger_id = ? OR opponent_id = ?) AND status = ?',
-    [req.params.duelId, uid, uid, 'pending']);
-  if (!duel) return res.status(404).json({ error: 'Duel not found' });
+  // Only the challenged player may resolve — accepting the duel and playing
+  // it out are the same action. The challenger can't force a resolution.
+  const duel = await db.get('SELECT * FROM card_duels WHERE id = ? AND opponent_id = ? AND status = ?',
+    [req.params.duelId, uid, 'pending']);
+  if (!duel) return res.status(404).json({ error: 'Duel not found (only the challenged player can accept and play a pending duel)' });
+  if (duel.wager_paper > 0) {
+    // Both sides must still be able to cover the wager at resolution time.
+    const cBal = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [duel.challenger_id]);
+    const oBal = await db.get('SELECT cash_balance FROM user_portfolios WHERE user_id = ?', [duel.opponent_id]);
+    if (!cBal || cBal.cash_balance < duel.wager_paper) return res.status(400).json({ error: 'Challenger can no longer cover the wager' });
+    if (!oBal || oBal.cash_balance < duel.wager_paper) return res.status(400).json({ error: 'You cannot cover the wager' });
+  }
   const cCards = await db.all('SELECT pc.*, cd.attack+cd.defense+cd.hustle+cd.luck AS power FROM player_cards pc JOIN card_definitions cd ON cd.card_key = pc.card_key WHERE pc.user_id = ? ORDER BY power DESC LIMIT 3', [duel.challenger_id]);
   const oCards = await db.all('SELECT pc.*, cd.attack+cd.defense+cd.hustle+cd.luck AS power FROM player_cards pc JOIN card_definitions cd ON cd.card_key = pc.card_key WHERE pc.user_id = ? ORDER BY power DESC LIMIT 3', [duel.opponent_id]);
   const cPower = cCards.reduce((s, c) => s + c.power, 0) + Math.floor(Math.random() * 50);
@@ -5855,8 +5924,13 @@ app.post('/api/cards/duel/resolve/:duelId', authenticateUser, async (req, res) =
   const winnerId = cPower >= oPower ? duel.challenger_id : duel.opponent_id;
   const loserId  = winnerId === duel.challenger_id ? duel.opponent_id : duel.challenger_id;
   if (duel.wager_paper > 0) {
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [duel.wager_paper, winnerId]);
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ? WHERE user_id = ?', [duel.wager_paper, loserId]);
+    const now = Date.now();
+    await db.run(
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
+       ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+      [winnerId, duel.wager_paper, now, duel.wager_paper, now]
+    );
+    await db.run('UPDATE user_portfolios SET cash_balance = MAX(0, cash_balance - ?), updated_at = ? WHERE user_id = ?', [duel.wager_paper, now, loserId]);
     await _syncLeaderboard(winnerId); await _syncLeaderboard(loserId);
   }
   await db.run('UPDATE card_duels SET winner_id = ?, status = ?, resolved_at = ? WHERE id = ?', [winnerId, 'resolved', Date.now(), duel.id]);
@@ -5906,7 +5980,7 @@ app.post('/api/stripe/buy-pet', authenticateUser, async (req, res) => {
   const pet = PETS[petKey];
   if (!pet) return res.status(400).json({ error: 'Unknown pet' });
   try {
-    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const acc = await db.get('SELECT email FROM accounts WHERE user_id = ?', [req.user.userId]);
     const { checkoutUrl } = await stripeProcessor.createPetCheckout(req.user.userId, acc.email, petKey, pet.label, pet.price_cents);
     res.json({ checkoutUrl });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -5922,15 +5996,22 @@ app.post('/api/pets/collect', authenticateUser, async (req, res) => {
   for (const pet of pets) {
     const petDef = PETS[pet.pet_key];
     if (!petDef) continue;
-    const hoursOwned = Math.min((now - pet.acquired_at) / 3600000, 24);
+    // Accrue only since the last collection (or acquisition), so income
+    // can't be farmed by spamming collect.
+    const accrueSince = pet.last_collect_at || pet.acquired_at;
+    const hoursAccrued = Math.min((now - accrueSince) / 3600000, 24);
     const happinessMult = pet.happiness / 100;
-    const income = Math.floor(petDef.daily_income * hoursOwned / 24 * happinessMult * (1 + pet.level * 0.1));
+    const income = Math.floor(petDef.daily_income * hoursAccrued / 24 * happinessMult * (1 + pet.level * 0.1));
     total += income;
     const newHappiness = Math.max(0, pet.happiness - 5);
-    await db.run('UPDATE player_pets SET happiness = ?, xp = xp + 5 WHERE id = ?', [newHappiness, pet.id]);
+    await db.run('UPDATE player_pets SET happiness = ?, xp = xp + 5, last_collect_at = ? WHERE id = ?', [newHappiness, now, pet.id]);
   }
   if (total > 0) {
-    await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ? WHERE user_id = ?', [total, uid]);
+    await db.run(
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
+       ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+      [uid, total, now, total, now]
+    );
     await _syncLeaderboard(uid);
   }
   res.json({ success: true, earned: total });
@@ -5952,7 +6033,7 @@ app.post('/api/stripe/buy-car', authenticateUser, async (req, res) => {
   const car = CARS[carKey];
   if (!car) return res.status(400).json({ error: 'Unknown car' });
   try {
-    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const acc = await db.get('SELECT email FROM accounts WHERE user_id = ?', [req.user.userId]);
     const { checkoutUrl } = await stripeProcessor.createCarCheckout(req.user.userId, acc.email, carKey, car.label, car.price_cents);
     res.json({ checkoutUrl });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -5960,7 +6041,7 @@ app.post('/api/stripe/buy-car', authenticateUser, async (req, res) => {
 
 app.post('/api/stripe/casino-vip', authenticateUser, async (req, res) => {
   try {
-    const acc = await db.get('SELECT email FROM accounts WHERE id = ?', [req.user.userId]);
+    const acc = await db.get('SELECT email FROM accounts WHERE user_id = ?', [req.user.userId]);
     const { checkoutUrl } = await stripeProcessor.createCasinoVIPCheckout(req.user.userId, acc.email);
     res.json({ checkoutUrl });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -5995,20 +6076,20 @@ app.post('/api/races/enter', authenticateUser, async (req, res) => {
 // HEAT LEVEL
 // ═══════════════════════════════════════════════════════════════════════════════
 app.get('/api/heat/level', authenticateUser, async (req, res) => {
-  const acc = await db.get('SELECT heat_level FROM accounts WHERE id = ?', [req.user.userId]);
+  const acc = await db.get('SELECT heat_level FROM accounts WHERE user_id = ?', [req.user.userId]);
   res.json({ heatLevel: acc ? acc.heat_level : 0 });
 });
 
 app.post('/api/heat/bribe', authenticateUser, async (req, res) => {
   const uid = req.user.userId;
   const BRIBE_COST = 500;
-  const cred = await db.get('SELECT credits FROM sml_credits WHERE user_id = ?', [uid]);
+  const cred = await db.get('SELECT balance AS credits FROM sml_credits WHERE user_id = ?', [uid]);
   if (!cred || cred.credits < BRIBE_COST) return res.status(400).json({ error: 'Need 500 SML Credits to bribe' });
-  const acc = await db.get('SELECT heat_level FROM accounts WHERE id = ?', [uid]);
+  const acc = await db.get('SELECT heat_level FROM accounts WHERE user_id = ?', [uid]);
   if (!acc || acc.heat_level === 0) return res.status(400).json({ error: 'You have no heat to cool down' });
-  await db.run('UPDATE sml_credits SET credits = credits - ? WHERE user_id = ?', [BRIBE_COST, uid]);
-  await db.run('UPDATE accounts SET heat_level = MAX(0, heat_level - 1) WHERE id = ?', [uid]);
-  const updated = await db.get('SELECT heat_level FROM accounts WHERE id = ?', [uid]);
+  await db.run('UPDATE sml_credits SET balance = balance - ? WHERE user_id = ?', [BRIBE_COST, uid]);
+  await db.run('UPDATE accounts SET heat_level = MAX(0, heat_level - 1) WHERE user_id = ?', [uid]);
+  const updated = await db.get('SELECT heat_level FROM accounts WHERE user_id = ?', [uid]);
   res.json({ success: true, heatLevel: updated.heat_level });
 });
 
@@ -6026,6 +6107,14 @@ async function startServer() {
     tournamentManager.restore(),
     coachSystem.restore(),
   ]);
+
+  // SocialNetwork keeps profiles in memory only — rebuild them from the
+  // restored accounts so friends/DMs keep working across restarts.
+  for (const acc of accountManager.getAllAccounts()) {
+    if (!socialNetwork.userProfiles.has(acc.userId)) {
+      socialNetwork.createProfile(acc.userId, acc.email, acc.fullName);
+    }
+  }
 
   // Start market simulation and AI systems
   priceEngine.start();
@@ -6138,15 +6227,19 @@ async function startServer() {
       }
       const entries = await db.all('SELECT * FROM race_entries WHERE race_id = ? ORDER BY speed_score DESC', [race.id]);
       if (entries.length < 2) { return; } // wait for more entrants
-      await db.run("UPDATE race_events SET status = 'closed', closed_at = ? WHERE id = ?", [Date.now(), race.id]);
+      await db.run("UPDATE race_events SET status = 'closed', ends_at = ? WHERE id = ?", [Date.now(), race.id]);
       const prizePool = race.prize_pool;
-      const payouts = [0.5, 0.3, 0.2];
+      const payouts = entries.length >= 3 ? [0.5, 0.3, 0.2] : [0.7, 0.3];
       for (let i = 0; i < Math.min(3, entries.length); i++) {
         const winner = entries[i];
         const winAmount = Math.floor(prizePool * payouts[i]);
         if (winAmount > 0) {
           const now = Date.now();
-          await db.run('UPDATE user_portfolios SET cash_balance = cash_balance + ?, updated_at = ? WHERE user_id = ?', [winAmount, now, winner.user_id]);
+          await db.run(
+            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
+             ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
+            [winner.user_id, winAmount, now, winAmount, now]
+          );
           await _syncLeaderboard(winner.user_id);
           emitToUser(winner.user_id, 'race_result', { place: i + 1, prize: winAmount, totalEntrants: entries.length });
           await _notify(winner.user_id, 'race_win', `🏁 Race Result: #${i + 1} Place!`, `You won $${winAmount.toLocaleString()} from the race prize pool!`);
@@ -6220,12 +6313,11 @@ async function startServer() {
         await db.run("UPDATE horse_races SET status='done', result_json=?, resolved_at=? WHERE id=?",
           [JSON.stringify({ winner, horseName: HORSE_NAMES[winner - 1] }), now, race.id]);
         const winBets = await db.all('SELECT * FROM horse_bets WHERE race_id=? AND horse_num=?', [race.id, winner]);
-        const totalPool = (await db.get('SELECT COALESCE(SUM(bet_paper),0) as total FROM horse_bets WHERE race_id=?', [race.id])).total;
-        const totalWinBets = winBets.reduce((s, b) => s + b.bet_paper, 0);
         for (const b of winBets) {
-          const payout = totalWinBets > 0 ? Math.floor((b.bet_paper / totalWinBets) * totalPool * 0.9) : 0;
+          // Pay the fixed odds advertised in the UI (2.5x-10x by horse)
+          const payout = Math.floor(b.bet_paper * (HORSE_ODDS[winner - 1] || 2));
           if (payout > 0) {
-            await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE id = ?', [payout, b.user_id]);
+            await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE user_id = ?', [payout, b.user_id]);
             await db.run('UPDATE horse_bets SET payout=? WHERE id=?', [payout, b.id]);
             emitToUser(b.user_id, 'horse_win', { raceid: race.id, horseName: HORSE_NAMES[winner - 1], payout });
             await _notify(b.user_id, 'horse_win', `🏇 ${HORSE_NAMES[winner - 1]} Wins!`, `You won ${payout.toLocaleString()} Casino Chips from the horse race!`);

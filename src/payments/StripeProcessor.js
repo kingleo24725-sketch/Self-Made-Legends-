@@ -376,21 +376,27 @@ class StripeProcessor {
   // Create a Stripe Checkout Session for VIP Elite Membership ($15.00/month recurring)
   async createEliteCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
-    const product = await this.stripe.products.create({
-      name: 'Self-Made Legends Elite Membership',
-      description: '$15.00/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
-    });
-    const price = await this.stripe.prices.create({
-      product: product.id,
-      unit_amount: 1500,
-      currency: 'usd',
-      recurring: { interval: 'month' },
-    });
+    if (!this._elitePriceId) {
+      const product = await this.stripe.products.create({
+        name: 'Self-Made Legends Elite Membership',
+        description: '$15.00/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
+      });
+      const price = await this.stripe.prices.create({
+        product: product.id,
+        unit_amount: 1500,
+        currency: 'usd',
+        recurring: { interval: 'month' },
+      });
+      this._elitePriceId = price.id;
+    }
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
-      line_items: [{ price: price.id, quantity: 1 }],
+      line_items: [{ price: this._elitePriceId, quantity: 1 }],
       mode: 'subscription',
+      subscription_data: {
+        metadata: { userId: String(userId), type: 'elite_membership', platform: 'Self-Made Legends' },
+      },
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=elite_membership`,
       cancel_url:  `${BASE}/dashboard.html?payment=cancelled`,
       metadata: { userId: String(userId), type: 'elite_membership', platform: 'Self-Made Legends' },
@@ -533,6 +539,9 @@ class StripeProcessor {
       customer_email: userEmail || undefined,
       line_items: [{ price: this._casinoVIPPriceId, quantity: 1 }],
       mode: 'subscription',
+      subscription_data: {
+        metadata: { userId: String(userId), type: 'casino_vip', platform: 'Self-Made Legends' },
+      },
       success_url: `${BASE}/dashboard.html?payment=success&pay_type=casino_vip`,
       cancel_url: `${BASE}/dashboard.html?payment=cancelled`,
       metadata: { userId: String(userId), type: 'casino_vip', platform: 'Self-Made Legends' },
