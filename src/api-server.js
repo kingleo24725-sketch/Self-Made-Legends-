@@ -60,6 +60,15 @@ const io = socketIo(server, {
 
 app.use(cors());
 app.use(express.json());
+
+// Serve the game at the root URL. Without this, express.static falls through to
+// public/index.html — the original repo's demo page, which has no login and no
+// link to the game. sendFile (200) rather than a redirect keeps Railway's
+// healthcheck on "/" unambiguously green.
+app.get("/", (req, res) => {
+  res.sendFile(require("path").join(__dirname, "..", "public", "dashboard.html"));
+});
+
 app.use(express.static("public"));
 
 const accountManager = new AccountManager();
@@ -307,15 +316,43 @@ const LOOT_DROPS = {
 };
 
 // ── Flash Challenge pool ──────────────────────────────────────────────────────
+// `required` is how many qualifying actions must happen after the challenge is
+// emitted before it can be claimed — without it the claim endpoint handed out
+// the reward to anyone who pressed the button. Counts are deliberately at or
+// below what the description asks for, so nobody who genuinely did the task is
+// ever denied (e.g. 3 profitable trades always counts as 3 trades).
 const FLASH_CHALLENGES = [
-  { type:'trade',  title:'Bull Rush',   description:'Make 3 profitable trades in the next 20 minutes',    reward_type:'paper',   reward_value:25000,  duration_mins:20 },
-  { type:'heist',  title:'Heist Hour',  description:'Complete 1 successful heist in the next 30 minutes', reward_type:'credits', reward_value:200,    duration_mins:30 },
-  { type:'dice',   title:'Lucky Roll',  description:'Roll the dice 5 times in the next 15 minutes',       reward_type:'box',     reward_value:1,      duration_mins:15 },
-  { type:'spin',   title:'Spin Fever',  description:'Spin the wheel 3 times in the next 10 minutes',      reward_type:'paper',   reward_value:50000,  duration_mins:10 },
-  { type:'login',  title:'Early Bird',  description:'Be online in the next 5 minutes to claim your reward', reward_type:'credits', reward_value:100,  duration_mins:5  },
-  { type:'trade',  title:'Crypto Surge',description:'Make 2 crypto trades in the next 25 minutes',        reward_type:'paper',   reward_value:75000,  duration_mins:25 },
-  { type:'heist',  title:'Crew Run',    description:'Initiate any heist in the next 20 minutes',           reward_type:'box',     reward_value:1,      duration_mins:20 },
+  { type:'trade',  title:'Bull Rush',   description:'Make 3 profitable trades in the next 20 minutes',    reward_type:'paper',   reward_value:25000,  duration_mins:20, required:3 },
+  { type:'heist',  title:'Heist Hour',  description:'Complete 1 successful heist in the next 30 minutes', reward_type:'credits', reward_value:200,    duration_mins:30, required:1 },
+  { type:'dice',   title:'Lucky Roll',  description:'Roll the dice 5 times in the next 15 minutes',       reward_type:'box',     reward_value:1,      duration_mins:15, required:5 },
+  { type:'spin',   title:'Spin Fever',  description:'Spin the wheel 3 times in the next 10 minutes',      reward_type:'paper',   reward_value:50000,  duration_mins:10, required:3 },
+  { type:'login',  title:'Early Bird',  description:'Be online in the next 5 minutes to claim your reward', reward_type:'credits', reward_value:100,  duration_mins:5,  required:0 },
+  { type:'trade',  title:'Crypto Surge',description:'Make 2 crypto trades in the next 25 minutes',        reward_type:'paper',   reward_value:75000,  duration_mins:25, required:2 },
+  { type:'heist',  title:'Crew Run',    description:'Initiate any heist in the next 20 minutes',           reward_type:'box',     reward_value:1,      duration_mins:20, required:1 },
 ];
+
+// How many qualifying actions a user has taken since `since` for a challenge type.
+async function _flashProgress(uid, type, since) {
+  if (type === 'trade') {
+    const r = await db.get('SELECT COUNT(*) AS c FROM trades WHERE user_id = ? AND timestamp >= ?', [uid, since]);
+    return r ? r.c : 0;
+  }
+  if (type === 'heist') {
+    const r = await db.get('SELECT COUNT(*) AS c FROM heist_attempts WHERE robber_id = ? AND created_at >= ?', [uid, since]);
+    return r ? r.c : 0;
+  }
+  if (type === 'spin' || type === 'dice') {
+    const r = await db.get('SELECT COUNT(*) AS c FROM player_activity WHERE user_id = ? AND kind = ? AND created_at >= ?', [uid, type, since]);
+    return r ? r.c : 0;
+  }
+  return 0; // 'login' and anything unknown need no action
+}
+
+async function _logActivity(uid, kind) {
+  try {
+    await db.run('INSERT INTO player_activity (user_id, kind, created_at) VALUES (?, ?, ?)', [uid, kind, Date.now()]);
+  } catch (e) { console.error('activity log error:', e.message); }
+}
 
 // ── Spin the Wheel prizes (weight-based) ─────────────────────────────────────
 const SPIN_PRIZES = [
@@ -844,7 +881,7 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           const now = Date.now();
           await db.run(
             `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at)
-             VALUES (?, ?, ?, ?)
+             VALUES (?, 1000 + ?, 1000 + ?, ?)
              ON CONFLICT(user_id) DO UPDATE SET
                cash_balance   = cash_balance + ?,
                total_invested = total_invested + ?,
@@ -924,9 +961,9 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
         if (userId && recipientId && pkg) {
           const now = Date.now();
           await db.run(
-            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+            `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
              ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-            [recipientId, pkg.paper, pkg.paper, now, pkg.paper, now]
+            [recipientId, pkg.paper, now, pkg.paper, now]
           );
           await db.run(
             'INSERT INTO paper_money_gifts (sender_id, recipient_id, amount, gift_type, stripe_session, created_at) VALUES (?, ?, ?, ?, ?, ?)',
@@ -1423,9 +1460,9 @@ app.post("/api/transfer/send-paper", authenticateUser, async (req, res) => {
     const now = Date.now();
     await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [amount, now, uid]);
     await db.run(
-      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
        ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-      [recipientId, amount, amount, now, amount, now]
+      [recipientId, amount, now, amount, now]
     );
     await db.run(
       'INSERT INTO paper_money_gifts (sender_id, recipient_id, amount, gift_type, created_at) VALUES (?, ?, ?, ?, ?)',
@@ -1531,9 +1568,9 @@ app.post("/api/spin/spin", authenticateUser, async (req, res) => {
 
     if (prize.type === 'paper') {
       await db.run(
-        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
          ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-        [uid, prize.amount, prize.amount, now, prize.amount, now]
+        [uid, prize.amount, now, prize.amount, now]
       );
       await _syncLeaderboard(uid);
     } else if (prize.type === 'credits') {
@@ -1542,6 +1579,7 @@ app.post("/api/spin/spin", authenticateUser, async (req, res) => {
         [uid, prize.amount, now, prize.amount, now]
       );
     }
+    await _logActivity(uid, 'spin');
     emitToUser(uid, 'spin_result', { ...prize });
     res.json({ success: true, prize });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -1816,9 +1854,9 @@ app.post("/api/boss-heist/attack", authenticateUser, async (req, res) => {
       for (const a of allAttackers) {
         const loot = parseFloat((boss.loot_pool * (a.total_dmg / totalDmg)).toFixed(2));
         await db.run(
-          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
            ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-          [a.user_id, loot, loot, now, loot, now]
+          [a.user_id, loot, now, loot, now]
         );
         await db.run('UPDATE boss_heist_attacks SET rewarded = 1 WHERE week_key = ? AND user_id = ?', [wk, a.user_id]);
         await _syncLeaderboard(a.user_id);
@@ -1851,6 +1889,7 @@ app.post("/api/game/dice", authenticateUser, async (req, res) => {
     const payout = won ? parseFloat((actualWager * 1.8).toFixed(2)) : 0;
     const net = won ? payout - actualWager : -actualWager;
     await db.run('UPDATE accounts SET casino_chips = casino_chips + ? WHERE user_id = ?', [net, uid]);
+    await _logActivity(uid, 'dice');
     res.json({ success: true, roll1, roll2, sum, won, wager: actualWager, payout, net });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -2033,9 +2072,9 @@ app.post("/api/realestate/collect", authenticateUser, async (req, res) => {
     }
     if (total <= 0) return res.status(400).json({ error: 'No income available yet — check back later' });
     await db.run(
-      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+      `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
        ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-      [uid, total, total, now, total, now]
+      [uid, total, now, total, now]
     );
     await _syncLeaderboard(uid);
     res.json({ success: true, collected: total, message: `Collected $${total.toFixed(2)} from your properties!` });
@@ -2083,9 +2122,9 @@ app.post("/api/battlepass/claim", authenticateUser, async (req, res) => {
     const now = Date.now();
     if (track.type === 'paper') {
       await db.run(
-        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
          ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-        [uid, track.amount, track.amount, now, track.amount, now]
+        [uid, track.amount, now, track.amount, now]
       );
       await _syncLeaderboard(uid);
     } else if (track.type === 'credits') {
@@ -2401,9 +2440,9 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
       // Credit each teammate (even those who get individually caught still receive their share)
       for (const rid of teammates) {
         await db.run(
-          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
            ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-          [rid, share, share, now, share, now]
+          [rid, share, now, share, now]
         );
         await _syncLeaderboard(rid);
       }
@@ -2504,9 +2543,9 @@ app.post("/api/heist/initiate", authenticateUser, async (req, res) => {
       if (bounty) {
         await db.run('UPDATE bounties SET active = 0, collected_by = ?, resolved_at = ? WHERE id = ?', [uid, now, bounty.id]);
         await db.run(
-          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+          `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
            ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-          [uid, bounty.amount, bounty.amount, now, bounty.amount, now]
+          [uid, bounty.amount, now, bounty.amount, now]
         );
         await _syncLeaderboard(uid);
         emitToUser(uid, 'bounty_collected', { amount: bounty.amount, targetName: _displayName(targetUserId) });
@@ -2763,9 +2802,9 @@ async function _resolveChallenge(challengeId) {
     if (prize > 0) {
       await db.run('UPDATE user_portfolios SET cash_balance = cash_balance - ?, updated_at = ? WHERE user_id = ?', [prize, now, loserId]);
       await db.run(
-        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, ?, ?, ?)
+        `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
          ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + ?, updated_at = ?`,
-        [winnerId, prize, prize, now, prize, now]
+        [winnerId, prize, now, prize, now]
       );
     }
 
@@ -4179,7 +4218,7 @@ app.get("/api/social/followers/me", authenticateUser, async (req, res) => {
   try {
     const count = await db.get('SELECT COUNT(*) AS c FROM creator_followers WHERE creator_id = ?', [uid]);
     const followers = await db.all(
-      `SELECT a.id, a.full_name, a.email FROM creator_followers cf
+      `SELECT a.user_id, a.full_name, a.email FROM creator_followers cf
        JOIN accounts a ON a.user_id = cf.follower_id
        WHERE cf.creator_id = ? ORDER BY cf.created_at DESC LIMIT 50`,
       [uid]
@@ -4192,7 +4231,7 @@ app.get("/api/social/following/me", authenticateUser, async (req, res) => {
   const uid = req.user.userId;
   try {
     const following = await db.all(
-      `SELECT a.id, a.full_name, a.email FROM creator_followers cf
+      `SELECT a.user_id, a.full_name, a.email FROM creator_followers cf
        JOIN accounts a ON a.user_id = cf.creator_id
        WHERE cf.follower_id = ? ORDER BY cf.created_at DESC LIMIT 50`,
       [uid]
@@ -5776,6 +5815,21 @@ app.post('/api/flash-challenge/claim', authenticateUser, async (req, res) => {
   if (!ch) return res.status(404).json({ error: 'Challenge expired or not found' });
   const already = await db.get('SELECT id FROM flash_challenge_completions WHERE challenge_id = ? AND user_id = ?', [challengeId, uid]);
   if (already) return res.status(400).json({ error: 'Already claimed' });
+
+  // Verify the task was actually done — otherwise the reward is free money for
+  // anyone who presses the button.
+  const tpl = FLASH_CHALLENGES.find(c => c.title === ch.title);
+  const required = tpl ? (tpl.required || 0) : 0;
+  if (required > 0) {
+    const done = await _flashProgress(uid, ch.type, ch.created_at);
+    if (done < required) {
+      return res.status(400).json({
+        error: `Not finished yet — ${done}/${required} done`,
+        progress: done, required,
+      });
+    }
+  }
+
   await db.run('INSERT INTO flash_challenge_completions (challenge_id, user_id, completed_at) VALUES (?, ?, ?)', [challengeId, uid, now]);
   if (ch.reward_type === 'paper') {
     await db.run(
