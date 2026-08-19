@@ -400,6 +400,17 @@ class DB {
         extra_spins INTEGER DEFAULT 0
       )`,
 
+      // Lightweight per-action log. spin_claims only keeps the latest spin and
+      // dice has no history, so flash challenges ("spin 3 times", "roll 5 times")
+      // had nothing to verify against. Trades and heists are counted from their
+      // own tables; this covers the rest.
+      `CREATE TABLE IF NOT EXISTS player_activity (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    TEXT NOT NULL,
+        kind       TEXT NOT NULL,
+        created_at INTEGER NOT NULL
+      )`,
+
       // ── Bounty System ─────────────────────────────────────────────────────────
       `CREATE TABLE IF NOT EXISTS bounties (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -926,6 +937,15 @@ class DB {
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_chips INTEGER DEFAULT 10000'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN date_of_birth TEXT'); } catch (_) {}
     try { await this.run('ALTER TABLE player_pets ADD COLUMN last_collect_at INTEGER'); } catch (_) {}
+
+    // One-time repair: reward payouts used to create a player's portfolio row with
+    // total_invested set to the reward amount instead of the 1000 starting capital,
+    // so a $25 spin produced a 200,000% "gain" that polluted the leaderboard.
+    // 1000 is the floor for every account, so anything below it is corrupt.
+    try {
+      const r = await this.run('UPDATE user_portfolios SET total_invested = 1000 WHERE total_invested < 1000');
+      if (r && r.changes) console.log(`🔧 Repaired total_invested on ${r.changes} portfolio row(s)`);
+    } catch (_) {}
 
     // Seed crew_territories with all 10 neighborhoods (uncontrolled)
     const terrCount = await this.get('SELECT COUNT(*) as c FROM crew_territories');
