@@ -37,7 +37,7 @@ const HOOKS = [
   "AI-powered trading — built for real people.",
   "Your money. Your rules. Your legend.",
   "The trading game where legends are made.",
-  "From the block to the market — Come Up.",
+  "From the block to the market — The Self-Made Legends Come Up.",
   "No Wall Street degree required.",
   "Simulate real trading. Build your legend. Play for free.",
   "Level up your money game today.",
@@ -79,9 +79,9 @@ const EMAIL_SUBJECTS = [
   "Attention {city}: The AI trading game is here",
   "Your {city} hustle just got an upgrade",
   "From {city} to legend — start today",
-  "New: Trade stocks & crypto for free on Come Up",
+  "New: Trade stocks & crypto for free on The Self-Made Legends Come Up",
   "Join {state}'s fastest-growing trading game",
-  "Come Up — free trading game, now live",
+  "The Self-Made Legends Come Up — free trading game, now live",
 ];
 
 class MarketingAgent {
@@ -124,7 +124,7 @@ class MarketingAgent {
         this._pick(HASHTAG_POOL.hustle),
         this._pick(HASHTAG_POOL.gaming),
       ].join(" ");
-      return `${hook}\n\nCome Up is the AI trading game where ${city} players compete on a live national leaderboard. Top 10 recognized every week.\n\n${cta}: ${url}\n\n${tags}`;
+      return `${hook}\n\nThe Self-Made Legends Come Up is the AI trading game where ${city} players compete on a live national leaderboard. Top 10 recognized every week.\n\n${cta}: ${url}\n\n${tags}`;
     }
 
     if (platform === "instagram") {
@@ -136,26 +136,26 @@ class MarketingAgent {
         ...(HASHTAG_POOL.regional[region] || []),
         `#${city.replace(/\s/g, "")}`,
       ].join(" ");
-      return `${hook} 🏆\n\n${city}, this one's for you.\n\nCome Up is the AI-powered stock trading GAME where you compete against real players nationwide. Practice trading — no real money at risk. 🎮\n\n✅ 100% free to play\n✅ Weekly leaderboard — Top 10 recognized\n✅ Create your own in-game crypto tokens\n✅ AI coach helps you learn smart trading habits\n\n${cta} → link in bio 👆\n\n.\n.\n.\n${tags}`;
+      return `${hook} 🏆\n\n${city}, this one's for you.\n\nThe Self-Made Legends Come Up is the AI-powered stock trading GAME where you compete against real players nationwide. Practice trading — no real money at risk. 🎮\n\n✅ 100% free to play\n✅ Weekly leaderboard — Top 10 recognized\n✅ Create your own in-game crypto tokens\n✅ AI coach helps you learn smart trading habits\n\n${cta} → link in bio 👆\n\n.\n.\n.\n${tags}`;
     }
 
     if (platform === "facebook") {
-      return `🏆 ATTENTION ${city.toUpperCase()} — Come Up is HERE!\n\n${hook}\n\nCome Up is the brand-new AI stock trading GAME built for everyday people — no Wall Street experience needed. Practice trading with simulated money and learn smart investing habits.\n\n🎯 What you get:\n• AI coach analyzes your portfolio and teaches you strategies\n• Weekly leaderboard competitions — Top 10 get recognized nationally\n• Create and trade your own in-game crypto tokens\n• Live leaderboard — compete against players nationwide\n• Free to play — no real money at risk 🎮\n\n💬 ${city} players are already signing up. Don't get left behind.\n\n👉 ${cta}: ${url}\n\nShare this with someone in ${city} who wants to learn trading! 💰`;
+      return `🏆 ATTENTION ${city.toUpperCase()} — The Self-Made Legends Come Up is HERE!\n\n${hook}\n\nThe Self-Made Legends Come Up is the brand-new AI stock trading GAME built for everyday people — no Wall Street experience needed. Practice trading with simulated money and learn smart investing habits.\n\n🎯 What you get:\n• AI coach analyzes your portfolio and teaches you strategies\n• Weekly leaderboard competitions — Top 10 get recognized nationally\n• Create and trade your own in-game crypto tokens\n• Live leaderboard — compete against players nationwide\n• Free to play — no real money at risk 🎮\n\n💬 ${city} players are already signing up. Don't get left behind.\n\n👉 ${cta}: ${url}\n\nShare this with someone in ${city} who wants to learn trading! 💰`;
     }
 
     if (platform === "tiktok") {
-      return `POV: You just found the AI trading game that's taking ${city} by storm 📈\n\n${hook}\n\nCome Up gives you:\n🤖 AI that trades stocks FOR YOU\n🏆 Weekly leaderboard — Top 10 recognized nationwide\n💎 Your own custom crypto tokens\n💵 Start with just $1\n\nThis is NOT your grandpa's stock market.\n\n${cta} → ${url}\n\n#SelfMadeLegends #AITrading #${city.replace(/\s/g, "")} #StockMarket #MoneyTok #FinanceTok #HustleTok`;
+      return `POV: You just found the AI trading game that's taking ${city} by storm 📈\n\n${hook}\n\nThe Self-Made Legends Come Up gives you:\n🤖 AI that trades stocks FOR YOU\n🏆 Weekly leaderboard — Top 10 recognized nationwide\n💎 Your own custom crypto tokens\n💵 Start with just $1\n\nThis is NOT your grandpa's stock market.\n\n${cta} → ${url}\n\n#SelfMadeLegends #AITrading #${city.replace(/\s/g, "")} #StockMarket #MoneyTok #FinanceTok #HustleTok`;
     }
 
     if (platform === "reddit") {
-      return `**[Promotion] Come Up — AI Stock Trading Game | Now in ${city}**\n\nHey r/entrepreneur (and anyone grinding in ${city}),\n\nWe just launched Come Up — an AI-powered stock trading GAME designed for everyday people, not Wall Street suits. All trading is simulated — no real money at risk.\n\n**What it does:**\n- AI coach analyzes market data 24/7 and gives you trade suggestions to help you learn\n- You compete with virtual SML Bucks on a live national leaderboard\n- Every week, the Top 10 players get recognized on the national leaderboard\n- You can create and trade your own custom in-game crypto tokens\n- Risk management tools built in to help you learn the right habits\n\n**Why we built it:**\nWe wanted to make learning smart investing accessible to everyone, especially self-made hustlers who don't have time to watch charts all day.\n\n**It's free to play:** ${url}\n\nHappy to answer any questions. We're a small team and love feedback from the community.\n\n*— Self-Made Legends LLC*`;
+      return `**[Promotion] The Self-Made Legends Come Up — AI Stock Trading Game | Now in ${city}**\n\nHey r/entrepreneur (and anyone grinding in ${city}),\n\nWe just launched The Self-Made Legends Come Up — an AI-powered stock trading GAME designed for everyday people, not Wall Street suits. All trading is simulated — no real money at risk.\n\n**What it does:**\n- AI coach analyzes market data 24/7 and gives you trade suggestions to help you learn\n- You compete with virtual SML Bucks on a live national leaderboard\n- Every week, the Top 10 players get recognized on the national leaderboard\n- You can create and trade your own custom in-game crypto tokens\n- Risk management tools built in to help you learn the right habits\n\n**Why we built it:**\nWe wanted to make learning smart investing accessible to everyone, especially self-made hustlers who don't have time to watch charts all day.\n\n**It's free to play:** ${url}\n\nHappy to answer any questions. We're a small team and love feedback from the community.\n\n*— Self-Made Legends LLC*`;
     }
 
     if (platform === "discord") {
-      return `🚨 **Come Up is LIVE** 🚨\n\n${hook}\n\n📍 Shoutout to all the ${city} players — this one's built for you.\n\n**Come Up** is the AI trading GAME where you compete on a LIVE national leaderboard. Practice stock trading with virtual money — no real money at risk. 🎮\n\n🏆 **Top 10 recognized every week**\n🪙 **Create your own in-game crypto tokens**\n📈 **AI coach — no experience needed**\n🆓 **Free to play**\n\n▶️ **Join free:** ${url}\n\nDrop your username after you sign up so we can cheer you on! 🔥`;
+      return `🚨 **The Self-Made Legends Come Up is LIVE** 🚨\n\n${hook}\n\n📍 Shoutout to all the ${city} players — this one's built for you.\n\n**The Self-Made Legends Come Up** is the AI trading GAME where you compete on a LIVE national leaderboard. Practice stock trading with virtual money — no real money at risk. 🎮\n\n🏆 **Top 10 recognized every week**\n🪙 **Create your own in-game crypto tokens**\n📈 **AI coach — no experience needed**\n🆓 **Free to play**\n\n▶️ **Join free:** ${url}\n\nDrop your username after you sign up so we can cheer you on! 🔥`;
     }
 
-    return `${hook} — Come Up | ${cta}: ${url}`;
+    return `${hook} — The Self-Made Legends Come Up | ${cta}: ${url}`;
   }
 
   // Generate a full campaign for a specific city/state across all platforms
@@ -283,7 +283,7 @@ Founder, Self-Made Legends LLC
 
 ---
 Self-Made Legends LLC | 18615 E Arrowhead Pl, Independence, MO 64056 | Unsubscribe | Privacy Policy
-This is a promotional email. Come Up is a simulated trading game — no real money is at risk. Virtual SML Bucks have no cash value. See our Terms of Service for full details.`;
+This is a promotional email. The Self-Made Legends Come Up is a simulated trading game — no real money is at risk. Virtual SML Bucks have no cash value. See our Terms of Service for full details.`;
   }
 
   _getHashtags(platform, region, city) {
@@ -393,7 +393,7 @@ This is a promotional email. Come Up is a simulated trading game — no real mon
       influencer: influencerName,
       tier,
       offer: offers[tier],
-      message: `Hi ${influencerName}! 👋\n\nI'm Jason from Self-Made Legends LLC. We just launched an AI-powered stock trading game where players compete on a live national leaderboard.\n\nI think your audience would love it — and I'd love to partner with you.\n\nHere's what we're offering ${tier}-tier creators like you:\n💰 ${offers[tier]}\n🔗 Custom referral link tracked to your account\n🏆 Your username featured on our leaderboard\n\nThe platform is live: https://web-production-576d9.up.railway.app/dashboard.html\n\n⚠️ FTC Disclosure Requirement: Per FTC guidelines (16 C.F.R. Part 255), you are required to clearly disclose this paid partnership in all content you create about Come Up. Please use #ad, #sponsored, or #partner in every post, video, or story. This is a legal requirement — not optional.\n\nInterested? Just reply and I'll send you a free creator account to try it out.\n\n— Jason Brown, Self-Made Legends LLC`,
+      message: `Hi ${influencerName}! 👋\n\nI'm Jason from Self-Made Legends LLC. We just launched an AI-powered stock trading game where players compete on a live national leaderboard.\n\nI think your audience would love it — and I'd love to partner with you.\n\nHere's what we're offering ${tier}-tier creators like you:\n💰 ${offers[tier]}\n🔗 Custom referral link tracked to your account\n🏆 Your username featured on our leaderboard\n\nThe platform is live: https://web-production-576d9.up.railway.app/dashboard.html\n\n⚠️ FTC Disclosure Requirement: Per FTC guidelines (16 C.F.R. Part 255), you are required to clearly disclose this paid partnership in all content you create about The Self-Made Legends Come Up. Please use #ad, #sponsored, or #partner in every post, video, or story. This is a legal requirement — not optional.\n\nInterested? Just reply and I'll send you a free creator account to try it out.\n\n— Jason Brown, Self-Made Legends LLC`,
     };
   }
 
