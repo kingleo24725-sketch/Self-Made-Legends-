@@ -2,7 +2,7 @@ const nodemailer = require("nodemailer");
 
 const APP_URL = process.env.APP_URL || "https://web-production-576d9.up.railway.app";
 const FROM_EMAIL = process.env.EMAIL_FROM || "noreply@selfmadelegends.com";
-const APP_NAME = "Come Up";
+const APP_NAME = "The Self-Made Legends Come Up";
 
 class NotificationService {
   constructor() {
@@ -44,7 +44,7 @@ class NotificationService {
       email,
       `Welcome to ${APP_NAME}, ${name}! 🏆`,
       `<div style="font-family:sans-serif;background:#0f1419;color:#e0e0e0;padding:30px;border-radius:12px;max-width:600px;margin:0 auto;">
-        <h1 style="color:#00d4ff;">Welcome to Come Up, ${name}!</h1>
+        <h1 style="color:#00d4ff;">Welcome to The Self-Made Legends Come Up, ${name}!</h1>
         <p style="color:#aaa;line-height:1.7;">You just joined the AI trading game where legends are made. Here's how to get started:</p>
         <div style="background:#1a1f2e;border-radius:8px;padding:20px;margin:20px 0;">
           <p style="margin:8px 0;">🤖 <strong style="color:#00ff88;">AI coach suggests trades</strong> — you're always in control, trade manually anytime</p>
@@ -120,7 +120,7 @@ class NotificationService {
   async sendWeeklyRecap(email, name, stats) {
     return this.send(
       email,
-      `📊 Your Weekly Recap — Come Up`,
+      `📊 Your Weekly Recap — The Self-Made Legends Come Up`,
       `<div style="font-family:sans-serif;background:#0f1419;color:#e0e0e0;padding:30px;border-radius:12px;max-width:600px;margin:0 auto;">
         <h2 style="color:#00d4ff;">📊 Your Weekly Recap</h2>
         <p style="color:#aaa;">Hey ${name}, here's how you did this week:</p>
