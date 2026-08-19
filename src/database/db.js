@@ -744,7 +744,7 @@ class DB {
       `CREATE TABLE IF NOT EXISTS race_events (
         id           INTEGER PRIMARY KEY AUTOINCREMENT,
         status       TEXT NOT NULL DEFAULT 'open',
-        entry_fee    INTEGER NOT NULL DEFAULT 10000,
+        entry_fee    INTEGER NOT NULL DEFAULT 500,
         prize_pool   INTEGER NOT NULL DEFAULT 0,
         starts_at    INTEGER NOT NULL,
         ends_at      INTEGER NOT NULL,
@@ -937,6 +937,14 @@ class DB {
     try { await this.run('ALTER TABLE accounts ADD COLUMN casino_chips INTEGER DEFAULT 10000'); } catch (_) {}
     try { await this.run('ALTER TABLE accounts ADD COLUMN date_of_birth TEXT'); } catch (_) {}
     try { await this.run('ALTER TABLE player_pets ADD COLUMN last_collect_at INTEGER'); } catch (_) {}
+
+    // Race entry was 10000 while players start with 1000, so the race a new
+    // player could see was one they could never enter. Bring any race that is
+    // still open down to the new fee instead of making them wait it out.
+    try {
+      const r = await this.run("UPDATE race_events SET entry_fee = 500 WHERE status = 'open' AND entry_fee > 500");
+      if (r && r.changes) console.log(`🏁 Lowered entry fee on ${r.changes} open race(s)`);
+    } catch (_) {}
 
     // One-time repair: reward payouts used to create a player's portfolio row with
     // total_invested set to the reward amount instead of the 1000 starting capital,
