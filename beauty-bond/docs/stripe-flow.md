@@ -24,8 +24,8 @@ Stripe Adaptive Pricing.
 |---|---|---|---|---|
 | Free | `free` | $0 | $0 | 1 |
 | Basic | `basic` | $6.99 | $58.99 (30% off) | 2 |
-| Premium | `premium` | $12.99 | $109.99 | 4 |
-| Family | `family` | $19.99 | $169.99 | 6 |
+| Premium | `premium` | $9.99 | $83.99 | 4 |
+| Family | `family` | $12.99 | $109.99 | 6 |
 
 **What each plan adds:**
 
@@ -173,8 +173,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_BB!, { apiVersion: '2024
 
 const PLANS = [
   { code: 'basic',   name: 'Basic',   monthly: 699,  yearly: 5899  },
-  { code: 'premium', name: 'Premium', monthly: 1299, yearly: 10999 },
-  { code: 'family',  name: 'Family',  monthly: 1999, yearly: 16999 },
+  { code: 'premium', name: 'Premium', monthly: 999,  yearly: 8399  },
+  { code: 'family',  name: 'Family',  monthly: 1299, yearly: 10999 },
 ]
 
 for (const p of PLANS) {

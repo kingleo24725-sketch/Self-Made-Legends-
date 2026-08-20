@@ -121,8 +121,8 @@ export const TIERS = { FREE: 'free', BASIC: 'basic', PREMIUM: 'premium', FAMILY:
 export const PLAN_META = {
   free:    { name: 'Free',    price: '$0',        blurb: 'Learn the basics together, at no cost.' },
   basic:   { name: 'Basic',   price: '$6.99/mo',  blurb: 'All lessons, all cultures, unlimited try-on.' },
-  premium: { name: 'Premium', price: '$12.99/mo', blurb: 'Plus Legacy Vault and Letters Forward.', popular: true },
-  family:  { name: 'Family',  price: '$19.99/mo', blurb: 'Up to 6 kids, unlimited rooms and Bond Books.' },
+  premium: { name: 'Premium', price: '$9.99/mo',  blurb: 'Plus Legacy Vault and Letters Forward.', popular: true },
+  family:  { name: 'Family',  price: '$12.99/mo', blurb: 'Up to 6 kids, unlimited rooms and Bond Books.' },
 };
 
 export const ROOM_TYPES = { FAMILY: 'family', LESSON: 'lesson', BFF: 'bff', GLOBAL: 'global' };

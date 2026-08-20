@@ -24,12 +24,12 @@ const PLANS = {
     blurb: 'All lessons, all cultures, unlimited try-on.',
   },
   premium: {
-    name: 'Premium', monthly: 1299, yearly: 10999,
+    name: 'Premium', monthly: 999, yearly: 8399,
     blurb: 'Everything in Basic, plus Legacy Vault and Letters Forward.',
     popular: true,
   },
   family: {
-    name: 'Family', monthly: 1999, yearly: 16999,
+    name: 'Family', monthly: 1299, yearly: 10999,
     blurb: 'Up to 6 kids, unlimited rooms, unlimited Bond Books.',
   },
 };

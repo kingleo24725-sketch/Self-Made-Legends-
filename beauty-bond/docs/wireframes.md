@@ -1116,26 +1116,29 @@ Legend:
 │  Choose your bond.                   │ [R1]
 │  [ Monthly ] [ Yearly — save 30% ]   │ [R2]
 │  ┌──────────────────────────────────┐│
-│  │ FREE                     Free ││
+│  │ FREE                        $0   ││
 │  │ Levels 1–2 · 1 culture · 5 try-  ││ [R3]
-│  │ ons/mo · 20 min rooms            ││
+│  │ ons/mo · 20 min rooms · 1 kid    ││
 │  │ ◦ Current plan                   ││
 │  ├──────────────────────────────────┤│
-│  │ BOND              $6.99/mo  ★POPULAR│
+│  │ BASIC             $6.99/mo       ││
 │  │ All levels · All cultures ·      ││
 │  │ Unlimited try-on · 5 h rooms ·   ││
-│  │ 3 kids                           ││
-│  │ ⬤ Choose Bond                    ││
+│  │ 2 kids                           ││
+│  │ ⬤ Choose Basic                   ││
 │  ├──────────────────────────────────┤│
-│  │ LEGACY           $12.99/mo       ││
-│  │ Everything in Bond + unlimited   ││
+│  │ PREMIUM        $9.99/mo ★POPULAR ││
+│  │ Everything in Basic + unlimited  ││
 │  │ vault · Letters Forward ·        ││
-│  │ unlimited rooms · 6 kids ·       ││
+│  │ unlimited rooms · 4 kids ·       ││
 │  │ 4 Bond Books                     ││
-│  │ ⬤ Choose Legacy                  ││
+│  │ ⬤ Choose Premium                 ││
 │  ├──────────────────────────────────┤│
-│  │ STUDIO           $24.99/mo       ││
-│  │ For creators & pros              ││
+│  │ FAMILY           $12.99/mo       ││
+│  │ Everything in Premium · 6 kids · ││
+│  │ unlimited Bond Books ·           ││
+│  │ creator tools                    ││
+│  │ ⬤ Choose Family                  ││
 │  └──────────────────────────────────┘│
 │                                      │
 │  🛈 Safety features are free, always. │ [R4]
