@@ -628,8 +628,11 @@ the route table.
 NODE_ENV= DATABASE_URL= REDIS_URL= JWT_SECRET= REFRESH_SECRET=
 # Storage
 S3_BUCKET_MEDIA= S3_BUCKET_EPHEMERAL= CLOUDFRONT_KEY_PAIR_ID= KMS_KEY_ID=
-# Stripe (Beauty Bond's OWN account — never shared with other SML products)
-STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= STRIPE_PORTAL_CONFIG_ID=
+# Stripe — SHARED SML account, Beauty Bond-scoped credentials (see 03 §3.2)
+STRIPE_SECRET_KEY_BB=          # restricted key, BB scope only — NOT the account's sk_live
+STRIPE_WEBHOOK_SECRET_BB=      # BB's own endpoint signing secret
+STRIPE_PORTAL_CONFIG_ID_BB=    # BB-specific portal configuration
+STRIPE_PUBLISHABLE_KEY=        # shared, public
 # Stores
 APPLE_SHARED_SECRET= GOOGLE_PLAY_SERVICE_ACCOUNT_JSON=
 # LiveKit

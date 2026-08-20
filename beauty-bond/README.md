@@ -25,17 +25,28 @@ only: **the same parent company, Self-Made Legends LLC.**
 | **Core loop** | Trade, compete, climb the leaderboard | Learn a skill together, build the bond |
 | **Currency** | SML Bucks (virtual) | None — no in-app currency at all |
 | **Stack** | Node/Express + SQLite, web | React Native + Postgres, mobile-first |
+| **Repository** | `Self-Made-Legends-` | `beauty-bond` (separate) |
+| **Stripe** | Shared SML account | **Shared SML account** (code-isolated) |
 | **Accounts** | Standalone player accounts | Guardian-linked family accounts |
 | **Regulatory posture** | Adult game | COPPA / GDPR-K child-safety regime |
 | **Owner** | Self-Made Legends LLC | Self-Made Legends LLC |
 
 ### Hard separation rules
 
-1. **No shared codebase.** Beauty Bond ships from its own repository and its own
-   pipeline. This directory holds the specification only.
+1. **No shared codebase.** Beauty Bond ships from **its own repository** (`beauty-bond`)
+   and its own pipeline. This directory holds the specification only.
 2. **No shared accounts, database, or user records.** A Come Up player is not a
    Beauty Bond user. There is no SSO between them, no account linking, no shared
    identity service.
+
+   **Exception — billing:** the two products **do** share one SML Stripe account, by
+   owner decision, so there is a single payout and dashboard. Because Stripe delivers
+   every event to every endpoint on an account, isolation there is enforced in code:
+   namespaced object metadata, a separate Stripe Customer per product, a webhook
+   ownership gate that fails closed, and separate restricted API keys. A shared Stripe
+   account must never become shared *entitlements*. See
+   [`03-stripe-subscriptions.md`](03-stripe-subscriptions.md) §3.2 — read it before
+   writing any billing code.
 3. **No shared currency or economy.** SML Bucks, loot boxes, leaderboards, racing,
    pets, heists, and every other Come Up game system are **absent** from Beauty Bond.
    Beauty Bond has no virtual currency and no gambling-adjacent mechanic of any kind —
@@ -55,16 +66,19 @@ only: **the same parent company, Self-Made Legends LLC.**
 
 ---
 
-## Why the spec lives in this repository
+## Repository
 
-This directory is the delivery location for the Beauty Bond specification on the
-`claude/beauty-bond-app-rebuild-u0c50c` branch. It is documentation only — there is no
-Beauty Bond application code here, and none should be added.
+**Beauty Bond lives in its own repository: `beauty-bond`.** That is the canonical
+home — all implementation happens there. The copy under `beauty-bond/` in the
+`Self-Made-Legends-` repo is a delivery snapshot on the
+`claude/beauty-bond-app-rebuild-u0c50c` branch and is documentation only; no Beauty
+Bond application code should ever be added to the Come Up repo.
 
-**Recommended next step:** move `beauty-bond/` into a dedicated
-`self-made-legends/beauty-bond` repository before implementation begins, so the two
-products never share a build, a dependency tree, or a deploy. The spec is written to be
-lifted wholesale — nothing in it references Come Up code.
+Beauty Bond has its own pipeline, its own dependency tree, its own deploy, and its own
+database. It shares no build with any other SML product.
+
+Repo layout once implementation starts: see
+[`06-development-plan.md`](06-development-plan.md) §6.3.
 
 ---
 

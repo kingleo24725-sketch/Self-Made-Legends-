@@ -149,12 +149,17 @@ co-branded as one, or presented as versions of each other.**
 | Economy | SML Bucks, loot boxes, leaderboards | **None** |
 | Codebase | Separate | Separate |
 | Database & accounts | Separate | Separate |
-| Stripe account | Separate | Separate |
+| Stripe account | **Shared SML account** | **Shared SML account** (isolated in code) |
+| Repository | `Self-Made-Legends-` | `beauty-bond` (separate) |
 | Brand system | Separate | Separate |
 | Regulatory regime | Adult game | COPPA / GDPR-K |
 
-Shared: **the SML house mark only.** Nothing else crosses between them — no code,
-no accounts, no currency, no data, no SSO, no in-app cross-promotion to minors.
+Shared: **the SML house mark and the SML Stripe account.** Nothing else crosses
+between them — no code, no user accounts, no currency, no application data, no SSO, no
+in-app cross-promotion to minors. The shared Stripe account is a billing convenience
+for the owner (one payout, one dashboard); it grants no entitlement, identity, or data
+path between the two products, and the isolation that guarantees this is specified in
+`03-stripe-subscriptions.md` §3.2.
 
 ---
 
