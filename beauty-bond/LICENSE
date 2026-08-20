@@ -1,58 +1,59 @@
-BEAUTY BOND™ — PROPRIETARY SOFTWARE LICENSE
+MIT License (with Self-Made Legends LLC attribution requirement)
 
+Dad + Daughter Beauty Bond™
 Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
 
-OWNER: Self-Made Legends LLC (SML)
-PRODUCT: Beauty Bond™ (working title: Dad + Daughter Beauty Bond)
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-────────────────────────────────────────────────────────────────────────
+1. ATTRIBUTION. The above copyright notice, this permission notice, and the
+   following attribution shall be included in all copies or substantial
+   portions of the Software, and shall be displayed in any user-facing
+   "About", "Credits", "Legal", or equivalent screen of any derivative work:
 
-ALL RIGHTS RESERVED. PROPRIETARY AND CONFIDENTIAL.
+       Based on Dad + Daughter Beauty Bond™,
+       originally created by Self-Made Legends LLC (SML).
 
-This software and its accompanying documentation, designs, wireframes,
-data models, brand system, and all other materials in this repository
-(collectively, the "Software") are the exclusive property of Self-Made
-Legends LLC ("SML").
+2. TRADEMARKS ARE NOT LICENSED. This license grants rights to the Software
+   only. It grants NO right to use the names, logos, or trademarks of
+   Self-Made Legends LLC, including but not limited to:
 
-1. NO LICENSE GRANTED
-   No license, express or implied, is granted to any person or entity
-   except by a separate written agreement signed by an authorized
-   representative of Self-Made Legends LLC.
+       SELF-MADE LEGENDS · SML · DAD + DAUGHTER BEAUTY BOND · BEAUTY BOND
+       BOND METER · DAD SCHOOL · LETTERS FORWARD · BOND BOOK · GLAM ROOMS
 
-2. RESTRICTIONS
-   Without SML's prior written permission, no person may copy, modify,
-   merge, publish, distribute, sublicense, sell, reverse engineer, or
-   create derivative works from the Software, or use it to develop a
-   competing product, or use it to train any machine-learning model.
+   Derivative works must not use these marks, must not imply endorsement or
+   affiliation with Self-Made Legends LLC, and must be distributed under a
+   different product name.
 
-3. AUTHORIZED USE
-   Employees, contractors, and vendors who have executed a written
-   non-disclosure agreement with SML may use the Software solely to
-   perform work authorized by SML.
+3. THIRD-PARTY MARKS. Beauty brand names referenced in this Software (Fenty
+   Beauty, Rare Beauty, Huda Beauty, MAC, NARS, and others) are the property
+   of their respective owners and appear solely as catalog-integration and
+   shade-matching references. No affiliation or endorsement is implied. This
+   license conveys no rights to those marks.
 
-4. WORK MADE FOR HIRE
-   All contributions to the Software are works made for hire owned by
-   SML. Where that doctrine does not apply, each contributor hereby
-   assigns to SML all right, title, and interest in their contributions.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
-5. CONFIDENTIALITY
-   The Software is confidential business information and a trade secret
-   of SML. Recipients must not disclose it outside SML.
+--------------------------------------------------------------------------
+A NOTE ON CHILD SAFETY
 
-6. THIRD-PARTY MARKS
-   Third-party trademarks referenced in the Software (including beauty
-   brand names used for catalog integration and shade matching) are the
-   property of their respective owners. No affiliation, sponsorship, or
-   endorsement is claimed or implied.
+This Software implements protections for minors: verifiable parental consent,
+age gates that no subscription can purchase past, on-device-only rendering for
+under-13 accounts, exclusion of minors from recordings, and an unconditional
+panic exit.
 
-7. NO WARRANTY
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
-   NONINFRINGEMENT. IN NO EVENT SHALL SML BE LIABLE FOR ANY CLAIM,
-   DAMAGES, OR OTHER LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
-
-────────────────────────────────────────────────────────────────────────
-
-Self-Made Legends LLC (SML)
-Beauty Bond™ is a trademark of Self-Made Legends LLC.
+These are not optional features. Anyone deploying this Software or a
+derivative to real families is responsible for their own compliance with
+COPPA, GDPR/GDPR-K, the UK Age Appropriate Design Code, and any other law
+applicable in their jurisdiction. Removing or weakening these protections
+while retaining the attribution above misrepresents the original work.
+--------------------------------------------------------------------------

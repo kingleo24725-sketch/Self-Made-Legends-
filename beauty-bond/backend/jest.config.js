@@ -1,4 +1,4 @@
-/** Beauty Bond™ — © 2026 Self-Made Legends LLC (SML). All rights reserved. */
+/** Dad + Daughter Beauty Bond™ — © 2026 Self-Made Legends LLC (SML). */
 module.exports = {
   testEnvironment: 'node',
   setupFiles: ['<rootDir>/tests/setup.js'],

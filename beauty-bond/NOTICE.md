@@ -2,11 +2,12 @@
 
 ```
 ════════════════════════════════════════════════════════════════════
-                     B E A U T Y   B O N D ™
+        D A D   +   D A U G H T E R   B E A U T Y   B O N D ™
               A SELF-MADE LEGENDS LLC (SML) PRODUCT
 
         © 2026 Self-Made Legends LLC (SML). All rights reserved.
-              PROPRIETARY AND CONFIDENTIAL — DO NOT DISTRIBUTE
+        MIT licensed with attribution — see LICENSE
+        Trademarks are NOT licensed — see §4
 ════════════════════════════════════════════════════════════════════
 ```
 
@@ -16,13 +17,13 @@
 
 | Field | Value |
 |---|---|
-| **Product** | Beauty Bond™ (working title: *Dad + Daughter Beauty Bond*) |
+| **Product** | **Dad + Daughter Beauty Bond™** |
 | **Owner** | **Self-Made Legends LLC (SML)** |
 | **Entity type** | Limited Liability Company |
 | **Copyright holder** | Self-Made Legends LLC (SML) |
 | **Copyright year** | 2026 |
-| **Status** | Proprietary — internal specification |
-| **Classification** | Confidential business information & trade secret |
+| **Status** | Open source under MIT + attribution; marks reserved |
+| **Classification** | Public source, SML-owned copyright and trademarks |
 | **Related SML product** | The Self-Made Legends Come Up (**separate product** — see §5) |
 
 **Self-Made Legends LLC (SML) is the sole and exclusive owner** of all right, title,
@@ -62,13 +63,15 @@ prototypes.
 ## 3. Required Attribution Stamp
 
 **Every document, file, screen, export, and deliverable must carry the SML mark.**
+This is both an SML branding rule and, for redistributed copies, a condition of the
+license (`LICENSE` §1).
 
 ### 3.1 Document header (Markdown)
 
 ```markdown
-> **BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
-> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
+> Owner: **Self-Made Legends LLC (SML)** · MIT licensed with SML attribution.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
 ```
 
@@ -76,10 +79,9 @@ prototypes.
 
 ```ts
 /**
- * Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+ * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
- * Proprietary and confidential. Unauthorized copying, distribution, or use
- * of this file, via any medium, is strictly prohibited.
+ * Licensed under the MIT License with SML attribution — see LICENSE.
  */
 ```
 
@@ -87,12 +89,12 @@ prototypes.
 
 | Surface | Required text |
 |---|---|
-| Splash screen | `from Self-Made Legends` (below the wordmark) |
-| Settings → About | `Beauty Bond™ v{version}` / `© 2026 Self-Made Legends LLC (SML)` |
+| Splash screen | `Dad + Daughter Beauty Bond™` / `from Self-Made Legends` |
+| Settings → About | `Dad + Daughter Beauty Bond™ v{version}` / `© 2026 Self-Made Legends LLC (SML)` |
 | App Store / Play listing | Seller: **Self-Made Legends LLC** |
 | Legal footer (web) | `© 2026 Self-Made Legends LLC (SML). All rights reserved.` |
-| Bond Book export (print) | Back page: `Made with Beauty Bond™ · A Self-Made Legends LLC (SML) product` |
-| Email footer | `Beauty Bond™ · Self-Made Legends LLC (SML)` |
+| Bond Book export (print) | Back page: `Made with Dad + Daughter Beauty Bond™ · A Self-Made Legends LLC (SML) product` |
+| Email footer | `Dad + Daughter Beauty Bond™ · Self-Made Legends LLC (SML)` |
 | Design exports & prototypes | Footer mark per `docs/branding.md` §7.9 |
 
 ### 3.4 Statement descriptor
@@ -112,7 +114,8 @@ Owned by Self-Made Legends LLC (SML):
 |---|---|---|
 | `SELF-MADE LEGENDS` | House mark | 9, 41, 42 |
 | `SML` | House abbreviation | 9, 41, 42 |
-| `BEAUTY BOND` | Product name | 9, 41, 44 |
+| `DAD + DAUGHTER BEAUTY BOND` | Product name | 9, 41, 44 |
+| `BEAUTY BOND` | Short mark | 9, 41, 44 |
 | `BOND METER` | Feature | 9, 41 |
 | `DAD SCHOOL` | Feature | 9, 41 |
 | `LITTLE LEGEND` | Mode | 9, 41 |
@@ -136,7 +139,7 @@ No affiliation, sponsorship, partnership, or endorsement by any of these compani
 claimed or implied. Any such relationship requires a separate executed agreement with
 Self-Made Legends LLC (SML). Nominative fair use only: brand names may identify a
 product a user owns or is matched to; brand logos may not be used in SML marketing
-without written permission.
+without written permission. **The MIT license conveys no rights to these marks.**
 
 ---
 
@@ -168,32 +171,52 @@ path between the two products, and the isolation that guarantees this is specifi
 
 ---
 
-## 6. Confidentiality
+## 6. License
 
-This specification is **confidential business information and a trade secret** of
-Self-Made Legends LLC (SML). It is disclosed only to employees, contractors, and
-vendors who have executed a written non-disclosure agreement with SML and who need it
-to perform authorized work.
+The **code and documentation** in this repository are licensed under the **MIT
+License with an SML attribution requirement** — see [`LICENSE`](LICENSE).
 
-Recipients may not: publish it, post it publicly, share it outside SML, use it to
-build a competing product, or train any machine-learning model on it.
+**What you may do:** use, copy, modify, merge, publish, distribute, sublicense,
+and sell copies, including commercially, provided you keep the copyright notice
+and display the attribution in any user-facing About/Credits screen.
 
-All work produced under this specification by employees or contractors is **work made
-for hire** and, where that doctrine does not apply, is hereby assigned in full to
-Self-Made Legends LLC (SML). Contractor agreements must include an explicit IP
-assignment clause naming SML before any work begins.
+**What you may not do:** use SML's names, logos, or product marks (§4.1), imply
+endorsement by or affiliation with Self-Made Legends LLC, or ship a derivative
+under the Dad + Daughter Beauty Bond name. **The MIT license covers copyright,
+not trademarks.** A fork must carry its own product name.
 
----
+> **Deliberate choice, worth understanding.** MIT is permissive: anyone may fork
+> this and build a competing product, and SML cannot prevent that. What SML
+> retains is the *brand* — the name, the marks, and the goodwill attached to
+> them. If the intent is instead to keep the source private and prevent
+> competing use, MIT is the wrong instrument and this section should be replaced
+> with a proprietary license before any public release.
+
+### Contributions
+
+Contributions are accepted under the same MIT terms. Work produced by SML
+employees or contractors under an employment or contractor agreement remains
+work made for hire owned by Self-Made Legends LLC; where that doctrine does not
+apply, contributors assign their contributions to SML. Contractor agreements
+should include an explicit IP assignment clause naming SML.
+
+### Child-safety obligation
+
+This repository implements protections for minors (§ see `docs/architecture.md`
+§1.5). The license permits removing them; **the law may not.** Anyone deploying
+this software or a derivative to real families is responsible for their own
+COPPA / GDPR-K / AADC compliance. Removing these protections while keeping the
+attribution misrepresents the original work.
 
 ## 7. Contact
 
 **Self-Made Legends LLC (SML)**
-Product: Beauty Bond™
+Product: Dad + Daughter Beauty Bond™
 Owner contact: leobrown24725@yahoo.com
 
 ---
 
 ```
 © 2026 Self-Made Legends LLC (SML). All rights reserved.
-Beauty Bond™ is a trademark of Self-Made Legends LLC.
+Dad + Daughter Beauty Bond™ is a trademark of Self-Made Legends LLC.
 ```
