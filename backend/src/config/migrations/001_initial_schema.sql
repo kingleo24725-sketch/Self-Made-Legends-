@@ -33,7 +33,7 @@ CREATE TABLE profiles (                   -- who uses the app (incl. children)
   birth_date        date NOT NULL,
   age_band          age_band NOT NULL,     -- recomputed nightly on birthdays
   avatar_url        text,
-  mode              text NOT NULL DEFAULT 'solo_glow',
+  mode              text NOT NULL DEFAULT 'solo_girl',
   cultural_modes    text[] NOT NULL DEFAULT '{}',
   remembrance_mode  boolean NOT NULL DEFAULT false,
   is_verified_creator boolean NOT NULL DEFAULT false,
@@ -41,7 +41,13 @@ CREATE TABLE profiles (                   -- who uses the app (incl. children)
   created_at        timestamptz NOT NULL DEFAULT now(),
   deleted_at        timestamptz,
   CONSTRAINT minor_needs_guardian
-    CHECK (age_band = 'adult' OR guardian_id IS NOT NULL)
+    CHECK (age_band = 'adult' OR guardian_id IS NOT NULL),
+  -- Keeps the column in step with MODES in app/utils/constants.js and
+  -- backend/src/services/modes.js. An unknown mode renders as an undefined
+  -- chip with no accent colour, so it is rejected here rather than shipped.
+  CONSTRAINT mode_is_known CHECK (mode IN (
+    'dad_daughter','mom_daughter','guardian_daughter',
+    'solo_girl','best_friend_glam','global_rooms'))
 );
 CREATE INDEX ON profiles(guardian_id);
 

@@ -35,7 +35,7 @@ Alternates evaluated: Daily.co, Agora, 100ms.
 
 ## 5.2 Room Creation
 
-### `POST /v1/rooms`
+### `POST /api/video/rooms`
 
 ```jsonc
 // → request
@@ -368,7 +368,7 @@ function SharedGlamPanel({ roomId }: { roomId: string }) {
     const next = { ...state!, step, updatedAt: Date.now() }
     setState(next)
     send(encode({ t: 'state', state: next }), { reliable: true })
-    void api.post(`/v1/rooms/${roomId}/glam`, next)   // persist for late joiners
+    void api.post(`/api/rooms/${roomId}/glam`, next)   // persist for late joiners
   }
 
   return (
@@ -388,7 +388,7 @@ function SharedGlamPanel({ roomId }: { roomId: string }) {
 - **"Everyone try it"** triggers each participant's **local, on-device** try-on
   (`ai-tryon.md` Path A). No face image ever crosses the room — critical, since
   the room may contain a child.
-- Late joiners fetch `GET /v1/rooms/:id/glam` for current state, then follow the
+- Late joiners fetch `GET /api/video/rooms/:id/glam` for current state, then follow the
   channel.
 - Panel state persists to Postgres so a dropped host can reclaim it on rejoin.
 
