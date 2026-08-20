@@ -5,11 +5,16 @@
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
 
-**Merchant of record:** Self-Made Legends LLC (SML). Card statements read
-`SML BEAUTY BOND` — distinct from the Come Up game's descriptor, so a family never
-sees a trading-game charge on their statement. Beauty Bond uses its **own Stripe
-account** (or at minimum its own Connect account and webhook endpoint); its products,
-prices, customers, and webhook secrets are never shared with any other SML product.
+**Merchant of record:** Self-Made Legends LLC (SML).
+
+**Billing topology:** Beauty Bond ships from its **own repository** but bills through
+the **shared SML Stripe account** — the same account The Self-Made Legends Come Up
+already uses. One account, one payout, one dashboard, two products. Because the
+account is shared, product isolation is not automatic; it is enforced in code at four
+layers described in §3.2. **Read §3.2 before writing any billing code.**
+
+Card statements read `SML* BEAUTY BOND` — distinct from the game's descriptor, so a
+family never sees a trading-game charge on their statement.
 
 Stripe API version pinned: **`2024-06-20`**. All amounts USD; multi-currency via
 Stripe Adaptive Pricing.
@@ -102,14 +107,210 @@ export const ALWAYS_FREE = [
 
 ---
 
-## 3.2 Stripe Object Setup
+## 3.2 Shared Stripe Account — Isolation Architecture
+
+> **The governing rule:** Beauty Bond and The Self-Made Legends Come Up share one
+> Stripe account. **Stripe fans out every event to every webhook endpoint on the
+> account.** Beauty Bond's endpoint will therefore receive the game's events, and the
+> game's endpoint will receive Beauty Bond's. Neither app may act on the other's
+> events. Isolation is enforced in code, at four layers.
+
+### Layer 1 — Namespace every object
+
+Every Stripe object Beauty Bond creates carries a product tag. No exceptions.
+
+| Object | Requirement |
+|---|---|
+| Product | `metadata.sml_product = 'beauty_bond'` |
+| Price | `metadata.sml_product = 'beauty_bond'`, `lookup_key` prefixed **`bb_`** |
+| Customer | `metadata.sml_product = 'beauty_bond'`, `metadata.bb_user_id` |
+| Subscription | `metadata.sml_product = 'beauty_bond'`, `metadata.bb_user_id` |
+| Checkout Session | `metadata.sml_product = 'beauty_bond'`, `client_reference_id = bb:<userId>` |
+| Coupon / Promo | code prefixed `BB-` |
+
+**Metadata key collision rule (verified against the live Come Up handler):** the Come
+Up app reads `metadata.userId` and `metadata.type`. Beauty Bond **must never write
+those two keys.** It writes `bb_user_id` and `sml_product` instead. Come Up's handler
+early-returns when `userId`/`type` are absent, so Beauty Bond events no-op there —
+that safety depends entirely on Beauty Bond honoring this namespace. Writing a
+`userId` key from Beauty Bond would cause the game to grant SML Bucks on a Beauty
+Bond payment.
+
+### Layer 2 — Separate Customer objects per product
+
+**A human who buys both products gets two Stripe Customers**, one per product, each
+tagged. Do not reuse one Customer across products.
+
+Why: entitlement lookups resolve `customer → user`. With a shared Customer, a Come Up
+subscription event would resolve to a Beauty Bond user and could grant a Beauty Bond
+tier — a silent cross-product entitlement grant. Separate Customers make that
+structurally impossible. The duplicate-customer cost (two rows for one human) is worth
+far more than the failure it prevents.
+
+```ts
+// Every customer lookup is product-scoped. There is no unscoped variant.
+async function findOrCreateBBCustomer(user: User): Promise<string> {
+  if (user.stripe_customer_id) return user.stripe_customer_id   // BB customer only
+
+  const customer = await stripe.customers.create({
+    email: user.email,
+    metadata: { sml_product: 'beauty_bond', bb_user_id: user.id },
+  }, { idempotencyKey: `bb_cust_${user.id}` })
+
+  await db.users.update(user.id, { stripe_customer_id: customer.id })
+  return customer.id
+}
+```
+
+```ts
+// db/users.ts — the scoped lookup. NEVER add an unscoped byStripeCustomer().
+export async function byStripeCustomer(customerId: string) {
+  return db.query(
+    `SELECT * FROM users WHERE stripe_customer_id = $1 AND deleted_at IS NULL`,
+    [customerId])   // only ever holds beauty_bond customers
+}
+```
+
+### Layer 3 — Webhook ownership filter (the critical one)
+
+Beauty Bond's handler resolves the owning product **before** any processing, and
+**fails closed** — an event it cannot attribute is ignored, never granted.
+
+```ts
+// apps/api/src/routes/webhooks.ts
+const OURS = 'beauty_bond'
+
+/** Resolve which SML product an event belongs to. Fails closed. */
+async function belongsToBeautyBond(event: Stripe.Event): Promise<boolean> {
+  const obj = event.data.object as any
+
+  // 1. Direct tag — covers subscription, checkout.session, PI, charge, customer
+  if (obj?.metadata?.sml_product) return obj.metadata.sml_product === OURS
+
+  // 2. Invoices carry no metadata of their own — resolve via subscription…
+  if (obj?.object === 'invoice') {
+    if (typeof obj.subscription === 'string') {
+      const sub = await stripe.subscriptions.retrieve(obj.subscription)
+      if (sub.metadata?.sml_product) return sub.metadata.sml_product === OURS
+    }
+    // …or via the line items' price lookup_key prefix
+    const key = obj.lines?.data?.[0]?.price?.lookup_key
+    if (key) return key.startsWith('bb_')
+  }
+
+  // 3. Fall back to the customer's tag
+  const customerId = typeof obj?.customer === 'string' ? obj.customer : null
+  if (customerId) {
+    const customer = await stripe.customers.retrieve(customerId)
+    if (!('deleted' in customer)) return customer.metadata?.sml_product === OURS
+  }
+
+  // 4. Unattributable → NOT ours. Fail closed: never grant on an unknown event.
+  logger.warn({ eventId: event.id, type: event.type }, 'unattributable_stripe_event')
+  metrics.increment('stripe.unattributable_event')
+  return false
+}
+
+webhooks.post('/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
+  let event: Stripe.Event
+  try {
+    event = stripe.webhooks.constructEvent(
+      req.body, req.headers['stripe-signature'] as string,
+      process.env.STRIPE_WEBHOOK_SECRET_BB!)
+  } catch (err: any) {
+    return res.status(400).send(`Webhook Error: ${err.message}`)
+  }
+
+  // ── OWNERSHIP GATE — before idempotency, before any write ──
+  if (!(await belongsToBeautyBond(event))) {
+    return res.json({ received: true, ignored: 'not_beauty_bond' })
+  }
+
+  const fresh = await db.webhookEvents.insertIfAbsent({
+    id: event.id, provider: 'stripe', type: event.type, payload: event,
+  })
+  if (!fresh) return res.json({ received: true, duplicate: true })
+
+  res.json({ received: true })
+  await handle(event).catch(err => db.webhookEvents.markFailed(event.id, String(err)))
+})
+```
+
+**The gate runs before the idempotency insert** so the `webhook_events` ledger stays
+free of the game's traffic.
+
+`syncSubscription` carries a defense-in-depth assertion — belt and braces, because a
+wrong grant here is a revenue and trust bug:
+
+```ts
+async function syncSubscription(sub: Stripe.Subscription) {
+  if (sub.metadata?.sml_product !== OURS) {
+    throw new Error(`refusing to sync foreign subscription ${sub.id}`)
+  }
+  // …
+}
+```
+
+### Layer 4 — Separate restricted API keys
+
+Beauty Bond never uses the account's unrestricted secret key.
+
+| Key | Scope |
+|---|---|
+| `STRIPE_SECRET_KEY_BB` | **Restricted key.** Write: Customers, Subscriptions, Prices (read), Checkout Sessions, Billing Portal, Invoices (read). No Connect, no Payouts, no Radar config, no account settings. |
+| `STRIPE_WEBHOOK_SECRET_BB` | Beauty Bond's **own endpoint** signing secret — a distinct endpoint URL from the game's |
+| `STRIPE_PUBLISHABLE_KEY` | Shared, public, safe |
+
+Two endpoints on one account, each with its own secret: a leaked Beauty Bond key
+cannot read the game's customers or trigger payouts, and rotating one doesn't disturb
+the other.
+
+### What sharing the account does and doesn't give you
+
+| | Effect |
+|---|---|
+| ✅ | One payout schedule, one bank account, one tax registration, one dashboard |
+| ✅ | One place to reconcile revenue across both products |
+| ✅ | No new business verification for Beauty Bond |
+| ⚠️ | **Account-level risk is shared.** A dispute spike or a Radar block on the game affects the account Beauty Bond depends on to charge families. |
+| ⚠️ | Radar rules are account-wide — scope any custom rule with `metadata['sml_product']` or it will apply to both products. |
+| ⚠️ | Reporting mixes both products by default — filter every report by `metadata.sml_product`. |
+| ⚠️ | Both apps receive both apps' webhooks — Layer 3 is mandatory, not optional. |
+
+> **Worth knowing:** one Stripe *login* can own multiple Stripe *accounts* with a
+> dashboard switcher — separate data, separate risk, still one place to look. If the
+> shared-risk row above becomes a concern, that's the migration path, and the Layer 1
+> namespacing above makes moving Beauty Bond's objects out straightforward. Building
+> it this way keeps that door open.
+
+### Required change to the Come Up app
+
+The game's handler is currently safe **by accident** — it early-returns when
+`metadata.userId` and `metadata.type` are missing, which Beauty Bond events will be.
+Make it safe **on purpose** by adding the mirror-image gate at the top of its
+webhook handler:
+
+```js
+// src/api-server.js — Come Up webhook, add before any branch
+const meta = obj.metadata || {};
+if (meta.sml_product && meta.sml_product !== 'come_up') {
+  return res.sendStatus(200);   // Beauty Bond's event — not ours
+}
+```
+
+Track this as a prerequisite ticket on the Come Up side before Beauty Bond's first
+live charge.
+
+---
+
+## 3.2.1 Stripe Object Setup
 
 One **Product** per tier, two **Prices** each (monthly/yearly). Seed script:
 
 ```ts
 // scripts/seed-stripe.ts
 import Stripe from 'stripe'
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_BB!, { apiVersion: '2024-06-20' })
 
 const PLANS = [
   { code: 'bond',   name: 'Bond',   monthly: 699,  yearly: 5899  },
@@ -120,7 +321,8 @@ const PLANS = [
 for (const p of PLANS) {
   const product = await stripe.products.create({
     name: `Beauty Bond ${p.name}`,
-    metadata: { tier: p.code },          // ← webhook reads tier from HERE
+    statement_descriptor: 'SML BEAUTY BOND',        // distinct from the game's
+    metadata: { tier: p.code, sml_product: 'beauty_bond' },
   })
   for (const [interval, amount] of [['month', p.monthly], ['year', p.yearly]] as const) {
     await stripe.prices.create({
@@ -128,15 +330,37 @@ for (const p of PLANS) {
       currency: 'usd',
       unit_amount: amount,
       recurring: { interval },
-      lookup_key: `${p.code}_${interval}ly`,   // bond_monthly, bond_yearly
-      metadata: { tier: p.code },
+      lookup_key: `bb_${p.code}_${interval}ly`,     // bb_bond_monthly, bb_bond_yearly
+      metadata: { tier: p.code, sml_product: 'beauty_bond' },
     })
   }
 }
 ```
 
-**Rule:** the app never hardcodes `price_...` IDs. It resolves prices by
-`lookup_key`, so test/live/regional catalogs stay swappable.
+**Rules:**
+
+- The app never hardcodes `price_...` IDs. It resolves prices by `lookup_key`, so
+  test/live/regional catalogs stay swappable.
+- Every `lookup_key` is **`bb_`-prefixed** — on a shared account this is what keeps
+  Beauty Bond's price resolution from ever matching a Come Up price.
+- Price lookups filter on the prefix, never on a bare tier name:
+
+```ts
+async function priceIdFor(lookupKey: string): Promise<string> {
+  if (!lookupKey.startsWith('bb_')) throw new Error('non_beauty_bond_price')
+  const { data } = await stripe.prices.list({ lookup_keys: [lookupKey], active: true })
+  const price = data.find(p => p.metadata.sml_product === 'beauty_bond')
+  if (!price) throw new Error('unknown_plan')
+  return price.id
+}
+```
+
+**Statement descriptor:** the SML account's static prefix stays `SML`; Beauty Bond
+sets its product-level descriptor so charges read `SML* BEAUTY BOND`. Verify the exact
+descriptor fields against the pinned API version at implementation time — Stripe has
+moved this between `Product`, `Invoice`, and `PaymentIntent.statement_descriptor_suffix`
+across versions. The requirement is the outcome, not the field: **a family's statement
+must never show a trading-game descriptor.**
 
 **Tax:** Stripe Tax enabled (`automatic_tax: { enabled: true }`); customer address
 collected at checkout. **Billing thresholds:** none — no surprise charges.
@@ -194,7 +418,7 @@ import Stripe from 'stripe'
 import { requireAuth, requireAdult } from '../middleware/auth'
 import { db } from '../db'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_BB!, { apiVersion: '2024-06-20' })
 export const billing = Router()
 
 // Purchases are adults-only. A child account can never reach this route.
@@ -202,20 +426,13 @@ billing.post('/checkout', requireAuth, requireAdult, async (req, res) => {
   const { lookupKey } = req.body as { lookupKey: string }
   const user = req.user!
 
+  if (!lookupKey.startsWith('bb_')) return res.status(400).json({ error: 'unknown_plan' })
   const prices = await stripe.prices.list({ lookup_keys: [lookupKey], expand: ['data.product'] })
-  const price = prices.data[0]
+  const price = prices.data.find(p => p.metadata.sml_product === 'beauty_bond')
   if (!price) return res.status(400).json({ error: 'unknown_plan' })
 
-  // Idempotent customer creation
-  let customerId = user.stripe_customer_id
-  if (!customerId) {
-    const customer = await stripe.customers.create({
-      email: user.email,
-      metadata: { user_id: user.id },
-    }, { idempotencyKey: `cust_${user.id}` })
-    customerId = customer.id
-    await db.users.update(user.id, { stripe_customer_id: customerId })
-  }
+  // Product-scoped customer — see §3.2 Layer 2
+  const customerId = await findOrCreateBBCustomer(user)
 
   const subscription = await stripe.subscriptions.create({
     customer: customerId,
@@ -224,9 +441,14 @@ billing.post('/checkout', requireAuth, requireAdult, async (req, res) => {
     payment_settings: { save_default_payment_method: 'on_subscription' },
     automatic_tax: { enabled: true },
     trial_period_days: 7,
-    metadata: { user_id: user.id, tier: (price.metadata as any).tier },
+    // NOTE: `bb_user_id`, never `userId` — see §3.2 Layer 1 collision rule
+    metadata: {
+      bb_user_id: user.id,
+      tier: (price.metadata as any).tier,
+      sml_product: 'beauty_bond',
+    },
     expand: ['latest_invoice.payment_intent'],
-  }, { idempotencyKey: `sub_${user.id}_${price.id}_${req.body.nonce ?? ''}` })
+  }, { idempotencyKey: `bb_sub_${user.id}_${price.id}_${req.body.nonce ?? ''}` })
 
   const ephemeralKey = await stripe.ephemeralKeys.create(
     { customer: customerId }, { apiVersion: '2024-06-20' }
@@ -253,9 +475,10 @@ billing.post('/checkout-session', requireAuth, requireAdult, async (req, res) =>
     line_items: [{ price: await priceIdFor(req.body.lookupKey), quantity: 1 }],
     subscription_data: {
       trial_period_days: 7,
-      metadata: { user_id: req.user!.id },
+      metadata: { bb_user_id: req.user!.id, sml_product: 'beauty_bond' },
     },
-    client_reference_id: req.user!.id,
+    metadata: { bb_user_id: req.user!.id, sml_product: 'beauty_bond' },
+    client_reference_id: `bb:${req.user!.id}`,
     automatic_tax: { enabled: true },
     allow_promotion_codes: true,
     success_url: `${process.env.WEB_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -295,7 +518,7 @@ import Stripe from 'stripe'
 import { db } from '../db'
 import { setEntitlement } from '../services/entitlements'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_BB!, { apiVersion: '2024-06-20' })
 export const webhooks = Router()
 
 webhooks.post('/stripe',
@@ -305,7 +528,7 @@ webhooks.post('/stripe',
     try {
       event = stripe.webhooks.constructEvent(
         req.body, req.headers['stripe-signature'] as string,
-        process.env.STRIPE_WEBHOOK_SECRET!
+        process.env.STRIPE_WEBHOOK_SECRET_BB!
       )
     } catch (err: any) {
       return res.status(400).send(`Webhook Error: ${err.message}`)
@@ -329,8 +552,11 @@ async function handle(event: Stripe.Event) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const s = event.data.object as Stripe.Checkout.Session
-      if (s.client_reference_id && typeof s.customer === 'string') {
-        await db.users.update(s.client_reference_id, { stripe_customer_id: s.customer })
+      // client_reference_id is `bb:<userId>` — strip the namespace prefix
+      const ref = s.client_reference_id?.startsWith('bb:')
+        ? s.client_reference_id.slice(3) : null
+      if (ref && typeof s.customer === 'string') {
+        await db.users.update(ref, { stripe_customer_id: s.customer })
       }
       break
     }
@@ -382,7 +608,7 @@ async function handle(event: Stripe.Event) {
 }
 
 async function syncSubscription(sub: Stripe.Subscription) {
-  const userId = sub.metadata.user_id
+  const userId = sub.metadata.bb_user_id
     ?? (await db.users.byStripeCustomer(sub.customer as string))?.id
   if (!userId) return
 
@@ -591,6 +817,11 @@ to the OS subscription manager instead of the Stripe portal. The API returns
 | Refund abuse | Radar rules + one self-serve refund per customer per 12 months |
 | Price change | New `lookup_key` version; existing subscribers grandfathered on their price |
 | Stripe outage | Access is read from the local `entitlements` cache, which never fails closed for existing subscribers |
+| **Cross-product event leak** | §3.2 Layer 3 ownership gate runs before any write; unattributable events fail closed and alert |
+| **Cross-product customer collision** | §3.2 Layer 2 — separate Customer per product; no unscoped `byStripeCustomer()` exists |
+| **Come Up grants on a BB payment** | BB never writes `metadata.userId`/`type`; Come Up gate added as a prerequisite ticket |
+| **BB key leak exposes game data** | §3.2 Layer 4 — restricted key, no Connect/Payouts/account scope |
+| **Account-level risk from the game** | Monitored: dispute rate and Radar blocks are account-wide. Migration path to a second account under the same login is kept open by Layer 1 namespacing. |
 
 ---
 
