@@ -6,7 +6,7 @@
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
 >
 > **Designers:** every exported screen, prototype frame, and handoff file must carry
-> the SML footer mark — see [`07-branding.md`](07-branding.md) §7.9.
+> the SML footer mark — see [`branding.md`](branding.md) §7.9.
 
 Low-fidelity, labeled, designer-ready. Every region is named `[R#]` and annotated
 below its frame. Frame reference: **390 × 844** (iPhone 14 baseline).
@@ -729,7 +729,7 @@ Legend:
 ```
 
 - **[R2]** This promise is a product commitment, not marketing. Enforced in the
-  render pipeline (`04-ai-tryon.md` §4.6).
+  render pipeline (`ai-tryon.md` §4.6).
 
 ---
 
@@ -1189,7 +1189,7 @@ Legend:
 
 - **[R4]** **Critical:** entitlement is granted by the *webhook*, never by the client
   returning to a success URL. This screen covers the gap. See
-  `03-stripe-subscriptions.md` §3.5.
+  `stripe-flow.md` §3.5.
 - **[R5]** Never blame the user; never say "declined" without "nothing was charged."
 
 ---
@@ -1228,4 +1228,4 @@ Legend:
 
 ---
 
-*Continue to `03-stripe-subscriptions.md`.*
+*Continue to `stripe-flow.md`.*

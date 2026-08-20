@@ -386,7 +386,7 @@ function SharedGlamPanel({ roomId }: { roomId: string }) {
 
 - **Host owns the step.** Participants may *request*; the host advances.
 - **"Everyone try it"** triggers each participant's **local, on-device** try-on
-  (`04-ai-tryon.md` Path A). No face image ever crosses the room — critical, since
+  (`ai-tryon.md` Path A). No face image ever crosses the room — critical, since
   the room may contain a child.
 - Late joiners fetch `GET /v1/rooms/:id/glam` for current state, then follow the
   channel.
@@ -466,7 +466,7 @@ rooms.post('/:roomId/panic', requireAuth, async (req, res) => {
 | Session anomalies (adult repeatedly joining minor rooms) | hourly job | account review |
 
 **Not scanned:** Family Room content beyond join metadata, and the Healing Journal
-(`01-app-blueprint.md` M08). Closed family rooms are private; blanket surveillance of
+(`architecture.md` M08). Closed family rooms are private; blanket surveillance of
 a family's living room is neither proportionate nor what parents are consenting to.
 
 ### Guardian force-disconnect
@@ -514,7 +514,7 @@ async function startRecording(roomId: string, requestedBy: string) {
 
 **Retention:** recordings auto-delete after 30 days unless explicitly saved to the
 Memory Gallery. Glam-room recaps in the gallery are **stills only**, generated with
-all-party consent, never room video (`01-app-blueprint.md` M10).
+all-party consent, never room video (`architecture.md` M10).
 
 ---
 
@@ -530,7 +530,7 @@ all-party consent, never room video (`01-app-blueprint.md` M10).
 | Region | LiveKit Cloud regional routing; TURN over 443 for restrictive networks |
 | Capacity | Lesson rooms > 50 switch to SFU broadcast mode (creator publishes, attendees subscribe) |
 
-**Quotas** (`03-stripe-subscriptions.md`): metered per profile into
+**Quotas** (`stripe-flow.md`): metered per profile into
 `usage_counters(metric='room_minutes')` on participant disconnect, charged to the
 **guardian's** tier — children never hold their own entitlement.
 
@@ -578,4 +578,4 @@ webhooks.post('/livekit', verifyLiveKitSignature, async (req, res) => {
 
 ---
 
-*Continue to `06-development-plan.md`.*
+*Continue to `api-reference.md`.*

@@ -36,17 +36,22 @@ this specification set.
 
 ## 2. Scope of This Notice
 
-This notice covers every file in the `beauty-bond/` directory:
+This notice covers every file in the `beauty-bond` repository:
 
 - `README.md` — product overview and separation rules
 - `NOTICE.md` — this file
-- `01-app-blueprint.md` — product definition, IA, module specs
-- `02-wireframes.md` — screen wireframes and annotations
-- `03-stripe-subscriptions.md` — subscription and billing architecture
-- `04-ai-tryon.md` — AI try-on pipeline
-- `05-live-video-rooms.md` — live video architecture
-- `06-development-plan.md` — stack, schema, API surface
-- `07-branding.md` — brand and design system
+- `LICENSE` — SML proprietary license
+- `BOOTSTRAP.md` — repository extraction procedure
+- `app/**` — React Native frontend source
+- `backend/**` — Node.js API source
+- `infra/**` — Docker, Kubernetes, Terraform, CI/CD
+- `docs/architecture.md` — product definition, IA, module specs
+- `docs/wireframes.md` — screen wireframes and annotations
+- `docs/stripe-flow.md` — subscription and billing architecture
+- `docs/ai-tryon.md` — AI try-on pipeline
+- `docs/video-rooms.md` — live video architecture
+- `docs/api-reference.md` — stack, schema, API surface
+- `docs/branding.md` — brand and design system
 
 …and every artifact derived from them: application source code, compiled binaries,
 marketing sites, press kits, PDF exports, Bond Book keepsakes, design files, and
@@ -88,7 +93,7 @@ prototypes.
 | Legal footer (web) | `© 2026 Self-Made Legends LLC (SML). All rights reserved.` |
 | Bond Book export (print) | Back page: `Made with Beauty Bond™ · A Self-Made Legends LLC (SML) product` |
 | Email footer | `Beauty Bond™ · Self-Made Legends LLC (SML)` |
-| Design exports & prototypes | Footer mark per `07-branding.md` §7.9 |
+| Design exports & prototypes | Footer mark per `docs/branding.md` §7.9 |
 
 ### 3.4 Statement descriptor
 
@@ -159,7 +164,7 @@ between them — no code, no user accounts, no currency, no application data, no
 in-app cross-promotion to minors. The shared Stripe account is a billing convenience
 for the owner (one payout, one dashboard); it grants no entitlement, identity, or data
 path between the two products, and the isolation that guarantees this is specified in
-`03-stripe-subscriptions.md` §3.2.
+`docs/stripe-flow.md` §3.2.
 
 ---
 
