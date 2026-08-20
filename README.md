@@ -185,8 +185,8 @@ npx jest --coverage   # everything
 |---|---|---|
 | **Free** | $0 | Levels 1–2, one cultural collection, 5 try-ons/mo, 20 min rooms |
 | **Basic** | $6.99/mo | All lessons and cultures, unlimited try-on, glam sets, 5 h rooms |
-| **Premium** | $12.99/mo | Legacy Vault, **Letters Forward**, unlimited rooms, 4 kids |
-| **Family** | $19.99/mo | 6 kids, unlimited Bond Books, creator tools |
+| **Premium** | $9.99/mo | Legacy Vault, **Letters Forward**, unlimited rooms, 4 kids |
+| **Family** | $12.99/mo | 6 kids, unlimited Bond Books, creator tools |
 
 Safety features, guardian controls, data export, and delivery of already-recorded
 Letters Forward are **free on every plan and never lapse**.
