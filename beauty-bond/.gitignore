@@ -1,0 +1,38 @@
+# Beauty Bond™ — © 2026 Self-Made Legends LLC (SML). All rights reserved.
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+.expo/
+*.tsbuildinfo
+
+# Secrets — NEVER commit. Stripe restricted keys, LiveKit secrets, KMS ids.
+.env
+.env.*
+!.env.example
+*.pem
+*.p8
+*.keystore
+google-play-service-account.json
+
+# Native
+ios/Pods/
+ios/build/
+android/.gradle/
+android/app/build/
+
+# ML model weights (pulled from S3 at build time)
+*.mlmodel
+*.tflite
+*.onnx
+
+# Test & tooling
+coverage/
+.turbo/
+*.log
+.DS_Store
