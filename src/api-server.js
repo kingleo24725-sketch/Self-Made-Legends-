@@ -36,7 +36,7 @@ const SecurityManager = require("./security/SecurityManager");
 const TokenCreator = require("./crypto/TokenCreator");
 const LeaderboardManager = require("./leaderboard/LeaderboardManager");
 const StripeProcessor = require("./payments/StripeProcessor");
-const { PAPER_MONEY_PACKAGES } = StripeProcessor;
+const { PAPER_MONEY_PACKAGES, CREDIT_PACKAGES } = StripeProcessor;
 const MarketingAgent = require("./marketing/MarketingAgent");
 const NotificationService = require("./notifications/NotificationService");
 const BadgeSystem = require("./achievements/BadgeSystem");
@@ -60,6 +60,26 @@ const io = socketIo(server, {
 
 app.use(cors());
 app.use(express.json());
+
+// Express 4 does not catch errors thrown from async route handlers: the rejection
+// escapes, no response is ever sent, and the player's request hangs forever — an
+// infinite spinner with no error. Wrap every handler registered from here on so a
+// throw becomes a normal Express error and reaches the handler at the bottom of
+// this file. Must run before any route is registered.
+for (const method of ['get', 'post', 'put', 'delete', 'patch']) {
+  const original = app[method].bind(app);
+  app[method] = (path, ...handlers) => original(path, ...handlers.map(h => {
+    // Arity 4 means it is an error handler; leave those alone.
+    if (typeof h !== 'function' || h.length >= 4) return h;
+    return function wrapped(req, res, next) {
+      try {
+        const out = h.call(this, req, res, next);
+        if (out && typeof out.catch === 'function') out.catch(next);
+        return out;
+      } catch (err) { next(err); }
+    };
+  }));
+}
 
 // Serve the game at the root URL. Without this, express.static falls through to
 // public/index.html — the original repo's demo page, which has no login and no
@@ -1039,8 +1059,8 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           await _addCredits(userId, 2500, 'bundle', 'Legend Starter Bundle — 2,500 Credits');
           await db.run(
             `INSERT INTO user_portfolios (user_id, cash_balance, total_invested, updated_at) VALUES (?, 1000 + ?, 1000, ?)
-             ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + 5000, updated_at = ?`,
-            [userId, 5000, now, now]
+             ON CONFLICT(user_id) DO UPDATE SET cash_balance = cash_balance + 100000, updated_at = ?`,
+            [userId, 100000, now, now]
           );
           await db.run(
             'INSERT INTO season_passes (user_id, stripe_sub_id, season_id, active, activated_at) VALUES (?, ?, ?, 1, ?) ON CONFLICT(user_id) DO UPDATE SET active = 1, activated_at = ?',
@@ -1049,13 +1069,17 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
           await db.run('INSERT OR IGNORE INTO player_cosmetics (user_id, frame_style, updated_at) VALUES (?, ?, ?)', [userId, 'neon', now]);
           await db.run('UPDATE player_cosmetics SET frame_style = CASE WHEN frame_style = \'default\' THEN \'neon\' ELSE frame_style END, updated_at = ? WHERE user_id = ?', [now, userId]);
           await _syncLeaderboard(userId);
-          emitToUser(userId, 'purchase_complete', { type: 'legend_bundle', message: '🎁 Legend Bundle activated! 2,500 Credits + $5,000 + Neon Frame added.' });
+          emitToUser(userId, 'purchase_complete', { type: 'legend_bundle', message: '🎁 Legend Bundle activated! 2,500 Credits + $100,000 SML Bucks + Neon Frame added.' });
         }
 
       } else if (type && type.startsWith('gift_credits_')) {
         const packageKey = type.slice('gift_credits_'.length);
         const recipientId = obj.metadata?.recipientId;
-        const creditAmounts = { starter: 500, legends: 2500, champion: 7000 };
+        // Derived from the one source of truth so gifted amounts can never drift
+        // out of sync with what the buyer was actually charged.
+        const creditAmounts = Object.fromEntries(
+          Object.entries(CREDIT_PACKAGES).map(([k, v]) => [k, v.credits])
+        );
         const credits = creditAmounts[packageKey];
         if (recipientId && credits) {
           await _addCredits(recipientId, credits, 'gift', `${credits} Credits gifted by a friend`);
@@ -1305,6 +1329,7 @@ app.post("/api/stripe/coach-pro", authenticateUser, async (req, res) => {
 // Real-money Stripe path removed. Entry now costs 1,000 Credits; 800 go to prize pool.
 
 app.post("/api/stripe/tournament-entry", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   const uid = req.user.userId;
   const ENTRY_COST = 1000;
   const POOL_SHARE = 800;
@@ -5502,6 +5527,7 @@ app.get("/api/subscriptions/status", authenticateUser, async (req, res) => {
 // ===== STRIPE — NEW CHECKOUT ENDPOINTS =====
 
 app.post("/api/stripe/elite-membership", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   const uid = req.user.userId;
   const existing = await db.get('SELECT active FROM elite_memberships WHERE user_id = ?', [uid]);
   if (existing && existing.active) return res.status(400).json({ error: 'Elite Membership already active' });
@@ -5511,11 +5537,12 @@ app.post("/api/stripe/elite-membership", authenticateUser, async (req, res) => {
 });
 
 app.post("/api/stripe/gift-credits", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   const { recipientEmail, packageKey } = req.body;
   if (!recipientEmail || !packageKey) return res.status(400).json({ error: 'recipientEmail and packageKey required' });
-  // Same prices as buying credits for yourself (StripeProcessor.CREDIT_PACKAGES)
-  const CREDIT_PACKAGES_MAP = { starter: { credits: 500, amount_cents: 500, label: 'Starter Pack (500 Credits)' }, legends: { credits: 2500, amount_cents: 1250, label: 'Legends Pack (2,500 Credits)' }, champion: { credits: 7000, amount_cents: 2750, label: 'Champion Pack (7,000 Credits)' } };
-  const pkg = CREDIT_PACKAGES_MAP[packageKey];
+  // Same prices as buying credits for yourself — read straight from the shared
+  // catalog rather than a copy, which previously fell out of date on a reprice.
+  const pkg = CREDIT_PACKAGES[packageKey];
   if (!pkg) return res.status(400).json({ error: 'Invalid package' });
   const recipient = accountManager.getAccount(recipientEmail);
   if (!recipient) return res.status(404).json({ error: 'Recipient not found' });
@@ -5526,6 +5553,7 @@ app.post("/api/stripe/gift-credits", authenticateUser, async (req, res) => {
 });
 
 app.post("/api/stripe/legend-bundle", authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   const uid = req.user.userId;
   const acct = accountManager.getAccountById(uid);
   const { checkoutUrl } = await stripeProcessor.createLegendBundleCheckout(uid, acct ? acct.email : null);
@@ -5794,6 +5822,7 @@ app.post('/api/boxes/open', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/loot-box-premium', authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   // Real-money loot boxes removed. Boxes are earned through gameplay.
   res.status(400).json({ error: 'Loot boxes are earned through gameplay — complete daily missions, win heists, and finish flash challenges to earn boxes.' });
 });
@@ -5905,6 +5934,7 @@ app.post('/api/cards/pack/open', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/card-pack', authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   // Real-money card packs removed. Purchase Credits above, then open packs in the Cards tab.
   res.status(400).json({ error: 'Card packs are purchased with SML Credits only. Buy Credits above, then open packs in the Cards tab.' });
 });
@@ -6030,6 +6060,7 @@ app.post('/api/pets/name/:petId', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/buy-pet', authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   const { petKey } = req.body;
   const pet = PETS[petKey];
   if (!pet) return res.status(400).json({ error: 'Unknown pet' });
@@ -6083,6 +6114,7 @@ app.get('/api/cars/mine', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/buy-car', authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   const { carKey } = req.body;
   const car = CARS[carKey];
   if (!car) return res.status(400).json({ error: 'Unknown car' });
@@ -6094,6 +6126,7 @@ app.post('/api/stripe/buy-car', authenticateUser, async (req, res) => {
 });
 
 app.post('/api/stripe/casino-vip', authenticateUser, async (req, res) => {
+  if (!stripeProcessor) return res.status(503).json({ error: 'Payment processing not configured' });
   try {
     const acc = await db.get('SELECT email FROM accounts WHERE user_id = ?', [req.user.userId]);
     const { checkoutUrl } = await stripeProcessor.createCasinoVIPCheckout(req.user.userId, acc.email);
@@ -6145,6 +6178,15 @@ app.post('/api/heat/bribe', authenticateUser, async (req, res) => {
   await db.run('UPDATE accounts SET heat_level = MAX(0, heat_level - 1) WHERE user_id = ?', [uid]);
   const updated = await db.get('SELECT heat_level FROM accounts WHERE user_id = ?', [uid]);
   res.json({ success: true, heatLevel: updated.heat_level });
+});
+
+// Catches anything the async wrapper above forwarded. Registered after every route
+// so it only sees genuine failures. Without it those requests never get a response
+// and the player watches a spinner that never stops.
+app.use((err, req, res, next) => {
+  console.error(`[route error] ${req.method} ${req.originalUrl}:`, err && err.stack ? err.stack : err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'Something went wrong on our end. Please try again.' });
 });
 
 const PORT = process.env.PORT || 3000;
