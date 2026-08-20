@@ -13,19 +13,19 @@ generated/         ← produced by npm run assets:generate. Do not edit by hand.
 
 ## Provenance
 
-`cover.png` is the official Dad + Daughter Beauty Bond™ cover artwork, supplied
-by Self-Made Legends LLC at native 1024×1536.
+`cover.png` is the official Dad + Daughter Beauty Bond™ cover artwork supplied
+by Self-Made Legends LLC — the badge-free master, at 985×1252.
 
-**One edit was made to the supplied file:** the "Made with AI" badge in the
-top-right corner was removed. It was replaced by cloning clean bokeh from lower
-in the same image, colour-matched to the local gradient and grain-matched to the
-surrounding canvas texture (σ ≈ 4.0), with feathering placed outside the badge
-bounds so no part of the pill survives. Nothing else in the artwork was altered.
+Two mechanical steps, no retouching:
 
-That removal matters for the store listing: a badge in the corner of a feature
-graphic reads as an artifact rather than a design choice, and some marketplaces
-have their own AI-disclosure placement rules. The unmodified original remains
-the master — re-run the removal from it if the crop ever changes.
+1. **Cropped to 2:3.** 150 px removed, 75 from each side. Verified against the
+   wordmark's measured extent first, so nothing is clipped — both faces, the
+   full wordmark, the rule, and the SML credit line are all intact.
+2. **Scaled to 1024×1536** (1.23×, Lanczos). The pipeline's floor exists so the
+   splash stays crisp on 3× screens; this artwork is smooth enough to take the
+   upscale without visible softening.
+
+Nothing was painted, cloned, or reconstructed.
 
 ## Replacing the cover
 
