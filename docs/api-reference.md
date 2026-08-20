@@ -18,7 +18,7 @@
 | Navigation | React Navigation 7 (native stack + tabs) | |
 | State — server | TanStack Query v5 | Cache, retry, offline, background refetch |
 | State — client | Zustand | Small, no boilerplate |
-| Styling | Unistyles + design tokens (`07-branding.md`) | Themeable, RTL-aware |
+| Styling | Unistyles + design tokens (`branding.md`) | Themeable, RTL-aware |
 | Graphics | **React Native Skia** | Try-on compositing, Bond Meter ring, gradients |
 | Camera | `react-native-vision-camera` v4 + frame processors | Real-time ML on frames |
 | On-device ML | CoreML (iOS) / NNAPI + MLKit (Android) via a custom `BBTryOnKit` module | 30 fps try-on |
@@ -63,40 +63,64 @@ port; the product is mobile-first.
 
 ## 6.3 Repository Structure
 
+Beauty Bond ships from its **own repository** (`beauty-bond`) — its own pipeline,
+dependency tree, deploy, and database. This is the structure as built:
+
 ```
-self-made-legends/beauty-bond/          # ← its own repo, NOT the Come Up repo
-├── apps/
-│   ├── mobile/                  # React Native
-│   │   ├── src/
-│   │   │   ├── features/        # onboarding, learning, tryon, rooms,
-│   │   │   │                    #   legacy, bonding, bag, billing, guardian
-│   │   │   ├── components/      # design-system primitives
-│   │   │   ├── native/          # BBTryOnKit bridge
-│   │   │   └── theme/           # tokens from 07-branding
-│   │   └── e2e/                 # Maestro flows
-│   ├── web/                     # Next.js companion
-│   └── api/                     # Fastify
-│       └── src/
-│           ├── routes/          # auth, profiles, guardian, learning, culture,
-│           │                    #   tryon, rooms, bag, legacy, billing, webhooks
-│           ├── middleware/      # auth, requireAgeBand, requireEntitlement,
-│           │                    #   requireConsent, rateLimit
-│           ├── services/        # entitlements, roomSafety, shadeMatch,
-│           │                    #   consent, moderation, notifications
-│           └── db/              # drizzle schema + migrations
-├── services/
-│   ├── tryon/                   # Python FastAPI + Triton
-│   └── moderation/              # classifier workers
-├── packages/
-│   ├── shared/                  # types, entitlements, glamPanel, zod schemas
-│   ├── ui/                      # cross-platform primitives
-│   └── tokens/                  # design tokens → TS/CSS/Swift/Kotlin
-├── infra/                       # Terraform
+beauty-bond/                     # ← its own repo, NOT the Come Up repo
+├── app/                         # React Native frontend (Expo)
+│   ├── screens/                 # 21 screens (Welcome … GuardianConsole)
+│   ├── components/
+│   │   ├── Buttons/             # PrimaryButton, SecondaryButton, PanicButton
+│   │   ├── Cards/               # Card, ShadeSwatch
+│   │   ├── Modals/              # PaywallSheet, ConsentGate
+│   │   └── VideoTiles/          # TileGrid, Tile, TileOverlay
+│   ├── hooks/                   # useAuth, useSubscription, useTryOn,
+│   │                            #   useRoom, useGlamPanel
+│   ├── context/                 # AuthContext, SubscriptionContext, ThemeContext
+│   ├── navigation/              # AppNavigator — age-aware tab set
+│   ├── native/                  # BBTryOnKit bridge (CoreML / NNAPI)
+│   ├── assets/                  # icons/ illustrations/ fonts/
+│   ├── styles/                  # colors, typography, spacing, theme
+│   ├── utils/                   # api, validators, constants, config
+│   └── App.js
+│
+├── backend/                     # Node.js API (Express)
+│   ├── src/
+│   │   ├── api/                 # auth/ tryon/ video/ stripe/ users/
+│   │   ├── services/            # aiService, videoService, stripeService,
+│   │   │                        #   userService, roomSafety, entitlements
+│   │   ├── controllers/
+│   │   ├── middleware/          # auth, requireAgeBand, requireEntitlement,
+│   │   │                        #   rateLimit, errorHandler
+│   │   ├── models/              # User, Profile, Subscription, Memory,
+│   │   │                        #   GlamSet, Room
+│   │   ├── utils/               # logger
+│   │   ├── config/              # index, db, migrate, migrations/
+│   │   └── server.js
+│   └── tests/safety/            # release-blocking safety suite
+│
+├── infra/
+│   ├── docker/                  # Dockerfile.backend, docker-compose.yml
+│   ├── k8s/                     # api-deployment.yaml
+│   ├── terraform/               # main.tf — buckets, KMS, 24h ephemeral TTL
+│   └── ci-cd/                   # ci.yml
+│
 ├── docs/                        # this specification set
-└── NOTICE.md                    # SML ownership (mirrors beauty-bond/NOTICE.md)
+├── .env.example
+├── LICENSE                      # SML proprietary
+├── NOTICE.md                    # ownership, trademarks, attribution
+└── README.md
 ```
 
-Monorepo: pnpm workspaces + Turborepo.
+**Language:** JavaScript (CommonJS on the backend, ESM/JSX in the app). The code
+samples elsewhere in this specification are written in TypeScript for precision about
+shapes; the shipped implementation is JavaScript, and the types in those samples read
+as documentation of the intended contract. If the project later adopts TypeScript, the
+samples convert directly.
+
+**Web companion** (`apps/web`, Next.js) is deferred to Phase 8 — marketing, web
+checkout, gift purchase, and the Bond Book viewer. The product is mobile-first.
 
 ---
 
@@ -716,4 +740,4 @@ build. These cannot be waived by a product decision — only by fixing the defec
 
 ---
 
-*Continue to `07-branding.md`.*
+*Continue to `branding.md`.*

@@ -825,4 +825,4 @@ to the OS subscription manager instead of the Stripe portal. The API returns
 
 ---
 
-*Continue to `04-ai-tryon.md`.*
+*Continue to `ai-tryon.md`.*

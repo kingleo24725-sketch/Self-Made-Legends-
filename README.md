@@ -11,12 +11,12 @@ Full IP, trademark, and attribution requirements: [`NOTICE.md`](NOTICE.md).
 
 ## ⚠️ This is a SEPARATE product from The Self-Made Legends Come Up
 
-Read this before touching anything in this directory.
+Read this before touching anything in this repository.
 
 **Beauty Bond is its own standalone app.** It is *not* a feature, mode, mini-game,
-expansion, or module of **The Self-Made Legends Come Up** (the AI trading game that
-lives in the root of this repository). The two products share one thing and one thing
-only: **the same parent company, Self-Made Legends LLC.**
+expansion, or module of **The Self-Made Legends Come Up** (SML's AI trading game,
+which lives in its own separate repository). The two products share exactly two
+things: **the parent company, Self-Made Legends LLC, and one Stripe account.**
 
 | | The Self-Made Legends Come Up | Beauty Bond |
 |---|---|---|
@@ -33,8 +33,9 @@ only: **the same parent company, Self-Made Legends LLC.**
 
 ### Hard separation rules
 
-1. **No shared codebase.** Beauty Bond ships from **its own repository** (`beauty-bond`)
-   and its own pipeline. This directory holds the specification only.
+1. **No shared codebase.** Beauty Bond ships from **its own repository**
+   (`beauty-bond`) with its own pipeline, dependency tree, deploy, and database.
+   No Come Up code belongs here; no Beauty Bond code belongs there.
 2. **No shared accounts, database, or user records.** A Come Up player is not a
    Beauty Bond user. There is no SSO between them, no account linking, no shared
    identity service.
@@ -45,14 +46,14 @@ only: **the same parent company, Self-Made Legends LLC.**
    namespaced object metadata, a separate Stripe Customer per product, a webhook
    ownership gate that fails closed, and separate restricted API keys. A shared Stripe
    account must never become shared *entitlements*. See
-   [`03-stripe-subscriptions.md`](03-stripe-subscriptions.md) §3.2 — read it before
+   [`docs/stripe-flow.md`](docs/stripe-flow.md) §3.2 — read it before
    writing any billing code.
 3. **No shared currency or economy.** SML Bucks, loot boxes, leaderboards, racing,
    pets, heists, and every other Come Up game system are **absent** from Beauty Bond.
    Beauty Bond has no virtual currency and no gambling-adjacent mechanic of any kind —
    it cannot, because it serves minors.
 4. **No shared branding beyond the SML corporate mark.** Beauty Bond has its own
-   name, logo, palette, typography, and voice (see `07-branding.md`). It is presented
+   name, logo, palette, typography, and voice (see `docs/branding.md`). It is presented
    as "Beauty Bond, from Self-Made Legends," never as "SML Come Up: Beauty Edition."
 5. **No cross-promotion into the child experience.** A simulated trading game must
    never be advertised to a 9-year-old inside a child-safe app. Corporate-level
@@ -66,58 +67,90 @@ only: **the same parent company, Self-Made Legends LLC.**
 
 ---
 
-## Repository
+## Repository layout
 
-**Beauty Bond lives in its own repository: `beauty-bond`.** That is the canonical
-home — all implementation happens there. The copy under `beauty-bond/` in the
-`Self-Made-Legends-` repo is a delivery snapshot on the
-`claude/beauty-bond-app-rebuild-u0c50c` branch and is documentation only; no Beauty
-Bond application code should ever be added to the Come Up repo.
+```
+beauty-bond/
+├── app/                 React Native frontend (Expo)
+│   ├── screens/         21 screens
+│   ├── components/      Buttons/ Cards/ Modals/ VideoTiles/
+│   ├── hooks/           useAuth, useSubscription, useTryOn, useRoom, useGlamPanel
+│   ├── context/         Auth, Subscription, Theme
+│   ├── navigation/      AppNavigator (age-aware tab set)
+│   ├── native/          BBTryOnKit bridge (on-device try-on)
+│   ├── styles/          colors, typography, spacing, theme
+│   ├── utils/           api, validators, constants, config
+│   └── App.js
+├── backend/             Node.js API (Express)
+│   ├── src/
+│   │   ├── api/         auth/ tryon/ video/ stripe/ users/
+│   │   ├── services/    aiService, videoService, stripeService,
+│   │   │                userService, roomSafety, entitlements
+│   │   ├── middleware/  auth, requireAgeBand, requireEntitlement, rateLimit
+│   │   ├── models/      User, Profile, Subscription, Memory, GlamSet, Room
+│   │   ├── config/      env, db, migrations/
+│   │   └── server.js
+│   └── tests/safety/    release-blocking safety suite
+├── infra/               docker/ k8s/ terraform/ ci-cd/
+├── docs/                the full specification (read these first)
+├── .env.example
+├── LICENSE              SML proprietary
+└── NOTICE.md            ownership, trademarks, attribution
+```
 
-Beauty Bond has its own pipeline, its own dependency tree, its own deploy, and its own
-database. It shares no build with any other SML product.
+## Getting started
 
-Repo layout once implementation starts: see
-[`06-development-plan.md`](06-development-plan.md) §6.3.
+```bash
+# Backend
+cd backend
+cp ../.env.example ../.env      # fill in secrets
+npm install
+npm run migrate                 # applies docs/api-reference.md §6.4 schema
+npm run test:safety             # release-blocking suite — must pass
+npm start
 
----
+# App (requires a dev client — Expo Go cannot load the try-on native module)
+cd app
+npm install
+npm start
+```
 
-## Ownership & IP
+## Read before you write code
 
-All content in this directory — product concept, feature design, wireframes,
-architecture, data models, API contracts, brand system, naming, and copy — is the
-exclusive property of **Self-Made Legends LLC**.
+| If you're touching… | Read first |
+|---|---|
+| **Anything billing** | [`docs/stripe-flow.md`](docs/stripe-flow.md) **§3.2** — the SML Stripe account is shared with the Come Up game; isolation is enforced in code |
+| **Try-on / rendering** | [`docs/ai-tryon.md`](docs/ai-tryon.md) §4.6 — cosmetics only, geometry lock, minors render on-device |
+| **Rooms / video** | [`docs/video-rooms.md`](docs/video-rooms.md) §5.1–5.3 — the `canJoin()` matrix |
+| **Any new route** | [`docs/api-reference.md`](docs/api-reference.md) §6.6 — the age gate always precedes the entitlement gate |
+| **Any UI** | [`docs/branding.md`](docs/branding.md) + [`docs/wireframes.md`](docs/wireframes.md) — tokens only, no hardcoded hex |
 
-- **Product:** Beauty Bond™ (working title "Dad + Daughter Beauty Bond")
-- **Owner:** Self-Made Legends LLC
-- **Status:** Proprietary — internal specification, not for public distribution
-- **Trademarks to file:** `BEAUTY BOND`, `BOND METER`, `DAD SCHOOL`,
-  `LITTLE LEGEND`, `LETTERS FORWARD`, `BOND BOOK`
-- **Third-party marks** (Fenty Beauty, Rare Beauty, Huda Beauty, MAC, NARS, and all
-  other brands referenced) belong to their respective owners and appear here only as
-  catalog-integration targets. No affiliation or endorsement is implied or claimed.
+## Specification
 
-Every document in this set carries the SML ownership header. Any generated
-artifact — app binary, marketing site, PDF export, Bond Book, press kit — must carry
-"A Self-Made Legends LLC product" and the current copyright line.
+| Document | Contents |
+|---|---|
+| [`docs/architecture.md`](docs/architecture.md) | Product definition, personas, account types, IA tree, 13 module specs, safety architecture, out-of-scope guardrails |
+| [`docs/wireframes.md`](docs/wireframes.md) | 25 labeled screens with designer annotations, global states, accessibility requirements |
+| [`docs/stripe-flow.md`](docs/stripe-flow.md) | Tiers, entitlements, shared-account isolation, checkout, webhooks, lifecycle |
+| [`docs/ai-tryon.md`](docs/ai-tryon.md) | Rendering pipeline, API contracts, shade resolution, cultural glam sets, fairness gates |
+| [`docs/video-rooms.md`](docs/video-rooms.md) | Room types, join authorization, tokens, tiles, Shared Glam Panel, moderation |
+| [`docs/api-reference.md`](docs/api-reference.md) | Stack, database schema, full API surface, environment, delivery phases |
+| [`docs/branding.md`](docs/branding.md) | Palette, typography, logo concepts, UI style, design tokens, voice guide |
 
----
+## Safety suite (release blocker)
 
-## Document set
+`npm run test:safety` in `backend/` covers:
 
-| # | Document | Contents |
-|---|---|---|
-| 01 | [`01-app-blueprint.md`](01-app-blueprint.md) | Product definition, personas, account types, full IA tree, 13 module specs, safety architecture, monetization gates, out-of-scope guardrails |
-| 02 | [`02-wireframes.md`](02-wireframes.md) | 25 labeled screen wireframes with designer annotations, global states, accessibility requirements |
-| 03 | [`03-stripe-subscriptions.md`](03-stripe-subscriptions.md) | Four tiers, entitlement matrix, checkout flows, webhook handlers, access control, lifecycle rules |
-| 04 | [`04-ai-tryon.md`](04-ai-tryon.md) | Upload flow, ML pipeline, API contracts, glam presets, cultural glam sets, minor-safety rendering rules |
-| 05 | [`05-live-video-rooms.md`](05-live-video-rooms.md) | Room creation, token generation, video tiles, shared glam panel, moderation, all four room types |
-| 06 | [`06-development-plan.md`](06-development-plan.md) | Stack, repo structure, database schema, full API surface, environment, delivery phases |
-| 07 | [`07-branding.md`](07-branding.md) | Palette, typography, logo concepts, UI style, design tokens, emotional tone, voice guide |
+- Try-on renders cosmetics only — geometry and skin-tone layers are rejected
+- Child accounts get stylized, low-opacity pigment and never server-render
+- The `canJoin()` matrix — age floors, guardian permission, no U13 with
+  untrusted adults, no 1:1 adult/minor, friendship approval, suspensions
+- Stripe webhook ownership gate — Come Up events rejected, fails closed
+- Age gates return 403 and never 402: age locks are not purchasable
+- Safety, guardian tools, data export, and letter delivery are never gated
 
-Read them in order. `01` establishes vocabulary the rest depend on.
-
----
+A failure here cannot be waived by a product decision. Only fixing the defect
+clears it.
 
 ## The one-line pitch
 

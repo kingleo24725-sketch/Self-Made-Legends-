@@ -52,7 +52,7 @@ Three relationship spines:
    contact list ships behind guardian consent.
 2. **Never a beauty-standard machine.** No skin smoothing, no face slimming, no
    "score your face." Try-on adds *color and artistry*, never alters facial structure.
-   (See §1.7 and `04-ai-tryon.md` §4.6.)
+   (See §1.7 and `ai-tryon.md` §4.6.)
 3. **Cultural depth, not a skin-tone slider.** Cultural modes carry history,
    technique, and creator credit — not just pigment.
 4. **Dads start at zero and that's the joke, not the shame.** Onboarding assumes no
@@ -303,7 +303,7 @@ complete · offline-cached video.
 - **Brush Match game:** drag brush → target face zone; 3 difficulty tiers.
 - **Cleaning coach:** 6-step wash routine with a 20-second timer and a dry-time
   reminder notification.
-- Data: `brushes` table (see `06-development-plan.md` §6.4).
+- Data: `brushes` table (see `api-reference.md` §6.4).
 
 **Shade Matching submodule:**
 - Inputs: (a) guided camera capture in neutral light with a white-balance card
@@ -346,7 +346,7 @@ culture routes to the advisor, not to generic moderation.
 
 ### M05 — AI Try-On Studio
 
-Full spec: `04-ai-tryon.md`. Blueprint-level summary:
+Full spec: `ai-tryon.md`. Blueprint-level summary:
 
 - **Capture** → consent modal → live AR preview *or* single-photo mode.
 - **Presets** → Everyday, Soft Glam, Date Night, Festival, Bridal + the six cultural
@@ -361,7 +361,7 @@ Full spec: `04-ai-tryon.md`. Blueprint-level summary:
 
 ### M06 — Live Glam Rooms
 
-Full spec: `05-live-video-rooms.md`. Blueprint-level summary:
+Full spec: `video-rooms.md`. Blueprint-level summary:
 
 | Room type | Size | Who | Recording | Moderation |
 |---|---|---|---|---|
@@ -407,7 +407,7 @@ product for U13 — ever.
 - **Letters Forward** — a mother (or guardian, on her behalf) records messages
   time-released to future dates: 13th birthday, first day of high school, wedding
   morning. Stored encrypted; delivery independent of subscription status
-  (**never paywall a dead mother's letter** — see `03-stripe-subscriptions.md` §3.6).
+  (**never paywall a dead mother's letter** — see `stripe-flow.md` §3.6).
 - **Healing Journal** — private, encrypted at rest, guardian-invisible for teens
   (13+) by design; prompts are grief-informed and never require a response.
 - **Remembrance Mode** — a per-profile flag. When on: mutes Mother's Day campaigns,
@@ -431,7 +431,7 @@ button, the app hands off to real resources and does not attempt to counsel.
 - **Brand shelf** — Fenty Beauty, Rare Beauty, Huda Beauty, MAC, NARS, Pat McGrath,
   Black Opal, Juvia's Place, Uoma, Danessa Myricks, Mented, Beauty Bakerie, Milk,
   e.l.f., Maybelline, L'Oréal, Charlotte Tilbury, Anastasia, Tarte, Glossier.
-  See `06-development-plan.md` §6.9 for the catalog-integration model and the
+  See `api-reference.md` §6.9 for the catalog-integration model and the
   affiliate/partnership boundary.
 - **Shade Profile Card** — shareable image export (adults/teens only), the single
   most valuable retention artifact in the app.
@@ -496,7 +496,7 @@ signup sets the consent age floor; the app takes the **stricter** of region floo
 
 ---
 
-## 1.6 Monetization Gates (summary — full detail in `03-stripe-subscriptions.md`)
+## 1.6 Monetization Gates (summary — full detail in `stripe-flow.md`)
 
 | Capability | Free | Bond | Legacy | Studio |
 |---|---|---|---|---|
@@ -535,4 +535,4 @@ These are documented as *rejected*, so nobody adds them in a later sprint:
 
 ---
 
-*Continue to `02-wireframes.md`.*
+*Continue to `wireframes.md`.*

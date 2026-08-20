@@ -5,8 +5,9 @@
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 
 Beauty Bond ships from its **own repository**. This file is the one-time procedure to
-move this specification out of the `Self-Made-Legends-` repo and into `beauty-bond`,
-**preserving the full commit history**.
+move this project — the full `app/`, `backend/`, `infra/`, and `docs/` tree — out of
+the `Self-Made-Legends-` repo and into `beauty-bond`, **preserving the full commit
+history**.
 
 > **Why this is a manual step:** the Claude GitHub App on this account does not have
 > repository-creation permission (`POST /user/repos` → 403). Creating the empty repo
@@ -22,7 +23,7 @@ On GitHub → **New repository**:
 |---|---|
 | Owner | `kingleo24725-sketch` (or the SML org, if one exists) |
 | Name | `beauty-bond` |
-| Visibility | **Private** — the spec is marked proprietary and confidential (`NOTICE.md` §6) |
+| Visibility | **Private** — this is proprietary and confidential (`NOTICE.md` §6) |
 | Initialize with README | **No** — leave it completely empty |
 | .gitignore / license | **None** — provided below |
 
@@ -52,13 +53,13 @@ git push https://github.com/kingleo24725-sketch/beauty-bond.git \
 cd ..
 git clone https://github.com/kingleo24725-sketch/beauty-bond.git
 cd beauty-bond
-ls          # 01-app-blueprint.md … 07-branding.md, NOTICE.md, README.md, BOOTSTRAP.md
+ls          # app/ backend/ infra/ docs/ README.md NOTICE.md LICENSE
 git log --oneline    # full Beauty Bond history, no Come Up commits
 ```
 
 **Verified:** the `git subtree split` above has been run in this environment. It
-produces the 9 specification documents at the repository root with all Beauty Bond
-commits intact and zero Come Up commits carried over.
+places `app/`, `backend/`, `infra/`, `docs/`, and the root files at the repository
+root, with every Beauty Bond commit intact and zero Come Up commits carried over.
 
 ---
 
@@ -95,7 +96,7 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 | Branch protection | Require PR review on `main` before implementation starts |
 | Secret scanning | **On** — the Stripe restricted key must never land in a commit |
 | Push protection | **On** |
-| Topics | `sml`, `beauty-bond`, `react-native`, `spec` |
+| Topics | `sml`, `beauty-bond`, `react-native`, `nodejs` |
 | Description | `Beauty Bond™ — a Self-Made Legends LLC (SML) product.` |
 
 **Collaborators:** only people with an executed NDA (`NOTICE.md` §6).
@@ -104,9 +105,10 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 
 ## Step 5 — Before the first line of code
 
-1. Read [`06-development-plan.md`](06-development-plan.md) §6.3 for the target
-   monorepo layout — the spec docs move to `docs/` when `apps/` arrives.
-2. Read [`03-stripe-subscriptions.md`](03-stripe-subscriptions.md) **§3.2** before
+1. Run the safety suite first: `cd backend && npm install && npm run test:safety`.
+   It must pass before any feature work. Then read
+   [`docs/api-reference.md`](docs/api-reference.md) §6.3 for the layout.
+2. Read [`docs/stripe-flow.md`](docs/stripe-flow.md) **§3.2** before
    writing any billing code. The shared SML Stripe account means product isolation is
    enforced in code, not by the account boundary.
 3. Open the prerequisite ticket on the **Come Up** side: add the mirror-image webhook
@@ -118,8 +120,8 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 
 ## What must never happen
 
-- Beauty Bond application code committed to the `Self-Made-Legends-` repo.
+- Beauty Bond application code left in the `Self-Made-Legends-` repo after Step 3.
 - Come Up code, SML Bucks, or game systems committed to `beauty-bond`.
 - The two repos sharing a build, a dependency tree, a deploy, or a database.
 - The Stripe **account** being shared (intended) becoming shared **entitlements**
-  (a bug — see `03-stripe-subscriptions.md` §3.2).
+  (a bug — see `docs/stripe-flow.md` §3.2).

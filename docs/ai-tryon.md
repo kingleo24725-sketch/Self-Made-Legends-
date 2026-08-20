@@ -482,4 +482,4 @@ published to the internal model card each release.
 
 ---
 
-*Continue to `05-live-video-rooms.md`.*
+*Continue to `video-rooms.md`.*

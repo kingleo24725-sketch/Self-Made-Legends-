@@ -1,0 +1,108 @@
+/**
+ * Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+ * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+ *
+ * Remembrance Mode is TOP-LEVEL, not buried in Legacy. Data export and
+ * account deletion are always free, at every tier, in every region.
+ * docs/wireframes.md W-A1.
+ */
+import React, { useState } from 'react';
+import { View, Text, SafeAreaView, ScrollView, Switch, Pressable, Linking } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
+import Card from '../components/Cards/Card';
+import { OWNER, AGE_BANDS } from '../utils/constants';
+import api from '../utils/api';
+
+export default function SettingsScreen({ navigation }) {
+  const t = useTheme();
+  const { profile, logout } = useAuth();
+  const { tier, openBillingPortal } = useSubscription();
+  const [remembrance, setRemembrance] = useState(!!profile?.remembranceMode);
+
+  async function toggleRemembrance(v) {
+    setRemembrance(v);
+    await api.patch(`/profiles/${profile.id}`, { remembranceMode: v }).catch(() => {});
+  }
+
+  async function manageBilling() {
+    const { url } = await openBillingPortal();
+    if (url) Linking.openURL(url);
+  }
+
+  const isAdult = profile?.ageBand === AGE_BANDS.ADULT;
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>
+      <ScrollView contentContainerStyle={{ padding: t.gutter, gap: t.space[4] }}>
+        <Text style={[t.type('h1'), { color: t.color.textPrimary }]}>Settings</Text>
+
+        <Group title="SAFETY">
+          <Row label="Guardian Console" onPress={() => navigation.navigate('GuardianConsole')} />
+          <Row label="Blocked accounts" onPress={() => {}} />
+          <Row label="Report history" onPress={() => {}} />
+        </Group>
+
+        <Group title="PRIVACY">
+          <Row label="Camera, photos, mic" onPress={() => {}} />
+          {/* Always free, every tier, every region. */}
+          <Row label="Download my data" onPress={() => api.get('/privacy/export')} />
+          <Row label="Delete my account" destructive onPress={() => {}} />
+        </Group>
+
+        {isAdult && (
+          <Group title="BILLING">
+            <Row label={`Plan: ${tier}`} onPress={() => navigation.navigate('PlanSelection')} />
+            <Row label="Manage billing" onPress={manageBilling} />
+          </Group>
+        )}
+
+        <Group title="APP">
+          <Card>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flex: 1 }}>
+                <Text style={[t.type('body'), { color: t.color.textPrimary }]}>Remembrance Mode</Text>
+                <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>
+                  Softens the app and mutes Mother's/Father's Day campaigns.
+                </Text>
+              </View>
+              <Switch value={remembrance} onValueChange={toggleRemembrance}
+                accessibilityLabel="Remembrance Mode" />
+            </View>
+          </Card>
+          <Row label="Language / Region" onPress={() => {}} />
+          <Row label="Text size" onPress={() => {}} />
+          <Row label="Help & support" onPress={() => {}} />
+          <Row label="Sign out" onPress={logout} />
+        </Group>
+
+        <Text style={[t.type('caption'), { color: t.color.textSecondary, textAlign: 'center' }]}>
+          Beauty Bond™{'\n'}© 2026 {OWNER}
+        </Text>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function Group({ title, children }) {
+  const t = useTheme();
+  return (
+    <View style={{ gap: t.space[2] }}>
+      <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function Row({ label, onPress, destructive }) {
+  const t = useTheme();
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}
+      style={{ minHeight: t.tapTarget, justifyContent: 'center', paddingVertical: t.space[2] }}>
+      <Text style={[t.type('body'), { color: destructive ? t.color.danger : t.color.textPrimary }]}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}

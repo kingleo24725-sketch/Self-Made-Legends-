@@ -36,3 +36,6 @@ coverage/
 .turbo/
 *.log
 .DS_Store
+
+# Local Postgres scratch
+pgdata/
