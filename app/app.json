@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "Dad + Daughter Beauty Bond",
+    "slug": "dad-daughter-beauty-bond",
+    "version": "0.1.0",
+    "orientation": "default",
+    "scheme": "beautybond",
+    "userInterfaceStyle": "automatic",
+    "primaryColor": "#E8A87C",
+
+    "icon": "./assets/images/generated/icon.png",
+
+    "splash": {
+      "image": "./assets/images/generated/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#E9B78E"
+    },
+
+    "ios": {
+      "bundleIdentifier": "com.selfmadelegends.beautybond",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "splash": {
+        "image": "./assets/images/generated/splash.png",
+        "tabletImage": "./assets/images/generated/splash-tablet-portrait.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#E9B78E",
+        "dark": {
+          "image": "./assets/images/generated/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1A1523"
+        }
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "Beauty Bond uses the camera for mirror lessons and try-on. Photos are processed on your device.",
+        "NSPhotoLibraryUsageDescription": "Choose a photo to try a look on.",
+        "NSMicrophoneUsageDescription": "Beauty Bond uses the microphone for Glam Rooms."
+      }
+    },
+
+    "android": {
+      "package": "com.selfmadelegends.beautybond",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/generated/adaptive-icon-foreground.png",
+        "backgroundColor": "#E9B78E"
+      },
+      "splash": {
+        "image": "./assets/images/generated/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#E9B78E",
+        "mdpi": "./assets/images/generated/android/mdpi/splash.png",
+        "hdpi": "./assets/images/generated/android/hdpi/splash.png",
+        "xhdpi": "./assets/images/generated/android/xhdpi/splash.png",
+        "xxhdpi": "./assets/images/generated/android/xxhdpi/splash.png",
+        "xxxhdpi": "./assets/images/generated/android/xxxhdpi/splash.png",
+        "dark": {
+          "image": "./assets/images/generated/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#1A1523"
+        }
+      },
+      "permissions": ["CAMERA", "RECORD_AUDIO"]
+    },
+
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/generated/splash.png",
+          "imageWidth": 300,
+          "resizeMode": "contain",
+          "backgroundColor": "#E9B78E",
+          "dark": { "backgroundColor": "#1A1523" }
+        }
+      ],
+      "expo-secure-store",
+      "expo-image-picker"
+    ],
+
+    "assetBundlePatterns": ["assets/images/**/*"],
+
+    "extra": {
+      "apiBaseUrl": "http://localhost:4000/api",
+      "stripePublishableKey": "",
+      "livekitWsUrl": "",
+      "env": "development",
+      "owner": "Self-Made Legends LLC (SML)",
+      "product": "Dad + Daughter Beauty Bond"
+    }
+  }
+}
