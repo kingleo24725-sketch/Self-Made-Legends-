@@ -1,5 +1,13 @@
 # 02 — Full Wireframes
 
+> **BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
+> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
+> A standalone SML product — **not** part of The Self-Made Legends Come Up.
+>
+> **Designers:** every exported screen, prototype frame, and handoff file must carry
+> the SML footer mark — see [`07-branding.md`](07-branding.md) §7.9.
+
 Low-fidelity, labeled, designer-ready. Every region is named `[R#]` and annotated
 below its frame. Frame reference: **390 × 844** (iPhone 14 baseline).
 Safe area: 16 px side gutters, 8 px grid, 44 px minimum tap target
