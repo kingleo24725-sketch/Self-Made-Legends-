@@ -13,7 +13,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../context/ThemeContext';
-import { MODES, AGE_BANDS } from '../utils/constants';
+import { AGE_BANDS } from '../utils/constants';
 
 import WelcomeScreen from '../screens/WelcomeScreen';
 import AgeGateScreen from '../screens/AgeGateScreen';
@@ -36,6 +36,8 @@ import ProfileScreen from '../screens/ProfileScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import GuardianConsoleScreen from '../screens/GuardianConsoleScreen';
 import PlanSelectionScreen from '../screens/PlanSelectionScreen';
+import CollectionDetailScreen from '../screens/CollectionDetailScreen';
+import DadSchoolScreen from '../screens/DadSchoolScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -43,8 +45,8 @@ const Tab = createBottomTabNavigator();
 function MainTabs() {
   const { profile } = useAuth();
   const theme = useTheme();
+  // Child tab set is driven by AGE BAND, not mode — a child can pick any mode.
   const isChild = profile?.ageBand === AGE_BANDS.CHILD;
-  const isLittleLegend = profile?.mode === MODES.LITTLE_LEGEND;
 
   const screenOptions = {
     headerShown: false,
@@ -54,8 +56,8 @@ function MainTabs() {
     tabBarLabelStyle: { ...theme.type('caption') },
   };
 
-  // Little Legend: 3 tabs, bigger targets, labels always visible.
-  if (isLittleLegend) {
+  // Child accounts: 3 tabs, bigger targets, labels always visible.
+  if (isChild) {
     return (
       <Tab.Navigator screenOptions={screenOptions}>
         <Tab.Screen name="Home" component={HomeScreen} />
@@ -103,6 +105,9 @@ export default function AppNavigator() {
             <Stack.Screen name="BrushEducation" component={BrushEducationScreen} />
             <Stack.Screen name="ShadeMatch" component={ShadeMatchScreen} />
             <Stack.Screen name="CulturalLibrary" component={CulturalLibraryScreen} />
+            <Stack.Screen name="CollectionDetail" component={CollectionDetailScreen} />
+            <Stack.Screen name="DadSchool" component={DadSchoolScreen} />
+            <Stack.Screen name="SafeLearning" component={SafeLearningScreen} />
             <Stack.Screen name="LiveRoom" component={LiveRoomScreen}
               options={{ gestureEnabled: false }} />
             <Stack.Screen name="Bond" component={BondScreen} />

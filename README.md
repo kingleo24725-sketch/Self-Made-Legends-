@@ -115,6 +115,18 @@ npm install
 npm start
 ```
 
+## Stack
+
+| Layer | Choice | Why (full reasoning in [`docs/architecture-decisions.md`](docs/architecture-decisions.md)) |
+|---|---|---|
+| Frontend | **React Native + Expo** | One codebase; dev client for the on-device try-on native module |
+| Backend | **Node.js + Express** | Conventional layout; explicit middleware ordering, which is load-bearing here |
+| Database | **PostgreSQL** | Safety questions are joins; CHECK constraints and RLS enforce child-safety invariants the app layer could otherwise break |
+| Auth | **JWT** (15 min access + rotating refresh) | Mobile-first; token carries the *active profile*, driving every age and entitlement gate |
+| Payments | **Stripe** subscriptions | Shared SML account, isolated in code — see `docs/stripe-flow.md` §3.2 |
+| Video | **LiveKit** | Server-side per-track egress control makes minor-exclusion structural, not a policy promise |
+| AI Try-On | Provider abstraction, **mock by default** | Real structure and contract; mock is refused in production |
+
 ## Read before you write code
 
 | If you're touching… | Read first |
@@ -136,6 +148,7 @@ npm start
 | [`docs/video-rooms.md`](docs/video-rooms.md) | Room types, join authorization, tokens, tiles, Shared Glam Panel, moderation |
 | [`docs/api-reference.md`](docs/api-reference.md) | Stack, database schema, full API surface, environment, delivery phases |
 | [`docs/branding.md`](docs/branding.md) | Palette, typography, logo concepts, UI style, design tokens, voice guide |
+| [`docs/architecture-decisions.md`](docs/architecture-decisions.md) | ADRs — why Postgres, JWT, LiveKit, Express, and the mock ML provider; what was rejected and why |
 
 ## Safety suite (release blocker)
 

@@ -26,7 +26,7 @@ export function useGlamPanel(roomId, { isHost, send }) {
     const next = { ...state, step, updatedAt: Date.now() };
     setState(next);
     send({ t: 'state', state: next });
-    api.post(`/rooms/${roomId}/glam`, next).catch(() => {});  // persist for late joiners
+    api.post(`/video/rooms/${roomId}/glam`, next).catch(() => {});  // persist for late joiners
   }, [isHost, state, send, roomId]);
 
   const everyoneTryIt = useCallback(() => {

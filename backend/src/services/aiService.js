@@ -8,8 +8,8 @@
  *   1. Child accounts NEVER server-render — a U13 face never leaves the device.
  *   2. Geometry lock — cosmetics only. Any landmark drift rejects the render.
  */
-const config = require('../config');
 const logger = require('../utils/logger');
+const { getProvider } = require('./mlProvider');
 
 /** Closed enum. An unknown layer type is rejected at the boundary. */
 const ALLOWED_LAYERS = ['lip', 'cheek', 'eye', 'brow', 'lash', 'glow', 'liner'];
@@ -49,21 +49,7 @@ async function render({ assetId, look, shadeProfile, profile }) {
 
   const safeLook = sanitizeLook(look, profile.age_band);
 
-  const res = await fetch(`${config.ml.serviceUrl}/internal/ml/render`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ assetId, look: safeLook, shadeProfile }),
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    const e = new Error(body.error || 'render_failed');
-    e.status = res.status === 422 ? 422 : 500;
-    e.recovery = body.recovery;
-    throw e;
-  }
-
-  const result = await res.json();
+  const result = await getProvider().render({ assetId, look: safeLook, shadeProfile });
 
   // GEOMETRY LOCK — there is no override flag.
   if ((result.deltaLandmarkPx ?? 0) > GEOMETRY_TOLERANCE_PX) {

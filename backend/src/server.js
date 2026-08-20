@@ -36,18 +36,23 @@ app.use((req, res, next) => {
  * must be registered before express.json(). Getting this order wrong makes
  * every signature check fail.
  */
-app.use('/v1/webhooks', stripeWebhook);
+app.use('/api/webhooks', stripeWebhook);
 
 app.use(express.json({ limit: '1mb' }));
 app.use(limits.standard);
 
 app.get('/health', (req, res) => res.json({ ok: true, product: 'beauty-bond' }));
 
-app.use('/v1/auth', authRoutes);
-app.use('/v1', userRoutes);
-app.use('/v1/tryon', tryonRoutes);
-app.use('/v1/rooms', videoRoutes);
-app.use('/v1/billing', stripeRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api', userRoutes);
+app.use('/api/tryon', tryonRoutes);
+app.use('/api/video', videoRoutes);
+app.use('/api/stripe', stripeRoutes);
+
+// Mock-mode static media so try-on renders resolve in local development.
+if (config.env !== 'production') {
+  app.use('/static', express.static(require('path').join(__dirname, '../public')));
+}
 
 app.use(notFound);
 app.use(errorHandler);

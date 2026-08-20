@@ -26,8 +26,8 @@ export const scale = {
 };
 
 /**
- * Little Legend mode: every size +2pt, line-height +2, family -> Nunito,
- * minimum body 18pt. docs/branding.md §7.4.
+ * Child accounts: every size +2pt, line-height +2, family -> Nunito,
+ * minimum body 18pt. Keyed off AGE BAND, not mode. docs/branding.md §7.4.
  */
 export function forChildMode(style) {
   return {
@@ -38,11 +38,11 @@ export function forChildMode(style) {
   };
 }
 
-/** Pick the right variant for the active mode. */
-export function type(name, mode) {
+/** Pick the right variant. `variant` is 'child' for child accounts. */
+export function type(name, variant) {
   const base = scale[name];
   if (!base) throw new Error(`unknown type token: ${name}`);
-  return mode === 'little_legend' ? forChildMode(base) : base;
+  return variant === 'child' ? forChildMode(base) : base;
 }
 
 export default { families, scale, type, forChildMode };

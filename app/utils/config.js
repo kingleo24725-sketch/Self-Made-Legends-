@@ -9,7 +9,7 @@ import Constants from 'expo-constants';
 
 const extra = Constants.expoConfig?.extra ?? {};
 
-export const API_BASE_URL = extra.apiBaseUrl ?? 'http://localhost:4000/v1';
+export const API_BASE_URL = extra.apiBaseUrl ?? 'http://localhost:4000/api';
 export const STRIPE_PUBLISHABLE_KEY = extra.stripePublishableKey ?? '';
 export const LIVEKIT_WS_URL = extra.livekitWsUrl ?? '';
 export const ENV = extra.env ?? 'development';

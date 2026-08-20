@@ -21,9 +21,16 @@ export function ThemeProvider({ children }) {
     return () => sub?.remove?.();
   }, []);
 
+  // Child-safe UI keys off AGE BAND, not mode: a 9-year-old can pick any mode,
+  // so tying 56px targets and simplified copy to a mode would miss them.
   const theme = useMemo(
-    () => buildTheme({ scheme, mode: profile?.mode ?? MODES.SOLO_GLOW, reduceMotion }),
-    [scheme, profile?.mode, reduceMotion]);
+    () => buildTheme({
+      scheme,
+      mode: profile?.mode ?? MODES.SOLO_GIRL,
+      isChild: profile?.ageBand === 'child',
+      reduceMotion,
+    }),
+    [scheme, profile?.mode, profile?.ageBand, reduceMotion]);
 
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
