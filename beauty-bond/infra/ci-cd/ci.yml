@@ -52,6 +52,12 @@ jobs:
         with: { node-version: 22 }
       - run: npm install
         working-directory: app
+
+      # Blocks a release that still carries the placeholder cover art.
+      - name: Verify splash / icon / store assets
+        run: node scripts/verify-assets.js --release
+        working-directory: app
+
       - run: npm test --if-present
         working-directory: app
 
