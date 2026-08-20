@@ -117,14 +117,46 @@ def edge_extend(src: Image.Image, tw: int, th: int) -> Image.Image:
     return canvas
 
 
+# Focal box for icons, as fractions of the cover: the two faces, with the
+# wordmark excluded. A clipped half-word in an icon reads as a mistake, and at
+# 60px neither platform renders text legibly anyway.
+FACE_BOX = (0.107, 0.026, 0.986, 0.612)
+
+
 def centre_square(src: Image.Image, size: int) -> Image.Image:
-    """Icons: crop the upper-centre, where the two faces are."""
+    """Icon crop: the two faces only, squared and centred."""
     sw, sh = src.size
-    side = min(sw, sh)
-    top = int(sh * 0.06)                       # bias upward to keep faces
-    top = min(top, sh - side)
-    box = ((sw - side) // 2, top, (sw - side) // 2 + side, top + side)
-    return src.crop(box).resize((size, size), Image.LANCZOS)
+    x0, y0, x1, y1 = (int(FACE_BOX[0] * sw), int(FACE_BOX[1] * sh),
+                      int(FACE_BOX[2] * sw), int(FACE_BOX[3] * sh))
+    side = min(x1 - x0, y1 - y0)
+    cx, cy = (x0 + x1) // 2, (y0 + y1) // 2
+    left = max(0, min(cx - side // 2, sw - side))
+    top = max(0, min(cy - side // 2, sh - side))
+    return src.crop((left, top, left + side, top + side)).resize(
+        (size, size), Image.LANCZOS)
+
+
+def adaptive_foreground(src: Image.Image, size: int) -> Image.Image:
+    """
+    Android adaptive icon foreground. The launcher may mask this to a circle,
+    a squircle, or a rounded square, and only the inner ~66% is guaranteed
+    visible — so the faces are scaled into that safe zone with transparent
+    padding around them.
+    """
+    safe = int(size * 0.64)
+    faces = centre_square(src, safe)
+    canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    canvas.paste(faces, ((size - safe) // 2, (size - safe) // 2))
+    return canvas
+
+
+def save_rgba(img: Image.Image, rel: str):
+    """Icon foregrounds keep their alpha — the launcher supplies the shape."""
+    path = OUT / f'{rel}.png'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    img.save(path, 'PNG', optimize=True)
+    print(f'  {rel + ".png":42} {img.width:>5}x{img.height:<5} '
+          f'{path.stat().st_size / 1024:7.1f} KB  (alpha)')
 
 
 def save(img: Image.Image, rel: str):
@@ -163,7 +195,7 @@ def main():
 
     print('\nicons:')
     save(centre_square(src, 1024), 'icon')
-    save(centre_square(src, 1024), 'adaptive-icon-foreground')
+    save_rgba(adaptive_foreground(src, 1024), 'adaptive-icon-foreground')
 
     print('\nstore listing:')
     for name, w, h in STORE:
