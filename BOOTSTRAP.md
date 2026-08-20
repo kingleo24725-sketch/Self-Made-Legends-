@@ -36,18 +36,23 @@ conflicts with the history being pushed in Step 2.
 
 Run from a clone of `Self-Made-Legends-`, on the branch holding this spec:
 
-```bash
-# 1. Fetch the branch that carries the specification
-git fetch origin claude/beauty-bond-app-rebuild-u0c50c
-git checkout claude/beauty-bond-app-rebuild-u0c50c
+**The split is already done.** Branch `beauty-bond-standalone` on
+`Self-Made-Legends-` holds the extracted history — `app/`, `backend/`, `infra/`,
+`docs/` and the root files at the repository root, 23 commits, zero Come Up commits.
+Steps 1–2 below are only needed if you want to regenerate it.
 
-# 2. Split beauty-bond/ into its own history, with that directory as the root.
-#    Every Beauty Bond commit is preserved; no Come Up history comes along.
-git subtree split --prefix=beauty-bond -b beauty-bond-standalone
+```bash
+# 1. Fetch the prepared standalone history
+git fetch origin beauty-bond-standalone
+
+# 2. (Only to regenerate it from scratch)
+#    git fetch origin claude/beauty-bond-app-rebuild-u0c50c
+#    git checkout claude/beauty-bond-app-rebuild-u0c50c
+#    git subtree split --prefix=beauty-bond -b beauty-bond-standalone
 
 # 3. Push that history to the new repository's main branch
 git push https://github.com/kingleo24725-sketch/beauty-bond.git \
-    beauty-bond-standalone:main
+    origin/beauty-bond-standalone:main
 
 # 4. Clone the new repo fresh and confirm
 cd ..
