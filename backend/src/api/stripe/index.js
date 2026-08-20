@@ -48,17 +48,8 @@ webhook.post('/stripe', express.raw({ type: 'application/json' }), async (req, r
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ── OWNERSHIP GATE — before idempotency, before any write ──
-  // The SML Stripe account is shared with The Self-Made Legends Come Up.
-  // Its events arrive here and must be ignored. Fails closed.
-  let ours;
-  try {
-    ours = await svc.belongsToBeautyBond(event);
-  } catch (err) {
-    logger.error({ err, eventId: event.id }, 'ownership_check_failed');
-    ours = false;
-  }
-  if (!ours) return res.json({ received: true, ignored: 'not_beauty_bond' });
+  // No product-ownership gate: this webhook endpoint belongs to Beauty Bond's
+  // own Stripe account, so no other product's events can reach it.
 
   // Idempotency ledger stays free of the game's traffic.
   const inserted = await db.query(

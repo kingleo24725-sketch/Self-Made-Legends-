@@ -108,12 +108,10 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 1. Run the safety suite first: `cd backend && npm install && npm run test:safety`.
    It must pass before any feature work. Then read
    [`docs/api-reference.md`](docs/api-reference.md) §6.3 for the layout.
-2. Read [`docs/stripe-flow.md`](docs/stripe-flow.md) **§3.2** before
-   writing any billing code. The shared SML Stripe account means product isolation is
-   enforced in code, not by the account boundary.
-3. Open the prerequisite ticket on the **Come Up** side: add the mirror-image webhook
-   ownership gate described in §3.2, before Beauty Bond's first live charge.
-4. Add the SML source-file header (`NOTICE.md` §3.2) to the lint config so it is
+2. Create Beauty Bond's **own Stripe account** and seed the catalogue:
+   `cd backend && npm run seed:stripe -- --dry-run`, then without the flag.
+   See [`docs/stripe-flow.md`](docs/stripe-flow.md) §3.2.
+3. Add the SML source-file header (`NOTICE.md` §3.2) to the lint config so it is
    enforced rather than remembered.
 
 ---
@@ -123,5 +121,5 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 - Beauty Bond application code left in the `Self-Made-Legends-` repo after Step 3.
 - Come Up code, SML Bucks, or game systems committed to `beauty-bond`.
 - The two repos sharing a build, a dependency tree, a deploy, or a database.
-- The Stripe **account** being shared (intended) becoming shared **entitlements**
-  (a bug — see `docs/stripe-flow.md` §3.2).
+- Beauty Bond billing through another SML product's Stripe account. It has its
+  own (`docs/stripe-flow.md` §3.2).

@@ -1,46 +1,48 @@
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
- * Proprietary and confidential. Unauthorized copying, distribution,
- * or use of this file, via any medium, is strictly prohibited.
+ * Proprietary and confidential. Unauthorized use is prohibited.
  *
  * ══════════════════════════════════════════════════════════════════════
- *  SHARED SML STRIPE ACCOUNT.
- *  Beauty Bond and The Self-Made Legends Come Up bill through ONE Stripe
- *  account. Stripe fans out EVERY event to EVERY endpoint, so isolation
- *  lives here, in code. Read docs/stripe-flow.md §3.2 before editing.
+ *  DEDICATED STRIPE ACCOUNT.
+ *  Beauty Bond bills through its OWN Stripe account — separate from The
+ *  Self-Made Legends Come Up and from every other SML product. Its
+ *  customers, products, prices, webhook endpoint, API keys, payouts, and
+ *  dispute history are its own.
+ *
+ *  This is why there is no product-ownership gate in the webhook handler:
+ *  no other product's events can arrive here. Objects are still tagged
+ *  sml_product and bb_-prefixed, which costs nothing and keeps reporting
+ *  and any future migration straightforward.
+ *
+ *  If this ever moves onto a shared account, the isolation described in
+ *  docs/stripe-flow.md §3.2 has to come back first.
  * ══════════════════════════════════════════════════════════════════════
  */
 const Stripe = require('stripe');
-const config = require('../config');
+const config = require('./../config');
 const db = require('../config/db');
-const logger = require('../utils/logger');
 const { setEntitlement } = require('./entitlements');
 
 const stripe = new Stripe(config.stripe.secretKey, { apiVersion: config.stripe.apiVersion });
 
-const OURS = config.stripe.productTag;           // 'beauty_bond'
-const PREFIX = config.stripe.lookupKeyPrefix;    // 'bb_'
+const OURS = config.stripe.productTag;          // 'beauty_bond'
+const PREFIX = config.stripe.lookupKeyPrefix;   // 'bb_'
 
-/* ── Layer 1: namespaced price resolution ─────────────────────────── */
+/* ── Prices ───────────────────────────────────────────────────────── */
 
 async function priceIdFor(lookupKey) {
   if (!lookupKey || !lookupKey.startsWith(PREFIX)) {
     const err = new Error('unknown_plan'); err.status = 400; throw err;
   }
   const { data } = await stripe.prices.list({ lookup_keys: [lookupKey], active: true });
-  const price = data.find((p) => p.metadata.sml_product === OURS);
+  const price = data[0];
   if (!price) { const err = new Error('unknown_plan'); err.status = 400; throw err; }
   return price;
 }
 
-/* ── Layer 2: separate Customer object per product ────────────────── */
+/* ── Customers ────────────────────────────────────────────────────── */
 
-/**
- * A human who buys BOTH products gets TWO Stripe Customers, one per product.
- * With a shared Customer, a Come Up event would resolve to a Beauty Bond user
- * and silently grant a paid tier.
- */
 async function findOrCreateCustomer(user) {
   if (user.stripe_customer_id) return user.stripe_customer_id;
 
@@ -54,46 +56,9 @@ async function findOrCreateCustomer(user) {
   return customer.id;
 }
 
-/** Product-scoped. There is deliberately NO unscoped variant of this. */
-async function userByCustomer(customerId) {
-  return db.one(
-    'SELECT * FROM users WHERE stripe_customer_id = $1 AND deleted_at IS NULL',
-    [customerId]);
-}
-
-/* ── Layer 3: webhook ownership filter ────────────────────────────── */
-
-/**
- * Resolve which SML product an event belongs to. FAILS CLOSED — an event we
- * cannot attribute is ignored, never granted.
- */
-async function belongsToBeautyBond(event) {
-  const obj = event.data.object;
-
-  // 1. Direct tag: subscription, checkout.session, payment_intent, charge, customer
-  if (obj?.metadata?.sml_product) return obj.metadata.sml_product === OURS;
-
-  // 2. Invoices carry no metadata of their own
-  if (obj?.object === 'invoice') {
-    if (typeof obj.subscription === 'string') {
-      const sub = await stripe.subscriptions.retrieve(obj.subscription);
-      if (sub.metadata?.sml_product) return sub.metadata.sml_product === OURS;
-    }
-    const key = obj.lines?.data?.[0]?.price?.lookup_key;
-    if (key) return key.startsWith(PREFIX);
-  }
-
-  // 3. Fall back to the customer's tag
-  const customerId = typeof obj?.customer === 'string' ? obj.customer : null;
-  if (customerId) {
-    const customer = await stripe.customers.retrieve(customerId);
-    if (!customer.deleted) return customer.metadata?.sml_product === OURS;
-  }
-
-  // 4. Unattributable -> not ours.
-  logger.warn({ eventId: event.id, type: event.type }, 'unattributable_stripe_event');
-  return false;
-}
+const userByCustomer = (customerId) =>
+  db.one('SELECT * FROM users WHERE stripe_customer_id = $1 AND deleted_at IS NULL',
+         [customerId]);
 
 /* ── Checkout ─────────────────────────────────────────────────────── */
 
@@ -108,7 +73,6 @@ async function createSubscriptionCheckout(user, lookupKey, nonce) {
     payment_settings: { save_default_payment_method: 'on_subscription' },
     automatic_tax: { enabled: true },
     trial_period_days: 7,
-    // `bb_user_id`, NEVER `userId` — the Come Up handler reads `userId`.
     metadata: { bb_user_id: user.id, tier: price.metadata.tier, sml_product: OURS },
     expand: ['latest_invoice.payment_intent'],
   }, { idempotencyKey: `bb_sub_${user.id}_${price.id}_${nonce ?? ''}` });
@@ -124,24 +88,17 @@ async function createSubscriptionCheckout(user, lookupKey, nonce) {
   };
 }
 
-async function createPortalSession(user) {
-  return stripe.billingPortal.sessions.create({
+const createPortalSession = (user) =>
+  stripe.billingPortal.sessions.create({
     customer: user.stripe_customer_id,
     return_url: `${config.webUrl}/settings/billing`,
     configuration: config.stripe.portalConfigId,
   });
-}
 
 /* ── Sync ─────────────────────────────────────────────────────────── */
 
 async function syncSubscription(sub) {
-  // Defense in depth — a wrong grant here is a revenue and trust bug.
-  if (sub.metadata?.sml_product !== OURS) {
-    throw new Error(`refusing to sync foreign subscription ${sub.id}`);
-  }
-
-  const userId = sub.metadata.bb_user_id
-    ?? (await userByCustomer(sub.customer))?.id;
+  const userId = sub.metadata.bb_user_id ?? (await userByCustomer(sub.customer))?.id;
   if (!userId) return;
 
   const price = sub.items.data[0]?.price;
@@ -171,5 +128,5 @@ async function syncSubscription(sub) {
 module.exports = {
   stripe, OURS, PREFIX,
   priceIdFor, findOrCreateCustomer, userByCustomer,
-  belongsToBeautyBond, createSubscriptionCheckout, createPortalSession, syncSubscription,
+  createSubscriptionCheckout, createPortalSession, syncSubscription,
 };
