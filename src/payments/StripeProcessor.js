@@ -35,28 +35,67 @@ class StripeProcessor {
   constructor() {
     this.stripe = stripe(process.env.STRIPE_SECRET_KEY);
     this.publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
-    // Cached Stripe Price ID for the $4.99/month subscription
+    // Optional override. It is verified before use — see _recurringPrice().
     this._priceId = process.env.STRIPE_CREATOR_PRICE_ID || null;
   }
 
-  // Get or create the recurring $4.99/month Price on Stripe
-  async getOrCreatePrice() {
-    if (this._priceId) return this._priceId;
+  // Resolve the Stripe Price for a monthly subscription, by stable lookup key.
+  //
+  // Two problems this solves:
+  //   1. The old code cached the Price ID in memory only, so every server restart
+  //      created a brand new Product + Price on Stripe. Deploys quietly piled up
+  //      duplicates.
+  //   2. A Price ID pinned in an env var was trusted forever, so changing the
+  //      amount in this file silently did nothing and customers kept being
+  //      charged the old rate.
+  //
+  // Now the price is looked up by key and its amount is checked against what this
+  // file says. Anything stale, inactive, or mispriced is replaced and the lookup
+  // key moves to the corrected price, so the code is always the source of truth.
+  async _recurringPrice(lookupKey, productName, description, amountCents, pinnedId) {
+    if (pinnedId) {
+      try {
+        const pinned = await this.stripe.prices.retrieve(pinnedId);
+        if (pinned && pinned.active && pinned.unit_amount === amountCents && pinned.recurring) {
+          return pinnedId;
+        }
+        console.warn(`[Stripe] Pinned price ${pinnedId} is ${pinned && pinned.unit_amount} cents, expected ${amountCents} — ignoring it and using the price this code defines.`);
+      } catch (e) {
+        console.warn(`[Stripe] Could not read pinned price ${pinnedId}: ${e.message} — falling back to lookup by key.`);
+      }
+    }
 
-    const product = await this.stripe.products.create({
-      name: "Self-Made Legends Creator Subscription",
-      description: "$4.99/month creator membership — billed on the 1st of each month",
-    });
+    try {
+      const found = await this.stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
+      const hit = found && found.data && found.data[0];
+      if (hit && hit.unit_amount === amountCents) return hit.id;
+      if (hit) console.log(`[Stripe] ${lookupKey} was ${hit.unit_amount} cents, repricing to ${amountCents}.`);
+    } catch (e) {
+      console.warn(`[Stripe] Price lookup for ${lookupKey} failed: ${e.message}`);
+    }
 
+    const product = await this.stripe.products.create({ name: productName, description });
     const price = await this.stripe.prices.create({
       product: product.id,
-      unit_amount: CREATOR_FEE_CENTS,
-      currency: "usd",
-      recurring: { interval: "month" },
+      unit_amount: amountCents,
+      currency: 'usd',
+      recurring: { interval: 'month' },
+      lookup_key: lookupKey,
+      transfer_lookup_key: true,
     });
-
-    this._priceId = price.id;
     return price.id;
+  }
+
+  // Get or create the recurring $4.99/month Creator Price on Stripe
+  async getOrCreatePrice() {
+    this._priceId = await this._recurringPrice(
+      'sml_creator_monthly',
+      'Self-Made Legends Creator Subscription',
+      '$4.99/month creator membership — billed on the 1st of each month',
+      CREATOR_FEE_CENTS,
+      this._priceId
+    );
+    return this._priceId;
   }
 
   // Create a Stripe Checkout Session for the $4.99/month subscription
@@ -164,19 +203,12 @@ class StripeProcessor {
   // Create a Stripe Checkout Session for Premium Coach Pro ($4.99/month recurring)
   async createCoachProCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
-    if (!this._coachProPriceId) {
-      const product = await this.stripe.products.create({
-        name: 'SML Premium AI Coach',
-        description: '$4.99/month — Deeper AI responses, weekly personalized reports',
-      });
-      const price = await this.stripe.prices.create({
-        product: product.id,
-        unit_amount: 499,
-        currency: 'usd',
-        recurring: { interval: 'month' },
-      });
-      this._coachProPriceId = price.id;
-    }
+    this._coachProPriceId = await this._recurringPrice(
+      'sml_coach_pro_monthly',
+      'SML Premium AI Coach',
+      '$4.99/month — Deeper AI responses, weekly personalized reports',
+      499
+    );
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
@@ -383,19 +415,12 @@ class StripeProcessor {
   // Create a Stripe Checkout Session for VIP Elite Membership ($9.99/month recurring)
   async createEliteCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
-    if (!this._elitePriceId) {
-      const product = await this.stripe.products.create({
-        name: 'Self-Made Legends Elite Membership',
-        description: '$9.99/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
-      });
-      const price = await this.stripe.prices.create({
-        product: product.id,
-        unit_amount: 999,
-        currency: 'usd',
-        recurring: { interval: 'month' },
-      });
-      this._elitePriceId = price.id;
-    }
+    this._elitePriceId = await this._recurringPrice(
+      'sml_elite_monthly',
+      'Self-Made Legends Elite Membership',
+      '$9.99/month — VIP perks: 3× safe capacity, Elite badge, permanent 2× XP, exclusive heist',
+      999
+    );
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
@@ -528,19 +553,12 @@ class StripeProcessor {
   // VIP Game Pass ($5.99/month)
   async createCasinoVIPCheckout(userId, userEmail) {
     const BASE = process.env.BASE_URL || 'https://web-production-576d9.up.railway.app';
-    if (!this._casinoVIPPriceId) {
-      const product = await this.stripe.products.create({
-        name: 'SML VIP Game Pass',
-        description: '$5.99/month — Unlocks VIP game modes, high-stakes simulated tables, 10× in-game rewards, and VIP room features. All gameplay uses virtual Casino Chips — no real money is wagered. Renews automatically. Cancel anytime.',
-      });
-      const price = await this.stripe.prices.create({
-        product: product.id,
-        unit_amount: 599,
-        currency: 'usd',
-        recurring: { interval: 'month' },
-      });
-      this._casinoVIPPriceId = price.id;
-    }
+    this._casinoVIPPriceId = await this._recurringPrice(
+      'sml_vip_game_pass_monthly',
+      'SML VIP Game Pass',
+      '$5.99/month — Unlocks VIP game modes, high-stakes simulated tables, 10× in-game rewards, and VIP room features. All gameplay uses virtual Casino Chips — no real money is wagered. Renews automatically. Cancel anytime.',
+      599
+    );
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       customer_email: userEmail || undefined,
