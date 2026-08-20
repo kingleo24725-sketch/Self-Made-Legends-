@@ -16,15 +16,21 @@ sharing is contained by the code isolation in `docs/stripe-flow.md` §3.2.
 
 ## 1. Create the project
 
-Railway → **New Project** → **Deploy from GitHub repo** → `beauty-bond`.
+Railway → **New Project** → **Deploy from GitHub repo**.
 
-Then in the service's **Settings**:
+Then in the service's **Settings**, the values depend on which repo you picked —
+`BOOTSTRAP.md` Step 1–2 is what moves the code into the standalone repo, and it is a
+manual step that may not be done yet:
 
-| Setting | Value |
-|---|---|
-| **Root Directory** | `backend` |
-| Branch | `main` |
-| Builder | Nixpacks (auto-detected) |
+| Setting | Standalone `beauty-bond` repo | Still in `Self-Made-Legends-` |
+|---|---|---|
+| Repo | `beauty-bond` | `Self-Made-Legends-` |
+| **Root Directory** | `backend` | `beauty-bond/backend` |
+| Branch | `main` | `claude/beauty-bond-app-rebuild-u0c50c` |
+| Builder | Nixpacks (auto-detected) | Nixpacks (auto-detected) |
+
+Either works — the second is the shortcut if you want the API live before doing the
+repo split. Nothing about the deploy changes afterward except those two fields.
 
 **Root Directory is the one that catches people out.** The repo root holds `app/`,
 `backend/`, `infra/`, and `docs/`; without it Railway tries to build the whole tree
