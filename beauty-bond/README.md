@@ -15,8 +15,8 @@ Read this before touching anything in this repository.
 
 **Dad + Daughter Beauty Bond is its own standalone app.** It is *not* a feature, mode, mini-game,
 expansion, or module of **The Self-Made Legends Come Up** (SML's AI trading game,
-which lives in its own separate repository). The two products share exactly one
-thing: **the parent company, Self-Made Legends LLC.**
+which lives in its own separate repository). The two products share exactly two
+things: **the parent company, Self-Made Legends LLC, and one Stripe account.**
 
 | | The Self-Made Legends Come Up | Beauty Bond |
 |---|---|---|
@@ -26,7 +26,7 @@ thing: **the parent company, Self-Made Legends LLC.**
 | **Currency** | SML Bucks (virtual) | None — no in-app currency at all |
 | **Stack** | Node/Express + SQLite, web | React Native + Postgres, mobile-first |
 | **Repository** | `Self-Made-Legends-` | `beauty-bond` (separate) |
-| **Stripe** | Own account | **Own account** (separate) |
+| **Stripe** | Shared SML account | **Shared SML account** (code-isolated) |
 | **Accounts** | Standalone player accounts | Guardian-linked family accounts |
 | **Regulatory posture** | Adult game | COPPA / GDPR-K child-safety regime |
 | **Owner** | Self-Made Legends LLC | Self-Made Legends LLC |
@@ -40,9 +40,14 @@ thing: **the parent company, Self-Made Legends LLC.**
    Beauty Bond user. There is no SSO between them, no account linking, no shared
    identity service.
 
-   This includes billing: Beauty Bond has its **own Stripe account**, so a leaked
-   key, a dispute spike, or a Radar rule on one product cannot reach the other.
-   See [`docs/stripe-flow.md`](docs/stripe-flow.md) §3.2.
+   **Exception — billing:** the two products **do** share one SML Stripe account, by
+   owner decision, so there is a single payout and dashboard. Because Stripe delivers
+   every event to every endpoint on an account, isolation there is enforced in code:
+   namespaced object metadata, a separate Stripe Customer per product, a webhook
+   ownership gate that fails closed, and separate restricted API keys. A shared Stripe
+   account must never become shared *entitlements*. See
+   [`docs/stripe-flow.md`](docs/stripe-flow.md) §3.2 — read it before
+   writing any billing code.
 3. **No shared currency or economy.** SML Bucks, loot boxes, leaderboards, racing,
    pets, heists, and every other Come Up game system are **absent** from Beauty Bond.
    Beauty Bond has no virtual currency and no gambling-adjacent mechanic of any kind —
@@ -199,7 +204,7 @@ Letters Forward are **free on every plan and never lapse**.
 | Backend | **Node.js + Express** | Conventional layout; explicit middleware ordering, which is load-bearing here |
 | Database | **PostgreSQL** | Safety questions are joins; CHECK constraints and RLS enforce child-safety invariants the app layer could otherwise break |
 | Auth | **JWT** (15 min access + rotating refresh) | Mobile-first; token carries the *active profile*, driving every age and entitlement gate |
-| Payments | **Stripe** subscriptions | Dedicated account, separate from every other SML product |
+| Payments | **Stripe** subscriptions | Shared SML account, isolated in code — see `docs/stripe-flow.md` §3.2 |
 | Video | **LiveKit** | Server-side per-track egress control makes minor-exclusion structural, not a policy promise |
 | AI Try-On | Provider abstraction, **mock by default** | Real structure and contract; mock is refused in production |
 

@@ -830,6 +830,14 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
     const obj = event.data.object;
     const meta = obj.metadata || {};
 
+    // Ownership gate — this Stripe account also bills Dad + Daughter Beauty Bond™,
+    // and Stripe fans every event out to every endpoint on the account. Anything
+    // tagged for another SML product is acknowledged and dropped before any write.
+    // Mirror of Beauty Bond's gate; see beauty-bond/docs/stripe-flow.md §3.2.
+    if (meta.sml_product && meta.sml_product !== 'come_up') {
+      return res.sendStatus(200);
+    }
+
     if (event.type === "checkout.session.completed") {
       const userId = meta.userId;
       const type   = meta.type;
