@@ -78,13 +78,18 @@ rather than only moving the price.
 - **Existing subscribers are never repriced.** Stripe binds a subscription to the Price
   object it was created with. A change only reaches new sign-ups. Nobody already paying
   gets charged more.
-- **`STRIPE_CREATOR_PRICE_ID` overrides the code.** If that environment variable is set,
-  `getOrCreatePrice()` returns it and `CREATOR_FEE_CENTS` is ignored entirely. To reprice
-  the Creator subscription you must create a new Price in Stripe and update the variable —
-  editing the constant alone will silently do nothing.
-- Elite and VIP create a fresh Stripe Product + Price on **every server restart**, because
-  they cache the ID only in memory. This works but clutters the Stripe account over time;
-  giving them env vars like the Creator sub has would fix it.
+- **This file is the source of truth — no Stripe dashboard step is needed.** Every monthly
+  price is resolved through `_recurringPrice()`, which looks it up by a stable key
+  (`sml_creator_monthly`, `sml_elite_monthly`, `sml_vip_game_pass_monthly`,
+  `sml_coach_pro_monthly`) and checks the amount against this code. Anything stale,
+  inactive, or mispriced is replaced automatically and the lookup key moves to the
+  corrected price. `STRIPE_CREATOR_PRICE_ID` is still honored **if** it points at a price
+  matching the code; if it is stale it is logged and ignored rather than silently
+  overriding the amount.
+- Because prices are found by lookup key rather than cached in memory, a restart no longer
+  creates duplicate Stripe products the way it used to.
+- `tests/pricing.test.js` covers this. Run `npx jest tests/pricing.test.js` after any
+  pricing change.
 
 ## Regional pricing
 
