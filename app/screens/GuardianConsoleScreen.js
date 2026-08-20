@@ -1,6 +1,8 @@
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+ * Proprietary and confidential. Unauthorized copying, distribution,
+ * or use of this file, via any medium, is strictly prohibited.
  *
  * The most important screen in the app.
  * Purchases are HARD-LOCKED on child accounts — a lock, not a toggle.

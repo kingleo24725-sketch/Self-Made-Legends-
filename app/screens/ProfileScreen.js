@@ -1,6 +1,8 @@
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+ * Proprietary and confidential. Unauthorized copying, distribution,
+ * or use of this file, via any medium, is strictly prohibited.
  *
  * "Share card" is hidden entirely on U13 profiles. Public profile cards show
  * NO location, NO school, NO last-seen. Streaks get two free passes a month —

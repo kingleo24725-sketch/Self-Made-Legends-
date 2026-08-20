@@ -6,8 +6,8 @@
               A SELF-MADE LEGENDS LLC (SML) PRODUCT
 
         © 2026 Self-Made Legends LLC (SML). All rights reserved.
-        MIT licensed with attribution — see LICENSE
-        Trademarks are NOT licensed — see §4
+        PROPRIETARY AND CONFIDENTIAL — DO NOT DISTRIBUTE
+        No license granted except by written agreement — see LICENSE
 ════════════════════════════════════════════════════════════════════
 ```
 
@@ -22,8 +22,8 @@
 | **Entity type** | Limited Liability Company |
 | **Copyright holder** | Self-Made Legends LLC (SML) |
 | **Copyright year** | 2026 |
-| **Status** | Open source under MIT + attribution; marks reserved |
-| **Classification** | Public source, SML-owned copyright and trademarks |
+| **Status** | Proprietary — confidential, not for distribution |
+| **Classification** | Confidential business information & trade secret |
 | **Related SML product** | The Self-Made Legends Come Up (**separate product** — see §5) |
 
 **Self-Made Legends LLC (SML) is the sole and exclusive owner** of all right, title,
@@ -63,15 +63,13 @@ prototypes.
 ## 3. Required Attribution Stamp
 
 **Every document, file, screen, export, and deliverable must carry the SML mark.**
-This is both an SML branding rule and, for redistributed copies, a condition of the
-license (`LICENSE` §1).
 
 ### 3.1 Document header (Markdown)
 
 ```markdown
 > **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
-> Owner: **Self-Made Legends LLC (SML)** · MIT licensed with SML attribution.
+> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
 ```
 
@@ -81,7 +79,8 @@ license (`LICENSE` §1).
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
- * Licensed under the MIT License with SML attribution — see LICENSE.
+ * Proprietary and confidential. Unauthorized copying, distribution,
+ * or use of this file, via any medium, is strictly prohibited.
  */
 ```
 
@@ -139,7 +138,7 @@ No affiliation, sponsorship, partnership, or endorsement by any of these compani
 claimed or implied. Any such relationship requires a separate executed agreement with
 Self-Made Legends LLC (SML). Nominative fair use only: brand names may identify a
 product a user owns or is matched to; brand logos may not be used in SML marketing
-without written permission. **The MIT license conveys no rights to these marks.**
+without written permission.
 
 ---
 
@@ -171,42 +170,54 @@ path between the two products, and the isolation that guarantees this is specifi
 
 ---
 
-## 6. License
+## 6. Confidentiality & License
 
-The **code and documentation** in this repository are licensed under the **MIT
-License with an SML attribution requirement** — see [`LICENSE`](LICENSE).
+This repository is **proprietary and confidential**. See [`LICENSE`](LICENSE)
+for the full terms.
 
-**What you may do:** use, copy, modify, merge, publish, distribute, sublicense,
-and sell copies, including commercially, provided you keep the copyright notice
-and display the attribution in any user-facing About/Credits screen.
+**No license is granted** to any person or entity except by a separate written
+agreement signed by an authorized representative of Self-Made Legends LLC.
+Possession of a copy conveys no rights.
 
-**What you may not do:** use SML's names, logos, or product marks (§4.1), imply
-endorsement by or affiliation with Self-Made Legends LLC, or ship a derivative
-under the Dad + Daughter Beauty Bond name. **The MIT license covers copyright,
-not trademarks.** A fork must carry its own product name.
+### Restrictions
 
-> **Deliberate choice, worth understanding.** MIT is permissive: anyone may fork
-> this and build a competing product, and SML cannot prevent that. What SML
-> retains is the *brand* — the name, the marks, and the goodwill attached to
-> them. If the intent is instead to keep the source private and prevent
-> competing use, MIT is the wrong instrument and this section should be replaced
-> with a proprietary license before any public release.
+Without SML's prior written permission, no person may copy, modify, publish,
+distribute, sublicense, sell, reverse engineer, or create derivative works from
+this Software; use it to build a competing product; **use it to train, fine-tune,
+or evaluate any machine-learning model**; or disclose it to any third party.
+
+### Authorized use
+
+Employees, contractors, and vendors who have executed a written non-disclosure
+agreement with SML may use the Software solely to perform work expressly
+authorized by SML, for the duration of that authorization. Confidentiality
+obligations survive the end of any engagement.
+
+### Trade secret status
+
+The Software is confidential business information and a trade secret of
+Self-Made Legends LLC. That status depends on it actually being kept
+confidential — public disclosure forfeits it permanently and cannot be undone.
+Practical consequences:
+
+- Repository visibility stays **private**.
+- Collaborators are added only after an NDA is executed.
+- Secret scanning and push protection stay **on**.
+- No snippets in public issues, forums, gists, or pastebins.
+- No pasting into third-party tools that retain or train on submitted data.
 
 ### Contributions
 
-Contributions are accepted under the same MIT terms. Work produced by SML
-employees or contractors under an employment or contractor agreement remains
-work made for hire owned by Self-Made Legends LLC; where that doctrine does not
-apply, contributors assign their contributions to SML. Contractor agreements
-should include an explicit IP assignment clause naming SML.
+All contributions are works made for hire owned by SML. Where that doctrine does
+not apply, contributors irrevocably assign their contributions to Self-Made
+Legends LLC. Contractor and employment agreements must carry an explicit IP
+assignment clause naming SML **before any work begins**.
 
 ### Child-safety obligation
 
-This repository implements protections for minors (§ see `docs/architecture.md`
-§1.5). The license permits removing them; **the law may not.** Anyone deploying
-this software or a derivative to real families is responsible for their own
-COPPA / GDPR-K / AADC compliance. Removing these protections while keeping the
-attribution misrepresents the original work.
+This repository implements protections for minors (`docs/architecture.md` §1.5).
+This license grants no permission to remove them. Any authorized deployment to
+real families remains responsible for its own COPPA / GDPR-K / AADC compliance.
 
 ## 7. Contact
 

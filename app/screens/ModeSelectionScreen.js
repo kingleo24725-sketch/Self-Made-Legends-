@@ -1,6 +1,8 @@
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+ * Proprietary and confidential. Unauthorized copying, distribution,
+ * or use of this file, via any medium, is strictly prohibited.
  *
  * Six modes. Mode changes vocabulary, accent color, home rails, AND the
  * safety envelope. Switchable any time; stored per-profile server-side.

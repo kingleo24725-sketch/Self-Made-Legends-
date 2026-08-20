@@ -1,6 +1,8 @@
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+ * Proprietary and confidential. Unauthorized copying, distribution,
+ * or use of this file, via any medium, is strictly prohibited.
  *
  * Room recaps are STILLS ONLY, generated with all-party consent.
  * Delete is a REAL delete: source, thumbs, recap frames, CDN purge <=24h.

@@ -2,6 +2,7 @@
 
 > **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
+> Proprietary and confidential.
 
 ## One source file drives everything
 

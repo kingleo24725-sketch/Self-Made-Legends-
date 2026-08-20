@@ -1,6 +1,8 @@
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+ * Proprietary and confidential. Unauthorized copying, distribution,
+ * or use of this file, via any medium, is strictly prohibited.
  *
  * Neutral DOB entry — NEVER "Are you 13 or older?". Self-selection inflates
  * ages and voids the compliance posture. docs/wireframes.md W-01.
