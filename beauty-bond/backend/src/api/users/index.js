@@ -11,6 +11,7 @@ const {
   effectiveTierFor, ENTITLEMENTS, quotaUsed,
 } = require('../../services/entitlements');
 const userService = require('../../services/userService');
+const { isValidMode } = require('../../services/modes');
 
 const router = express.Router();
 
@@ -40,6 +41,9 @@ router.get('/me/entitlements', requireAuth, async (req, res, next) => {
 router.patch('/profiles/:id', requireAuth, async (req, res, next) => {
   try {
     const { mode, remembranceMode, culturalModes, displayName } = req.body;
+    if (mode !== undefined && !isValidMode(mode)) {
+      return res.status(400).json({ error: 'unknown_mode', mode });
+    }
     const row = await db.one(
       `UPDATE profiles SET
          mode = COALESCE($2, mode),

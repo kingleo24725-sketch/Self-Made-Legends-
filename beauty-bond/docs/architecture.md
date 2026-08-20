@@ -4,7 +4,7 @@
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up. See
-> [`README.md`](README.md) for the separation rules and [`NOTICE.md`](NOTICE.md) for IP.
+> [`README.md`](../README.md) for the separation rules and [`NOTICE.md`](../NOTICE.md) for IP.
 
 **Product:** Beauty Bond (working title: Dad + Daughter Beauty Bond)
 **Owner:** Self-Made Legends LLC (SML)
@@ -21,7 +21,7 @@ separate codebase, separate accounts, separate database, separate economy, separ
 brand system. No SML Bucks, no leaderboards, no loot boxes, no game economy of any
 kind appears in this product; it serves minors and cannot carry gambling-adjacent
 mechanics. The only shared asset is the SML corporate mark in the credits.
-Full rules: [`README.md`](README.md).
+Full rules: [`README.md`](../README.md).
 
 ---
 

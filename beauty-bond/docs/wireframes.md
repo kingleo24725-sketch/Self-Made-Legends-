@@ -11,7 +11,7 @@
 Low-fidelity, labeled, designer-ready. Every region is named `[R#]` and annotated
 below its frame. Frame reference: **390 × 844** (iPhone 14 baseline).
 Safe area: 16 px side gutters, 8 px grid, 44 px minimum tap target
-(**56 px in Little Legend mode**).
+(**56 px in child accounts**).
 
 Legend:
 `▢` container · `◉` avatar · `▶` media · `⬤` primary CTA · `◦` secondary · `≡` list
@@ -348,12 +348,12 @@ Legend:
   shame: "Life gets busy. Five minutes puts you right back."
 - **[R5]** Slot 1 = user's selected culture; slot 2 (on scroll) = an unselected one.
 - **[R6]** Red dot = live, grey = scheduled. Empty state → "Start a Family Room ⬤".
-- **[R8]** Tab bar; in Little Legend mode the bar drops to 3 tabs (Home, Learn,
+- **[R8]** Tab bar; in child accounts the bar drops to 3 tabs (Home, Learn,
   Play) with 56 px targets and labels always visible.
 
 ---
 
-## W-12 · Home {Little Legend mode}
+## W-12 · Home {child accounts}
 
 ```
 ┌──────────────────────────────────────┐
@@ -1218,7 +1218,7 @@ Legend:
 | Requirement | Spec |
 |---|---|
 | Contrast | 4.5:1 body, 3:1 large text — verified against **both** themes |
-| Tap target | 44 px min; 56 px in Little Legend mode |
+| Tap target | 44 px min; 56 px in child accounts |
 | Dynamic type | Support to 200%; no clipped layouts, no fixed-height text rows |
 | Screen reader | Every control labeled; decorative art `aria-hidden` |
 | Reduced motion | All hero loops → static; transitions → fades |

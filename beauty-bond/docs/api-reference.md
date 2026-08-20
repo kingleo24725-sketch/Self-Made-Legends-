@@ -129,7 +129,7 @@ checkout, gift purchase, and the Bond Book viewer. The product is mobile-first.
 ```sql
 -- ═══ IDENTITY & FAMILY ═══════════════════════════════════════════════
 CREATE TYPE age_band  AS ENUM ('child','teen','adult');
-CREATE TYPE tier_code AS ENUM ('sparkle','bond','legacy','studio');
+CREATE TYPE tier_code AS ENUM ('free','basic','premium','family');
 
 CREATE TABLE users (                      -- billing/auth identity (adults)
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -151,7 +151,7 @@ CREATE TABLE profiles (                   -- who uses the app (incl. children)
   birth_date        date NOT NULL,
   age_band          age_band NOT NULL,     -- recomputed nightly on birthdays
   avatar_url        text,
-  mode              text NOT NULL DEFAULT 'solo_glow',
+  mode              text NOT NULL DEFAULT 'solo_girl',
   cultural_modes    text[] NOT NULL DEFAULT '{}',
   remembrance_mode  boolean NOT NULL DEFAULT false,
   is_verified_creator boolean NOT NULL DEFAULT false,
@@ -159,7 +159,10 @@ CREATE TABLE profiles (                   -- who uses the app (incl. children)
   created_at        timestamptz NOT NULL DEFAULT now(),
   deleted_at        timestamptz,
   CONSTRAINT minor_needs_guardian
-    CHECK (age_band = 'adult' OR guardian_id IS NOT NULL)
+    CHECK (age_band = 'adult' OR guardian_id IS NOT NULL),
+  CONSTRAINT mode_is_known CHECK (mode IN (
+    'dad_daughter','mom_daughter','guardian_daughter',
+    'solo_girl','best_friend_glam','global_rooms'))
 );
 CREATE INDEX ON profiles(guardian_id);
 
@@ -271,7 +274,7 @@ CREATE TABLE lessons (
   title                text NOT NULL,
   level                int  NOT NULL,
   min_age              int  NOT NULL,
-  tier_required        tier_code NOT NULL DEFAULT 'sparkle',
+  tier_required        tier_code NOT NULL DEFAULT 'free',
   duration_seconds     int,
   video_url            text,
   captions             jsonb,             -- {locale: url}
@@ -369,7 +372,7 @@ CREATE TABLE looks (
   profile_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
   name text NOT NULL, layers jsonb NOT NULL,
   preset_id text, collection_id uuid REFERENCES collections(id),
-  min_age int NOT NULL DEFAULT 0, tier_required tier_code NOT NULL DEFAULT 'sparkle',
+  min_age int NOT NULL DEFAULT 0, tier_required tier_code NOT NULL DEFAULT 'free',
   advisor_approved_at timestamptz, qa_panel_passed_at timestamptz,
   credit jsonb, created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT cultural_preset_needs_signoff
@@ -530,85 +533,85 @@ per-request by the API. A guardian policy grants read on a linked child's rows
 
 | Method | Path | Notes |
 |---|---|---|
-| `POST` | `/v1/auth/signup` | Adult only; region → consent floor |
-| `POST` | `/v1/auth/login` | |
-| `POST` | `/v1/auth/refresh` | Rotating refresh token |
-| `POST` | `/v1/auth/sso/:provider` | Apple / Google |
-| `POST` | `/v1/auth/logout` | |
-| `GET` | `/v1/me` | User + profiles |
-| `GET` | `/v1/me/entitlements` | Client-side UI affordances (advisory) |
+| `POST` | `/api/auth/signup` | Adult only; region → consent floor |
+| `POST` | `/api/auth/login` | |
+| `POST` | `/api/auth/refresh` | Rotating refresh token |
+| `POST` | `/api/auth/sso/:provider` | Apple / Google |
+| `POST` | `/api/auth/logout` | |
+| `GET` | `/api/me` | User + profiles |
+| `GET` | `/api/me/entitlements` | Client-side UI affordances (advisory) |
 
 ### Profiles & Guardianship
 
 | Method | Path | Notes |
 |---|---|---|
-| `POST` | `/v1/profiles` | Create child/teen profile (adult only) |
-| `PATCH` | `/v1/profiles/:id` | Mode, avatar, cultural modes, remembrance |
-| `POST` | `/v1/guardian/consent/start` | Send verification to guardian |
-| `POST` | `/v1/guardian/consent/verify` | Completes VPC → provisions child account |
-| `GET` | `/v1/guardian/children` | Guardian Console list |
-| `PATCH` | `/v1/guardian/permissions/:childId` | Permission matrix |
-| `GET` | `/v1/guardian/activity/:childId` | Activity log |
-| `POST` | `/v1/guardian/friend-requests/:id/approve` | |
-| `POST` | `/v1/trusted-circle` | Add trusted adult |
-| `GET` | `/v1/privacy/export` | Always free |
-| `DELETE` | `/v1/privacy/account` | Always free |
+| `POST` | `/api/profiles` | Create child/teen profile (adult only) |
+| `PATCH` | `/api/profiles/:id` | Mode, avatar, cultural modes, remembrance |
+| `POST` | `/api/guardian/consent/start` | Send verification to guardian |
+| `POST` | `/api/guardian/consent/verify` | Completes VPC → provisions child account |
+| `GET` | `/api/guardian/children` | Guardian Console list |
+| `PATCH` | `/api/guardian/permissions/:childId` | Permission matrix |
+| `GET` | `/api/guardian/activity/:childId` | Activity log |
+| `POST` | `/api/guardian/friend-requests/:id/approve` | |
+| `POST` | `/api/trusted-circle` | Add trusted adult |
+| `GET` | `/api/privacy/export` | Always free |
+| `DELETE` | `/api/privacy/account` | Always free |
 
 ### Learning & Culture
 
 | Method | Path |
 |---|---|
-| `GET` | `/v1/paths` · `/v1/paths/:id` |
-| `GET` | `/v1/lessons/:id` (age gate → entitlement gate) |
-| `POST` | `/v1/lessons/:id/progress` |
-| `GET` | `/v1/brushes` · `/v1/brushes/:id` |
-| `POST` | `/v1/brush-kit/:brushId/cleaned` |
-| `GET` | `/v1/collections` · `/v1/collections/:slug` |
-| `GET` | `/v1/collections/:slug/stories` |
-| `GET` | `/v1/progress` · `/v1/streaks` · `/v1/badges` |
+| `GET` | `/api/paths` · `/api/paths/:id` |
+| `GET` | `/api/lessons/:id` (age gate → entitlement gate) |
+| `POST` | `/api/lessons/:id/progress` |
+| `GET` | `/api/brushes` · `/api/brushes/:id` |
+| `POST` | `/api/brush-kit/:brushId/cleaned` |
+| `GET` | `/api/collections` · `/api/collections/:slug` |
+| `GET` | `/api/collections/:slug/stories` |
+| `GET` | `/api/progress` · `/api/streaks` · `/api/badges` |
 
 ### Shade & Products
 
 | Method | Path |
 |---|---|
-| `POST` | `/v1/shade/scan` → shade profile (range + confidence) |
-| `POST` | `/v1/shade/manual` |
-| `GET` | `/v1/shade/matches?profileId=&brand=` (ΔE-sorted) |
-| `GET` | `/v1/brands` · `/v1/products?q=` · `/v1/products/barcode/:ean` |
-| `GET`/`POST`/`DELETE` | `/v1/bag` · `/v1/bag/:id` |
+| `POST` | `/api/shade/scan` → shade profile (range + confidence) |
+| `POST` | `/api/shade/manual` |
+| `GET` | `/api/shade/matches?profileId=&brand=` (ΔE-sorted) |
+| `GET` | `/api/brands` · `/api/products?q=` · `/api/products/barcode/:ean` |
+| `GET`/`POST`/`DELETE` | `/api/bag` · `/api/bag/:id` |
 
 ### Try-On (`04`)
 
-`POST /v1/tryon/upload-url` · `POST /v1/tryon/render` · `GET /v1/tryon/presets` ·
-`POST /v1/tryon/save` · `GET/POST /v1/looks`
+`POST /api/tryon/upload-url` · `POST /api/tryon/render` · `GET /api/tryon/presets` ·
+`POST /api/tryon/save` · `GET/POST /api/looks`
 
 ### Rooms (`05`)
 
-`POST /v1/rooms` · `GET /v1/rooms` · `POST /v1/rooms/:id/token` ·
-`POST /v1/rooms/:id/invite` · `GET/POST /v1/rooms/:id/glam` ·
-`POST /v1/rooms/:id/panic` · `POST /v1/rooms/:id/report` ·
-`POST /v1/rooms/:id/eject/:profileId` · `POST /v1/rooms/:id/recording`
+`POST /api/video/rooms` · `GET /api/video/rooms` · `POST /api/video/rooms/:id/token` ·
+`POST /api/video/rooms/:id/invite` · `GET/POST /api/video/rooms/:id/glam` ·
+`POST /api/video/rooms/:id/panic` · `POST /api/video/rooms/:id/report` ·
+`POST /api/video/rooms/:id/eject/:profileId` · `POST /api/video/rooms/:id/recording`
 
 ### Bonding & Legacy
 
 | Method | Path |
 |---|---|
-| `GET` | `/v1/bond/:pairId` |
-| `GET` | `/v1/bond/missions` |
-| `POST` | `/v1/bond/missions/:id/confirm` (dual-confirm) |
-| `POST` | `/v1/bond/compliments` |
-| `GET`/`POST` | `/v1/legacy/people` · `/v1/legacy/items` |
-| `POST` | `/v1/legacy/letters` (seal) |
-| `GET` | `/v1/legacy/letters` (sealed metadata only) |
-| `POST` | `/v1/journal` (ciphertext in, never read server-side) |
-| `GET`/`POST` | `/v1/memories` · `POST /v1/memories/:id/consent` |
-| `POST` | `/v1/bond-book` → PDF/print job |
+| `GET` | `/api/bond/:pairId` |
+| `GET` | `/api/bond/missions` |
+| `POST` | `/api/bond/missions/:id/confirm` (dual-confirm) |
+| `POST` | `/api/bond/compliments` |
+| `GET`/`POST` | `/api/legacy/people` · `/api/legacy/items` |
+| `POST` | `/api/legacy/letters` (seal) |
+| `GET` | `/api/legacy/letters` (sealed metadata only) |
+| `POST` | `/api/journal` (ciphertext in, never read server-side) |
+| `GET`/`POST` | `/api/memories` · `POST /api/memories/:id/consent` |
+| `POST` | `/api/bond-book` → PDF/print job |
 
 ### Billing (`03`)
 
-`POST /v1/billing/checkout` · `POST /v1/billing/checkout-session` ·
-`POST /v1/billing/portal` · `POST /v1/billing/gift` ·
-`POST /v1/webhooks/stripe` · `POST /v1/webhooks/apple` · `POST /v1/webhooks/google`
+`POST /api/stripe/checkout` · `POST /api/stripe/checkout-session` ·
+`POST /api/stripe/portal` · `POST /api/stripe/gift` ·
+`POST /api/webhooks/stripe` · `POST /api/webhooks/apple` · `POST /api/webhooks/google`
 
 ### AI service (internal, mTLS, not public)
 
@@ -617,7 +620,7 @@ per-request by the API. A guardian policy grants read on a linked child's rows
 
 ### Conventions
 
-- Versioned `/v1`; additive changes only within a version.
+- Mounted at `/api`; additive changes only, or a new prefix.
 - Errors: `{ error: 'snake_code', message: 'human copy', recovery?: 'action' }`.
 - Idempotency-Key required on all `POST` that create money or media.
 - Rate limits: 60 rpm default · 10 rpm try-on render · 5 rpm auth · 120 rpm reads.

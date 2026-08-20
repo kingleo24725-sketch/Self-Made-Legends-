@@ -45,7 +45,7 @@ another product's price if these catalogues were ever merged (§3.2).
 
 ```ts
 // packages/shared/entitlements.ts
-export const TIERS = ['sparkle', 'bond', 'legacy', 'studio'] as const
+export const TIERS = ['free', 'basic', 'premium', 'family'] as const
 export type Tier = (typeof TIERS)[number]
 
 export type Entitlements = {
@@ -172,9 +172,9 @@ import Stripe from 'stripe'
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY_BB!, { apiVersion: '2024-06-20' })
 
 const PLANS = [
-  { code: 'bond',   name: 'Bond',   monthly: 699,  yearly: 5899  },
-  { code: 'legacy', name: 'Legacy', monthly: 1299, yearly: 10999 },
-  { code: 'studio', name: 'Studio', monthly: 2499, yearly: 20999 },
+  { code: 'basic',   name: 'Basic',   monthly: 699,  yearly: 5899  },
+  { code: 'premium', name: 'Premium', monthly: 1299, yearly: 10999 },
+  { code: 'family',  name: 'Family',  monthly: 1999, yearly: 16999 },
 ]
 
 for (const p of PLANS) {
@@ -237,7 +237,7 @@ export function useCheckout() {
 
   return async function checkout(lookupKey: string) {
     // 1. Server creates customer + subscription in `incomplete` state
-    const res = await api.post('/v1/billing/checkout', { lookupKey })
+    const res = await api.post('/api/stripe/checkout', { lookupKey })
     const { clientSecret, ephemeralKey, customerId, subscriptionId } = res.data
 
     // 2. Native payment sheet (Apple Pay / Google Pay / card)
@@ -351,7 +351,7 @@ billing.post('/checkout-session', requireAuth, requireAdult, async (req, res) =>
 
 ## 3.4 Webhooks
 
-**Endpoint:** `POST /v1/webhooks/stripe` — raw body, signature-verified, idempotent.
+**Endpoint:** `POST /api/webhooks/stripe` — raw body, signature-verified, idempotent.
 
 ### Events consumed
 
@@ -498,7 +498,7 @@ async function syncSubscription(sub: Stripe.Subscription) {
 ### Local & CI testing
 
 ```bash
-stripe listen --forward-to localhost:4000/v1/webhooks/stripe
+stripe listen --forward-to localhost:4000/api/webhooks/stripe
 stripe trigger customer.subscription.created
 stripe trigger invoice.payment_failed
 stripe trigger customer.subscription.deleted
@@ -587,7 +587,7 @@ router.post('/rooms/:id/panic',
    No tier, coupon, or promo overrides an age lock. This is a compliance boundary.
 2. **Entitlement gate** (`requireEntitlement`) — commercial.
 
-Client mirrors entitlements from `GET /v1/me/entitlements` (cached 60 s, refetched on
+Client mirrors entitlements from `GET /api/me/entitlements` (cached 60 s, refetched on
 app foreground and on push after a webhook lands) purely for UI affordances.
 **A client that lies gets a 402 from the API.**
 

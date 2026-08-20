@@ -409,7 +409,7 @@ hardcoded hex in a component fails lint.
 | Cultural sections | The Cultural Library | |
 | Grief setting | Remembrance Mode | |
 
-Full trademark schedule and classes: [`NOTICE.md`](NOTICE.md) §4.1.
+Full trademark schedule and classes: [`NOTICE.md`](../NOTICE.md) §4.1.
 
 ---
 
@@ -470,4 +470,4 @@ someone who loves you is teaching you something they know by heart.
 
 ---
 
-*End of specification set. Return to [`README.md`](README.md).*
+*End of specification set. Return to [`README.md`](../README.md).*

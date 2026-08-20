@@ -40,6 +40,7 @@ import GuardianConsoleScreen from '../screens/GuardianConsoleScreen';
 import PlanSelectionScreen from '../screens/PlanSelectionScreen';
 import CollectionDetailScreen from '../screens/CollectionDetailScreen';
 import DadSchoolScreen from '../screens/DadSchoolScreen';
+import RespectNoteScreen from '../screens/RespectNoteScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -108,6 +109,7 @@ export default function AppNavigator() {
             <Stack.Screen name="ShadeMatch" component={ShadeMatchScreen} />
             <Stack.Screen name="CulturalLibrary" component={CulturalLibraryScreen} />
             <Stack.Screen name="CollectionDetail" component={CollectionDetailScreen} />
+            <Stack.Screen name="RespectNote" component={RespectNoteScreen} />
             <Stack.Screen name="DadSchool" component={DadSchoolScreen} />
             <Stack.Screen name="SafeLearning" component={SafeLearningScreen} />
             <Stack.Screen name="LiveRoom" component={LiveRoomScreen}

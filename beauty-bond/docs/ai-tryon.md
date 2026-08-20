@@ -71,7 +71,7 @@ export function useTryOn() {
 
     // Adults/teens, still-photo, opt-in high-fidelity path
     const upload = await uploadEphemeral(source)   // presigned, 24h TTL, SSE-KMS
-    return api.post('/v1/tryon/render', {
+    return api.post('/api/tryon', {
       assetId: upload.assetId,
       look: sanitizeLook(look, profile.ageBand),
       shadeProfileId: profile.shadeProfileId,
@@ -160,7 +160,7 @@ All on-device models ship **in the app bundle** — try-on works offline.
 
 ## 4.3 Backend API
 
-### `POST /v1/tryon/upload-url`
+### `POST /api/tryon/upload-url`
 
 Presigned ephemeral upload. **403 for child accounts.**
 
@@ -242,11 +242,11 @@ const result = await aiService.applyLook(
 band, validates the image, calls the provider, and **enforces the geometry lock on
 the way out** — so no route can bypass those checks by calling the provider directly.
 
-### `GET /v1/tryon/presets?ageBand=&cultures[]=`
+### `GET /api/tryon/presets?ageBand=&cultures[]=`
 
 Returns only presets legal for the caller's age band.
 
-### `POST /v1/tryon/save`
+### `POST /api/tryon/save`
 
 ```jsonc
 { "renderId": "rnd_01J8X...", "destination": "memory_gallery",
@@ -356,7 +356,7 @@ function resolveShade(layer: Layer, profile: ShadeProfile, light: Lighting): Lab
 | **Festival** | glitter glow, graphic liner, color | Playful, all ages (stylized for U13) |
 | **Bridal** | full base, long-wear, precise liner | 16+ |
 | **No-Makeup Makeup** | brow, balm, sheer glow | Most-used by dads learning |
-| **Little Legend** | sparkle, sticker, face-paint pigment | U13 only — stylized by design |
+| **Playful (U13)** | sparkle, sticker, face-paint pigment | Applied by age band, not by mode |
 
 ### Cultural Glam Sets
 

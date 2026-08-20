@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config');
 const db = require('../config/db');
 const { ageFromBirthDate } = require('../middleware/requireAgeBand');
+const { defaultModeFor, MODES } = require('./modes');
 
 function ageBandFor(birthDate) {
   const age = ageFromBirthDate(birthDate);
@@ -27,9 +28,9 @@ async function createAdult({ email, password, birthDate, region, displayName }) 
     [email.toLowerCase(), hash, region]);
 
   const profile = await db.one(
-    `INSERT INTO profiles (user_id, display_name, birth_date, age_band)
-     VALUES ($1,$2,$3,'adult') RETURNING *`,
-    [user.id, displayName, birthDate]);
+    `INSERT INTO profiles (user_id, display_name, birth_date, age_band, mode)
+     VALUES ($1,$2,$3,'adult',$4) RETURNING *`,
+    [user.id, displayName, birthDate, defaultModeFor('adult')]);
 
   return { user, profile };
 }
@@ -49,8 +50,7 @@ async function createChildProfile({ guardianProfileId, displayName, birthDate, c
   const profile = await db.one(
     `INSERT INTO profiles (guardian_id, display_name, birth_date, age_band, mode)
      VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-    [guardianProfileId, displayName, birthDate, band,
-     band === 'child' ? 'little_legend' : 'solo_glow']);
+    [guardianProfileId, displayName, birthDate, band, defaultModeFor(band)]);
 
   // Defaults are OFF for everything that touches video or strangers.
   await db.query(
