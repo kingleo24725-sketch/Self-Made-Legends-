@@ -1,5 +1,16 @@
 # 03 — Stripe Subscription Flow
 
+> **BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
+> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
+> A standalone SML product — **not** part of The Self-Made Legends Come Up.
+
+**Merchant of record:** Self-Made Legends LLC (SML). Card statements read
+`SML BEAUTY BOND` — distinct from the Come Up game's descriptor, so a family never
+sees a trading-game charge on their statement. Beauty Bond uses its **own Stripe
+account** (or at minimum its own Connect account and webhook endpoint); its products,
+prices, customers, and webhook secrets are never shared with any other SML product.
+
 Stripe API version pinned: **`2024-06-20`**. All amounts USD; multi-currency via
 Stripe Adaptive Pricing.
 

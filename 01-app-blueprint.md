@@ -1,8 +1,27 @@
 # 01 — Full App Blueprint
 
-**Product:** Dad + Daughter Beauty Bond
+> **BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
+> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
+> A standalone SML product — **not** part of The Self-Made Legends Come Up. See
+> [`README.md`](README.md) for the separation rules and [`NOTICE.md`](NOTICE.md) for IP.
+
+**Product:** Beauty Bond (working title: Dad + Daughter Beauty Bond)
+**Owner:** Self-Made Legends LLC (SML)
 **Category:** Family bonding × beauty education × safe social
 **Platforms:** iOS, Android (React Native), Web companion (Next.js)
+
+---
+
+## 1.0 Ownership & Product Boundary
+
+Beauty Bond is owned and operated by **Self-Made Legends LLC**. It is a separate
+product from SML's trading game, **The Self-Made Legends Come Up** — separate app,
+separate codebase, separate accounts, separate database, separate economy, separate
+brand system. No SML Bucks, no leaderboards, no loot boxes, no game economy of any
+kind appears in this product; it serves minors and cannot carry gambling-adjacent
+mechanics. The only shared asset is the SML corporate mark in the credits.
+Full rules: [`README.md`](README.md).
 
 ---
 
