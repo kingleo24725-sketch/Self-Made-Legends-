@@ -15,7 +15,7 @@ Read this before touching anything in this repository.
 
 **Dad + Daughter Beauty Bond is its own standalone app.** It is *not* a feature, mode, mini-game,
 expansion, or module of **The Self-Made Legends Come Up** (SML's AI trading game,
-which lives in its own separate repository). The two products share exactly two
+which lives in its own separate repository). The two products share exactly one
 thing: **the parent company, Self-Made Legends LLC.**
 
 | | The Self-Made Legends Come Up | Beauty Bond |
@@ -116,7 +116,8 @@ Verify it came up:
 
 ```bash
 curl localhost:4000/health
-# {"ok":true,"product":"beauty-bond"}
+# {"ok":true,"product":"beauty-bond","env":"development",
+#  "features":{"billing":false,"video":false,"ml":true}}
 ```
 
 **Minimum env to boot locally** — everything else can stay blank:
@@ -128,8 +129,9 @@ REFRESH_SECRET=another-long-random-string
 ML_PROVIDER=mock                  # runs the full try-on pipeline with no ML service
 ```
 
-Stripe and LiveKit keys are only needed for billing and video. Without them the
-rest of the API works; those routes will error.
+Stripe and LiveKit keys are only needed for billing and video. Without them the API
+still boots and serves everything else — those routes return 503 and `/health` reports
+the feature as `false`. Deploying to Railway: [`docs/deploy-railway.md`](docs/deploy-railway.md).
 
 ### 2. App
 
@@ -222,6 +224,7 @@ Letters Forward are **free on every plan and never lapse**.
 | [`docs/video-rooms.md`](docs/video-rooms.md) | Room types, join authorization, tokens, tiles, Shared Glam Panel, moderation |
 | [`docs/api-reference.md`](docs/api-reference.md) | Stack, database schema, full API surface, environment, delivery phases |
 | [`docs/branding.md`](docs/branding.md) | Palette, typography, logo concepts, UI style, design tokens, voice guide |
+| [`docs/deploy-railway.md`](docs/deploy-railway.md) | Deploying the API to Railway — project setup, variables, webhooks, operations |
 | [`docs/architecture-decisions.md`](docs/architecture-decisions.md) | ADRs — why Postgres, JWT, LiveKit, Express, and the mock ML provider; what was rejected and why |
 
 ## Safety suite (release blocker)

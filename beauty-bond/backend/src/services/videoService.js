@@ -11,17 +11,42 @@ const config = require('../config');
 const db = require('../config/db');
 const { canJoin } = require('./roomSafety');
 
-const roomService = new RoomServiceClient(
-  config.livekit.wsUrl, config.livekit.apiKey, config.livekit.apiSecret);
-const egressClient = new EgressClient(
-  config.livekit.wsUrl, config.livekit.apiKey, config.livekit.apiSecret);
+/**
+ * Built on first use, not at import. The SDK throws on an undefined URL, which
+ * would take the whole API down at boot on a deploy where video is not yet
+ * configured — see src/config/index.js.
+ */
+let _roomService, _egressClient;
+
+function requireVideoConfigured() {
+  if (!config.enabled.video) {
+    const e = new Error('video_not_configured');
+    e.status = 503;
+    e.publicMessage = 'Glam Rooms are not available yet.';
+    throw e;
+  }
+}
+
+function roomServiceClient() {
+  requireVideoConfigured();
+  _roomService ||= new RoomServiceClient(
+    config.livekit.wsUrl, config.livekit.apiKey, config.livekit.apiSecret);
+  return _roomService;
+}
+
+function egress() {
+  requireVideoConfigured();
+  _egressClient ||= new EgressClient(
+    config.livekit.wsUrl, config.livekit.apiKey, config.livekit.apiSecret);
+  return _egressClient;
+}
 
 const MAX_PARTICIPANTS = { family: 8, lesson: 200, bff: 4, global: 50 };
 
 async function createRoom({ type, name, hostProfile, scheduledFor }) {
   const livekitRoom = `bb_${type}_${Date.now().toString(36)}`;
 
-  await roomService.createRoom({
+  await roomServiceClient().createRoom({
     name: livekitRoom,
     emptyTimeout: 300,
     maxParticipants: MAX_PARTICIPANTS[type],
@@ -40,6 +65,7 @@ async function createRoom({ type, name, hostProfile, scheduledFor }) {
  * guardian revoking permission mid-call ejects the child at the next refresh.
  */
 async function mintToken(room, profile) {
+  requireVideoConfigured();
   const check = await canJoin(profile.id, {
     type: room.type, hostProfileId: room.host_profile_id, roomId: room.id,
   });
@@ -85,13 +111,13 @@ async function mintToken(room, profile) {
 
 /** Panic: get them OUT first. Everything else is secondary. */
 async function forceDisconnect(room, profileId) {
-  await roomService.removeParticipant(room.livekit_room, profileId).catch(() => {});
+  await roomServiceClient().removeParticipant(room.livekit_room, profileId).catch(() => {});
 }
 
 async function freezeRoom(room, reason) {
   await db.query('UPDATE rooms SET frozen_at = now(), freeze_reason = $2 WHERE id = $1',
                  [room.id, reason]);
-  await roomService.updateRoomMetadata(
+  await roomServiceClient().updateRoomMetadata(
     room.livekit_room, JSON.stringify({ frozen: true })).catch(() => {});
 }
 
@@ -104,7 +130,7 @@ async function startRecording(room) {
     const e = new Error('recording_not_available_for_room_type'); e.status = 403; throw e;
   }
 
-  const participants = await roomService.listParticipants(room.livekit_room);
+  const participants = await roomServiceClient().listParticipants(room.livekit_room);
   const adults = participants.filter((p) => {
     try { return !JSON.parse(p.metadata || '{}').isMinor; } catch { return false; }
   });
@@ -114,12 +140,12 @@ async function startRecording(room) {
   const videoTrackIds = adults.flatMap((p) =>
     (p.tracks || []).filter((t) => t.type === 'VIDEO').map((t) => t.sid));
 
-  return egressClient.startTrackCompositeEgress(room.livekit_room, {
+  return egress().startTrackCompositeEgress(room.livekit_room, {
     file: { filepath: `recordings/${room.id}/{time}.mp4` },
   }, { audioTrackIds, videoTrackIds });
 }
 
 module.exports = {
-  roomService, createRoom, mintToken, forceDisconnect, freezeRoom, startRecording,
-  MAX_PARTICIPANTS,
+  roomServiceClient, createRoom, mintToken, forceDisconnect, freezeRoom,
+  startRecording, requireVideoConfigured, MAX_PARTICIPANTS,
 };
