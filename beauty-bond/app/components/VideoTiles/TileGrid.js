@@ -1,6 +1,8 @@
 /**
  * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+ * Proprietary and confidential. Unauthorized copying, distribution,
+ * or use of this file, via any medium, is strictly prohibited.
  *
  * Tile layout per docs/video-rooms.md §5.4:
  *   2 -> stacked 50/50 | 3-4 -> 2x2 grid | 5+ -> active speaker + strip

@@ -2,7 +2,7 @@
 
 > **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
-> Owner: **Self-Made Legends LLC (SML)** · MIT licensed with SML attribution.
+> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 
 Beauty Bond ships from its **own repository**. This file is the one-time procedure to
 move this project — the full `app/`, `backend/`, `infra/`, and `docs/` tree — out of

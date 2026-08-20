@@ -2,7 +2,7 @@
 """
 Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
 Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
-Licensed under the MIT License with SML attribution — see LICENSE.
+Proprietary and confidential. See LICENSE.
 
 Generates every splash, icon, and store-listing asset from ONE source file:
 
