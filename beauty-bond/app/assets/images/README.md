@@ -84,6 +84,29 @@ variant in the bundle.
 | `generated/store/ipad-screenshot-12.9.png` | 2048×2732 | iPad 12.9" screenshot |
 | `generated/store/play-screenshot-phone.png` | 1080×1920 | Play phone screenshot |
 
+## Weight
+
+Only four things ship in the app bundle — **6.1 MB total**:
+
+| Bundled | Size |
+|---|---|
+| `generated/splash.png` | 2.4 MB |
+| `generated/icon.png` | 1.5 MB |
+| `generated/adaptive-icon-foreground.png` | 0.8 MB |
+| `../fonts/*.ttf` | 1.4 MB |
+
+Everything else is generated but **not bundled**: the four full-bleed variants
+(3.4 MB, opt-in) and the store listing set (5.7 MB, uploaded to the consoles by
+hand). `assetBundlePatterns` in `app.json` lists the bundled files explicitly
+rather than globbing `assets/images/**/*`, which previously swept the store
+screenshots into the download.
+
+Large no-alpha variants are JPEG (q90–92, 4:4:4, progressive); anything the Expo
+config consumes stays PNG. The per-density Android and iOS scale folders are
+still generated for bare-workflow use but are no longer referenced by
+`app.json` — the `expo-splash-screen` plugin renders one image at `imageWidth`
+dp, so referencing them was adding ~11 MB of duplicates.
+
 ## Icons crop to the faces, not the cover
 
 `generated/icon.png` and the Android adaptive foreground crop to `FACE_BOX` in

@@ -127,11 +127,11 @@ export function FullBleedSplash({ onFinish }) {
 
   const source = tablet
     ? (landscape
-        ? require('../assets/images/generated/splash-tablet-landscape.png')
-        : require('../assets/images/generated/splash-tablet-portrait.png'))
+        ? require('../assets/images/generated/splash-tablet-landscape.jpg')
+        : require('../assets/images/generated/splash-tablet-portrait.jpg'))
     : (landscape
-        ? require('../assets/images/generated/splash-phone-landscape.png')
-        : require('../assets/images/generated/splash-phone-portrait.png'));
+        ? require('../assets/images/generated/splash-phone-landscape.jpg')
+        : require('../assets/images/generated/splash-phone-portrait.jpg'));
 
   useEffect(() => {
     ExpoSplashScreen.hideAsync().catch(() => {});
