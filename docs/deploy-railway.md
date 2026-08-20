@@ -8,8 +8,9 @@ This deploys `backend/` only. The React Native app ships through EAS to the app
 stores; Railway serves the API it talks to.
 
 **Its own Railway project.** Not a service inside The Self-Made Legends Come Up's
-project — separate project, separate database, separate variables, same reasoning as
-the separate Stripe account (`docs/stripe-flow.md` §3.2).
+project — separate project, separate database, separate variables. The Stripe
+*account* is shared with Come Up by owner decision; nothing else is, and that
+sharing is contained by the code isolation in `docs/stripe-flow.md` §3.2.
 
 ---
 
@@ -148,6 +149,12 @@ radar.early_fraud_warning.created
 ```
 
 Copy the signing secret into `STRIPE_WEBHOOK_SECRET_BB` and redeploy.
+
+**This endpoint will receive The Self-Made Legends Come Up's events too.** Stripe fans
+every event out to every endpoint on an account, and Beauty Bond bills through the
+shared SML account. Those events are ignored by the ownership gate before any write —
+seeing `ignored: not_beauty_bond` in the logs is the gate working, not a
+misconfiguration. `docs/stripe-flow.md` §3.2 Layer 3.
 
 **Entitlement is granted by the webhook, never by the client returning from the
 payment sheet.** If the webhook is not wired up, payments succeed and nobody gets

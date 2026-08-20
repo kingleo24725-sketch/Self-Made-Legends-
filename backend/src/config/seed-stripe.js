@@ -16,9 +16,10 @@
  * and move the lookup_key onto it — this script does that for you, and existing
  * subscribers stay on the price they signed up at (see CHANGING A PRICE below).
  *
- * DEDICATED ACCOUNT: this writes to Beauty Bond's own Stripe account. Objects
- * are still tagged sml_product=beauty_bond and bb_-prefixed — that costs
- * nothing and keeps reporting unambiguous. See docs/stripe-flow.md §3.2.
+ * SHARED SML ACCOUNT: The Self-Made Legends Come Up bills through the same
+ * Stripe account. Everything created here is tagged sml_product=beauty_bond and
+ * prefixed bb_, which is what keeps the two products' catalogues apart.
+ * Read docs/stripe-flow.md §3.2 before changing any of this.
  */
 const Stripe = require('stripe');
 const config = require('./index');
