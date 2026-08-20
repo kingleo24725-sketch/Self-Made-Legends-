@@ -2,7 +2,7 @@
   "name": "@beauty-bond/backend",
   "version": "0.1.0",
   "private": true,
-  "description": "Beauty Bond API — a Self-Made Legends LLC (SML) product",
+  "description": "Beauty Bond API \u2014 a Self-Made Legends LLC (SML) product",
   "license": "UNLICENSED",
   "main": "src/server.js",
   "type": "commonjs",
@@ -12,7 +12,8 @@
     "test": "jest",
     "test:safety": "jest tests/safety",
     "migrate": "node src/config/migrate.js",
-    "seed:stripe": "node src/config/seed-stripe.js"
+    "seed:stripe": "node src/config/seed-stripe.js",
+    "test:e2e": "jest tests/integration"
   },
   "dependencies": {
     "argon2": "^0.41.1",

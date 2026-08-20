@@ -43,12 +43,12 @@ export const surface = {
 
 /** Mode accents — docs/branding.md §7.3. */
 export const modeAccent = {
-  dad_daughter: { accent: '#E8A87C', gradient: ['#E8A87C', '#C1654F'] },
-  legacy:       { accent: '#D4AF37', gradient: ['#D4AF37', '#3D2645'] },
-  little_legend:{ accent: '#F4C2C2', gradient: ['#F4C2C2', '#E8A87C'] },
-  solo_glow:    { accent: '#5C3D66', gradient: ['#5C3D66', '#3D2645'] },
-  bff:          { accent: '#C1654F', gradient: ['#C1654F', '#F4C2C2'] },
-  global_glam:  { accent: '#8FA68E', gradient: ['#8FA68E', '#3D2645'] },
+  dad_daughter:      { accent: '#E8A87C', gradient: ['#E8A87C', '#C1654F'] },
+  mom_daughter:      { accent: '#D4AF37', gradient: ['#D4AF37', '#3D2645'] },
+  guardian_daughter: { accent: '#8FA68E', gradient: ['#8FA68E', '#E8A87C'] },
+  solo_girl:         { accent: '#5C3D66', gradient: ['#5C3D66', '#3D2645'] },
+  best_friend_glam:  { accent: '#C1654F', gradient: ['#C1654F', '#F4C2C2'] },
+  global_rooms:      { accent: '#8FA68E', gradient: ['#8FA68E', '#3D2645'] },
 };
 
 /**

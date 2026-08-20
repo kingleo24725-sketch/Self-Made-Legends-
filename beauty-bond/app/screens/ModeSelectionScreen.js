@@ -2,11 +2,12 @@
  * Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
  *
- * Mode changes vocabulary, color, content rails, AND the safety envelope.
- * Switchable any time — stored per-profile server-side. docs/wireframes.md W-10.
+ * Six modes. Mode changes vocabulary, accent color, home rails, AND the
+ * safety envelope. Switchable any time; stored per-profile server-side.
+ * docs/wireframes.md W-10.
  */
-import React from 'react';
-import { View, Text, SafeAreaView, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, SafeAreaView, ScrollView, ActivityIndicator } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import Card from '../components/Cards/Card';
@@ -14,34 +15,46 @@ import { MODES, MODE_META } from '../utils/constants';
 import { ageFromBirthDate } from '../utils/validators';
 import api from '../utils/api';
 
-const ORDER = [MODES.DAD_DAUGHTER, MODES.LEGACY, MODES.LITTLE_LEGEND,
-                MODES.SOLO_GLOW, MODES.BFF, MODES.GLOBAL_GLAM];
-const ICON = {
-  [MODES.DAD_DAUGHTER]: '👨‍👧', [MODES.LEGACY]: '👩‍👧', [MODES.LITTLE_LEGEND]: '🧸',
-  [MODES.SOLO_GLOW]: '✨', [MODES.BFF]: '👯', [MODES.GLOBAL_GLAM]: '🌍',
-};
+const ORDER = [
+  MODES.DAD_DAUGHTER,
+  MODES.MOM_DAUGHTER,
+  MODES.GUARDIAN_DAUGHTER,
+  MODES.SOLO_GIRL,
+  MODES.BEST_FRIEND_GLAM,
+  MODES.GLOBAL_ROOMS,
+];
 
 export default function ModeSelectionScreen({ navigation }) {
   const t = useTheme();
   const { profile, reload } = useAuth();
+  const [saving, setSaving] = useState(null);
+
   const age = profile?.birthDate ? ageFromBirthDate(profile.birthDate) : 99;
 
-  async function pick(mode, locked) {
+  async function pick(mode, locked, meta) {
     if (locked) {
-      // Never a dead end — offer the guardian-request path.
-      navigation.navigate('GuardianConsole', { requestMode: mode });
+      // Never a dead end — route to the guardian-request path instead.
+      navigation.navigate('GuardianConsole', { requestMode: mode, minAge: meta.minAge });
       return;
     }
-    await api.patch(`/profiles/${profile.id}`, { mode });
-    await reload();
-    navigation.navigate('Main');
+    setSaving(mode);
+    try {
+      await api.patch(`/profiles/${profile.id}`, { mode });
+      await reload();
+      navigation.navigate('Main');
+    } finally {
+      setSaving(null);
+    }
   }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>
       <ScrollView contentContainerStyle={{ padding: t.gutter, gap: t.space[3] }}>
         <Text style={[t.type('h1'), { color: t.color.textPrimary }]}>
-          How do you want to glam today?
+          How do you want to bond today?
+        </Text>
+        <Text style={[t.type('body'), { color: t.color.textSecondary, marginBottom: t.space[2] }]}>
+          Pick a mode. You can switch any time.
         </Text>
 
         {ORDER.map((mode) => {
@@ -50,29 +63,45 @@ export default function ModeSelectionScreen({ navigation }) {
           const active = profile?.mode === mode;
 
           return (
-            <Card key={mode} onPress={() => pick(mode, locked)} selected={active}
-                  style={{ opacity: locked ? 0.55 : 1 }}>
+            <Card
+              key={mode}
+              onPress={() => pick(mode, locked, meta)}
+              selected={active}
+              style={{ opacity: locked ? 0.55 : 1 }}
+            >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
-                <Text style={{ fontSize: 28 }}>{ICON[mode]}</Text>
+                <Text style={{ fontSize: 30 }}>{meta.icon}</Text>
+
                 <View style={{ flex: 1 }}>
-                  <Text style={[t.type('h3'), { color: t.color.textPrimary }]}>{meta.title}</Text>
+                  <Text style={[t.type('h3'), { color: t.color.textPrimary }]}>
+                    {meta.title}
+                  </Text>
                   <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
                     {meta.subtitle}
                   </Text>
                 </View>
-                {locked && (
+
+                {saving === mode && <ActivityIndicator color={t.color.accent} />}
+
+                {/* Lock reason is always visible — never a bare padlock. */}
+                {locked && !saving && (
                   <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>
                     🔒 {meta.minAge}+
                   </Text>
                 )}
-                {active && <Text style={[t.type('caption'), { color: t.color.accent }]}>● Active</Text>}
+
+                {active && !saving && (
+                  <Text style={[t.type('caption'), { color: t.color.accent }]}>● Active</Text>
+                )}
               </View>
             </Card>
           );
         })}
 
-        <Text style={[t.type('caption'), { color: t.color.textSecondary, textAlign: 'center' }]}>
-          You can switch any time.
+        <Text style={[t.type('caption'), {
+          color: t.color.textSecondary, textAlign: 'center', marginTop: t.space[3],
+        }]}>
+          Locked modes need a grown-up. Tap one to ask.
         </Text>
       </ScrollView>
     </SafeAreaView>

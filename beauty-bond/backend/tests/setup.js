@@ -5,7 +5,10 @@
  * Test env. Dummy values only — never real keys, never a real database.
  */
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = 'postgres://localhost:5432/beauty_bond_test';
+// Respect an externally provided test database (CI service container,
+// local instance). Only fall back to the default when nothing is set.
+process.env.DATABASE_URL = process.env.DATABASE_URL
+  || 'postgres://postgres:postgres@localhost:5432/beauty_bond_test';
 process.env.JWT_SECRET = 'test-jwt-secret';
 process.env.REFRESH_SECRET = 'test-refresh-secret';
 process.env.STRIPE_SECRET_KEY_BB = 'sk_test_dummy_beauty_bond';

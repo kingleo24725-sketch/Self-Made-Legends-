@@ -53,6 +53,14 @@ module.exports = {
     wsUrl: process.env.LIVEKIT_WS_URL,
     webhookKey: process.env.LIVEKIT_WEBHOOK_KEY,
   },
-  ml: { serviceUrl: process.env.ML_SERVICE_URL },
+  ml: {
+    serviceUrl: process.env.ML_SERVICE_URL,
+    // 'mock' runs the full pipeline locally; 'http' calls a real Vision/ML
+    // service. The mock is refused in production — see services/mlProvider.js.
+    provider: process.env.ML_PROVIDER || (process.env.NODE_ENV === 'production' ? 'http' : 'mock'),
+  },
+  mock: {
+    mediaBaseUrl: process.env.MOCK_MEDIA_BASE_URL || 'http://localhost:4000/static',
+  },
   webUrl: process.env.WEB_URL || 'http://localhost:3000',
 };

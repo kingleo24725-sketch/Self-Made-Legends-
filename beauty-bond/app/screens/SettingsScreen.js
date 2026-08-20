@@ -32,16 +32,31 @@ export default function SettingsScreen({ navigation }) {
   }
 
   const isAdult = profile?.ageBand === AGE_BANDS.ADULT;
+  const isChild = profile?.ageBand === AGE_BANDS.CHILD;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>
       <ScrollView contentContainerStyle={{ padding: t.gutter, gap: t.space[4] }}>
         <Text style={[t.type('h1'), { color: t.color.textPrimary }]}>Settings</Text>
 
-        <Group title="SAFETY">
-          <Row label="Guardian Console" onPress={() => navigation.navigate('GuardianConsole')} />
+        <Group title="SAFETY CONTROLS">
+          <Card>
+            <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
+              Age band: <Text style={{ color: t.color.textPrimary }}>{profile?.ageBand}</Text>
+            </Text>
+            <Text style={[t.type('caption'), {
+              color: t.color.textSecondary, marginTop: t.space[1],
+            }]}>
+              Age settings are fixed and cannot be changed with a plan. Contact
+              support if this is wrong.
+            </Text>
+          </Card>
+          {isAdult && (
+            <Row label="Guardian Console" onPress={() => navigation.navigate('GuardianConsole')} />
+          )}
           <Row label="Blocked accounts" onPress={() => {}} />
           <Row label="Report history" onPress={() => {}} />
+          <Row label="Who can reach me" onPress={() => {}} />
         </Group>
 
         <Group title="PRIVACY">
@@ -54,6 +69,12 @@ export default function SettingsScreen({ navigation }) {
         {isAdult && (
           <Group title="BILLING">
             <Row label={`Plan: ${tier}`} onPress={() => navigation.navigate('PlanSelection')} />
+            <Text style={[t.type('caption'), {
+              color: t.color.textSecondary, paddingBottom: t.space[2],
+            }]}>
+              🛈 Safety features, guardian controls, and data export are free on
+              every plan.
+            </Text>
             <Row label="Manage billing" onPress={manageBilling} />
           </Group>
         )}

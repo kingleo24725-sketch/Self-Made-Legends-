@@ -17,7 +17,7 @@ export function useRoomToken(roomId) {
 
   const mint = useCallback(async () => {
     try {
-      const data = await api.post(`/rooms/${roomId}/token`);
+      const data = await api.post('/video/token', { roomId });
       setState({ token: data.token, url: data.url, capabilities: data.capabilities, error: null });
     } catch (e) {
       setState((s) => ({ ...s, error: e }));   // 403 => permission revoked; leave the room
@@ -36,7 +36,7 @@ export function useRoomToken(roomId) {
 /** One tap, no confirmation. A child in trouble never faces "Are you sure?" */
 export function usePanic(roomId) {
   return useCallback(async () => {
-    try { await api.post(`/rooms/${roomId}/panic`); } finally { /* always leave */ }
+    try { await api.post(`/video/rooms/${roomId}/panic`); } finally { /* always leave */ }
   }, [roomId]);
 }
 

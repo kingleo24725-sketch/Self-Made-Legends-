@@ -20,7 +20,7 @@ export function useSubscription() {
     setStatus('pending');
     try {
       const { clientSecret, ephemeralKey, customerId } =
-        await api.post('/billing/checkout', { lookupKey });
+        await api.post('/stripe/checkout', { lookupKey });
 
       const { error: initErr } = await initPaymentSheet({
         merchantDisplayName: 'Beauty Bond',
@@ -45,7 +45,7 @@ export function useSubscription() {
 
   const openBillingPortal = useCallback(async () => {
     // Store-sourced subscriptions deep-link to the OS manager instead.
-    const { url, source } = await api.post('/billing/portal');
+    const { url, source } = await api.post('/stripe/portal');
     return { url, source };
   }, []);
 

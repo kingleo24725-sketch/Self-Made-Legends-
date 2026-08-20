@@ -11,6 +11,7 @@ import React from 'react';
 import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
+import { useSubscription } from '../hooks/useSubscription';
 import Card from '../components/Cards/Card';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
 import ShadeSwatch from '../components/Cards/ShadeSwatch';
@@ -19,6 +20,7 @@ import { AGE_BANDS } from '../utils/constants';
 export default function ProfileScreen({ navigation }) {
   const t = useTheme();
   const { profile } = useAuth();
+  const { tier, entitlements, usage } = useSubscription();
   const isChild = profile?.ageBand === AGE_BANDS.CHILD;
 
   return (
@@ -40,6 +42,38 @@ export default function ProfileScreen({ navigation }) {
             🔥 7-day streak — 2 passes left this month
           </Text>
         </Card>
+
+        {/* Subscription status — kids never see billing, they don't hold a plan. */}
+        {!isChild && (
+          <>
+            <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>
+              SUBSCRIPTION
+            </Text>
+            <Card onPress={() => navigation.navigate('PlanSelection')}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[t.type('h3'), {
+                  color: t.color.textPrimary, flex: 1, textTransform: 'capitalize',
+                }]}>
+                  {tier} plan
+                </Text>
+                <Text style={[t.type('caption'), { color: t.color.accent }]}>Manage ›</Text>
+              </View>
+              <Text style={[t.type('bodySm'), {
+                color: t.color.textSecondary, marginTop: t.space[1],
+              }]}>
+                Try-ons this month: {usage.tryon}
+                {entitlements.tryOnPerMonth === 'unlimited'
+                  ? ' · unlimited'
+                  : ` / ${entitlements.tryOnPerMonth}`}
+              </Text>
+              <Text style={[t.type('caption'), {
+                color: t.color.textSecondary, marginTop: t.space[1],
+              }]}>
+                🛈 Safety features are free, always.
+              </Text>
+            </Card>
+          </>
+        )}
 
         <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>BADGES · 6/24</Text>
         <Card>
