@@ -43,7 +43,15 @@ app.use('/api/webhooks', stripeWebhook);
 app.use(express.json({ limit: '12mb' }));
 app.use(limits.standard);
 
-app.get('/health', (req, res) => res.json({ ok: true, product: 'beauty-bond' }));
+app.get('/health', (req, res) => res.json({
+  ok: true,
+  product: 'beauty-bond',
+  env: config.env,
+  version: require('../package.json').version,
+  // Which optional features are configured. A deploy can be healthy with some
+  // of these false — see src/config/index.js.
+  features: config.enabled,
+}));
 
 app.use('/api/auth', authRoutes);
 app.use('/api', userRoutes);

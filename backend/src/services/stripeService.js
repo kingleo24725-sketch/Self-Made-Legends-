@@ -24,7 +24,24 @@ const config = require('./../config');
 const db = require('../config/db');
 const { setEntitlement } = require('./entitlements');
 
-const stripe = new Stripe(config.stripe.secretKey, { apiVersion: config.stripe.apiVersion });
+/**
+ * Built on first use. The SDK throws without a key, which would take the API
+ * down at boot on a deploy where billing is not yet configured.
+ */
+let _stripe;
+const stripe = new Proxy({}, {
+  get(_t, prop) {
+    if (!config.enabled.billing && config.env === 'production') {
+      const e = new Error('billing_not_configured');
+      e.status = 503;
+      e.publicMessage = 'Subscriptions are not available yet.';
+      throw e;
+    }
+    _stripe ||= new Stripe(config.stripe.secretKey || 'sk_test_unconfigured',
+                           { apiVersion: config.stripe.apiVersion });
+    return _stripe[prop];
+  },
+});
 
 const OURS = config.stripe.productTag;          // 'beauty_bond'
 const PREFIX = config.stripe.lookupKeyPrefix;   // 'bb_'
