@@ -7,20 +7,17 @@
 |---|---|
 | `icons/` | UI icons — Lucide base, 2px stroke, rounded caps, 24px grid. Beauty-specific icons (brush types, shade drop, bond link) drawn bespoke. |
 | `illustrations/` | Empty-state and onboarding art. **Real families, real skin texture, unretouched.** Every cultural collection ships photography of that heritage — casting is contractual, not aspirational (`docs/branding.md` §7.5). |
-| `fonts/` | Fraunces (display), Inter (body), Nunito (child accounts). All SIL OFL — embeddable in the app and in Bond Book print exports. |
+| `fonts/` | Fraunces (display), Inter (body), Nunito (child accounts) — bundled, SIL OFL. |
 
-## Font files to add
+## Bundled fonts
 
 ```
-fonts/Fraunces-VariableFont.ttf
-fonts/Inter-Regular.ttf
-fonts/Inter-Medium.ttf
-fonts/Inter-SemiBold.ttf
-fonts/Nunito-SemiBold.ttf
-fonts/Nunito-Bold.ttf
+fonts/Fraunces.ttf     variable, SOFT/WONK/opsz/wght
+fonts/Inter.ttf        variable, opsz/wght
+fonts/Nunito.ttf       variable, wght
 ```
 
-Load them in `App.js` with `expo-font` before rendering, so the first paint is not
+Load them with `expo-font` before the first render so the opening frame is not
 in a fallback face.
 
 ## Rules

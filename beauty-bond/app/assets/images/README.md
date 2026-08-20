@@ -7,28 +7,40 @@
 ## One source file drives everything
 
 ```
-cover.png          ← the ONLY file you edit. 1024×1536 (2:3), PNG.
+cover.png          ← the ONLY image you edit. 1024×1536 (2:3), PNG.
 generated/         ← produced by npm run assets:generate. Do not edit by hand.
 ```
 
-## Replacing the placeholder
+## Provenance
 
-`cover.png` is currently a **generated placeholder**, and
-`.cover-is-placeholder` marks it as such. CI fails the release build while that
-marker exists.
+`cover.png` is the official Dad + Daughter Beauty Bond™ cover artwork, supplied
+by Self-Made Legends LLC at native 1024×1536.
+
+**One edit was made to the supplied file:** the "Made with AI" badge in the
+top-right corner was removed. It was replaced by cloning clean bokeh from lower
+in the same image, colour-matched to the local gradient and grain-matched to the
+surrounding canvas texture (σ ≈ 4.0), with feathering placed outside the badge
+bounds so no part of the pill survives. Nothing else in the artwork was altered.
+
+That removal matters for the store listing: a badge in the corner of a feature
+graphic reads as an artifact rather than a design choice, and some marketplaces
+have their own AI-disclosure placement rules. The unmodified original remains
+the master — re-run the removal from it if the crop ever changes.
+
+## Replacing the cover
 
 ```bash
-# 1. Drop the real artwork in, at 1024×1536 or larger, 2:3 aspect
-cp ~/Downloads/beauty-bond-cover.png app/assets/images/cover.png
-
-# 2. Clear the marker
-rm app/assets/images/.cover-is-placeholder
-
-# 3. Regenerate and verify
+cp new-cover.png app/assets/images/cover.png    # 1024×1536 or larger, 2:3
 cd app
 npm run assets:generate
-npm run assets:verify:release      # must exit 0
+npm run assets:verify:release                   # must exit 0
 ```
+
+## Fonts
+
+`app/assets/fonts/` carries the three faces from `docs/branding.md` §7.4 —
+Fraunces (display), Inter (body), Nunito (child accounts). All SIL OFL, so they
+embed in the app and in Bond Book print exports without licensing cost.
 
 ## Why the splash is `contain`, not `cover`
 
@@ -72,18 +84,22 @@ variant in the bundle.
 | `generated/store/ipad-screenshot-12.9.png` | 2048×2732 | iPad 12.9" screenshot |
 | `generated/store/play-screenshot-phone.png` | 1080×1920 | Play phone screenshot |
 
-## Two things to check before submitting
+## Icons crop to the faces, not the cover
 
-1. **The "Made with AI" badge is baked into the artwork.** Fine for a splash,
-   but review it for the store listing — some marketplaces have AI-disclosure
-   rules, and a badge in the corner of a feature graphic reads as an artifact
-   rather than a design choice. Consider a badge-free master for store assets.
+`generated/icon.png` and the Android adaptive foreground crop to `FACE_BOX` in
+`generate-splash-assets.py` — the two faces, with the wordmark excluded. At 60px
+neither platform renders that text legibly, and a clipped half-word reads as a
+mistake. The adaptive foreground is additionally scaled into the inner 64% with
+transparent padding, because a launcher may mask it to a circle, a squircle, or
+a rounded square.
 
-2. **Apple discourages text in launch screens** because they cannot be
-   localised and can make the launch-to-first-screen transition feel abrupt.
-   The wordmark is baked into this art. It will pass review, but if the
-   transition feels jarring, switch the native splash to the icon on
-   `#E9B78E` and keep the full cover for the JS splash only.
+## One thing to check before submitting
+
+**Apple discourages text in launch screens** because they cannot be localised
+and can make the launch-to-first-screen transition feel abrupt. The wordmark is
+part of this artwork. It will pass review, but if the transition feels jarring,
+switch the native splash to the icon on `#E9B78E` and keep the full cover for
+the JS splash only.
 
 ## Colour
 
