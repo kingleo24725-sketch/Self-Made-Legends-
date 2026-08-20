@@ -143,9 +143,9 @@ async function syncSubscription(sub) {
   if (!userId) return;
 
   const price = sub.items.data[0]?.price;
-  const tier = price?.metadata?.tier ?? 'sparkle';
+  const tier = price?.metadata?.tier ?? 'free';
   const ACTIVE = ['active', 'trialing', 'past_due'];
-  const effectiveTier = ACTIVE.includes(sub.status) ? tier : 'sparkle';
+  const effectiveTier = ACTIVE.includes(sub.status) ? tier : 'free';
 
   await db.query(
     `INSERT INTO subscriptions

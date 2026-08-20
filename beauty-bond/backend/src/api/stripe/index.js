@@ -11,30 +11,24 @@ const logger = require('../../utils/logger');
 const { requireAuth, requireAdult } = require('../../middleware/auth');
 const svc = require('../../services/stripeService');
 
+const ctrl = require('../../controllers/stripeController');
+
 const router = express.Router();
 
-/* ── Checkout (adults only — a child can never reach this) ───────── */
-router.post('/checkout', requireAuth, requireAdult, async (req, res, next) => {
-  try {
-    const out = await svc.createSubscriptionCheckout(
-      req.user, req.body.lookupKey, req.body.nonce);
-    res.json(out);
-  } catch (err) { next(err); }
-});
+/* ── Public ──────────────────────────────────────────────────────── */
+router.get('/plans', ctrl.listPlans);
 
-router.post('/portal', requireAuth, requireAdult, async (req, res, next) => {
-  try {
-    // Store-sourced subs deep-link to the OS manager instead of the portal.
-    const sub = await db.one(
-      `SELECT source FROM subscriptions WHERE user_id = $1
-        ORDER BY updated_at DESC LIMIT 1`, [req.user.id]);
-    if (sub && sub.source !== 'stripe') {
-      return res.json({ source: sub.source, manageUrl: null });
-    }
-    const session = await svc.createPortalSession(req.user);
-    res.json({ url: session.url, source: 'stripe' });
-  } catch (err) { next(err); }
-});
+/* ── Adults only. A child account can never reach any of these. ──── */
+router.post('/customer', requireAuth, requireAdult, ctrl.createCustomer);
+router.post('/subscription', requireAuth, requireAdult, ctrl.createSubscription);
+router.post('/checkout', requireAuth, requireAdult, ctrl.createSubscription); // alias
+router.post('/subscription/cancel', requireAuth, requireAdult, ctrl.cancelSubscription);
+router.post('/portal', requireAuth, requireAdult, ctrl.createPortal);
+
+/* ── Status: readable by any authenticated profile, including a child,
+ *    because the UI needs to know what is unlocked. Children inherit the
+ *    guardian's plan and never see billing controls. ───────────────── */
+router.get('/subscription', requireAuth, ctrl.getSubscriptionStatus);
 
 /* ── Webhook ─────────────────────────────────────────────────────── */
 /**

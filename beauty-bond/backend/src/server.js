@@ -38,7 +38,8 @@ app.use((req, res, next) => {
  */
 app.use('/api/webhooks', stripeWebhook);
 
-app.use(express.json({ limit: '1mb' }));
+// 12mb accommodates a base64 photo payload on /api/tryon.
+app.use(express.json({ limit: '12mb' }));
 app.use(limits.standard);
 
 app.get('/health', (req, res) => res.json({ ok: true, product: 'beauty-bond' }));

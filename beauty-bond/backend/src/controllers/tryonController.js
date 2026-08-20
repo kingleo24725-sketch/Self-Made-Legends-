@@ -43,27 +43,38 @@ async function receiveUpload(req, res, next) {
   } catch (err) { next(err); }
 }
 
+/**
+ * POST /api/tryon
+ *
+ * Body: { image: { base64 } | { assetId }, look: { id, layers } }
+ *   or the flat form { base64, assetId, look } for convenience.
+ *
+ * Returns { processedImageUrl, ... }.
+ */
 async function render(req, res, next) {
   try {
-    const { assetId, look } = req.body;
-    if (!look || !Array.isArray(look.layers)) {
-      return res.status(400).json({ error: 'look_required' });
-    }
+    const look = req.body.look ?? req.body.preset;
+    const image = req.body.image ?? {
+      base64: req.body.base64 ?? req.body.imageBase64,
+      assetId: req.body.assetId,
+    };
 
     const shadeProfile = await db.one(
       `SELECT * FROM shade_profiles WHERE profile_id = $1
-        ORDER BY created_at DESC LIMIT 1`, [req.profile.id]);
+        ORDER BY created_at DESC LIMIT 1`, [req.profile.id]).catch(() => null);
 
-    const result = await aiService.render({
-      assetId, look, shadeProfile, profile: req.profile,
+    const result = await aiService.applyLook(image, look, {
+      profile: req.profile, shadeProfile,
     });
 
     await consumeQuota(req.profile.id, 'tryon');
 
+    // The SOURCE image is never persisted — only the render, and only for 24h
+    // unless the user explicitly saves it. docs/ai-tryon.md §4.6 Rule 3.
     await db.query(
       `INSERT INTO renders (id, profile_id, url, before_url, geometry_locked, expires_at)
        VALUES (gen_random_uuid(), $1, $2, $3, true, now() + interval '24 hours')`,
-      [req.profile.id, result.url, result.beforeUrl]).catch(() => {});
+      [req.profile.id, result.processedImageUrl, result.originalImageUrl]).catch(() => {});
 
     res.json(result);
   } catch (err) { next(err); }

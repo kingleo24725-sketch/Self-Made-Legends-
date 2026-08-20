@@ -98,22 +98,101 @@ beauty-bond/
 └── NOTICE.md            ownership, trademarks, attribution
 ```
 
-## Getting started
+## Setup
+
+### Prerequisites
+
+Node 22+, PostgreSQL 16+, and an Expo dev client (Expo Go cannot load the
+on-device try-on native module).
+
+### 1. Backend
 
 ```bash
-# Backend
 cd backend
-cp ../.env.example ../.env      # fill in secrets
+cp ../.env.example ../.env        # then fill in the values below
 npm install
-npm run migrate                 # applies docs/api-reference.md §6.4 schema
-npm run test:safety             # release-blocking suite — must pass
-npm start
+createdb beauty_bond              # or point DATABASE_URL at an existing one
+npm run migrate                   # 43 tables, safety constraints, RLS policies
+npm run test:safety               # release blocker — must pass
+npm run dev                       # http://localhost:4000
+```
 
-# App (requires a dev client — Expo Go cannot load the try-on native module)
+Verify it came up:
+
+```bash
+curl localhost:4000/health
+# {"ok":true,"product":"beauty-bond"}
+```
+
+**Minimum env to boot locally** — everything else can stay blank:
+
+```bash
+DATABASE_URL=postgres://postgres@localhost:5432/beauty_bond
+JWT_SECRET=any-long-random-string
+REFRESH_SECRET=another-long-random-string
+ML_PROVIDER=mock                  # runs the full try-on pipeline with no ML service
+```
+
+Stripe and LiveKit keys are only needed for billing and video. Without them the
+rest of the API works; those routes will error.
+
+### 2. App
+
+```bash
 cd app
 npm install
-npm start
+npx expo start --dev-client
 ```
+
+Point the app at your backend via `app.json` → `expo.extra.apiBaseUrl`
+(default `http://localhost:4000/api`).
+
+### 3. Try it end to end
+
+```bash
+# Register
+curl -X POST localhost:4000/api/auth/register -H 'Content-Type: application/json' \
+  -d '{"email":"you@example.com","password":"a-strong-passphrase","birthDate":"1990-01-01"}'
+
+# Use the accessToken from that response
+curl -X POST localhost:4000/api/tryon -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"image":{"base64":"data:image/png;base64,iVBORw0KGgo="},
+       "look":{"id":"soft_glam","layers":[{"type":"lip","opacity":0.8}]}}'
+# -> { "processedImageUrl": "...", "safety": { "cosmeticsOnly": true } }
+```
+
+### Tests
+
+```bash
+cd backend
+npm run test:safety   # release blocker: geometry lock, canJoin matrix, gate order
+npm run test:e2e      # end-to-end against a real Postgres
+npx jest --coverage   # everything
+```
+
+## API
+
+| Group | Endpoints |
+|---|---|
+| **Auth** `/api/auth` | `POST /register` · `POST /login` · `GET /me` · `POST /refresh` · `POST /logout` |
+| **Stripe** `/api/stripe` | `GET /plans` · `POST /customer` · `POST /subscription` · `GET /subscription` · `POST /subscription/cancel` · `POST /portal` |
+| **Try-On** `/api/tryon` | `POST /` (base64 → `processedImageUrl`) · `POST /upload-url` · `GET /presets` · `POST /shade` |
+| **Video** `/api/video` | `POST /token` · `GET|POST /rooms` · `GET|POST /rooms/:id/glam` · `POST /rooms/:id/panic` · `POST /rooms/:id/report` · `POST /rooms/:id/eject/:profileId` |
+| **Users** `/api` | `GET /me/entitlements` · `PATCH /profiles/:id` · `POST /guardian/*` · `GET /privacy/export` · `DELETE /privacy/account` |
+| **Webhooks** `/api/webhooks` | `POST /stripe` (raw body, signature-verified, product-scoped) |
+
+## Plans
+
+| Plan | Price | Adds |
+|---|---|---|
+| **Free** | $0 | Levels 1–2, one cultural collection, 5 try-ons/mo, 20 min rooms |
+| **Basic** | $6.99/mo | All lessons and cultures, unlimited try-on, glam sets, 5 h rooms |
+| **Premium** | $12.99/mo | Legacy Vault, **Letters Forward**, unlimited rooms, 4 kids |
+| **Family** | $19.99/mo | 6 kids, unlimited Bond Books, creator tools |
+
+Safety features, guardian controls, data export, and delivery of already-recorded
+Letters Forward are **free on every plan and never lapse**.
 
 ## Stack
 

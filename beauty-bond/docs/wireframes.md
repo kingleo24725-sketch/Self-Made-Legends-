@@ -1116,7 +1116,7 @@ Legend:
 │  Choose your bond.                   │ [R1]
 │  [ Monthly ] [ Yearly — save 30% ]   │ [R2]
 │  ┌──────────────────────────────────┐│
-│  │ SPARKLE                     Free ││
+│  │ FREE                     Free ││
 │  │ Levels 1–2 · 1 culture · 5 try-  ││ [R3]
 │  │ ons/mo · 20 min rooms            ││
 │  │ ◦ Current plan                   ││

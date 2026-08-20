@@ -86,8 +86,8 @@ describe('AI try-on pipeline (mock provider)', () => {
       });
 
     expect(render.status).toBe(200);
-    expect(render.body.url).toMatch(/^https?:\/\/.+\.jpg$/);   // processed image URL
-    expect(render.body.beforeUrl).toBeTruthy();
+    expect(render.body.processedImageUrl).toMatch(/^https?:\/\/.+\.jpg$/);
+    expect(render.body.originalImageUrl).toBeTruthy();
     expect(render.body.safety.geometryLocked).toBe(true);
     expect(render.body.safety.deltaLandmarkPx).toBe(0);
   });
@@ -108,6 +108,50 @@ describe('AI try-on pipeline (mock provider)', () => {
 
     expect(render.status).toBe(200);
     expect(render.body.appliedLayers).toBe(1);      // only the lip survived
+  });
+
+  test('adult: base64 image returns a processedImageUrl', async () => {
+    const auth = `Bearer ${tokenFor(adultUser.id, adultProfile.id)}`;
+    // 1x1 transparent PNG
+    const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+    const res = await request(app).post('/api/tryon')
+      .set('Authorization', auth)
+      .send({ image: { base64: png }, look: { id: 'soft_glam', layers: [{ type: 'lip' }] } });
+
+    expect(res.status).toBe(200);
+    expect(res.body.processedImageUrl).toMatch(/^https?:\/\/.+\.jpg$/);
+    expect(res.body.safety.cosmeticsOnly).toBe(true);
+  });
+
+  test('rejects a non-image base64 payload', async () => {
+    const auth = `Bearer ${tokenFor(adultUser.id, adultProfile.id)}`;
+    const res = await request(app).post('/api/tryon')
+      .set('Authorization', auth)
+      .send({ image: { base64: 'data:application/pdf;base64,AAAA' },
+              look: { layers: [{ type: 'lip' }] } });
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe('invalid_image_format');
+  });
+
+  test('rejects a look whose every layer is disallowed', async () => {
+    const auth = `Bearer ${tokenFor(adultUser.id, adultProfile.id)}`;
+    const res = await request(app).post('/api/tryon')
+      .set('Authorization', auth)
+      .send({ image: { assetId: 'ast_x' },
+              look: { layers: [{ type: 'reshape' }, { type: 'skin_lighten' }] } });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('no_valid_layers');
+  });
+
+  test('CHILD: base64 render is 403 — a U13 image never leaves the device', async () => {
+    const auth = `Bearer ${tokenFor(null, childProfile.id)}`;
+    const res = await request(app).post('/api/tryon')
+      .set('Authorization', auth)
+      .send({ image: { base64: 'data:image/png;base64,AAAA' },
+              look: { layers: [{ type: 'lip' }] } });
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('server_render_forbidden_for_minor');
   });
 
   test('CHILD: upload-url is 403 — a U13 image never leaves the device', async () => {
@@ -145,13 +189,104 @@ describe('video token safety', () => {
   });
 });
 
+describe('auth API', () => {
+  const email = `reg_${Date.now()}@sml.test`;
+  let created;
+
+  test('POST /api/auth/register creates an adult account', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      email, password: 'a-strong-passphrase', birthDate: '1990-01-01',
+      region: 'US', displayName: 'Test Adult',
+    });
+    expect(res.status).toBe(201);
+    expect(res.body.accessToken).toBeTruthy();
+    expect(res.body.refreshToken).toBeTruthy();
+    expect(res.body.user.email).toBe(email);
+    // A password hash must never appear in a response body.
+    expect(JSON.stringify(res.body)).not.toMatch(/password_hash|\$argon/);
+    created = res.body;
+  });
+
+  test('register rejects a weak password', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      email: `weak_${Date.now()}@sml.test`, password: 'short',
+      birthDate: '1990-01-01',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('weak_password');
+  });
+
+  test('register refuses a duplicate email', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      email, password: 'a-strong-passphrase', birthDate: '1990-01-01',
+    });
+    expect(res.status).toBe(409);
+  });
+
+  test('register refuses a minor — children are guardian-provisioned', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      email: `kid_${Date.now()}@sml.test`, password: 'a-strong-passphrase',
+      birthDate: '2016-01-01',
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test('POST /api/auth/login returns tokens', async () => {
+    const res = await request(app).post('/api/auth/login')
+      .send({ email, password: 'a-strong-passphrase' });
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toBeTruthy();
+  });
+
+  test('login with a wrong password is 401', async () => {
+    const res = await request(app).post('/api/auth/login')
+      .send({ email, password: 'wrong-password-entirely' });
+    expect(res.status).toBe(401);
+  });
+
+  test('GET /api/auth/me returns profile and plan', async () => {
+    const res = await request(app).get('/api/auth/me')
+      .set('Authorization', `Bearer ${created.accessToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.profile.ageBand).toBe('adult');
+    expect(res.body.subscription.tier).toBe('free');
+  });
+});
+
+describe('subscription plans', () => {
+  test('GET /api/stripe/plans lists Free, Basic, Premium, Family', async () => {
+    const res = await request(app).get('/api/stripe/plans');
+    expect(res.status).toBe(200);
+    expect(res.body.plans.map((p) => p.code))
+      .toEqual(['free', 'basic', 'premium', 'family']);
+    expect(res.body.plans.find((p) => p.code === 'basic').lookupKeyMonthly)
+      .toBe('bb_basic_monthly');
+  });
+
+  test('GET /api/stripe/subscription reports the free plan by default', async () => {
+    const auth = `Bearer ${tokenFor(adultUser.id, adultProfile.id)}`;
+    const res = await request(app).get('/api/stripe/subscription').set('Authorization', auth);
+    expect(res.status).toBe(200);
+    expect(res.body.tier).toBe('free');
+    expect(res.body.status).toBe('none');
+    expect(res.body.entitlements.tryOnPerMonth).toBe(5);
+  });
+
+  test('a child inherits the guardian plan and is flagged as inherited', async () => {
+    const auth = `Bearer ${tokenFor(null, childProfile.id)}`;
+    const res = await request(app).get('/api/stripe/subscription').set('Authorization', auth);
+    expect(res.status).toBe(200);
+    expect(res.body.inheritedFromGuardian).toBe(true);
+  });
+});
+
 describe('billing is adults-only', () => {
   test('child cannot reach checkout', async () => {
     const auth = `Bearer ${tokenFor(null, childProfile.id)}`;
     const res = await request(app)
-      .post('/api/stripe/checkout')
+      .post('/api/stripe/subscription')
       .set('Authorization', auth)
-      .send({ lookupKey: 'bb_bond_monthly' });
+      .send({ plan: 'premium' });
     expect(res.status).toBe(403);
     expect(res.body.error).toBe('adults_only');
   });

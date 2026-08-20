@@ -177,49 +177,70 @@ Presigned ephemeral upload. **403 for child accounts.**
 }
 ```
 
-### `POST /v1/tryon/render`
+### `POST /api/tryon`
+
+The primary endpoint. Accepts a **base64 data URL** (or a pre-uploaded `assetId`)
+plus a look, and returns `processedImageUrl`.
 
 ```jsonc
-// → request
+// -> request
 {
-  "assetId": "ast_01J8X...",
-  "shadeProfileId": "shp_01J7...",
+  "image": { "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRgABA..." },
   "look": {
-    "id": "look_soft_glam",
+    "id": "soft_glam",
     "layers": [
       { "type": "lip",   "productId": "prd_fenty_icon_mvp", "shadeId": "shd_mvp",
         "opacity": 0.85, "finish": "matte" },
-      { "type": "cheek", "productId": "prd_rare_soft_pinch", "shadeId": "shd_happy",
-        "opacity": 0.45, "finish": "dewy", "placement": "apples" },
-      { "type": "brow",  "shadeId": "shd_soft_brown", "opacity": 0.6 },
-      { "type": "glow",  "shadeId": "shd_champagne", "opacity": 0.35,
-        "placement": ["cheekbone", "brow_bone", "cupid_bow"] }
+      { "type": "cheek", "shadeId": "shd_happy", "opacity": 0.45, "finish": "dewy" },
+      { "type": "glow",  "shadeId": "shd_champagne", "opacity": 0.35 }
     ]
-  },
-  "output": { "format": "jpeg", "maxEdge": 2048, "beforeAfter": true }
+  }
 }
 
-// ← 200
+// <- 200
 {
-  "renderId": "rnd_01J8X...",
-  "url": "https://cdn.beautybond.sml/rnd_01J8X.jpg?exp=...",   // signed, 1h
-  "beforeUrl": "https://cdn.beautybond.sml/rnd_01J8X_before.jpg?exp=...",
-  "appliedLayers": 4,
+  "renderId": "rnd_9f2c...",
+  "processedImageUrl": "https://cdn.beautybond.sml/renders/rnd_9f2c.jpg",
+  "originalImageUrl":  "https://cdn.beautybond.sml/renders/rnd_9f2c_before.jpg",
+  "appliedLayers": 3,
   "adjustments": [
-    { "layer": "lip", "note": "shade deepened 4% for warm undertone" }
+    { "layer": "lip", "note": "lip chroma boosted for depth 12 (anti-ashiness)" }
   ],
-  "safety": { "geometryLocked": true, "deltaLandmarkPx": 0.0 },
-  "expiresAt": "2026-08-20T15:21:00Z"
+  "provider": "mock",
+  "safety": { "geometryLocked": true, "deltaLandmarkPx": 0, "cosmeticsOnly": true }
 }
-
-// ← 422 (validation)
-{ "error": "no_face_detected", "message": "We can't find a face in this one.",
-  "recovery": "retake" }
-
-// ← 403 (child account)
-{ "error": "server_render_forbidden_for_minor",
-  "message": "This account renders on-device only." }
 ```
+
+**Error responses** — every one carries a machine `error` code, human `message`,
+and where useful a `recovery` hint the client turns into a button:
+
+| Status | `error` | When |
+|---|---|---|
+| 400 | `look_required` | No look supplied |
+| 400 | `image_required` | Neither `base64` nor `assetId` |
+| 400 | `no_valid_layers` | Every layer was disallowed (e.g. all geometry ops) |
+| 403 | `server_render_forbidden_for_minor` | Child account — render on-device |
+| 413 | `image_too_large` | Over 8 MB |
+| 422 | `invalid_image_format` | Not JPEG/PNG/WebP |
+| 402 | `upgrade_required` | Free-tier try-on quota exhausted |
+| 500 | `render_rejected_geometry_changed` | Geometry lock tripped (§4.6) |
+| 502 | `render_rejected_unverifiable_geometry` | Provider omitted the drift metric |
+
+### The service function
+
+```js
+// services/aiService.js
+const result = await aiService.applyLook(
+  { base64 },                                   // or { assetId }
+  { id: 'soft_glam', layers: [...] },
+  { profile, shadeProfile },
+);
+// -> { processedImageUrl, originalImageUrl, appliedLayers, adjustments, safety }
+```
+
+`applyLook()` is the single entry point. It sanitizes the look for the caller's age
+band, validates the image, calls the provider, and **enforces the geometry lock on
+the way out** — so no route can bypass those checks by calling the provider directly.
 
 ### `GET /v1/tryon/presets?ageBand=&cultures[]=`
 
