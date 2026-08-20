@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "citext";
 
 -- ═══ IDENTITY & FAMILY ═══════════════════════════════════════════════
 CREATE TYPE age_band  AS ENUM ('child','teen','adult');
-CREATE TYPE tier_code AS ENUM ('sparkle','bond','legacy','studio');
+CREATE TYPE tier_code AS ENUM ('free','basic','premium','family');
 
 CREATE TABLE users (                      -- billing/auth identity (adults)
   id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -153,7 +153,7 @@ CREATE TABLE lessons (
   title                text NOT NULL,
   level                int  NOT NULL,
   min_age              int  NOT NULL,
-  tier_required        tier_code NOT NULL DEFAULT 'sparkle',
+  tier_required        tier_code NOT NULL DEFAULT 'free',
   duration_seconds     int,
   video_url            text,
   captions             jsonb,             -- {locale: url}
@@ -251,7 +251,7 @@ CREATE TABLE looks (
   profile_id uuid REFERENCES profiles(id) ON DELETE CASCADE,
   name text NOT NULL, layers jsonb NOT NULL,
   preset_id text, collection_id uuid REFERENCES collections(id),
-  min_age int NOT NULL DEFAULT 0, tier_required tier_code NOT NULL DEFAULT 'sparkle',
+  min_age int NOT NULL DEFAULT 0, tier_required tier_code NOT NULL DEFAULT 'free',
   advisor_approved_at timestamptz, qa_panel_passed_at timestamptz,
   credit jsonb, created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT cultural_preset_needs_signoff

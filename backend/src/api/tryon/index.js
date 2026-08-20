@@ -25,6 +25,15 @@ router.put('/upload/:assetId', requireAuth,
   express.raw({ type: '*/*', limit: '12mb' }),
   ctrl.receiveUpload);
 
+// POST /api/tryon  (and /api/tryon/render — same handler)
+router.post('/', requireAuth, limits.tryonRender,
+  requireGuardianPermission('camera_tryon'),
+  requireEntitlement(async (e, req) => {
+    if (e.tryOnPerMonth === 'unlimited') return true;
+    return (await quotaUsed(req.profile.id, 'tryon')) < e.tryOnPerMonth;
+  }, 'tryon'),
+  ctrl.render);
+
 router.post('/render', requireAuth, limits.tryonRender,
   requireGuardianPermission('camera_tryon'),
   requireEntitlement(async (e, req) => {

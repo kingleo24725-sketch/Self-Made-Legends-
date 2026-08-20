@@ -171,7 +171,7 @@ const no = (reason: string) => ({ ok: false as const, reason })
 Tokens are **short-lived (10 min), single-room, single-identity, permission-scoped**,
 and minted only after `canJoin()` passes. The client never constructs a token.
 
-### `POST /v1/rooms/:roomId/token`
+### `POST /api/video/token`
 
 ```ts
 import { AccessToken } from 'livekit-server-sdk'
@@ -540,18 +540,15 @@ all-party consent, never room video (`architecture.md` M10).
 
 | Method | Path | Purpose |
 |---|---|---|
-| `POST` | `/v1/rooms` | Create room (type-gated) |
-| `GET` | `/v1/rooms` | List my rooms + live lessons |
-| `GET` | `/v1/rooms/:id` | Room detail + participants |
-| `POST` | `/v1/rooms/:id/token` | Mint scoped join token (re-checks safety) |
-| `POST` | `/v1/rooms/:id/invite` | Invite (guardian-routed for minors) |
-| `POST` | `/v1/rooms/:id/join-code` | Rotate family join code |
-| `GET`/`POST` | `/v1/rooms/:id/glam` | Shared Glam Panel state |
-| `POST` | `/v1/rooms/:id/panic` | **Panic exit** — always free, always allowed |
-| `POST` | `/v1/rooms/:id/report` | Report a participant |
-| `POST` | `/v1/rooms/:id/eject/:profileId` | Host/guardian removal |
-| `POST` | `/v1/rooms/:id/recording` | Start/stop (adult tracks only) |
-| `POST` | `/v1/webhooks/livekit` | Participant joined/left, egress status, room finished |
+| `POST` | `/api/video/token` | **Mint a scoped join token.** Body `{ roomId }` or `{ type, name }` to create-and-join. Re-runs the full safety check. |
+| `GET` | `/api/video/rooms` | List my rooms |
+| `POST` | `/api/video/rooms` | Create room (type-gated) |
+| `GET`/`POST` | `/api/video/rooms/:id/glam` | Shared Glam Panel state |
+| `POST` | `/api/video/rooms/:id/panic` | **Panic exit** — always free, always allowed |
+| `POST` | `/api/video/rooms/:id/report` | Report a participant |
+| `POST` | `/api/video/rooms/:id/eject/:profileId` | Host/guardian removal |
+| `POST` | `/api/video/rooms/:id/recording` | Start (adult tracks only) |
+| `POST` | `/api/webhooks/livekit` | Participant joined/left, egress status, room finished |
 
 ### LiveKit webhook → minute metering + audit
 

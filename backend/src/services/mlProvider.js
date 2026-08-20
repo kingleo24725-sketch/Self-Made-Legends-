@@ -46,12 +46,18 @@ const mockProvider = {
    * provider would make. Returns geometry drift of exactly 0 — a mock must
    * never fake a violation, and must never fake a *pass* it didn't compute.
    */
-  async render({ assetId, look, shadeProfile }) {
+  async render({ assetId, base64, look, shadeProfile }) {
     await new Promise((r) => setTimeout(r, MOCK_LATENCY_MS));
+
+    // Deterministic id from whichever input we were given, so repeat calls
+    // with the same photo and look return the same URL.
+    const fingerprint = base64
+      ? crypto.createHash('sha256').update(base64).digest('hex').slice(0, 16)
+      : String(assetId);
 
     const renderId = 'rnd_' + crypto
       .createHash('sha256')
-      .update(`${assetId}:${JSON.stringify(look.layers)}`)
+      .update(`${fingerprint}:${JSON.stringify(look.layers)}`)
       .digest('hex')
       .slice(0, 24);
 
@@ -62,7 +68,8 @@ const mockProvider = {
 
     return {
       renderId,
-      url: `${config.mock.mediaBaseUrl}/renders/${renderId}.jpg`,
+      processedImageUrl: `${config.mock.mediaBaseUrl}/renders/${renderId}.jpg`,
+      url: `${config.mock.mediaBaseUrl}/renders/${renderId}.jpg`,   // alias
       beforeUrl: `${config.mock.mediaBaseUrl}/renders/${renderId}_before.jpg`,
       deltaLandmarkPx: 0,
       appliedLayers: (look.layers || []).length,

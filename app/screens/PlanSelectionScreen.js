@@ -12,27 +12,18 @@ import { useTheme } from '../context/ThemeContext';
 import { useSubscription } from '../hooks/useSubscription';
 import Card from '../components/Cards/Card';
 import PrimaryButton from '../components/Buttons/PrimaryButton';
-import { COPY } from '../utils/constants';
+import { COPY, PLAN_META } from '../utils/constants';
 
-const PLANS = [
-  { code: 'sparkle', name: 'SPARKLE', price: 'Free',
-    blurb: 'Levels 1–2 · 1 culture · 5 try-ons/mo · 20 min rooms' },
-  { code: 'bond', name: 'BOND', price: '$6.99/mo', popular: true,
-    blurb: 'All levels · All cultures · Unlimited try-on · 5 h rooms · 3 kids' },
-  { code: 'legacy', name: 'LEGACY', price: '$12.99/mo',
-    blurb: 'Everything in Bond + unlimited vault · Letters Forward · 6 kids' },
-  { code: 'studio', name: 'STUDIO', price: '$24.99/mo', blurb: 'For creators & pros' },
-];
+const PLAN_ORDER = ['free', 'basic', 'premium', 'family'];
 
 export default function PlanSelectionScreen({ navigation }) {
   const t = useTheme();
-  const { tier, checkout, checkoutStatus } = useSubscription();
+  const { tier, subscribe, checkoutStatus } = useSubscription();
   const [interval, setInterval] = useState('monthly');
 
   async function choose(code) {
-    if (code === 'sparkle') return;
-    // lookup_key is bb_-prefixed — see docs/stripe-flow.md §3.2 Layer 1.
-    const res = await checkout(`bb_${code}_${interval}`);
+    if (code === 'free') return;
+    const res = await subscribe(code, interval);
     if (res.status === 'failed') Alert.alert('Payment', res.message ?? COPY.paymentFailed);
     if (res.status === 'success') navigation.goBack();
   }
@@ -55,26 +46,42 @@ export default function PlanSelectionScreen({ navigation }) {
           ))}
         </View>
 
-        {PLANS.map((p) => (
-          <Card key={p.code} selected={tier === p.code}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={[t.type('h3'), { color: t.color.textPrimary, flex: 1 }]}>{p.name}</Text>
-              <Text style={[t.type('body'), { color: t.color.accent }]}>{p.price}</Text>
-            </View>
-            {p.popular && (
-              <Text style={[t.type('caption'), { color: t.color.accent }]}>★ POPULAR</Text>
-            )}
-            <Text style={[t.type('bodySm'), { color: t.color.textSecondary, marginVertical: t.space[2] }]}>
-              {p.blurb}
-            </Text>
-            {tier === p.code
-              ? <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>Current plan</Text>
-              : p.code !== 'sparkle' && (
-                  <PrimaryButton title={`Choose ${p.name[0] + p.name.slice(1).toLowerCase()}`}
-                    loading={checkoutStatus === 'pending'} onPress={() => choose(p.code)} />
-                )}
-          </Card>
-        ))}
+        {PLAN_ORDER.map((code) => {
+          const p = PLAN_META[code];
+          const isCurrent = tier === code;
+          return (
+            <Card key={code} selected={isCurrent}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={[t.type('h3'), { color: t.color.textPrimary, flex: 1 }]}>
+                  {p.name}
+                </Text>
+                <Text style={[t.type('body'), { color: t.color.accent }]}>{p.price}</Text>
+              </View>
+
+              {p.popular && (
+                <Text style={[t.type('caption'), { color: t.color.accent }]}>★ POPULAR</Text>
+              )}
+
+              <Text style={[t.type('bodySm'), {
+                color: t.color.textSecondary, marginVertical: t.space[2],
+              }]}>
+                {p.blurb}
+              </Text>
+
+              {isCurrent ? (
+                <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>
+                  Current plan
+                </Text>
+              ) : code !== 'free' ? (
+                <PrimaryButton
+                  title={`Choose ${p.name}`}
+                  loading={checkoutStatus === 'pending'}
+                  onPress={() => choose(code)}
+                />
+              ) : null}
+            </Card>
+          );
+        })}
 
         {/* Permanent line. Non-negotiable. */}
         <Text style={[t.type('caption'), { color: t.color.textSecondary, textAlign: 'center' }]}>

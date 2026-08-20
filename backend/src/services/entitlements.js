@@ -2,33 +2,56 @@
  * Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
  *
- * Single source of truth for what each tier unlocks.
+ * Single source of truth for what each plan unlocks.
  * docs/stripe-flow.md §3.1 and §3.5.
+ *
+ * Plans: Free (no card) -> Basic -> Premium -> Family.
  */
 const db = require('../config/db');
 
-const TIERS = ['sparkle', 'bond', 'legacy', 'studio'];
+const TIERS = ['free', 'basic', 'premium', 'family'];
+
+/** Display metadata — kept next to the entitlements so they cannot drift. */
+const PLANS = {
+  free: {
+    name: 'Free', monthly: 0, yearly: 0,
+    blurb: 'Learn the basics together, at no cost.',
+  },
+  basic: {
+    name: 'Basic', monthly: 699, yearly: 5899,
+    blurb: 'All lessons, all cultures, unlimited try-on.',
+  },
+  premium: {
+    name: 'Premium', monthly: 1299, yearly: 10999,
+    blurb: 'Everything in Basic, plus Legacy Vault and Letters Forward.',
+    popular: true,
+  },
+  family: {
+    name: 'Family', monthly: 1999, yearly: 16999,
+    blurb: 'Up to 6 kids, unlimited rooms, unlimited Bond Books.',
+  },
+};
 
 const ENTITLEMENTS = {
-  sparkle: {
+  free: {
     learningMaxLevel: 2, culturalCollections: 1, tryOnPerMonth: 5,
     culturalGlamSets: false, familyRoomMinutesPerMonth: 20, globalRooms: 'listen',
     vaultItems: 3, lettersForward: false, bondBooksPerYear: 0, childSeats: 1,
     creatorTools: false,
   },
-  bond: {
+  basic: {
     learningMaxLevel: 6, culturalCollections: 'all', tryOnPerMonth: 'unlimited',
     culturalGlamSets: true, familyRoomMinutesPerMonth: 300, globalRooms: 'full',
-    vaultItems: 25, lettersForward: false, bondBooksPerYear: 1, childSeats: 3,
+    vaultItems: 25, lettersForward: false, bondBooksPerYear: 1, childSeats: 2,
     creatorTools: false,
   },
-  legacy: {
+  premium: {
     learningMaxLevel: 6, culturalCollections: 'all', tryOnPerMonth: 'unlimited',
     culturalGlamSets: true, familyRoomMinutesPerMonth: 'unlimited', globalRooms: 'full',
-    vaultItems: 'unlimited', lettersForward: true, bondBooksPerYear: 4, childSeats: 6,
+    vaultItems: 'unlimited', lettersForward: true, bondBooksPerYear: 4, childSeats: 4,
     creatorTools: false,
   },
-  studio: {
+  family: {
     learningMaxLevel: 6, culturalCollections: 'all', tryOnPerMonth: 'unlimited',
     culturalGlamSets: true, familyRoomMinutesPerMonth: 'unlimited', globalRooms: 'full',
     vaultItems: 'unlimited', lettersForward: true, bondBooksPerYear: 'unlimited',
@@ -52,12 +75,18 @@ const ALWAYS_FREE = new Set([
   'legacy.letter_delivery',
 ]);
 
+/** Ordered, so "is at least Premium" is a comparison rather than a list. */
+const RANK = { free: 0, basic: 1, premium: 2, family: 3 };
+const atLeast = (tier, minimum) => (RANK[tier] ?? 0) >= (RANK[minimum] ?? 0);
+
 async function getTier(userId) {
+  if (!userId) return 'free';
+
   const sub = await db.one(
     `SELECT * FROM subscriptions
       WHERE user_id = $1 AND status IN ('active','trialing','past_due')
       ORDER BY updated_at DESC LIMIT 1`, [userId]);
-  if (!sub) return 'sparkle';
+  if (!sub) return 'free';
 
   if (['active', 'trialing'].includes(sub.status)) return sub.tier;
 
@@ -67,14 +96,14 @@ async function getTier(userId) {
       'SELECT grace_ends_at FROM dunning WHERE user_id = $1', [userId]);
     if (dunning && new Date(dunning.grace_ends_at) > new Date()) return sub.tier;
   }
-  return 'sparkle';
+  return 'free';
 }
 
-/** A guardian's tier flows down to every linked child. Kids never pay. */
+/** A guardian's plan flows down to every linked child. Kids never pay. */
 async function effectiveTierFor(profileId) {
   const profile = await db.one(
     'SELECT user_id, guardian_id FROM profiles WHERE id = $1', [profileId]);
-  if (!profile) return 'sparkle';
+  if (!profile) return 'free';
 
   if (profile.guardian_id) {
     const guardian = await db.one(
@@ -110,6 +139,6 @@ async function quotaUsed(profileId, metric) {
 }
 
 module.exports = {
-  TIERS, ENTITLEMENTS, ALWAYS_FREE,
+  TIERS, PLANS, ENTITLEMENTS, ALWAYS_FREE, RANK, atLeast,
   getTier, effectiveTierFor, setEntitlement, consumeQuota, quotaUsed,
 };

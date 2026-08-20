@@ -22,7 +22,7 @@ const ALWAYS_FREE = new Set([
 ]);
 
 const FALLBACK = {
-  tier: TIERS.SPARKLE,
+  tier: TIERS.FREE,
   learningMaxLevel: 2, culturalCollections: 1, tryOnPerMonth: 5,
   culturalGlamSets: false, familyRoomMinutesPerMonth: 20, globalRooms: 'listen',
   vaultItems: 3, lettersForward: false, bondBooksPerYear: 0, childSeats: 1,
@@ -34,13 +34,22 @@ export function SubscriptionProvider({ children }) {
   const [usage, setUsage] = useState({ tryon: 0, room_minutes: 0 });
   const [loading, setLoading] = useState(true);
 
+  const [plan, setPlan] = useState(null);
+  const [status, setStatus] = useState('none');
+
   const load = useCallback(async () => {
     try {
-      const data = await api.get('/me/entitlements');
-      setEntitlements(data.entitlements ?? FALLBACK);
+      const data = await api.get('/stripe/subscription');
+      const next = { tier: data.tier, ...data.entitlements };
+      setEntitlements(next);
       setUsage(data.usage ?? { tryon: 0, room_minutes: 0 });
+      setPlan(data.plan ?? null);
+      setStatus(data.status ?? 'none');
+      return next;
     } catch {
-      setEntitlements(FALLBACK);   // fail to the free tier, never to unlocked
+      // Fail to the FREE tier, never to unlocked.
+      setEntitlements(FALLBACK);
+      return FALLBACK;
     } finally {
       setLoading(false);
     }
@@ -73,9 +82,9 @@ export function SubscriptionProvider({ children }) {
     (level) => level <= entitlements.learningMaxLevel, [entitlements]);
 
   const value = useMemo(() => ({
-    entitlements, usage, loading, can, canLesson, reload: load,
-    tier: entitlements.tier ?? TIERS.SPARKLE,
-  }), [entitlements, usage, loading, can, canLesson, load]);
+    entitlements, usage, loading, plan, status, can, canLesson, reload: load,
+    tier: entitlements.tier ?? TIERS.FREE,
+  }), [entitlements, usage, loading, plan, status, can, canLesson, load]);
 
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
 }

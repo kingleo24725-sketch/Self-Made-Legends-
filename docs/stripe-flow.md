@@ -23,22 +23,26 @@ Stripe Adaptive Pricing.
 
 ## 3.1 Plan Tiers
 
-| Tier | Code | Monthly | Yearly | Child accounts |
+| Plan | Code | Monthly | Yearly | Child accounts |
 |---|---|---|---|---|
-| Sparkle | `sparkle` | Free | Free | 1 |
-| Bond | `bond` | $6.99 | $58.99 (30% off) | 3 |
-| Legacy | `legacy` | $12.99 | $109.99 | 6 |
-| Studio | `studio` | $24.99 | $209.99 | 6 |
+| Free | `free` | $0 | $0 | 1 |
+| Basic | `basic` | $6.99 | $58.99 (30% off) | 2 |
+| Premium | `premium` | $12.99 | $109.99 | 4 |
+| Family | `family` | $19.99 | $169.99 | 6 |
 
-**Add-ons (one-time / metered):**
+**What each plan adds:**
 
-| Add-on | Code | Price | Type |
-|---|---|---|---|
-| Bond Book (printed) | `bondbook_print` | $34.99 | one-time |
-| Bond Book (PDF) | `bondbook_pdf` | $9.99 | one-time |
-| Extra child seat | `seat_child` | $2.99/mo | recurring, quantity-based |
-| Legacy Vault +100 GB | `vault_100` | $3.99/mo | recurring |
-| Gift subscription (12 mo Bond) | `gift_bond_12` | $58.99 | one-time → coupon |
+- **Free** — Levels 1–2, one cultural collection, 5 try-ons/month, 20 min of
+  Family Room, 3 Legacy Vault items. No card required.
+- **Basic** — all lessons, all cultural collections, unlimited try-on, cultural
+  glam sets, 5 h of rooms, Global Rooms.
+- **Premium** — unlimited Legacy Vault, **Letters Forward**, unlimited room
+  minutes, 4 Bond Books a year.
+- **Family** — 6 child seats, unlimited Bond Books, creator tools.
+
+Price IDs resolve by `lookup_key`: `bb_basic_monthly`, `bb_premium_yearly`, and so
+on. The `bb_` prefix is what keeps Beauty Bond's price resolution from ever matching
+a Come Up price on the shared SML account (§3.2).
 
 ### Entitlement matrix (single source of truth)
 
@@ -501,7 +505,7 @@ billing.post('/checkout-session', requireAuth, requireAdult, async (req, res) =>
 | `checkout.session.completed` | Link customer → user (web path) |
 | `customer.subscription.created` | Upsert subscription, grant entitlement |
 | `customer.subscription.updated` | Re-sync tier/status (upgrade, downgrade, trial end, cancel-at-period-end) |
-| `customer.subscription.deleted` | Downgrade to `sparkle` |
+| `customer.subscription.deleted` | Downgrade to `free` |
 | `customer.subscription.trial_will_end` | Notify (3 days out) |
 | `invoice.paid` | Extend `current_period_end`, clear dunning |
 | `invoice.payment_failed` | Enter dunning, notify, keep access during grace |
@@ -764,7 +768,7 @@ await db.query(
 | **Upgrade** | Immediate, prorated (`proration_behavior: 'create_prorations'`). Access unlocks on webhook. |
 | **Downgrade** | Scheduled at period end. User keeps what they paid for. If child seats exceed the new tier, the *guardian chooses* which to keep — never auto-delete a child's account. |
 | **Cancel** | `cancel_at_period_end: true`. Access continues to the end of the paid period. |
-| **Dunning** | Smart Retries, 7-day grace with **full access**, then downgrade to `sparkle`. Data is retained, never deleted. |
+| **Dunning** | Smart Retries, 7-day grace with **full access**, then downgrade to `free`. Data is retained, never deleted. |
 | **Reactivate** | Resume within 30 days → same customer, prior data intact. |
 | **Refund** | Self-serve within 14 days of first charge, no questions. |
 | **Gift** | One-time payment → coupon code → redeemer's subscription. Gifter never sees recipient data. |
