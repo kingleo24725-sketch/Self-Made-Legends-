@@ -1,5 +1,5 @@
 /**
- * Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+ * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
  *
  * Global Glam Rooms are ABSENT (not greyed) for U13 and 13-15 accounts.

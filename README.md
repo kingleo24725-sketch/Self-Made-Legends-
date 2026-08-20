@@ -1,8 +1,8 @@
-# Beauty Bond™ — Dad + Daughter Beauty Bond
+# Dad + Daughter Beauty Bond™
 
-> **BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
-> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
+> Owner: **Self-Made Legends LLC (SML)** · MIT licensed with SML attribution.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
 
 Full IP, trademark, and attribution requirements: [`NOTICE.md`](NOTICE.md).
@@ -13,7 +13,7 @@ Full IP, trademark, and attribution requirements: [`NOTICE.md`](NOTICE.md).
 
 Read this before touching anything in this repository.
 
-**Beauty Bond is its own standalone app.** It is *not* a feature, mode, mini-game,
+**Dad + Daughter Beauty Bond is its own standalone app.** It is *not* a feature, mode, mini-game,
 expansion, or module of **The Self-Made Legends Come Up** (SML's AI trading game,
 which lives in its own separate repository). The two products share exactly two
 things: **the parent company, Self-Made Legends LLC, and one Stripe account.**
@@ -246,8 +246,8 @@ clears it.
 
 ## The one-line pitch
 
-> Beauty Bond is a guided beauty studio where a parent and child learn shades,
-> brushes, and technique together — inclusive of every skin tone, texture, and
-> culture — with child safety designed in, not bolted on.
+> **Dad + Daughter Beauty Bond™** is a guided beauty studio where a parent and
+> child learn shades, brushes, and technique together — inclusive of every skin
+> tone, texture, and culture — with child safety designed in, not bolted on.
 >
-> **From Self-Made Legends LLC.**
+> **From Self-Made Legends LLC (SML).**

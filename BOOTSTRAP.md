@@ -1,8 +1,8 @@
 # BOOTSTRAP — Creating the standalone `beauty-bond` repository
 
-> **BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
-> Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
+> Owner: **Self-Made Legends LLC (SML)** · MIT licensed with SML attribution.
 
 Beauty Bond ships from its **own repository**. This file is the one-time procedure to
 move this project — the full `app/`, `backend/`, `infra/`, and `docs/` tree — out of
@@ -97,7 +97,7 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 | Secret scanning | **On** — the Stripe restricted key must never land in a commit |
 | Push protection | **On** |
 | Topics | `sml`, `beauty-bond`, `react-native`, `nodejs` |
-| Description | `Beauty Bond™ — a Self-Made Legends LLC (SML) product.` |
+| Description | `Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.` |
 
 **Collaborators:** only people with an executed NDA (`NOTICE.md` §6).
 

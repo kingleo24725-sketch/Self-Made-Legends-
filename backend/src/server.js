@@ -1,7 +1,7 @@
 /**
- * Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+ * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
- * Proprietary and confidential.
+ * Licensed under the MIT License with SML attribution — see LICENSE.
  *
  * API entry point. docs/api-reference.md §6.6 for middleware ordering.
  */
