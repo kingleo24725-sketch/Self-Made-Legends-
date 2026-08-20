@@ -19,13 +19,25 @@ const GEN = path.join(IMAGES, 'generated');
 const RELEASE = process.argv.includes('--release');
 
 /** Minimal PNG header reader — avoids pulling in an image dependency. */
-function pngSize(file) {
-  const fd = fs.openSync(file, 'r');
-  const buf = Buffer.alloc(24);
-  fs.readSync(fd, buf, 0, 24, 0);
-  fs.closeSync(fd);
-  if (buf.toString('ascii', 1, 4) !== 'PNG') throw new Error('not a PNG');
-  return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+/** Reads PNG and JPEG dimensions from headers — no image dependency needed. */
+function imageSize(file) {
+  const buf = fs.readFileSync(file);
+  if (buf.toString('ascii', 1, 4) === 'PNG') {
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  }
+  if (buf[0] === 0xff && buf[1] === 0xd8) {          // JPEG: walk the markers
+    let i = 2;
+    while (i < buf.length) {
+      if (buf[i] !== 0xff) { i++; continue; }
+      const marker = buf[i + 1];
+      if (marker >= 0xc0 && marker <= 0xcf &&
+          ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        return { height: buf.readUInt16BE(i + 5), width: buf.readUInt16BE(i + 7) };
+      }
+      i += 2 + buf.readUInt16BE(i + 2);
+    }
+  }
+  throw new Error('unrecognised image format');
 }
 
 const EXPECT = [
@@ -41,17 +53,17 @@ const EXPECT = [
   ['generated/ios/splash@1x.png',                   414,  621, 'ios @1x'],
   ['generated/ios/splash@2x.png',                   828, 1242, 'ios @2x'],
   ['generated/ios/splash@3x.png',                  1242, 1863, 'ios @3x'],
-  ['generated/splash-phone-portrait.png',          1284, 2778, 'full-bleed phone'],
-  ['generated/splash-phone-landscape.png',         2778, 1284, 'full-bleed phone ls'],
-  ['generated/splash-tablet-portrait.png',         2048, 2732, 'full-bleed tablet'],
-  ['generated/splash-tablet-landscape.png',        2732, 2048, 'full-bleed tablet ls'],
+  ['generated/splash-phone-portrait.jpg',          1284, 2778, 'full-bleed phone'],
+  ['generated/splash-phone-landscape.jpg',         2778, 1284, 'full-bleed phone ls'],
+  ['generated/splash-tablet-portrait.jpg',         2048, 2732, 'full-bleed tablet'],
+  ['generated/splash-tablet-landscape.jpg',        2732, 2048, 'full-bleed tablet ls'],
   ['generated/store/ios-app-icon.png',             1024, 1024, 'App Store icon'],
   ['generated/store/play-icon.png',                 512,  512, 'Play icon'],
-  ['generated/store/play-feature-graphic.png',     1024,  500, 'Play feature graphic'],
-  ['generated/store/ios-screenshot-6.7.png',       1290, 2796, 'iPhone 6.7" shot'],
-  ['generated/store/ios-screenshot-6.5.png',       1242, 2688, 'iPhone 6.5" shot'],
-  ['generated/store/ipad-screenshot-12.9.png',     2048, 2732, 'iPad 12.9" shot'],
-  ['generated/store/play-screenshot-phone.png',    1080, 1920, 'Play phone shot'],
+  ['generated/store/play-feature-graphic.jpg',     1024,  500, 'Play feature graphic'],
+  ['generated/store/ios-screenshot-6.7.jpg',       1290, 2796, 'iPhone 6.7" shot'],
+  ['generated/store/ios-screenshot-6.5.jpg',       1242, 2688, 'iPhone 6.5" shot'],
+  ['generated/store/ipad-screenshot-12.9.jpg',     2048, 2732, 'iPad 12.9" shot'],
+  ['generated/store/play-screenshot-phone.jpg',    1080, 1920, 'Play phone shot'],
 ];
 
 let failures = 0;
@@ -72,7 +84,7 @@ for (const [rel, w, h, label] of EXPECT) {
     continue;
   }
   try {
-    const { width, height } = pngSize(file);
+    const { width, height } = imageSize(file);
     if (width !== w || height !== h) {
       console.log(`${rel.padEnd(46)} ${expected.padEnd(12)} WRONG SIZE ${width}x${height}`);
       failures++;

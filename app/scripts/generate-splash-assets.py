@@ -159,12 +159,22 @@ def save_rgba(img: Image.Image, rel: str):
           f'{path.stat().st_size / 1024:7.1f} KB  (alpha)')
 
 
-def save(img: Image.Image, rel: str):
-    path = OUT / f'{rel}.png'
+def save(img: Image.Image, rel: str, fmt='png', quality=88):
+    """
+    PNG for anything the Expo config consumes; JPEG for the large full-bleed
+    and store variants. None of those carry alpha, and at 1–6 MB each the PNGs
+    would otherwise add ~17 MB to the app download for no visible gain.
+    """
+    ext = 'png' if fmt == 'png' else 'jpg'
+    path = OUT / f'{rel}.{ext}'
     path.parent.mkdir(parents=True, exist_ok=True)
-    img.convert('RGB').save(path, 'PNG', optimize=True)
+    if fmt == 'png':
+        img.convert('RGB').save(path, 'PNG', optimize=True)
+    else:
+        img.convert('RGB').save(path, 'JPEG', quality=quality,
+                                optimize=True, progressive=True, subsampling=0)
     kb = path.stat().st_size / 1024
-    print(f'  {rel + ".png":42} {img.width:>5}x{img.height:<5} {kb:7.1f} KB')
+    print(f'  {rel + "." + ext:42} {img.width:>5}x{img.height:<5} {kb:7.1f} KB')
 
 
 def main():
@@ -189,20 +199,20 @@ def main():
         h = int(w / (src.width / src.height))
         save(src.resize((w, h), Image.LANCZOS), f'ios/splash@{scale}x')
 
-    print('\nfull-bleed (edge-extended, zero crop):')
+    print('\nfull-bleed (edge-extended, zero crop) — JPEG, opt-in:')
     for name, w, h in FULL_BLEED:
-        save(edge_extend(src, w, h), name)
+        save(edge_extend(src, w, h), name, fmt='jpg', quality=90)
 
     print('\nicons:')
     save(centre_square(src, 1024), 'icon')
     save_rgba(adaptive_foreground(src, 1024), 'adaptive-icon-foreground')
 
-    print('\nstore listing:')
+    print('\nstore listing — JPEG except the icons, never bundled:')
     for name, w, h in STORE:
         if w == h:
-            save(centre_square(src, w), name)
+            save(centre_square(src, w), name)                 # icons stay PNG
         else:
-            save(edge_extend(src, w, h), name)
+            save(edge_extend(src, w, h), name, fmt='jpg', quality=92)
 
     print(f'\nDone. Output: {OUT.relative_to(ROOT)}')
 
