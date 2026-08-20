@@ -228,6 +228,19 @@ CREATE TABLE learning_paths (
   min_age int NOT NULL, description text
 );
 
+CREATE TABLE collections (                -- cultural beauty library
+  id                 uuid PRIMARY KEY,
+  slug               text UNIQUE NOT NULL,  -- 'black_beauty', 'latina_beauty', …
+  name               text NOT NULL,
+  advisor_name       text NOT NULL,
+  advisor_profile_id uuid REFERENCES profiles(id),
+  advisor_approval_at timestamptz,          -- publish gate
+  respect_note_id    uuid,
+  published_at       timestamptz,
+  CONSTRAINT publish_requires_advisor
+    CHECK (published_at IS NULL OR advisor_approval_at IS NOT NULL)
+);
+
 CREATE TABLE lessons (
   id                   uuid PRIMARY KEY,
   path_id              uuid REFERENCES learning_paths(id),
@@ -244,19 +257,6 @@ CREATE TABLE lessons (
   kid_safe             boolean NOT NULL DEFAULT false,
   collection_id        uuid REFERENCES collections(id),
   published_at         timestamptz
-);
-
-CREATE TABLE collections (                -- cultural beauty library
-  id                 uuid PRIMARY KEY,
-  slug               text UNIQUE NOT NULL,  -- 'black_beauty', 'latina_beauty', …
-  name               text NOT NULL,
-  advisor_name       text NOT NULL,
-  advisor_profile_id uuid REFERENCES profiles(id),
-  advisor_approval_at timestamptz,          -- publish gate
-  respect_note_id    uuid,
-  published_at       timestamptz,
-  CONSTRAINT publish_requires_advisor
-    CHECK (published_at IS NULL OR advisor_approval_at IS NOT NULL)
 );
 
 CREATE TABLE stories (                    -- elder/creator story archive
