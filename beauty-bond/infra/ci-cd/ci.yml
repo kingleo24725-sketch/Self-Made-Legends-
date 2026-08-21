@@ -1,0 +1,75 @@
+# Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+# Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+# Proprietary and confidential. Unauthorized use is prohibited.
+#
+# Copy to .github/workflows/ci.yml in the standalone beauty-bond repo.
+name: CI
+
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: beauty_bond_test
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+        ports: ['5432:5432']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: backend/package-lock.json }
+      - run: npm ci
+        working-directory: backend
+      - name: Apply migrations
+        run: npm run migrate
+        working-directory: backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/beauty_bond_test
+
+      # ── RELEASE BLOCKER ──────────────────────────────────────────
+      # A failure here cannot be waived by a product decision.
+      # Only fixing the defect clears it. docs/api-reference.md §6.10.
+      - name: Safety suite (release blocker)
+        run: npm run test:safety
+        working-directory: backend
+
+      - name: Full test suite with coverage
+        run: npx jest --coverage
+        working-directory: backend
+
+  app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+        working-directory: app
+
+      # Blocks a release that still carries the placeholder cover art.
+      - name: Verify splash / icon / store assets
+        run: node scripts/verify-assets.js --release
+        working-directory: app
+
+      - run: npm test --if-present
+        working-directory: app
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      # The Stripe restricted key must never land in a commit.
+      - name: Scan for secrets
+        run: |
+          if git grep -nE 'sk_live_|whsec_[A-Za-z0-9]{20,}|rk_live_' -- . ; then
+            echo "::error::Possible live secret committed"; exit 1
+          fi

@@ -1,0 +1,113 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Dads & Daughters Beauty Bond™
+Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+
+OWNER:   Self-Made Legends LLC (SML)
+PRODUCT: Dads & Daughters Beauty Bond™
+
+════════════════════════════════════════════════════════════════════════════
+        ALL RIGHTS RESERVED · PROPRIETARY AND CONFIDENTIAL
+                    NOT OPEN SOURCE · DO NOT DISTRIBUTE
+════════════════════════════════════════════════════════════════════════════
+
+1. OWNERSHIP
+
+   This software, together with its documentation, designs, wireframes, data
+   models, API contracts, brand system, artwork, and all other materials in
+   this repository (collectively, the "Software"), is the exclusive property
+   of Self-Made Legends LLC ("SML").
+
+2. NO LICENSE GRANTED
+
+   No license, express or implied, is granted to any person or entity except
+   by a separate written agreement signed by an authorized representative of
+   Self-Made Legends LLC. Possession of a copy of the Software conveys no
+   rights of any kind.
+
+3. RESTRICTIONS
+
+   Without SML's prior written permission, no person may:
+
+     (a) copy, reproduce, modify, adapt, translate, or create derivative
+         works from the Software;
+     (b) publish, distribute, sublicense, sell, rent, lease, or otherwise
+         transfer the Software;
+     (c) reverse engineer, decompile, or disassemble the Software;
+     (d) use the Software to develop a competing or substantially similar
+         product;
+     (e) use the Software, or any part of it, to train, fine-tune, evaluate,
+         or ground any machine-learning model; or
+     (f) disclose the Software to any third party.
+
+4. AUTHORIZED USE
+
+   Employees, contractors, and vendors who have executed a written
+   non-disclosure agreement with SML may use the Software solely to perform
+   work expressly authorized by SML, and only for the duration of that
+   authorization.
+
+5. CONFIDENTIALITY
+
+   The Software is confidential business information and a trade secret of
+   Self-Made Legends LLC. Recipients must protect it with no less care than
+   they use for their own confidential information, and must not disclose it
+   outside SML. Confidentiality obligations survive termination of any
+   engagement.
+
+6. WORK MADE FOR HIRE
+
+   All contributions to the Software are works made for hire owned by SML.
+   Where that doctrine does not apply, each contributor hereby irrevocably
+   assigns to Self-Made Legends LLC all right, title, and interest in and to
+   their contributions. Contractor and employment agreements must include an
+   explicit IP assignment clause naming SML before any work begins.
+
+7. TRADEMARKS
+
+   The following marks are the property of Self-Made Legends LLC and are not
+   licensed by this agreement:
+
+       SELF-MADE LEGENDS · SML · DADS & DAUGHTERS BEAUTY BOND · BEAUTY BOND
+       BOND METER · DAD SCHOOL · LITTLE LEGEND · LETTERS FORWARD
+       BOND BOOK · GLAM ROOMS
+
+8. THIRD-PARTY MARKS
+
+   Beauty brand names referenced in the Software (Fenty Beauty, Rare Beauty,
+   Huda Beauty, MAC, NARS, and others) are the property of their respective
+   owners and appear solely as catalog-integration and shade-matching
+   references. No affiliation, sponsorship, or endorsement is claimed or
+   implied. This license conveys no rights to those marks.
+
+9. TERMINATION
+
+   Any use in breach of these terms terminates all permissions immediately.
+   Upon termination or upon SML's request, the recipient must destroy or
+   return all copies of the Software in their possession.
+
+10. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+   IN NO EVENT SHALL SML BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+   LIABILITY ARISING FROM THE SOFTWARE OR ITS USE.
+
+────────────────────────────────────────────────────────────────────────────
+CHILD SAFETY
+
+This Software implements protections for minors: verifiable parental consent,
+age gates that no subscription can purchase past, on-device-only rendering for
+under-13 accounts, exclusion of minors from recordings, and an unconditional
+panic exit.
+
+These are not optional features, and this license grants no permission to
+remove them. Any authorized deployment to real families remains responsible
+for its own compliance with COPPA, GDPR/GDPR-K, the UK Age Appropriate Design
+Code, and any other law applicable in its jurisdiction.
+────────────────────────────────────────────────────────────────────────────
+
+Self-Made Legends LLC (SML)
+Dads & Daughters Beauty Bond™ is a trademark of Self-Made Legends LLC.
+Contact: leobrown24725@yahoo.com

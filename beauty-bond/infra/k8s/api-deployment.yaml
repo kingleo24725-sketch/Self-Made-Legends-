@@ -1,0 +1,44 @@
+# Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+# Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+# Proprietary and confidential. Unauthorized use is prohibited.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: beauty-bond-api
+  labels:
+    app: beauty-bond-api
+    owner: self-made-legends-llc
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: beauty-bond-api }
+  template:
+    metadata:
+      labels: { app: beauty-bond-api }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: api
+          image: ghcr.io/self-made-legends/beauty-bond-api:latest
+          ports: [{ containerPort: 4000 }]
+          envFrom:
+            - secretRef: { name: beauty-bond-secrets }
+          readinessProbe:
+            httpGet: { path: /health, port: 4000 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /health, port: 4000 }
+            initialDelaySeconds: 15
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits:   { cpu: "1",  memory: 1Gi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: beauty-bond-api
+spec:
+  selector: { app: beauty-bond-api }
+  ports: [{ port: 80, targetPort: 4000 }]
