@@ -1,6 +1,6 @@
-# Dad + Daughter Beauty Bond™
+# Dads & Daughters Beauty Bond™
 
-> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
@@ -13,7 +13,7 @@ Full IP, trademark, and attribution requirements: [`NOTICE.md`](NOTICE.md).
 
 Read this before touching anything in this repository.
 
-**Dad + Daughter Beauty Bond is its own standalone app.** It is *not* a feature, mode, mini-game,
+**Dads & Daughters Beauty Bond is its own standalone app.** It is *not* a feature, mode, mini-game,
 expansion, or module of **The Self-Made Legends Come Up** (SML's AI trading game,
 which lives in its own separate repository). The two products share exactly two
 things: **the parent company, Self-Made Legends LLC, and one Stripe account.**
@@ -25,7 +25,7 @@ things: **the parent company, Self-Made Legends LLC, and one Stripe account.**
 | **Core loop** | Trade, compete, climb the leaderboard | Learn a skill together, build the bond |
 | **Currency** | SML Bucks (virtual) | None — no in-app currency at all |
 | **Stack** | Node/Express + SQLite, web | React Native + Postgres, mobile-first |
-| **Repository** | `Self-Made-Legends-` | `beauty-bond` (separate) |
+| **Repository** | `Self-Made-Legends-` | `dads-daughters-beauty-bond` (separate) |
 | **Stripe** | Shared SML account | **Shared SML account** (code-isolated) |
 | **Accounts** | Standalone player accounts | Guardian-linked family accounts |
 | **Regulatory posture** | Adult game | COPPA / GDPR-K child-safety regime |
@@ -34,7 +34,7 @@ things: **the parent company, Self-Made Legends LLC, and one Stripe account.**
 ### Hard separation rules
 
 1. **No shared codebase.** Beauty Bond ships from **its own repository**
-   (`beauty-bond`) with its own pipeline, dependency tree, deploy, and database.
+   (`dads-daughters-beauty-bond`) with its own pipeline, dependency tree, deploy, and database.
    No Come Up code belongs here; no Beauty Bond code belongs there.
 2. **No shared accounts, database, or user records.** A Come Up player is not a
    Beauty Bond user. There is no SSO between them, no account linking, no shared
@@ -249,7 +249,7 @@ clears it.
 
 ## The one-line pitch
 
-> **Dad + Daughter Beauty Bond™** is a guided beauty studio where a parent and
+> **Dads & Daughters Beauty Bond™** is a guided beauty studio where a parent and
 > child learn shades, brushes, and technique together — inclusive of every skin
 > tone, texture, and culture — with child safety designed in, not bolted on.
 >

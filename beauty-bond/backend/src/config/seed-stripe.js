@@ -1,5 +1,5 @@
 /**
- * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+ * Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
  * Proprietary and confidential. Unauthorized use is prohibited.
  *
@@ -110,7 +110,7 @@ async function main() {
   const live = config.stripe.secretKey.startsWith('sk_live') ||
                config.stripe.secretKey.startsWith('rk_live');
 
-  console.log(`\nDad + Daughter Beauty Bond™ — Stripe catalogue`);
+  console.log(`\nDads & Daughters Beauty Bond™ — Stripe catalogue`);
   console.log(`mode: ${DRY ? 'DRY RUN' : 'WRITE'}   account: ${live ? 'LIVE' : 'test'}\n`);
 
   if (live && !DRY && !process.argv.includes('--yes')) {

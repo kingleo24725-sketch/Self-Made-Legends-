@@ -1,6 +1,6 @@
 # Assets
 
-> Dad + Daughter Beauty Bond™ — © 2026 Self-Made Legends LLC (SML).
+> Dads & Daughters Beauty Bond™ — © 2026 Self-Made Legends LLC (SML).
 > All rights reserved. Proprietary and confidential.
 
 | Folder | Contents |

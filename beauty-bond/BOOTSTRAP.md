@@ -1,12 +1,12 @@
-# BOOTSTRAP — Creating the standalone `beauty-bond` repository
+# BOOTSTRAP — Creating the standalone `dads-daughters-beauty-bond` repository
 
-> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 
 Beauty Bond ships from its **own repository**. This file is the one-time procedure to
 move this project — the full `app/`, `backend/`, `infra/`, and `docs/` tree — out of
-the `Self-Made-Legends-` repo and into `beauty-bond`, **preserving the full commit
+the `Self-Made-Legends-` repo and into `dads-daughters-beauty-bond`, **preserving the full commit
 history**.
 
 > **Why this is a manual step:** the Claude GitHub App on this account does not have
@@ -15,20 +15,20 @@ history**.
 
 ---
 
-## Step 1 — Create the empty repository
+## Step 1 — Create the empty repository ✅ done
 
-On GitHub → **New repository**:
+`kingleo24725-sketch/dads-daughters-beauty-bond` exists.
 
 | Field | Value |
 |---|---|
-| Owner | `kingleo24725-sketch` (or the SML org, if one exists) |
-| Name | `beauty-bond` |
+| Owner | `kingleo24725-sketch` |
+| Name | `dads-daughters-beauty-bond` |
 | Visibility | **Private** — this is proprietary and confidential (`NOTICE.md` §6) |
-| Initialize with README | **No** — leave it completely empty |
-| .gitignore / license | **None** — provided below |
 
-Creating it empty matters: an auto-generated README creates a root commit that
-conflicts with the history being pushed in Step 2.
+**It was created with a README**, so `main` already carries one commit. That commit
+is not part of Beauty Bond's history and nothing references it, so Step 2 replaces it
+outright with `--force`. Confirm `main` holds only that single auto-generated commit
+before forcing — if anyone has pushed real work there, merge instead.
 
 ---
 
@@ -50,14 +50,15 @@ git fetch origin beauty-bond-standalone
 #    git checkout claude/beauty-bond-app-rebuild-u0c50c
 #    git subtree split --prefix=beauty-bond -b beauty-bond-standalone
 
-# 3. Push that history to the new repository's main branch
-git push https://github.com/kingleo24725-sketch/beauty-bond.git \
+# 3. Push that history to the new repository's main branch.
+#    --force replaces the auto-generated README commit (see Step 1).
+git push --force https://github.com/kingleo24725-sketch/dads-daughters-beauty-bond.git \
     origin/beauty-bond-standalone:main
 
 # 4. Clone the new repo fresh and confirm
 cd ..
-git clone https://github.com/kingleo24725-sketch/beauty-bond.git
-cd beauty-bond
+git clone https://github.com/kingleo24725-sketch/dads-daughters-beauty-bond.git
+cd dads-daughters-beauty-bond
 ls          # app/ backend/ infra/ docs/ README.md NOTICE.md LICENSE
 git log --oneline    # full Beauty Bond history, no Come Up commits
 ```
@@ -70,7 +71,7 @@ root, with every Beauty Bond commit intact and zero Come Up commits carried over
 
 ## Step 3 — Clean up the Come Up repo
 
-Once `beauty-bond` is confirmed good, remove the snapshot so there is exactly one
+Once `dads-daughters-beauty-bond` is confirmed good, remove the snapshot so there is exactly one
 canonical copy and no drift:
 
 ```bash
@@ -79,7 +80,7 @@ git rm -r beauty-bond
 git commit -m "Move Beauty Bond spec to its own repository
 
 Beauty Bond is a separate SML product and now lives at
-github.com/kingleo24725-sketch/beauty-bond. Removing the snapshot so
+github.com/kingleo24725-sketch/dads-daughters-beauty-bond. Removing the snapshot so
 there is one canonical copy."
 git push
 ```
@@ -88,7 +89,7 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 
 ```markdown
 > **Note:** Beauty Bond™ is a separate SML product and is **not** part of this
-> repository. It lives at `kingleo24725-sketch/beauty-bond`.
+> repository. It lives at `kingleo24725-sketch/dads-daughters-beauty-bond`.
 ```
 
 ---
@@ -101,8 +102,8 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 | Branch protection | Require PR review on `main` before implementation starts |
 | Secret scanning | **On** — the Stripe restricted key must never land in a commit |
 | Push protection | **On** |
-| Topics | `sml`, `beauty-bond`, `react-native`, `nodejs` |
-| Description | `Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.` |
+| Topics | `sml`, `dads-daughters-beauty-bond`, `react-native`, `nodejs` |
+| Description | `Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.` |
 
 **Collaborators:** only people with an executed NDA (`NOTICE.md` §6).
 
@@ -127,7 +128,7 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 ## What must never happen
 
 - Beauty Bond application code left in the `Self-Made-Legends-` repo after Step 3.
-- Come Up code, SML Bucks, or game systems committed to `beauty-bond`.
+- Come Up code, SML Bucks, or game systems committed to `dads-daughters-beauty-bond`.
 - The two repos sharing a build, a dependency tree, a deploy, or a database.
 - The Stripe **account** being shared (intended) becoming shared **entitlements**
   (a bug — see `docs/stripe-flow.md` §3.2).

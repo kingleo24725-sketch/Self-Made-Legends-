@@ -1,6 +1,6 @@
 # Cover art & generated assets
 
-> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Proprietary and confidential.
 
@@ -13,7 +13,7 @@ generated/         ← produced by npm run assets:generate. Do not edit by hand.
 
 ## Provenance
 
-`cover.png` is the official Dad + Daughter Beauty Bond™ cover artwork supplied
+`cover.png` is the official Dads & Daughters Beauty Bond™ cover artwork supplied
 by Self-Made Legends LLC — the badge-free master, at 985×1252.
 
 Two mechanical steps, no retouching:

@@ -1,6 +1,6 @@
 # Architecture Decisions
 
-> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 

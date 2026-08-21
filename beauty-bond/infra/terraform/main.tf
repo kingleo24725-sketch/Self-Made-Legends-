@@ -1,4 +1,4 @@
-# Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+# Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
 # Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
 # Proprietary and confidential. Unauthorized use is prohibited.
 #

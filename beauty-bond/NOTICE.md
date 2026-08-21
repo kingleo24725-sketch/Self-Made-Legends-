@@ -2,7 +2,7 @@
 
 ```
 ════════════════════════════════════════════════════════════════════
-        D A D   +   D A U G H T E R   B E A U T Y   B O N D ™
+     D A D S   &   D A U G H T E R S   B E A U T Y   B O N D ™
               A SELF-MADE LEGENDS LLC (SML) PRODUCT
 
         © 2026 Self-Made Legends LLC (SML). All rights reserved.
@@ -17,7 +17,7 @@
 
 | Field | Value |
 |---|---|
-| **Product** | **Dad + Daughter Beauty Bond™** |
+| **Product** | **Dads & Daughters Beauty Bond™** |
 | **Owner** | **Self-Made Legends LLC (SML)** |
 | **Entity type** | Limited Liability Company |
 | **Copyright holder** | Self-Made Legends LLC (SML) |
@@ -37,7 +37,7 @@ this specification set.
 
 ## 2. Scope of This Notice
 
-This notice covers every file in the `beauty-bond` repository:
+This notice covers every file in the `dads-daughters-beauty-bond` repository:
 
 - `README.md` — product overview and separation rules
 - `NOTICE.md` — this file
@@ -67,7 +67,7 @@ prototypes.
 ### 3.1 Document header (Markdown)
 
 ```markdown
-> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
@@ -77,7 +77,7 @@ prototypes.
 
 ```ts
 /**
- * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+ * Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
  * Proprietary and confidential. Unauthorized copying, distribution,
  * or use of this file, via any medium, is strictly prohibited.
@@ -88,12 +88,12 @@ prototypes.
 
 | Surface | Required text |
 |---|---|
-| Splash screen | `Dad + Daughter Beauty Bond™` / `from Self-Made Legends` |
-| Settings → About | `Dad + Daughter Beauty Bond™ v{version}` / `© 2026 Self-Made Legends LLC (SML)` |
+| Splash screen | `Dads & Daughters Beauty Bond™` / `from Self-Made Legends` |
+| Settings → About | `Dads & Daughters Beauty Bond™ v{version}` / `© 2026 Self-Made Legends LLC (SML)` |
 | App Store / Play listing | Seller: **Self-Made Legends LLC** |
 | Legal footer (web) | `© 2026 Self-Made Legends LLC (SML). All rights reserved.` |
-| Bond Book export (print) | Back page: `Made with Dad + Daughter Beauty Bond™ · A Self-Made Legends LLC (SML) product` |
-| Email footer | `Dad + Daughter Beauty Bond™ · Self-Made Legends LLC (SML)` |
+| Bond Book export (print) | Back page: `Made with Dads & Daughters Beauty Bond™ · A Self-Made Legends LLC (SML) product` |
+| Email footer | `Dads & Daughters Beauty Bond™ · Self-Made Legends LLC (SML)` |
 | Design exports & prototypes | Footer mark per `docs/branding.md` §7.9 |
 
 ### 3.4 Statement descriptor
@@ -113,7 +113,7 @@ Owned by Self-Made Legends LLC (SML):
 |---|---|---|
 | `SELF-MADE LEGENDS` | House mark | 9, 41, 42 |
 | `SML` | House abbreviation | 9, 41, 42 |
-| `DAD + DAUGHTER BEAUTY BOND` | Product name | 9, 41, 44 |
+| `DADS & DAUGHTERS BEAUTY BOND` | Product name | 9, 41, 44 |
 | `BEAUTY BOND` | Short mark | 9, 41, 44 |
 | `BOND METER` | Feature | 9, 41 |
 | `DAD SCHOOL` | Feature | 9, 41 |
@@ -157,7 +157,7 @@ co-branded as one, or presented as versions of each other.**
 | Codebase | Separate | Separate |
 | Database & accounts | Separate | Separate |
 | Stripe account | **Shared SML account** | **Shared SML account** (isolated in code) |
-| Repository | `Self-Made-Legends-` | `beauty-bond` (separate) |
+| Repository | `Self-Made-Legends-` | `dads-daughters-beauty-bond` (separate) |
 | Brand system | Separate | Separate |
 | Regulatory regime | Adult game | COPPA / GDPR-K |
 
@@ -222,12 +222,12 @@ real families remains responsible for its own COPPA / GDPR-K / AADC compliance.
 ## 7. Contact
 
 **Self-Made Legends LLC (SML)**
-Product: Dad + Daughter Beauty Bond™
+Product: Dads & Daughters Beauty Bond™
 Owner contact: leobrown24725@yahoo.com
 
 ---
 
 ```
 © 2026 Self-Made Legends LLC (SML). All rights reserved.
-Dad + Daughter Beauty Bond™ is a trademark of Self-Made Legends LLC.
+Dads & Daughters Beauty Bond™ is a trademark of Self-Made Legends LLC.
 ```
