@@ -6,7 +6,9 @@
  *
  * LiveKit room + token management. docs/video-rooms.md §5.2, §5.3, §5.8.
  */
-const { AccessToken, RoomServiceClient, EgressClient } = require('livekit-server-sdk');
+const {
+  AccessToken, RoomServiceClient, EgressClient, TrackSource,
+} = require('livekit-server-sdk');
 const config = require('../config');
 const db = require('../config/db');
 const { canJoin } = require('./roomSafety');
@@ -91,7 +93,11 @@ async function mintToken(room, profile) {
     canPublishData: true,            // Shared Glam Panel channel
     canUpdateOwnMetadata: true,
     roomAdmin: isHost,
-    canPublishSources: ['camera', 'microphone'],
+    // TrackSource enum members, not strings: AccessToken.toJwt() runs these
+    // through trackSourceToString and throws on a plain string, which made
+    // every mint a 500. Camera and microphone only — never screen share, so a
+    // minor cannot be talked into presenting their device.
+    canPublishSources: [TrackSource.CAMERA, TrackSource.MICROPHONE],
     recorder: false,
   });
 

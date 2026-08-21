@@ -18,6 +18,7 @@ const router = express.Router();
 router.post('/token', requireAuth, ctrl.issueToken);
 
 router.get('/rooms', requireAuth, ctrl.listRooms);
+router.post('/rooms/:id/leave', requireAuth, ctrl.leaveRoom);
 router.post('/rooms', requireAuth, ctrl.createRoom);
 
 router.get('/rooms/:id/glam', requireAuth, ctrl.getGlam);

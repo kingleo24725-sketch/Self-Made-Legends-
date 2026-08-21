@@ -64,8 +64,46 @@ async function issueToken(req, res, next) {
 
     if (room.frozen_at) return res.status(423).json({ error: 'room_frozen' });
 
+    // mintToken runs the full canJoin check and throws 403 if it fails, so
+    // presence is only ever recorded for someone who was allowed in.
     const out = await video.mintToken(room, req.profile);
+    await recordJoin(room.id, req.profile.id,
+                     room.host_profile_id === req.profile.id ? 'host' : 'participant');
     res.json(out);
+  } catch (err) { next(err); }
+}
+
+/**
+ * Presence is what makes roomSafety Rule 1 work: "is an untrusted adult in
+ * this room with a child?" reads room_participants. Before this existed the
+ * set was always empty and the rule could never fire.
+ *
+ * Tokens live 10 minutes and clients re-mint, so this must be idempotent —
+ * the partial unique index from migration 004 makes a second open row for the
+ * same person impossible, and ON CONFLICT turns the re-mint into a no-op.
+ */
+async function recordJoin(roomId, profileId, role = 'participant') {
+  await db.query(
+    `INSERT INTO room_participants (room_id, profile_id, role, joined_at)
+     VALUES ($1, $2, $3, now())
+     ON CONFLICT (room_id, profile_id) WHERE left_at IS NULL DO NOTHING`,
+    [roomId, profileId, role]);
+}
+
+/** Closes the open session and banks the minutes. Idempotent. */
+async function recordLeave(roomId, profileId) {
+  await db.query(
+    `UPDATE room_participants
+        SET left_at = now(),
+            minutes = GREATEST(0, ROUND(EXTRACT(EPOCH FROM (now() - joined_at)) / 60))
+      WHERE room_id = $1 AND profile_id = $2 AND left_at IS NULL`,
+    [roomId, profileId]);
+}
+
+async function leaveRoom(req, res, next) {
+  try {
+    await recordLeave(req.params.id, req.profile.id);
+    res.json({ ok: true });
   } catch (err) { next(err); }
 }
 
@@ -89,6 +127,7 @@ async function panic(req, res, next) {
     if (!room) return res.json({ ok: true });
 
     await video.forceDisconnect(room, req.profile.id);
+    await recordLeave(room.id, req.profile.id);
     await video.freezeRoom(room, 'panic');
 
     logger.error({ roomId: room.id, profileId: req.profile.id }, 'panic_triggered');
@@ -114,6 +153,7 @@ async function eject(req, res, next) {
   try {
     const room = await db.one('SELECT * FROM rooms WHERE id = $1', [req.params.id]);
     await video.forceDisconnect(room, req.params.profileId);
+    await recordLeave(req.params.id, req.params.profileId);
     await db.query(
       'UPDATE guardian_permissions SET video_rooms = false WHERE child_profile_id = $1',
       [req.params.profileId]);
@@ -148,6 +188,6 @@ async function startRecording(req, res, next) {
 }
 
 module.exports = {
-  createRoom, issueToken, listRooms, panic, report, eject,
+  createRoom, issueToken, listRooms, leaveRoom, panic, report, eject,
   getGlam, setGlam, startRecording,
 };
