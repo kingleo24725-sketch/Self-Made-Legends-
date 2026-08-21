@@ -1,6 +1,6 @@
 # Deploying the API to Railway
 
-> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 
@@ -22,9 +22,9 @@ Then in the service's **Settings**, the values depend on which repo you picked �
 `BOOTSTRAP.md` Step 1–2 is what moves the code into the standalone repo, and it is a
 manual step that may not be done yet:
 
-| Setting | Standalone `beauty-bond` repo | Still in `Self-Made-Legends-` |
+| Setting | Standalone `dads-daughters-beauty-bond` repo | Still in `Self-Made-Legends-` |
 |---|---|---|
-| Repo | `beauty-bond` | `Self-Made-Legends-` |
+| Repo | `dads-daughters-beauty-bond` | `Self-Made-Legends-` |
 | **Root Directory** | `backend` | `beauty-bond/backend` |
 | Branch | `main` | `claude/beauty-bond-app-rebuild-u0c50c` |
 | Builder | Nixpacks (auto-detected) | Nixpacks (auto-detected) |
