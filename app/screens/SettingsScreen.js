@@ -76,7 +76,6 @@ export default function SettingsScreen({ navigation }) {
   }
 
   const isAdult = profile?.ageBand === AGE_BANDS.ADULT;
-  const isChild = profile?.ageBand === AGE_BANDS.CHILD;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>

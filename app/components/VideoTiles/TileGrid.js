@@ -16,8 +16,12 @@ export function TileOverlay({ name, speaking, muted, connection }) {
   const t = useTheme();
   return (
     <View style={styles.overlay}>
-      <View style={styles.row}>
+      <View
+        style={styles.row}
+        accessibilityLabel={`${name}${speaking ? ', speaking' : ''}${muted ? ', muted' : ''}`}
+      >
         {muted && <Text style={styles.icon}>🔇</Text>}
+        {speaking && !muted && <Text style={styles.icon}>🔊</Text>}
         <Text style={[t.type('caption'), { color: '#fff' }]} numberOfLines={1}>{name}</Text>
         <View style={[styles.dot, { backgroundColor: connectionColor(connection, t) }]} />
       </View>

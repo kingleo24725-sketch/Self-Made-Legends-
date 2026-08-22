@@ -11,7 +11,7 @@
  * the point of having one.
  */
 import React from 'react';
-import { View, Text, SafeAreaView, ScrollView } from 'react-native';
+import { Text, SafeAreaView, ScrollView } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Card from '../components/Cards/Card';
 import { CULTURAL_COLLECTIONS } from '../utils/constants';

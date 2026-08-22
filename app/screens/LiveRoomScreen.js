@@ -125,6 +125,9 @@ function RoomBody({ roomId, capabilities, name, navigation }) {
           tracks={tracks}
           renderTrack={(tr, isActive) => {
             const meta = safeParse(tr?.participant?.metadata);
+            // A minor's tile shows a first name and nothing else — no age
+            // band, no guardian id, whatever the metadata happens to carry.
+            const isMinor = meta?.isMinor === true;
             return (
               <Tile
                 key={tr.participant.identity}
@@ -137,7 +140,9 @@ function RoomBody({ roomId, capabilities, name, navigation }) {
                             style={{ width: '100%', height: '100%' }} />
                 {/* Minor tiles carry no location, no last name, no age. */}
                 <TileOverlay
-                  name={tr.participant.name}
+                  name={isMinor
+                    ? String(tr.participant.name ?? '').split(' ')[0]
+                    : tr.participant.name}
                   speaking={tr.participant.isSpeaking}
                   muted={!tr.participant.isMicrophoneEnabled}
                   connection={tr.participant.connectionQuality}

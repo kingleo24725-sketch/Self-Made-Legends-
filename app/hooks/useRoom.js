@@ -48,7 +48,7 @@ export function useRoomToken(roomIdOrOptions) {
 export function usePanic(roomId) {
   return useCallback(async () => {
     try { await api.post(`/video/rooms/${roomId}/panic`); } finally { /* always leave */ }
-  }, [roomId, type, name]);
+  }, [roomId]);
 }
 
 export default useRoomToken;

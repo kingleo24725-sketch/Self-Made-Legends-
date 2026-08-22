@@ -21,11 +21,11 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View, Image, Animated, StyleSheet, useWindowDimensions,
-  AccessibilityInfo, Platform,
+  AccessibilityInfo,
 } from 'react-native';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 
-import { brand, accent } from '../styles/colors';
+import { accent } from '../styles/colors';
 
 /** Matches app.json `splash.backgroundColor` — a mismatch shows as a flash. */
 export const SPLASH_BG = '#E9B78E';

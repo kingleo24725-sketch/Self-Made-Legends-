@@ -8,7 +8,7 @@
  * docs/wireframes.md W-50.
  */
 import React from 'react';
-import { View, Text, SafeAreaView, ScrollView } from 'react-native';
+import { Text, SafeAreaView, ScrollView } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import Card from '../components/Cards/Card';
