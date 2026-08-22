@@ -1,5 +1,6 @@
-const CACHE = 'sml-v19';
+const CACHE = 'sml-v20';
 const STATIC = [
+  '/',
   '/dashboard.html',
   '/manifest.json',
   '/privacy-policy.html',
