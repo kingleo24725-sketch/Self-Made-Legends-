@@ -180,3 +180,59 @@ describe('a child account can actually be created', () => {
     ).rejects.toThrow(/consent_granted_before_child/);
   });
 });
+
+/* ── Access control on profile edits ──────────────────────────────── */
+
+describe('PATCH /api/profiles/:id is ownership-scoped', () => {
+  let childId;
+
+  beforeAll(async () => {
+    const start = await request(app).post('/api/guardian/consent/start')
+      .set('Authorization', `Bearer ${tokenFor(guardianUser.id, guardianProfile.id)}`)
+      .send({ guardianEmail: 'marcus@sml.test' });
+    await request(app).post(`/api/guardian/consent/${start.body.consentId}/verify`)
+      .send({ token: start.body.verificationToken });
+    const child = await request(app).post('/api/guardian/children')
+      .set('Authorization', `Bearer ${tokenFor(guardianUser.id, guardianProfile.id)}`)
+      .send({ displayName: 'Patchable', birthDate: '2017-03-04',
+              consentId: start.body.consentId });
+    childId = child.body.id;
+  });
+
+  test('a guardian may edit their own child', async () => {
+    const res = await request(app).patch(`/api/profiles/${childId}`)
+      .set('Authorization', `Bearer ${tokenFor(guardianUser.id, guardianProfile.id)}`)
+      .send({ displayName: 'Renamed By Parent' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.displayName).toBe('Renamed By Parent');
+    // Serialized, not a raw row — the client reads camelCase everywhere else.
+    expect(res.body).not.toHaveProperty('display_name');
+  });
+
+  test("a stranger cannot edit someone else's child", async () => {
+    const res = await request(app).patch(`/api/profiles/${childId}`)
+      .set('Authorization', `Bearer ${tokenFor(strangerUser.id, strangerProfile.id)}`)
+      .send({ displayName: 'Renamed By A Stranger' });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe('not_your_profile');
+  });
+
+  test("a stranger cannot edit another adult's profile", async () => {
+    const res = await request(app).patch(`/api/profiles/${guardianProfile.id}`)
+      .set('Authorization', `Bearer ${tokenFor(strangerUser.id, strangerProfile.id)}`)
+      .send({ mode: 'solo_girl' });
+
+    expect(res.status).toBe(403);
+  });
+
+  test('an unknown profile id is 404, not a silent no-op', async () => {
+    const res = await request(app)
+      .patch('/api/profiles/00000000-0000-0000-0000-000000000000')
+      .set('Authorization', `Bearer ${tokenFor(guardianUser.id, guardianProfile.id)}`)
+      .send({ displayName: 'Nobody' });
+
+    expect(res.status).toBe(404);
+  });
+});
