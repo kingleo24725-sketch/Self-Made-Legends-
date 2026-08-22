@@ -47,6 +47,51 @@ describe('every navigation target is registered', () => {
     routes.forEach((r) => expect(registered.has(r)).toBe(true));
   });
 
+  /**
+   * Registered-somewhere is not enough. The stack is swapped by auth status,
+   * so a screen in the authed group simply does not exist while anon. The age
+   * gate navigated to ModeSelection — authed-only — which threw for every new
+   * user at the last step of onboarding, and the test above could not see it
+   * because ModeSelection *is* registered, just not there.
+   */
+  describe('the anonymous stack is self-contained', () => {
+    const groupFor = (label) => {
+      const i = nav.indexOf(`status === '${label}'`);
+      if (i === -1) return '';
+      // Up to the start of the next status group, or the end of the navigator.
+      const rest = nav.slice(i);
+      const next = rest.slice(1).search(/status === '/);
+      return next === -1 ? rest : rest.slice(0, next + 1);
+    };
+
+    const anonGroup = groupFor('anon');
+    const anonScreens = new Set(
+      [...anonGroup.matchAll(/<Stack\.Screen\s+name="(\w+)"/g)].map((m) => m[1]));
+
+    test('the anon group registers the screens onboarding needs', () => {
+      ['Welcome', 'AgeGate', 'SignIn', 'SignUp', 'GuardianHandoff']
+        .forEach((name) => expect(anonScreens.has(name)).toBe(true));
+    });
+
+    test('no anon screen navigates somewhere only an authed user can reach', () => {
+      const authedOnly = new Set(
+        [...groupFor('authed').matchAll(/<Stack\.Screen\s+name="(\w+)"/g)]
+          .map((m) => m[1])
+          .filter((n) => !anonScreens.has(n)));
+
+      const escapes = [];
+      anonScreens.forEach((screen) => {
+        const file = path.join(APP, 'screens', `${screen}Screen.js`);
+        if (!fs.existsSync(file)) return;
+        const src = fs.readFileSync(file, 'utf8');
+        for (const m of src.matchAll(/navigation\.navigate\(\s*'(\w+)'/g)) {
+          if (authedOnly.has(m[1])) escapes.push(`${screen} -> ${m[1]}`);
+        }
+      });
+      expect(escapes).toEqual([]);
+    });
+  });
+
   test('every screen file is actually mounted somewhere', () => {
     // SplashScreen is mounted in App.js rather than the navigator, since it
     // has to render before the providers are ready. Both count as wired.

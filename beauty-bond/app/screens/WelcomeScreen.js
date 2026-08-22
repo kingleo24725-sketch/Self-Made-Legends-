@@ -52,7 +52,7 @@ export default function WelcomeScreen({ navigation }) {
         <View style={{ gap: t.space[3] }}>
           <PrimaryButton title="Get started" onPress={() => navigation.navigate('AgeGate')} />
           <SecondaryButton title="I already have an account"
-            onPress={() => navigation.navigate('AgeGate', { returning: true })} ghost />
+            onPress={() => navigation.navigate('SignIn')} ghost />
           <Text style={[t.type('caption'), { color: t.color.textSecondary, textAlign: 'center' }]}>
             {ATTRIBUTION}
           </Text>
