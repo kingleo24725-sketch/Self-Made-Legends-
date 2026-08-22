@@ -94,10 +94,10 @@
       "assets/fonts/*"
     ],
     "extra": {
-      "apiBaseUrl": "http://localhost:4000/api",
+      "apiBaseUrl": "https://web-production-75d20c.up.railway.app/api",
       "stripePublishableKey": "",
       "livekitWsUrl": "",
-      "env": "development",
+      "env": "production",
       "owner": "Self-Made Legends LLC (SML)",
       "product": "Dad + Daughter Beauty Bond",
       "eas": {
