@@ -254,3 +254,10 @@ clears it.
 > tone, texture, and culture — with child safety designed in, not bolted on.
 >
 > **From Self-Made Legends LLC (SML).**
+
+---
+
+## App Store short description
+
+> Strengthen the bond between dads and daughters with fun, safe, and inclusive
+> makeup learning powered by AI.
