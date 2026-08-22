@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Dads & Daughters Beauty Bond",
-    "slug": "dads-daughters-beauty-bond",
+    "name": "Dad + Daughter Beauty Bond",
+    "slug": "dad-daughter-beauty-bond",
     "version": "0.1.0",
     "orientation": "default",
     "scheme": "beautybond",
@@ -99,7 +99,7 @@
       "livekitWsUrl": "",
       "env": "development",
       "owner": "Self-Made Legends LLC (SML)",
-      "product": "Dads & Daughters Beauty Bond",
+      "product": "Dad + Daughter Beauty Bond",
       "eas": {
         "projectId": ""
       }

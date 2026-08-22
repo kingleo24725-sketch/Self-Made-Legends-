@@ -1,6 +1,6 @@
 # BOOTSTRAP — Creating the standalone `dads-daughters-beauty-bond` repository
 
-> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 
@@ -12,6 +12,14 @@ history**.
 > **Why this is a manual step:** the Claude GitHub App on this account does not have
 > repository-creation permission (`POST /user/repos` → 403). Creating the empty repo
 > takes about thirty seconds in the GitHub UI; everything after that is scripted below.
+
+> **Note on the repository name.** The product is **Dad + Daughter Beauty Bond™**, but
+> the repository is `dads-daughters-beauty-bond` — it was created while the product
+> briefly carried the plural name. Every reference below points at the repository that
+> actually exists, deliberately; do not "correct" them to match the product name or the
+> push will 404. GitHub redirects old URLs after a rename, so renaming the repo to
+> `dad-daughter-beauty-bond` is safe whenever you want it to match — nothing here
+> depends on the name beyond these links.
 
 ---
 
@@ -103,7 +111,7 @@ Leave a pointer in the Come Up `README.md` so nobody re-adds it:
 | Secret scanning | **On** — the Stripe restricted key must never land in a commit |
 | Push protection | **On** |
 | Topics | `sml`, `dads-daughters-beauty-bond`, `react-native`, `nodejs` |
-| Description | `Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.` |
+| Description | `Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.` |
 
 **Collaborators:** only people with an executed NDA (`NOTICE.md` §6).
 
