@@ -56,6 +56,20 @@ export function AuthProvider({ children }) {
     await load();
   }
 
+  /**
+   * Only adults may hold an account — the API rejects a minor birth date with
+   * adults_only_signup. A child reaches the app through their guardian adding
+   * them, after verifiable parental consent.
+   */
+  async function register({ email, password, birthDate, displayName }) {
+    const { accessToken, refreshToken } = await api.post('/auth/register', {
+      email, password, birthDate, displayName,
+    });
+    setAccessToken(accessToken);
+    await SecureStore.setItemAsync(REFRESH_KEY, refreshToken);
+    await load();
+  }
+
   async function logout() {
     await api.post('/auth/logout').catch(() => {});
     await SecureStore.deleteItemAsync(REFRESH_KEY);
@@ -69,7 +83,7 @@ export function AuthProvider({ children }) {
     isChild: profile?.ageBand === AGE_BANDS.CHILD,
     isTeen: profile?.ageBand === AGE_BANDS.TEEN,
     isAdult: profile?.ageBand === AGE_BANDS.ADULT,
-    login, logout, reload: load, switchProfile: setProfile,
+    login, register, logout, reload: load, switchProfile: setProfile,
   }), [user, profile, profiles, status, load]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

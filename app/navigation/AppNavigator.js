@@ -18,6 +18,8 @@ import { useTheme } from '../context/ThemeContext';
 import { AGE_BANDS } from '../utils/constants';
 
 import WelcomeScreen from '../screens/WelcomeScreen';
+import SignInScreen from '../screens/SignInScreen';
+import SignUpScreen from '../screens/SignUpScreen';
 import AgeGateScreen from '../screens/AgeGateScreen';
 import GuardianHandoffScreen from '../screens/GuardianHandoffScreen';
 import ModeSelectionScreen from '../screens/ModeSelectionScreen';
@@ -91,6 +93,8 @@ export default function AppNavigator() {
           <Stack.Group>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
             <Stack.Screen name="AgeGate" component={AgeGateScreen} />
+            <Stack.Screen name="SignIn" component={SignInScreen} />
+            <Stack.Screen name="SignUp" component={SignUpScreen} />
             <Stack.Screen name="GuardianHandoff" component={GuardianHandoffScreen} />
           </Stack.Group>
         )}

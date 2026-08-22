@@ -30,7 +30,12 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Beauty Bond uses the camera for mirror lessons and try-on. Photos are processed on your device.",
         "NSPhotoLibraryUsageDescription": "Choose a photo to try a look on.",
-        "NSMicrophoneUsageDescription": "Beauty Bond uses the microphone for Glam Rooms."
+        "NSMicrophoneUsageDescription": "Beauty Bond uses the microphone for Glam Rooms.",
+        "NSPhotoLibraryAddUsageDescription": "Save a look you loved to your photos.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
@@ -52,7 +57,8 @@
       },
       "permissions": [
         "CAMERA",
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS"
       ]
     },
     "plugins": [
@@ -69,7 +75,17 @@
         }
       ],
       "expo-secure-store",
-      "expo-image-picker"
+      "expo-image-picker",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Fraunces.ttf",
+            "./assets/fonts/Inter.ttf",
+            "./assets/fonts/Nunito.ttf"
+          ]
+        }
+      ]
     ],
     "assetBundlePatterns": [
       "assets/images/generated/splash.png",
@@ -83,7 +99,10 @@
       "livekitWsUrl": "",
       "env": "development",
       "owner": "Self-Made Legends LLC (SML)",
-      "product": "Dads & Daughters Beauty Bond"
+      "product": "Dads & Daughters Beauty Bond",
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }

@@ -143,6 +143,11 @@ export const COPY = {
   legacyEntry: "Whenever you're ready.",
   letterDelivered: 'She left this for today.',
   errorGeneric: 'Our side, not yours.',
+  // The on-device renderer ships with the native try-on module. Until then a
+  // child account cannot try on at all, because the alternative -- sending a
+  // U13 face to a server -- is the one thing this app must never do.
+  errorOnDeviceUnavailable:
+    'Try-on needs the latest version of the app. Everything else still works.',
   offline: "You're offline. Downloaded lessons still work.",
   safetyAlwaysFree: 'Safety features are free, always.',
 };

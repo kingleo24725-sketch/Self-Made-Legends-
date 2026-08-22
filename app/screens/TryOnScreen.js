@@ -97,7 +97,12 @@ export default function TryOnScreen({ navigation }) {
       setResult(out);
     } catch (e) {
       if (e.isUpgradeRequired) return setPaywall(true);
-      Alert.alert('Try-on', e.message || COPY.errorGeneric);
+      if (e.isOnDeviceUnavailable) {
+        return Alert.alert('Try-on', COPY.errorOnDeviceUnavailable);
+      }
+      // e.message is a machine code (server_render_forbidden_for_minor and
+      // friends) -- never show it to a family.
+      Alert.alert('Try-on', COPY.errorGeneric);
     }
   }
 

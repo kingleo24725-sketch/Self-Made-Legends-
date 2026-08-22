@@ -25,7 +25,9 @@ export default function AgeGateScreen({ navigation }) {
     const band = ageBandFor(iso);
     // DOB is fixed once submitted; changing it needs guardian/support intervention.
     if (band === AGE_BANDS.CHILD) navigation.navigate('GuardianHandoff', { birthDate: iso });
-    else navigation.navigate('ModeSelection', { birthDate: iso, ageBand: band });
+    // ModeSelection lives in the AUTHED stack — an anon user cannot reach it.
+    // The account has to exist first; mode is chosen straight after.
+    else navigation.navigate('SignUp', { birthDate: iso, ageBand: band });
   }
 
   const field = (key, placeholder, len) => (

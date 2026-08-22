@@ -14,7 +14,7 @@ import { useAuth } from './useAuth';
 import { useSubscription } from './useSubscription';
 import { sanitizeLook } from '../utils/validators';
 import { AGE_BANDS } from '../utils/constants';
-import { renderOnDevice } from '../native/BBTryOnKit';
+import { renderOnDevice, isSupported } from '../native/BBTryOnKit';
 
 export function useTryOn() {
   const { profile } = useAuth();
@@ -39,12 +39,29 @@ export function useTryOn() {
     setRendering(true);
     try {
       if (mustStayLocal || source.kind === 'live') {
+        // BBTryOnKit is a JS contract whose native half is not built yet, so
+        // on a real device renderOnDevice throws developer text at a parent.
+        // Ask first and fail as a stated product limit instead.
+        if (!(await isSupported())) {
+          const err = new Error('on_device_unavailable');
+          err.isOnDeviceUnavailable = true;
+          throw err;
+        }
         return await renderOnDevice({
           source,
           look: safeLook,
           // Child accounts get stylized pigment, never photoreal cosmetics.
           style: mustStayLocal ? 'playful' : 'realistic',
         });
+      }
+
+      // Past this point the image is uploaded. A child's face must never get
+      // here: mustStayLocal is what guarantees a U13 photo stays on device,
+      // so an unavailable renderer has to fail above, never fall through.
+      if (mustStayLocal) {
+        const err = new Error('on_device_unavailable');
+        err.isOnDeviceUnavailable = true;
+        throw err;
       }
 
       const upload = await uploadEphemeral(source);
