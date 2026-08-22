@@ -67,6 +67,34 @@ things: **the parent company, Self-Made Legends LLC, and one Stripe account.**
 
 ---
 
+## What v1 is
+
+**One thing, finished.** The Legacy Vault, Letters Forward, the Healing Journal
+and the Bond Meter.
+
+| | |
+|---|---|
+| **Shipping** | Legacy module, Bond Meter, lessons, cultural library, guardian console |
+| **Built, switched off** | AI Try-On, Glam Rooms — `app/app.json` → `extra.features` |
+| **Price** | Free. No tier, nothing seeded in Stripe. |
+
+Try-on and Glam Rooms are not broken and not removed — every screen, hook, route
+and test is intact and passing. They are off because the try-on native module
+was never written, and live video with minors carries moderation cost a
+pre-revenue product cannot carry. Turning either on is one flag.
+
+Billing is off the same way. With no Stripe key there is no way to take a
+payment, so withholding a paid capability would sell nothing and only break the
+app — commercial gates open when billing is off. **Only commercial ones.** Age
+bands, guardian permissions and every safety rule are separate middleware and
+are unaffected.
+
+The one promise that never bends, at any tier or none: **a letter already
+recorded is delivered.** `services/legacyService.js` cannot read subscription
+state, and a test enforces that against its source.
+
+---
+
 ## Repository layout
 
 ```
