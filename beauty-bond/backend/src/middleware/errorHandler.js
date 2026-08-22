@@ -16,10 +16,26 @@ function notFound(req, res) {
  * Client errors (<500) surface their machine-readable code so the app can
  * branch on it — e.g. `server_render_forbidden_for_minor` drives the
  * on-device fallback. Server errors NEVER leak internals.
+ *
+ * 503 is the exception on both counts. "This feature is not configured yet" is
+ * not an internal fault and must not read as one: videoService, stripeService
+ * and mlProvider all raise a 503 carrying a publicMessage precisely so a
+ * family sees "Glam Rooms are not available yet" rather than "Our side, not
+ * yours", and so the client can tell an unconfigured feature from an outage.
+ * Those errors are deliberate and carry nothing internal to leak.
  */
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, _next) {
   const status = err.status || 500;
+
+  if (status === 503 && err.publicMessage) {
+    logger.warn({ code: err.message, path: req.path }, 'feature_not_configured');
+    return res.status(503).json({
+      error: err.code || err.message || 'not_configured',
+      message: err.publicMessage,
+      requestId: req.id,
+    });
+  }
 
   if (status >= 500) {
     logger.error({ err, path: req.path }, 'unhandled_error');

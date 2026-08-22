@@ -76,12 +76,12 @@ a feature on when set:
 |---|---|---|
 | Billing | `STRIPE_SECRET_KEY_BB`, `STRIPE_WEBHOOK_SECRET_BB` | Billing routes return 503; the rest of the API works |
 | Glam Rooms | `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `LIVEKIT_WS_URL` | Room routes return 503 |
-| AI try-on | `ML_SERVICE_URL`, `ML_PROVIDER=http` | Try-on returns 502 |
+| AI try-on | `ML_SERVICE_URL`, `ML_PROVIDER=http` | Try-on routes return 503 |
 
-This split is deliberate: the API boots and serves auth, profiles, learning, and the
-guardian console before Stripe or LiveKit exist. Each disabled feature **fails
-closed** — Stripe rejects unsigned webhooks, LiveKit refuses to mint tokens — so a
-partial deploy cannot quietly do the wrong thing.
+This split is deliberate: the API boots and serves auth, profiles, the Legacy
+module, learning and the guardian console before Stripe or LiveKit exist. Each
+disabled feature **fails closed with a 503 naming itself** — never a 500, so an
+unconfigured feature is always distinguishable from a real fault.
 
 Boot logs say plainly what is off:
 
@@ -112,8 +112,27 @@ curl https://<your-app>.up.railway.app/health
 }
 ```
 
-`ok: true` with features `false` is a **correct** first deploy. Flip them on as each
-account is set up.
+**`ok: true` with all three `false` is the correct v1 deploy, not a broken one.**
+v1 ships the Legacy module — the Vault, Letters Forward, the Healing Journal and
+the Bond Meter — and none of it needs Stripe, LiveKit or an ML service. Sign-in,
+profiles, guardian consent, lessons and the cultural library all run on this.
+
+Try-on and Glam Rooms are switched off in the app (`app/app.json` →
+`extra.features`) and their routes fail closed behind it: a request to one
+answers **503 with its real reason** — `"Try-on is not available yet."` — never
+a 500. If you see `internal_error`, that is a genuine fault and worth reporting,
+which is the whole point of separating the two.
+
+**v1 also ships free.** With no Stripe key there is no way to take a payment, so
+commercial gates open rather than locking a feature nobody can buy. Age bands,
+guardian permissions and every safety rule are separate middleware and are
+unaffected.
+
+This exact configuration was rehearsed before you run it: fresh database, the
+three variables below and nothing else, `NODE_ENV=production`, Railway's own
+`preDeployCommand` and `startCommand`. Six migrations applied, the API booted,
+and a father added a legacy person, saved a vault item, completed guardian
+consent, added his daughter and sealed her two letters.
 
 ---
 
@@ -194,5 +213,6 @@ one dataset here that cannot be regenerated from anything.
 | `Cannot start: missing JWT_SECRET` | Boot-critical variable unset — see §3 |
 | Health check timing out | `preDeployCommand` migration failing; check deploy logs |
 | `ECONNREFUSED` to Postgres | Postgres service not attached to this project |
-| Billing routes 503 | Expected until Stripe variables are set |
+| Billing routes 503 | Expected until Stripe variables are set — v1 ships this way |
+| Any route returns `internal_error` | A real fault. Unconfigured features return 503 with their own name. |
 | Webhook 400s | `STRIPE_WEBHOOK_SECRET_BB` is from a different endpoint or account |
