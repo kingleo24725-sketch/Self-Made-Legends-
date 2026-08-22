@@ -58,12 +58,28 @@ router.get('/me/entitlements', requireAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+/**
+ * A profile may be edited by the person it belongs to, or by their guardian.
+ * Nobody else — this used to update by id with no ownership check at all, so
+ * any authenticated account could rename or re-mode any profile in the system,
+ * including a stranger's child.
+ */
 router.patch('/profiles/:id', requireAuth, async (req, res, next) => {
   try {
     const { mode, remembranceMode, culturalModes, displayName } = req.body;
     if (mode !== undefined && !isValidMode(mode)) {
       return res.status(400).json({ error: 'unknown_mode', mode });
     }
+
+    const target = await db.one(
+      'SELECT * FROM profiles WHERE id = $1 AND deleted_at IS NULL',
+      [req.params.id]).catch(() => null);
+    if (!target) return res.status(404).json({ error: 'profile_not_found' });
+
+    const isSelf = target.id === req.profile.id;
+    const isMyChild = target.guardian_id && target.guardian_id === req.profile.id;
+    if (!isSelf && !isMyChild) return res.status(403).json({ error: 'not_your_profile' });
+
     const row = await db.one(
       `UPDATE profiles SET
          mode = COALESCE($2, mode),
@@ -73,7 +89,10 @@ router.patch('/profiles/:id', requireAuth, async (req, res, next) => {
        WHERE id = $1 RETURNING *`,
       [req.params.id, mode ?? null, remembranceMode ?? null,
        culturalModes ?? null, displayName ?? null]);
-    res.json(row);
+
+    // Serialized, like every other profile the client receives — a raw row is
+    // snake_case, and the client reads ageBand.
+    res.json(publicProfile(row));
   } catch (err) { next(err); }
 });
 
