@@ -132,7 +132,27 @@ async function call(path, payload) {
 
 const providers = { mock: mockProvider, http: httpProvider };
 
+/**
+ * Fail closed when try-on is not configured, the way videoService and
+ * stripeService already do.
+ *
+ * Without this, a production deploy with no ML_SERVICE_URL answered a try-on
+ * request with a 500 and "Our side, not yours." — which reads as a broken app
+ * rather than an unconfigured feature, and buries a real outage in the same
+ * error as a missing setting. 503 says the true thing.
+ */
+function requireMlConfigured() {
+  if (!config.enabled.ml) {
+    const e = new Error('tryon_not_configured');
+    e.status = 503;
+    e.publicMessage = 'Try-on is not available yet.';
+    throw e;
+  }
+}
+
 function getProvider() {
+  requireMlConfigured();
+
   const name = config.ml.provider;
   const provider = providers[name];
   if (!provider) throw new Error(`unknown ML provider: ${name}`);
@@ -145,4 +165,6 @@ function getProvider() {
 
 logger.info({ provider: config.ml.provider }, 'ml_provider_selected');
 
-module.exports = { getProvider, providers, mockProvider, httpProvider };
+module.exports = {
+  getProvider, requireMlConfigured, providers, mockProvider, httpProvider,
+};

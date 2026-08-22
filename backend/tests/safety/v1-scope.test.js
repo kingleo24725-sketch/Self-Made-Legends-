@@ -156,3 +156,78 @@ describe('Remembrance Mode actually changes the app', () => {
     expect(read('screens/LegacyScreen.js')).toContain('HELPLINES[profile?.region]');
   });
 });
+
+/* ── Unconfigured features must fail closed, and say so ───────────── */
+
+describe('an unconfigured feature is not an outage', () => {
+  const fs = require('fs');
+  const path = require('path');
+  let app;
+  let request;
+
+  beforeAll(() => {
+    jest.resetModules();
+    delete process.env.STRIPE_SECRET_KEY_BB;
+    delete process.env.STRIPE_WEBHOOK_SECRET_BB;
+    delete process.env.LIVEKIT_API_KEY;
+    delete process.env.LIVEKIT_API_SECRET;
+    delete process.env.LIVEKIT_WS_URL;
+    delete process.env.ML_SERVICE_URL;
+    request = require('supertest');
+    app = require('../../src/server');
+  });
+
+  afterAll(async () => {
+    const db = require('../../src/config/db');
+    await db.pool.end().catch(() => { /* pool may be unused in this suite */ });
+
+    process.env.STRIPE_SECRET_KEY_BB = 'sk_test_dummy_beauty_bond';
+    process.env.STRIPE_WEBHOOK_SECRET_BB = 'whsec_test_dummy';
+    process.env.LIVEKIT_API_KEY = 'test-livekit-key';
+    process.env.LIVEKIT_API_SECRET = 'test-livekit-secret';
+    process.env.LIVEKIT_WS_URL = 'wss://test.livekit.local';
+    process.env.ML_SERVICE_URL = 'http://localhost:9000';
+    jest.resetModules();
+  });
+
+  test('/health reports the credential-backed features as off', async () => {
+    const res = await request(app).get('/health');
+    expect(res.body.ok).toBe(true);
+    expect(res.body.features.billing).toBe(false);
+    expect(res.body.features.video).toBe(false);
+  });
+
+  test('ml is forced on outside production, and only there', () => {
+    // config/index.js:46 — the mock provider runs locally so the try-on
+    // pipeline is exercisable without an ML service. In production the flag
+    // follows ML_SERVICE_URL, which is why a real deploy reports ml:false.
+    const cfg = fs.readFileSync(
+      path.join(__dirname, '../../src/config/index.js'), 'utf8');
+    expect(cfg).toMatch(/if \(!isProd\) enabled\.ml = true/);
+  });
+
+  test('a 503 carries its real reason, not "internal_error"', () => {
+    // A deploy with no ML_SERVICE_URL used to answer try-on with a 500 and
+    // "Our side, not yours." — indistinguishable from the server being broken,
+    // and it buried real outages in the same message as a missing setting.
+    const handler = fs.readFileSync(
+      path.join(__dirname, '../../src/middleware/errorHandler.js'), 'utf8');
+    expect(handler).toMatch(/status === 503 && err\.publicMessage/);
+  });
+
+  test('all three services fail closed the same way', () => {
+    const src = (rel) => fs.readFileSync(path.join(__dirname, '../../src', rel), 'utf8');
+    // mlProvider had no guard at all; video and stripe already had one.
+    expect(src('services/mlProvider.js')).toContain('requireMlConfigured');
+    expect(src('services/mlProvider.js')).toMatch(/status = 503/);
+    expect(src('services/videoService.js')).toMatch(/status = 503/);
+    expect(src('services/stripeService.js')).toMatch(/status = 503/);
+  });
+
+  test('the v1 module works with nothing configured beyond the database', async () => {
+    // This is exactly a fresh Railway deploy: DATABASE_URL and the two secrets.
+    const res = await request(app).get('/api/legacy/people');
+    // 401 (needs auth), not 503 or 500 — the feature itself is live.
+    expect(res.status).toBe(401);
+  });
+});
