@@ -1,0 +1,119 @@
+# Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+# Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+# Proprietary and confidential. Unauthorized use is prohibited.
+#
+# Builds an installable Android APK on Expo's servers and emails the owner a
+# link. The owner has a phone and no computer, so this exists to make sure no
+# step of shipping requires one. docs/get-it-on-your-phone.md.
+#
+# Two deliberate choices, both about not making a person chase things:
+#
+#   - It triggers on PUSH, not on a button. Finding "Run workflow" in GitHub's
+#     mobile web UI is exactly the kind of step this is meant to remove.
+#   - Before EXPO_TOKEN is set it SKIPS and stays green, rather than failing
+#     red. A red mark for "setup isn't finished yet" is indistinguishable, at a
+#     glance, from "your app is broken", and that is the wrong thing to tell
+#     someone. The notice says what to do; workflow_dispatch runs it once the
+#     token is in place, with no new commit needed.
+name: Beauty Bond Android build
+
+on:
+  push:
+    branches: [claude/beauty-bond-app-rebuild-u0c50c]
+    paths:
+      - 'beauty-bond/app/**'
+      - '.github/workflows/beauty-bond-android.yml'
+  workflow_dispatch:
+
+# Two builds of the same branch race for the same Expo build slot and the
+# older one is wasted, so cancel it.
+concurrency:
+  group: beauty-bond-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The `secrets` context is not available in a job-level `if`, so whether the
+  # token exists has to become a job OUTPUT before another job can branch on it.
+  # That is the whole reason this job exists.
+  setup-check:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.token.outputs.ready }}
+    steps:
+      - id: token
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -n "$EXPO_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::EXPO_TOKEN found — building the APK."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Waiting for EXPO_TOKEN. Nothing is broken — setup is not finished."
+            echo ""
+            echo "On a phone browser (NOT the GitHub app — it has no Settings screen):"
+            echo "  1. https://expo.dev                          sign up, free"
+            echo "  2. https://expo.dev/settings/access-tokens    Create token, copy it"
+            echo "  3. Settings -> Secrets and variables -> Actions -> New repository secret"
+            echo "       Name:   EXPO_TOKEN"
+            echo "       Secret: the token you copied"
+            echo ""
+            echo "Full walkthrough: beauty-bond/docs/get-it-on-your-phone.md"
+          fi
+
+  android:
+    needs: setup-check
+    if: needs.setup-check.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: beauty-bond/app/package-lock.json
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - run: npm ci
+        working-directory: beauty-bond/app
+
+      # 40 seconds here beats 20 minutes of cloud build to discover a bad
+      # config plugin, or a native module with no plugin registered at all —
+      # which is the failure this app already had. See stripe-flow.md §3.9.
+      - name: Generate the native project (catches config errors early)
+        run: npx expo prebuild --platform android --no-install
+        working-directory: beauty-bond/app
+
+      # app.json ships extra.eas.projectId as "" on purpose — the id belongs to
+      # whoever owns the Expo account, not to the repo. --force links this
+      # checkout to that account's project; the edit stays in the runner and is
+      # never committed. Nothing in the app reads projectId.
+      - name: Link the Expo project
+        run: npx eas init --force --non-interactive
+        working-directory: beauty-bond/app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      # --wait, not --no-wait: waiting puts the outcome in THIS log, which is
+      # readable without an expo.dev session. --no-wait would put it only there.
+      #
+      # The `preview` profile in eas.json is the one that matters —
+      # distribution: internal, android.buildType: apk. An APK installs
+      # straight from a link; an app-bundle does not.
+      - name: Build the APK
+        run: npx eas build --platform android --profile preview --non-interactive --wait
+        working-directory: beauty-bond/app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Where to get it
+        if: success()
+        run: |
+          echo "::notice::Build finished. Check your email for the install link."
+          echo "Or: https://expo.dev -> Projects -> dad-daughter-beauty-bond -> Builds"
+          echo "Open it on the phone, tap Install, and allow installs from the browser once."

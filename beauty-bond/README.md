@@ -130,8 +130,16 @@ beauty-bond/
 
 ### Prerequisites
 
-Node 22+, PostgreSQL 16+, and an Expo dev client (Expo Go cannot load the
-on-device try-on native module).
+Node 22+ and PostgreSQL 16+.
+
+Expo Go works again as of v1: the three non-Expo native packages
+(`@stripe/stripe-react-native`, `@livekit/react-native`, `livekit-client`) were
+removed along with the switched-off features that needed them, so the app is
+pure Expo. A dev client is only required once Try-On or Glam Rooms come back —
+see `docs/stripe-flow.md` §3.9 and `docs/video-rooms.md` §5.11.
+
+**No computer at all?** [`docs/get-it-on-your-phone.md`](docs/get-it-on-your-phone.md)
+is the whole path to an installed Android app using only a phone browser.
 
 ### 1. Backend
 
@@ -258,6 +266,7 @@ Letters Forward are **free on every plan and never lapse**.
 | [`docs/api-reference.md`](docs/api-reference.md) | Stack, database schema, full API surface, environment, delivery phases |
 | [`docs/branding.md`](docs/branding.md) | Palette, typography, logo concepts, UI style, design tokens, voice guide |
 | [`docs/deploy-railway.md`](docs/deploy-railway.md) | Deploying the API to Railway — project setup, variables, webhooks, operations |
+| [`docs/get-it-on-your-phone.md`](docs/get-it-on-your-phone.md) | Building and installing the Android app with no computer involved |
 | [`docs/architecture-decisions.md`](docs/architecture-decisions.md) | ADRs — why Postgres, JWT, LiveKit, Express, and the mock ML provider; what was rejected and why |
 
 ## Safety suite (release blocker)

@@ -15,6 +15,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import PrimaryButton from '../components/Buttons/PrimaryButton';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
+import HealthBanner from '../components/HealthBanner';
 
 /** Server codes -> something a parent can act on. Never surface a raw code. */
 const MESSAGES = {
@@ -86,6 +87,9 @@ export default function SignInScreen({ navigation }) {
               Sign in to pick up where you and your daughter left off.
             </Text>
           </View>
+
+          {/* Answers "is it me or is it them?" before the password is typed. */}
+          <HealthBanner />
 
           <View style={{ gap: t.space[3] }}>
             {input({

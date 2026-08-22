@@ -26,6 +26,10 @@ export default function PlanSelectionScreen({ navigation }) {
   async function choose(code) {
     if (code === 'free') return;
     const res = await subscribe(code, interval);
+    // 'unavailable' is v1's answer: billing is switched off and subscribe()
+    // has no payment sheet to open. Without this branch the button would look
+    // broken — tapped, nothing happens, no reason given.
+    if (res.status === 'unavailable') Alert.alert('Beauty Bond is free', res.message);
     if (res.status === 'failed') Alert.alert('Payment', res.message ?? COPY.paymentFailed);
     if (res.status === 'success') navigation.goBack();
   }

@@ -1,4 +1,4 @@
-# Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+# Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
 # Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
 # Proprietary and confidential. Unauthorized use is prohibited.
 #
@@ -90,6 +90,13 @@ jobs:
         with: { fetch-depth: 0 }
       - name: Scan for a committed live key
         run: |
-          if git grep -nE 'sk_live_|whsec_[A-Za-z0-9]{20,}|rk_live_' -- . ; then
+          # The pattern requires a key-shaped BODY, not just a prefix. The
+          # previous version matched on the bare prefix `sk_live_` — and so
+          # matched this very line, in every file that documents the scanner.
+          # Every CI run since it was added failed on its own source code.
+          #
+          # Stripe live keys are ~100 chars of [A-Za-z0-9]; a prefix followed
+          # by `[` or `|` is a pattern, not a key.
+          if git grep -nE '(sk|rk)_live_[A-Za-z0-9]{16,}|whsec_[A-Za-z0-9]{24,}' -- . ; then
             echo "::error::Possible live secret committed"; exit 1
           fi

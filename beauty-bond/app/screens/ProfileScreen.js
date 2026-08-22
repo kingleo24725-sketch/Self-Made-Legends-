@@ -59,8 +59,9 @@ export default function ProfileScreen({ navigation }) {
           </Text>
         </Card>
 
-        {/* Subscription status — kids never see billing, they don't hold a plan. */}
-        {!isChild && (
+        {/* Subscription status — kids never see billing, they don't hold a plan,
+            and with billing off in v1 nobody does. */}
+        {!isChild && featureOn('billing') && (
           <>
             <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>
               SUBSCRIPTION

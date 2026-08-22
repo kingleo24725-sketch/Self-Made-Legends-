@@ -11,6 +11,7 @@ import { useTheme } from '../context/ThemeContext';
 import PrimaryButton from '../components/Buttons/PrimaryButton';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
 import { ATTRIBUTION } from '../utils/constants';
+import HealthBanner from '../components/HealthBanner';
 
 const CARDS = [
   { title: 'Beauty is a language.\nLearn it together.', sub: '' },
@@ -50,6 +51,9 @@ export default function WelcomeScreen({ navigation }) {
         </View>
 
         <View style={{ gap: t.space[3] }}>
+          {/* First screen of the app: if the server is unreachable, say so here
+              rather than letting sign-up fail three taps later. */}
+          <HealthBanner style={{ marginBottom: 0 }} />
           <PrimaryButton title="Get started" onPress={() => navigation.navigate('AgeGate')} />
           <SecondaryButton title="I already have an account"
             onPress={() => navigation.navigate('SignIn')} ghost />

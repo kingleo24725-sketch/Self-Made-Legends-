@@ -65,6 +65,7 @@ module.exports = [
         setInterval: 'readonly',
         clearInterval: 'readonly',
         fetch: 'readonly',
+        AbortController: 'readonly',
         FormData: 'readonly',
         __DEV__: 'readonly',
         TextEncoder: 'readonly',

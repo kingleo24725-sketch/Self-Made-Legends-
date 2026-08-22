@@ -831,4 +831,51 @@ to the OS subscription manager instead of the Stripe portal. The API returns
 
 ---
 
+## 3.9 v1 ships with billing OFF — and without the SDK
+
+Everything above is the design and it is unchanged. None of it runs in v1.
+
+`app/utils/config.js` → `FEATURES.billing` is `false`, and the backend's
+`config.enabled.billing` is derived from `STRIPE_SECRET_KEY_BB` being unset, so
+there is no key, no price catalogue, and no way to take a payment. With nothing
+purchasable, `services/entitlements.js` applies `V1_UNGATED` instead of the
+plan ladder — commercial gates open rather than locking a feature nobody can buy.
+
+**`@stripe/stripe-react-native` is not installed.** That is a step beyond the
+flag, and it was taken for a specific reason: on Android the SDK requires its
+Expo config plugin to force an AppCompat theme, and `app/app.json` never listed
+that plugin. A `StripeProvider` mounted at the root of `App.js` — where it was —
+crashes the app on launch without it. Carrying that risk to ship a switched-off
+feature was the wrong trade.
+
+What that removed, exactly:
+
+| Was | Now |
+|---|---|
+| `App.js` — `StripeProvider` wrapping the navigator | gone; provider order is Auth → Theme → Subscription → Navigator |
+| `hooks/useSubscription.js` — `useStripe()`, the `initPaymentSheet` / `presentPaymentSheet` body, the `pollForPlan` helper | `subscribe()` returns `{ status: 'unavailable', message }` |
+| `ProfileScreen` subscription card, `SettingsScreen` BILLING group | rendered only when `featureOn('billing')` |
+
+Every other member of `useSubscription` — `tier`, `atLeast`, `isUnlocked`,
+`cancel`, `openBillingPortal` — is a plain API call and is untouched.
+
+### Turning billing back on
+
+Four steps, none optional. **A native module is never a flag flip alone.**
+
+1. `npm i @stripe/stripe-react-native` in `app/`
+2. Add `"@stripe/stripe-react-native"` to `app/app.json` → `expo.plugins`
+   — this is the step whose absence caused the crash risk; do not skip it
+3. Restore `StripeProvider` in `App.js` and the real `subscribe()` body in
+   `hooks/useSubscription.js` (both are in git history at the commit that
+   removed them, and `subscribe()`'s docblock names them)
+4. Set `extra.features.billing = true`, set `STRIPE_SECRET_KEY_BB` and
+   `STRIPE_WEBHOOK_SECRET_BB` on the server, and make a **new build** — the
+   installed APK cannot gain a native module
+
+The webhook is still what grants entitlement (§3.4). A restored payment sheet
+with no webhook endpoint wired up means payments succeed and nobody gets a plan.
+
+---
+
 *Continue to `ai-tryon.md`.*

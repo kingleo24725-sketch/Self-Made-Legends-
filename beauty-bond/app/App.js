@@ -5,12 +5,18 @@
  * or use of this file, via any medium, is strictly prohibited.
  *
  * Entry point. Provider order matters:
- *   Auth -> Theme (reads profile.mode) -> Subscription -> Stripe -> Navigator
+ *   Auth -> Theme (reads profile.mode) -> Subscription -> Navigator
+ *
+ * StripeProvider used to wrap the navigator. It was removed with the
+ * @stripe/stripe-react-native dependency: v1 has billing switched off
+ * (utils/config.js -> FEATURES.billing), and on Android that SDK needs its
+ * Expo config plugin to force an AppCompat theme. Without the plugin — which
+ * app.json never listed — a provider mounted this high crashes the app on
+ * launch. See docs/stripe-flow.md for the restore procedure.
  */
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { StripeProvider } from '@stripe/stripe-react-native';
 import { useFonts } from 'expo-font';
 
 import { AuthProvider } from './context/AuthContext';
@@ -18,7 +24,6 @@ import { ThemeProvider } from './context/ThemeContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import AppNavigator from './navigation/AppNavigator';
 import SplashScreen from './screens/SplashScreen';
-import { STRIPE_PUBLISHABLE_KEY } from './utils/config';
 
 export default function App() {
   const [splashDone, setSplashDone] = useState(false);
@@ -46,13 +51,8 @@ export default function App() {
       <AuthProvider>
         <ThemeProvider>
           <SubscriptionProvider>
-            <StripeProvider
-              publishableKey={STRIPE_PUBLISHABLE_KEY}
-              merchantIdentifier="merchant.com.selfmadelegends.beautybond"
-            >
-              <StatusBar style="auto" />
-              <AppNavigator />
-            </StripeProvider>
+            <StatusBar style="auto" />
+            <AppNavigator />
           </SubscriptionProvider>
         </ThemeProvider>
       </AuthProvider>
