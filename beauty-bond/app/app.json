@@ -31,8 +31,7 @@
         "NSCameraUsageDescription": "Beauty Bond uses the camera for mirror lessons and try-on. Photos are processed on your device.",
         "NSPhotoLibraryUsageDescription": "Choose a photo to try a look on.",
         "NSMicrophoneUsageDescription": "Beauty Bond uses the microphone for Glam Rooms.",
-        "NSPhotoLibraryAddUsageDescription": "Save a look you loved to your photos.",
-        "ITSAppUsesNonExemptEncryption": false
+        "NSPhotoLibraryAddUsageDescription": "Save a look you loved to your photos."
       },
       "config": {
         "usesNonExemptEncryption": false
