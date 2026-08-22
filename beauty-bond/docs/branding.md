@@ -1,6 +1,6 @@
 # 07 — Branding
 
-> **DADS & DAUGHTERS BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
+> **DAD + DAUGHTER BEAUTY BOND™ — A SELF-MADE LEGENDS LLC (SML) PRODUCT**
 > © 2026 **Self-Made Legends LLC (SML)**. All rights reserved.
 > Owner: **Self-Made Legends LLC (SML)** · Proprietary and confidential.
 > A standalone SML product — **not** part of The Self-Made Legends Come Up.
@@ -15,7 +15,7 @@ the SML house mark in the endorsement lockup (§7.2) and legal footers.
 
 **Name:** Beauty Bond™
 **Endorsement:** *from Self-Made Legends*
-**Working subtitle:** Dads & Daughters Beauty Bond
+**Working subtitle:** Dad + Daughter Beauty Bond
 
 **Brand idea:**
 
@@ -335,7 +335,7 @@ genuinely glad you asked.
 
 ```jsonc
 // packages/tokens/beauty-bond.tokens.json
-// Dads & Daughters Beauty Bond™ — © 2026 Self-Made Legends LLC (SML).
+// Dad + Daughter Beauty Bond™ — © 2026 Self-Made Legends LLC (SML).
 {
   "color": {
     "brand": {

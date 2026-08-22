@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
 Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
 Proprietary and confidential. See LICENSE.
 
@@ -14,7 +14,7 @@ WHY EDGE-EXTENSION, NOT CROPPING
 --------------------------------
 The cover is 2:3. Modern phones are ~9:19.5. Filling the screen with
 `resizeMode: cover` would crop ~31% of the WIDTH on every current phone,
-slicing both ends off the "Dads & Daughters Beauty Bond" wordmark, and 54% of
+slicing both ends off the "Dad + Daughter Beauty Bond" wordmark, and 54% of
 the HEIGHT on a landscape tablet.
 
 So full-bleed variants are built by *extending* the artwork instead: a blurred,

@@ -1,5 +1,5 @@
 /**
- * Dads & Daughters Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+ * Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
  * Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
  * Proprietary and confidential. Unauthorized copying, distribution,
  * or use of this file, via any medium, is strictly prohibited.
@@ -69,7 +69,7 @@ const EXPECT = [
 let failures = 0;
 let warnings = 0;
 
-console.log('\nDads & Daughters Beauty Bond™ — asset verification');
+console.log('\nDad + Daughter Beauty Bond™ — asset verification');
 console.log('Self-Made Legends LLC (SML)\n');
 console.log(`${'asset'.padEnd(46)} ${'expected'.padEnd(12)} status`);
 console.log('-'.repeat(78));
