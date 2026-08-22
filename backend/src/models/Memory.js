@@ -77,11 +77,11 @@ function remove(id, profileId) {
 /**
  * @param {Buffer} ciphertext encrypted client-side; the server holds no key
  */
-function addJournalEntry({ profileId, ciphertext, promptId }) {
+function addJournalEntry({ profileId, ciphertext, promptId, keyId }) {
   return db.one(
-    `INSERT INTO journal_entries (profile_id, ciphertext, prompt_id)
-     VALUES ($1,$2,$3) RETURNING id, prompt_id, created_at`,
-    [profileId, ciphertext, promptId ?? null]);
+    `INSERT INTO journal_entries (profile_id, ciphertext, prompt_id, key_id)
+     VALUES ($1,$2,$3,$4) RETURNING id, prompt_id, key_id, created_at`,
+    [profileId, ciphertext, promptId ?? null, keyId ?? null]);
 }
 
 /**
@@ -91,15 +91,15 @@ function addJournalEntry({ profileId, ciphertext, promptId }) {
  */
 function listJournalEntries(profileId) {
   return db.query(
-    `SELECT id, ciphertext, prompt_id, created_at FROM journal_entries
+    `SELECT id, ciphertext, prompt_id, key_id, created_at FROM journal_entries
       WHERE profile_id = $1 ORDER BY created_at DESC`, [profileId]);
 }
 
 /** "Just sit with it" — logs presence without requiring any words. */
 function logJournalPresence({ profileId, promptId }) {
   return db.one(
-    `INSERT INTO journal_entries (profile_id, ciphertext, prompt_id)
-     VALUES ($1, ''::bytea, $2) RETURNING id, created_at`,
+    `INSERT INTO journal_entries (profile_id, ciphertext, prompt_id, key_id)
+     VALUES ($1, ''::bytea, $2, NULL) RETURNING id, created_at`,
     [profileId, promptId ?? null]);
 }
 

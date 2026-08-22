@@ -25,6 +25,7 @@ import SecondaryButton from '../components/Buttons/SecondaryButton';
 import PrimaryButton from '../components/Buttons/PrimaryButton';
 import { COPY, HELPLINES, VAULT_KINDS, JOURNAL_PROMPTS } from '../utils/constants';
 import api from '../utils/api';
+import { encryptEntry, decryptEntry, hasJournalKey } from '../utils/journalCrypto';
 
 export default function LegacyScreen() {
   const t = useTheme();
@@ -35,18 +36,30 @@ export default function LegacyScreen() {
   const [items, setItems] = useState([]);
   const [vault, setVault] = useState({ limit: 3, readOnly: false });
   const [letters, setLetters] = useState({ sealed: [], delivered: [] });
+  const [entries, setEntries] = useState([]);
+  const [keyExists, setKeyExists] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const person = people[0] ?? null;
 
   const load = useCallback(async () => {
     try {
-      const [p, l] = await Promise.all([
+      const [p, l, j] = await Promise.all([
         api.get('/legacy/people'),
         api.get('/legacy/letters'),
+        api.get('/journal'),
       ]);
       setPeople(p?.people ?? []);
       setLetters({ sealed: l?.sealed ?? [], delivered: l?.delivered ?? [] });
+      setKeyExists(await hasJournalKey());
+
+      // Decryption happens here, on the device. The server sent opaque bytes.
+      // An entry written under a key this phone no longer holds comes back
+      // null — it is shown as unreadable, never as garbage.
+      setEntries(await Promise.all((j?.entries ?? []).map(async (e) => ({
+        ...e,
+        text: e.presenceOnly ? null : await decryptEntry(e.ciphertext, e.keyId),
+      }))));
 
       if (p?.people?.length) {
         const i = await api.get(`/legacy/items?personId=${p.people[0].id}`);
@@ -213,19 +226,51 @@ export default function LegacyScreen() {
             <Text style={[t.type('caption'), {
               color: t.color.textSecondary, marginTop: t.space[2],
             }]}>
-              Private. Never read by anyone, including us.
+              Locked on this phone. We store it encrypted and hold no key —
+              we could not read it if we were asked to.
             </Text>
           </Card>
 
           <View style={{ flexDirection: 'row', gap: t.space[3] }}>
             <View style={{ flex: 1 }}>
-              <SecondaryButton title="Write" onPress={() => writeEntry(prompt.id, load)} />
+              <SecondaryButton
+                title="Write"
+                onPress={() => writeEntry(prompt.id, load, !keyExists)}
+              />
             </View>
             <View style={{ flex: 1 }}>
               <SecondaryButton title="Just sit with it" ghost
                 onPress={() => sitWithIt(prompt.id)} />
             </View>
           </View>
+
+          {entries.map((e) => (
+            <Card key={e.id}>
+              {e.presenceOnly ? (
+                <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
+                  You sat with it. {formatDate(e.createdAt)}
+                </Text>
+              ) : e.text === null ? (
+                <>
+                  <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
+                    🔒 Written on a device you no longer have.
+                  </Text>
+                  <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>
+                    {formatDate(e.createdAt)} · the key stayed on that phone
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={[t.type('body'), { color: t.color.textPrimary }]}>
+                    {e.text}
+                  </Text>
+                  <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>
+                    {formatDate(e.createdAt)}
+                  </Text>
+                </>
+              )}
+            </Card>
+          ))}
         </Section>
 
         {/* Persistent and region-aware. Always visible in this module. */}
@@ -251,22 +296,39 @@ export default function LegacyScreen() {
 }
 
 /**
- * Journal content is encrypted on the device before it is sent. The server
- * stores opaque bytes and holds no key — see models/Memory.js.
+ * Entries are encrypted on this device with a key held in the OS keychain.
+ * The server receives bytes it cannot read and has no key to ask for.
+ *
+ * The trade is real and is said out loud before the first entry: a key that
+ * never leaves the phone cannot be recovered, so a reinstall means these words
+ * are gone. Nobody is told that after the fact.
  */
-async function writeEntry(promptId, reload) {
+async function writeEntry(promptId, reload, firstEntry) {
+  if (firstEntry) {
+    const understood = await new Promise((resolve) => {
+      Alert.alert(
+        'Before you write',
+        'Your journal is locked with a key that stays on this phone. '
+        + 'Nobody can read it — not your family, not us.\n\n'
+        + "That also means if you reinstall the app or change phones, what you "
+        + "write here can't be recovered. By anyone.",
+        [
+          { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'I understand', onPress: () => resolve(true) },
+        ],
+      );
+    });
+    if (!understood) return;
+  }
+
   Alert.prompt?.(
     'Write it down',
     'Only you will ever read this.',
     async (text) => {
       if (!text?.trim()) return;
       try {
-        // TODO(encryption): device keychain key. Until that lands the body is
-        // base64 only, and the journal is NOT advertised as encrypted in the UI.
-        const ciphertext = globalThis.btoa
-          ? globalThis.btoa(unescape(encodeURIComponent(text)))
-          : text;
-        await api.post('/journal', { ciphertext, promptId });
+        const { ciphertext, keyId } = await encryptEntry(text);
+        await api.post('/journal', { ciphertext, keyId, promptId });
         reload();
       } catch {
         Alert.alert('Journal', "That didn't save. Your words are still here.");

@@ -253,13 +253,18 @@ router.get('/letters/outbox', requireAuth, async (req, res, next) => {
  */
 router.post('/journal', requireAuth, async (req, res, next) => {
   try {
-    const { ciphertext, promptId } = req.body;
+    const { ciphertext, promptId, keyId } = req.body;
     if (!ciphertext) return res.status(400).json({ error: 'ciphertext_required' });
+    // keyId says WHICH device key sealed this, so the app can tell "written on
+    // a phone you no longer have" from "corrupt". It identifies the key and
+    // cannot reveal it — see app/utils/journalCrypto.js.
+    if (!keyId) return res.status(400).json({ error: 'key_id_required' });
 
     const row = await Memory.addJournalEntry({
       profileId: req.profile.id,
       ciphertext: Buffer.from(ciphertext, 'base64'),
       promptId,
+      keyId,
     });
     res.status(201).json(row);
   } catch (err) { next(err); }
@@ -288,6 +293,7 @@ router.get('/journal', requireAuth, async (req, res, next) => {
         id: r.id,
         ciphertext: r.ciphertext ? Buffer.from(r.ciphertext).toString('base64') : '',
         promptId: r.prompt_id,
+        keyId: r.key_id,
         createdAt: r.created_at,
         // An empty body is a presence log, not a lost entry.
         presenceOnly: !r.ciphertext || r.ciphertext.length === 0,

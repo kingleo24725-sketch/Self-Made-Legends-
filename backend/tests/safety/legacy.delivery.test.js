@@ -193,7 +193,7 @@ describe('the Healing Journal', () => {
 
     await request(app).post('/api/journal')
       .set('Authorization', `Bearer ${tokenFor(guardianUser.id, guardianProfile.id)}`)
-      .send({ ciphertext: secret, promptId: 'p1' })
+      .send({ ciphertext: secret, keyId: 'testkey00001', promptId: 'p1' })
       .expect(201);
 
     const res = await request(app).get('/api/journal')
@@ -209,7 +209,7 @@ describe('the Healing Journal', () => {
   test("a guardian cannot read their child's journal — there is no such route", async () => {
     await request(app).post('/api/journal')
       .set('Authorization', `Bearer ${tokenFor(null, child.id)}`)
-      .send({ ciphertext: Buffer.from('hers').toString('base64') })
+      .send({ ciphertext: Buffer.from('hers').toString('base64'), keyId: 'herkey000001' })
       .expect(201);
 
     // The guardian's own listing must not contain it. There is deliberately
