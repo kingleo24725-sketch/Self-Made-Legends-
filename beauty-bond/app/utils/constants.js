@@ -151,3 +151,24 @@ export const COPY = {
   offline: "You're offline. Downloaded lessons still work.",
   safetyAlwaysFree: 'Safety features are free, always.',
 };
+
+/**
+ * Badges. The catalogue is the source of BADGE_TOTAL, so the "6/24" the
+ * profile used to hard-code can never drift from what is earnable.
+ */
+export const BADGE_ICON = {
+  first_lesson: '🖌',
+  brush_care: '🧼',
+  colour_theory: '🎨',
+  cultural_explorer: '🌍',
+  bond_level_2: '👨‍👧',
+  kindness: '💛',
+  hygiene_hero: '🧴',
+  shade_matched: '🎯',
+  first_room: '🎥',
+  streak_7: '🔥',
+  streak_30: '🌟',
+  legacy_letter: '💌',
+};
+
+export const BADGE_TOTAL = Object.keys(BADGE_ICON).length;

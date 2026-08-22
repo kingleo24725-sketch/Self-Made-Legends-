@@ -8,8 +8,8 @@
  * Purchases are HARD-LOCKED on child accounts — a lock, not a toggle.
  * docs/wireframes.md W-A0.
  */
-import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, Switch } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, SafeAreaView, ScrollView, Switch, Alert, Share } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Card from '../components/Cards/Card';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
@@ -25,15 +25,95 @@ const PERMISSIONS = [
 
 export default function GuardianConsoleScreen() {
   const t = useTheme();
-  const [child] = useState({ id: 'c1', name: 'Zaria', age: 9 });
+
+  // The child used to be a hardcoded placeholder, so every permission toggle
+  // wrote to /guardian/permissions/c1 -- an id that does not exist.
+  const [child, setChild] = useState(null);
   const [perms, setPerms] = useState({
-    camera_tryon: true, video_rooms: true, live_lessons: false,
+    camera_tryon: true, video_rooms: false, live_lessons: false,
     bff_rooms: false, notifications: true,
   });
 
+  const loadChildren = useCallback(async () => {
+    try {
+      const { children } = await api.get('/guardian/children');
+      const first = children?.[0] ?? null;
+      setChild(first && { id: first.id, name: first.displayName, ageBand: first.ageBand });
+    } catch {
+      setChild(null);
+    }
+  }, []);
+
+  useEffect(() => { loadChildren(); }, [loadChildren]);
+
   async function toggle(key, value) {
+    if (!child) return;
+    const previous = perms[key];
     setPerms((p) => ({ ...p, [key]: value }));
-    await api.patch(`/guardian/permissions/${child.id}`, { [key]: value }).catch(() => {});
+    try {
+      await api.patch(`/guardian/permissions/${child.id}`, { [key]: value });
+    } catch {
+      // Never leave a permission switch showing a state the server rejected —
+      // a guardian would believe video was off when it is on.
+      setPerms((p) => ({ ...p, [key]: previous }));
+      Alert.alert('Permissions', "That didn't save. Check your connection.");
+    }
+  }
+
+  async function exportChildData() {
+    try {
+      const data = await api.get('/privacy/export');
+      await Share.share({
+        title: `${child.name} — Beauty Bond data`,
+        message: JSON.stringify(data, null, 2),
+      });
+    } catch {
+      Alert.alert('Export', "We couldn't build that export just now.");
+    }
+  }
+
+  function confirmDeleteChild() {
+    Alert.alert(
+      `Delete ${child.name}'s account?`,
+      'This removes their profile, memories and Legacy Vault items. '
+      + 'It cannot be undone.',
+      [
+        { text: 'Keep it', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/guardian/children/${child.id}`);
+              await loadChildren();
+            } catch {
+              Alert.alert('Delete', "That didn't go through. Try again?");
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  // No child yet: the console has nothing to govern, and every control below
+  // dereferences `child`. Say what to do instead of rendering a broken page.
+  if (!child) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>
+        <ScrollView contentContainerStyle={{ padding: t.gutter, gap: t.space[4] }}>
+          <Text style={[t.type('h1'), { color: t.color.textPrimary }]}>Guardian Console</Text>
+          <Card>
+            <Text style={[t.type('body'), { color: t.color.textPrimary }]}>
+              No child profile yet.
+            </Text>
+            <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
+              Once you've added your daughter, her permissions, screen time and
+              data controls all live here.
+            </Text>
+          </Card>
+        </ScrollView>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -43,7 +123,7 @@ export default function GuardianConsoleScreen() {
 
         <Card>
           <Text style={[t.type('h3'), { color: t.color.textPrimary }]}>
-            {child.name}, {child.age}
+            {child.name}
           </Text>
           <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>Child account</Text>
         </Card>
@@ -79,8 +159,8 @@ export default function GuardianConsoleScreen() {
         </Card>
 
         {/* Always free, at every tier. */}
-        <SecondaryButton title={`Export ${child.name}'s data`} onPress={() => {}} />
-        <SecondaryButton title={`Delete ${child.name}'s account`} onPress={() => {}} ghost />
+        <SecondaryButton title={`Export ${child.name}'s data`} onPress={exportChildData} />
+        <SecondaryButton title={`Delete ${child.name}'s account`} onPress={confirmDeleteChild} ghost />
       </ScrollView>
     </SafeAreaView>
   );

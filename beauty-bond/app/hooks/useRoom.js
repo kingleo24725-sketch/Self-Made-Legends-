@@ -13,18 +13,27 @@ import api from '../utils/api';
 
 const REFRESH_MS = 8 * 60 * 1000;   // refresh at 8 min on a 10 min TTL
 
-export function useRoomToken(roomId) {
+/**
+ * Accepts an existing roomId, or a { type, name } to create-and-join in one
+ * call — the API supports both, and the lobby's "Start" has no room yet.
+ */
+export function useRoomToken(roomIdOrOptions) {
+  const opts = typeof roomIdOrOptions === 'string'
+    ? { roomId: roomIdOrOptions }
+    : (roomIdOrOptions ?? {});
+  const { roomId, type, name } = opts;
   const [state, setState] = useState({ token: null, url: null, capabilities: null, error: null });
   const timer = useRef(null);
 
   const mint = useCallback(async () => {
     try {
-      const data = await api.post('/video/token', { roomId });
+      const body = roomId ? { roomId } : { type, name };
+      const data = await api.post('/video/token', body);
       setState({ token: data.token, url: data.url, capabilities: data.capabilities, error: null });
     } catch (e) {
       setState((s) => ({ ...s, error: e }));   // 403 => permission revoked; leave the room
     }
-  }, [roomId]);
+  }, [roomId, type, name]);
 
   useEffect(() => {
     mint();
@@ -39,7 +48,7 @@ export function useRoomToken(roomId) {
 export function usePanic(roomId) {
   return useCallback(async () => {
     try { await api.post(`/video/rooms/${roomId}/panic`); } finally { /* always leave */ }
-  }, [roomId]);
+  }, [roomId, type, name]);
 }
 
 export default useRoomToken;

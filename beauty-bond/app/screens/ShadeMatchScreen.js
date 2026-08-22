@@ -28,7 +28,7 @@ export default function ShadeMatchScreen() {
   async function scan() {
     setScanning(true);
     try {
-      const r = await api.post('/shade/scan', {});
+      const r = await api.post('/tryon/shade', {});
       setResult(r);
     } catch {
       setResult(null);

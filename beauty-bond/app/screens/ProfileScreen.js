@@ -9,7 +9,7 @@
  * they must never become an anxiety mechanic for a 9-year-old.
  * docs/wireframes.md W-90.
  */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
@@ -17,13 +17,20 @@ import { useSubscription } from '../hooks/useSubscription';
 import Card from '../components/Cards/Card';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
 import ShadeSwatch from '../components/Cards/ShadeSwatch';
-import { AGE_BANDS } from '../utils/constants';
+import { AGE_BANDS, BADGE_ICON, BADGE_TOTAL } from '../utils/constants';
+import api from '../utils/api';
 
 export default function ProfileScreen({ navigation }) {
   const t = useTheme();
   const { profile } = useAuth();
   const { tier, entitlements, usage } = useSubscription();
   const isChild = profile?.ageBand === AGE_BANDS.CHILD;
+
+  // Level, streak and badge count were literals identical on every device.
+  const [prog, setProg] = useState(null);
+  useEffect(() => {
+    api.get('/me/progression').then(setProg).catch(() => {});
+  }, []);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>
@@ -39,9 +46,15 @@ export default function ProfileScreen({ navigation }) {
         </View>
 
         <Card>
-          <Text style={[t.type('h3'), { color: t.color.textPrimary }]}>Level 2 · Apprentice</Text>
+          <Text style={[t.type('h3'), { color: t.color.textPrimary }]}>
+            {prog?.bond ? `Level ${prog.bond.level}` : 'Just getting started'}
+          </Text>
           <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
-            🔥 7-day streak — 2 passes left this month
+            {prog?.streak?.current > 0
+              ? `🔥 ${prog.streak.current}-day streak — `
+                + `${prog.streak.passesRemaining} pass`
+                + `${prog.streak.passesRemaining === 1 ? '' : 'es'} left`
+              : `${prog?.lessonsCompleted ?? 0} lessons finished`}
           </Text>
         </Card>
 
@@ -77,9 +90,21 @@ export default function ProfileScreen({ navigation }) {
           </>
         )}
 
-        <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>BADGES · 6/24</Text>
+        <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>
+          BADGES · {prog?.badges?.length ?? 0}/{BADGE_TOTAL}
+        </Text>
         <Card>
-          <Text style={{ fontSize: 24 }}>🖌 🧼 🎨 🌍 👨‍👧 💛</Text>
+          {prog?.badges?.length
+            ? (
+              <Text style={{ fontSize: 24 }}>
+                {prog.badges.map((b) => BADGE_ICON[b.code] ?? '🏅').join(' ')}
+              </Text>
+            )
+            : (
+              <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
+                Your first badge is waiting after lesson one.
+              </Text>
+            )}
         </Card>
 
         <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>MY SHADE PROFILE</Text>
