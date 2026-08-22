@@ -12,12 +12,23 @@ import typography from './typography';
 import layout from './spacing';
 
 export function buildTheme({ scheme = 'light', mode = 'solo_girl', isChild = false,
-                             reduceMotion = false } = {}) {
+                             reduceMotion = false, remembrance = false } = {}) {
 
   return {
     scheme,
     mode,
     isChild,
+    /**
+     * Remembrance Mode. docs/wireframes.md:1105 — softens the palette, removes
+     * streak pressure, changes empty-state copy.
+     *
+     * The flag was stored on the profile, toggleable in Settings, and read by
+     * nothing at all. It is a grief-aware setting that did not make the app
+     * any gentler. These three are what it now actually does.
+     */
+    remembrance,
+    /** Screens check this before showing a streak, a count, or a nudge. */
+    suppressStreaks: remembrance,
     color: {
       ...colors.brand,
       ...colors.accent,
@@ -43,9 +54,14 @@ export function buildTheme({ scheme = 'light', mode = 'solo_girl', isChild = fal
     tapTarget: isChild ? layout.tapTarget.child : layout.tapTarget.default,
     controlHeight: layout.controlHeight,
     // prefers-reduced-motion: transitions collapse to 150ms fades.
+    // Remembrance slows them instead — nothing in this app should bounce at
+    // someone who has just told us they are grieving.
     motion: reduceMotion
       ? Object.fromEntries(Object.keys(layout.motion).map((k) => [k, 150]))
-      : layout.motion,
+      : remembrance
+        ? Object.fromEntries(Object.entries(layout.motion)
+            .map(([k, v]) => [k, Math.round(v * 1.4)]))
+        : layout.motion,
     reduceMotion,
   };
 }

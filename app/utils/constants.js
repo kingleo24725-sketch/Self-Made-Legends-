@@ -64,10 +64,18 @@ export const HOME_SECTIONS = [
   { key: 'bonding', title: 'Bonding & Memories', icon: '\u{1F49B}',
     blurb: 'Challenges, memories, and legacy looks.', route: 'Bond' },
   { key: 'tryon', title: 'AI Try-On', icon: '\u{1F484}',
-    blurb: 'See a look before you wear it.', route: 'TryOn' },
+    blurb: 'See a look before you wear it.', route: 'TryOn', feature: 'tryOn' },
   { key: 'rooms', title: 'Live Glam Rooms', icon: '\u{1F3A5}',
-    blurb: 'Get ready together, anywhere.', route: 'LiveRoom' },
+    blurb: 'Get ready together, anywhere.', route: 'LiveRoom', feature: 'rooms' },
 ];
+
+/**
+ * The sections v1 actually shows. A section carrying a `feature` key appears
+ * only when that feature is on — see utils/config.js. The full catalogue above
+ * stays intact so nothing has to be rewritten when one is switched back on.
+ */
+export const visibleHomeSections = (featureOn) =>
+  HOME_SECTIONS.filter((s) => !s.feature || featureOn(s.feature));
 
 /** SafeLearningScreen topics. */
 export const SAFE_LEARNING_TOPICS = [
@@ -172,3 +180,44 @@ export const BADGE_ICON = {
 };
 
 export const BADGE_TOTAL = Object.keys(BADGE_ICON).length;
+
+/**
+ * Helplines. docs/architecture.md:418 requires this be region-aware with local
+ * numbers — it was a single hardcoded global URL. The profile already carries
+ * `region`, so use it.
+ *
+ * The app never counsels and never diagnoses. It hands off to people who do.
+ */
+export const HELPLINES = {
+  US: { name: '988 Suicide & Crisis Lifeline', url: 'tel:988' },
+  CA: { name: 'Talk Suicide Canada', url: 'tel:988' },
+  GB: { name: 'Samaritans', url: 'tel:116123' },
+  IE: { name: 'Samaritans Ireland', url: 'tel:116123' },
+  AU: { name: 'Lifeline Australia', url: 'tel:131114' },
+  NZ: { name: '1737 Need to Talk', url: 'tel:1737' },
+  DEFAULT: { name: 'Find a helpline', url: 'https://findahelpline.com' },
+};
+
+/** The Legacy Vault kinds. Mirrors the CHECK constraint in migration 005. */
+export const VAULT_KINDS = [
+  { key: 'voice', icon: '🎙', label: 'voice' },
+  { key: 'photo', icon: '📷', label: 'photo' },
+  { key: 'recipe', icon: '📝', label: 'recipe' },
+  { key: 'routine', icon: '💫', label: 'routine' },
+  { key: 'shade', icon: '💄', label: 'shades' },
+];
+
+/**
+ * Grief-informed prompts. Every one is answerable with silence — that is what
+ * "Just sit with it" is for. None of them ask a person to be positive about
+ * a death. docs/architecture.md:411.
+ */
+export const JOURNAL_PROMPTS = [
+  { id: 'what_would_she_say', text: 'What would she have said today?' },
+  { id: 'something_small', text: 'Something small you remember.' },
+  { id: 'not_today', text: "Today doesn't have to be a good day." },
+  { id: 'she_taught_me', text: 'One thing she taught you without meaning to.' },
+  { id: 'i_wish', text: 'What do you wish you could tell her?' },
+  { id: 'sat_here', text: 'You came here. That counts.' },
+  { id: 'her_hands', text: 'What did her hands look like?' },
+];

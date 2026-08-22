@@ -17,6 +17,7 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 const authRoutes = require('./api/auth');
 const userRoutes = require('./api/users');
 const contentRoutes = require('./api/content');
+const legacyRoutes = require('./api/legacy');
 const tryonRoutes = require('./api/tryon');
 const videoRoutes = require('./api/video');
 const { router: stripeRoutes, webhook: stripeWebhook } = require('./api/stripe');
@@ -57,6 +58,10 @@ app.get('/health', (req, res) => res.json({
 app.use('/api/auth', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', contentRoutes);
+app.use('/api/legacy', legacyRoutes);
+// The journal lives under /api/journal per docs/api-reference.md:602, but is
+// implemented in the legacy router because it is the same module.
+app.use('/api', legacyRoutes);
 app.use('/api/tryon', tryonRoutes);
 app.use('/api/video', videoRoutes);
 app.use('/api/stripe', stripeRoutes);

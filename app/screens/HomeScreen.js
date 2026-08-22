@@ -4,8 +4,8 @@
  * Proprietary and confidential. Unauthorized copying, distribution,
  * or use of this file, via any medium, is strictly prohibited.
  *
- * Five sections: Safe Makeup Learning, Cultural Beauty Library,
- * Bonding & Memories, AI Try-On, Live Glam Rooms.
+ * Sections are driven by v1 scope — see utils/config.js. Try-On and Glam
+ * Rooms are built but switched off, so v1 shows three.
  * Child accounts get 56px targets and simplified copy — keyed off AGE BAND,
  * not mode, because a child can pick any mode. docs/wireframes.md W-11/W-12.
  */
@@ -14,7 +14,8 @@ import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import Card from '../components/Cards/Card';
-import { HOME_SECTIONS, MODE_META, RELATIONAL_MODES, COPY } from '../utils/constants';
+import { visibleHomeSections, MODE_META, RELATIONAL_MODES, COPY } from '../utils/constants';
+import { featureOn } from '../utils/config';
 import api from '../utils/api';
 
 export default function HomeScreen({ navigation }) {
@@ -53,7 +54,7 @@ export default function HomeScreen({ navigation }) {
             </Pressable>
           </View>
 
-          {!t.isChild && prog?.streak?.current > 0 && (
+          {!t.isChild && !t.suppressStreaks && prog?.streak?.current > 0 && (
             <Text
               accessibilityLabel={`${prog.streak.current} day streak`}
               style={{ fontSize: 18 }}
@@ -86,8 +87,8 @@ export default function HomeScreen({ navigation }) {
           </Card>
         )}
 
-        {/* The five sections */}
-        {HOME_SECTIONS.map((section) => (
+        {/* The sections in scope for this build */}
+        {visibleHomeSections(featureOn).map((section) => (
           <Card
             key={section.key}
             onPress={() => navigation.navigate(section.route)}

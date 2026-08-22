@@ -19,6 +19,7 @@ import SecondaryButton from '../components/Buttons/SecondaryButton';
 import ShadeSwatch from '../components/Cards/ShadeSwatch';
 import { AGE_BANDS, BADGE_ICON, BADGE_TOTAL } from '../utils/constants';
 import api from '../utils/api';
+import { featureOn } from '../utils/config';
 
 export default function ProfileScreen({ navigation }) {
   const t = useTheme();
@@ -50,7 +51,7 @@ export default function ProfileScreen({ navigation }) {
             {prog?.bond ? `Level ${prog.bond.level}` : 'Just getting started'}
           </Text>
           <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
-            {prog?.streak?.current > 0
+            {prog?.streak?.current > 0 && !t.suppressStreaks
               ? `🔥 ${prog.streak.current}-day streak — `
                 + `${prog.streak.passesRemaining} pass`
                 + `${prog.streak.passesRemaining === 1 ? '' : 'es'} left`
@@ -122,7 +123,7 @@ export default function ProfileScreen({ navigation }) {
             {/* Share is hidden entirely for U13. */}
             {!isChild && <SecondaryButton title="Share card" onPress={() => {}} style={{ flex: 1 }} />}
             <SecondaryButton title="Re-scan" style={{ flex: 1 }}
-              onPress={() => navigation.navigate('ShadeMatch')} />
+              onPress={() => featureOn('tryOn') && navigation.navigate('ShadeMatch')} />
           </View>
         </Card>
 

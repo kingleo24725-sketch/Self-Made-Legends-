@@ -8,7 +8,7 @@ const express = require('express');
 const db = require('../../config/db');
 const { requireAuth, requireAdult, requireGuardianOf } = require('../../middleware/auth');
 const {
-  effectiveTierFor, ENTITLEMENTS, quotaUsed,
+  capabilitiesFor, quotaUsed,
 } = require('../../services/entitlements');
 const userService = require('../../services/userService');
 const config = require('../../config');
@@ -47,9 +47,11 @@ router.get('/me', requireAuth, async (req, res, next) => {
 
 router.get('/me/entitlements', requireAuth, async (req, res, next) => {
   try {
-    const tier = await effectiveTierFor(req.profile.id);
+    // capabilitiesFor, not ENTITLEMENTS[tier] — v1 ships with billing off and
+    // nothing commercial gated. See entitlements.js.
+    const caps = await capabilitiesFor(req.profile.id);
     res.json({
-      entitlements: { tier, ...ENTITLEMENTS[tier] },
+      entitlements: caps,
       usage: {
         tryon: await quotaUsed(req.profile.id, 'tryon'),
         room_minutes: await quotaUsed(req.profile.id, 'room_minutes'),
