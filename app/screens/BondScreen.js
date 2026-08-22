@@ -38,10 +38,14 @@ export default function BondScreen({ navigation }) {
   const t = useTheme();
   const { profile } = useAuth();
   const [challenges, setChallenges] = useState(FALLBACK_CHALLENGES);
+  const [bond, setBond] = useState(null);
 
   useEffect(() => {
     api.get('/bond/missions')
       .then((d) => { if (d?.missions?.length) setChallenges(d.missions); })
+      .catch(() => {});
+    api.get('/me/progression')
+      .then((d) => setBond(d?.bond ?? null))
       .catch(() => {});
   }, []);
 
@@ -50,7 +54,16 @@ export default function BondScreen({ navigation }) {
       c.id === id
         ? { ...c, confirmedBy: [...new Set([...c.confirmedBy, profile?.id ?? 'me'])] }
         : c));
-    await api.post(`/bond/missions/${id}/confirm`).catch(() => {});
+    try {
+      // A mission completes only when BOTH halves confirm, so the response
+      // carries the authoritative meter — never assume the optimistic one.
+      const r = await api.post(`/bond/missions/${id}/confirm`);
+      if (r) {
+        setBond((b) => ({ ...(b ?? {}), meter: r.meter, level: r.level }));
+        setChallenges((cs) => cs.map((c) =>
+          (c.id === id ? { ...c, confirmedBy: r.confirmedBy, waitingOn: r.waitingOn } : c)));
+      }
+    } catch { /* the optimistic tick stands; the next load reconciles it */ }
   }
 
   return (
@@ -62,9 +75,13 @@ export default function BondScreen({ navigation }) {
 
         <Card>
           <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>BOND METER</Text>
-          <Text style={[t.type('display'), { color: t.color.accent }]}>68%</Text>
+          <Text style={[t.type('display'), { color: t.color.accent }]}>
+            {bond ? `${bond.meter}` : '—'}
+          </Text>
           <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
-            Level 2 · "Blending Buddies"
+            {bond
+              ? `Level ${bond.level}${bond.partner ? ` · with ${bond.partner.displayName}` : ''}`
+              : 'Complete a mission together to start your Bond Meter.'}
           </Text>
         </Card>
 

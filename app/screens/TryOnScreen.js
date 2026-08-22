@@ -12,7 +12,7 @@
  *   - Action row is age-dependent: adult Save/Share/Shop, teen Save/Share/
  *     Wishlist, child Save only.
  */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, SafeAreaView, ScrollView, Image, Pressable, Alert, ActivityIndicator,
 } from 'react-native';
@@ -26,8 +26,9 @@ import SecondaryButton from '../components/Buttons/SecondaryButton';
 import ConsentGate from '../components/Modals/ConsentGate';
 import PaywallSheet from '../components/Modals/PaywallSheet';
 import { AGE_BANDS, TRYON_LAYERS, COPY } from '../utils/constants';
+import api from '../utils/api';
 
-const PRESETS = [
+const FALLBACK_PRESETS = [
   { id: 'everyday',   name: 'Everyday' },
   { id: 'soft_glam',  name: 'Soft Glam' },
   { id: 'date_night', name: 'Date Night', minAge: 13 },
@@ -35,7 +36,7 @@ const PRESETS = [
   { id: 'bridal',     name: 'Bridal', minAge: 16 },
 ];
 
-const CULTURAL_SETS = [
+const FALLBACK_CULTURAL_SETS = [
   { id: 'glam_black',          name: 'Black Glam' },
   { id: 'glam_latina',         name: 'Latina Glam' },
   { id: 'glam_middle_eastern', name: 'Middle Eastern Glam' },
@@ -55,6 +56,20 @@ export default function TryOnScreen({ navigation }) {
   const [result, setResult] = useState(null);      // { url, beforeUrl, adjustments }
   const [showBefore, setShowBefore] = useState(false);
   const [activeLayer, setActiveLayer] = useState('lip');
+
+  // The server filters presets by the profile's age band, so an age-gated look
+  // never reaches a child's device at all. The literals stay only as an
+  // offline fallback.
+  const [presets, setPresets] = useState(FALLBACK_PRESETS);
+  const [culturalSets, setCulturalSets] = useState(FALLBACK_CULTURAL_SETS);
+  useEffect(() => {
+    api.get('/tryon/presets')
+      .then((d) => {
+        if (d?.presets?.length) setPresets(d.presets);
+        if (d?.culturalSets?.length) setCulturalSets(d.culturalSets);
+      })
+      .catch(() => {});
+  }, []);
 
   const band = profile?.ageBand ?? AGE_BANDS.ADULT;
   const isChild = band === AGE_BANDS.CHILD;
@@ -197,7 +212,7 @@ export default function TryOnScreen({ navigation }) {
         <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>PRESETS</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ gap: t.space[3] }}>
-          {PRESETS.filter((p) => !isChild || !p.minAge).map((p) => (
+          {presets.filter((p) => !isChild || !p.minAge).map((p) => (
             <Card key={p.id} style={{ width: 118 }} onPress={() => run(p)}>
               <Text style={[t.type('bodySm'), { color: t.color.textPrimary }]}>{p.name}</Text>
             </Card>
@@ -212,7 +227,7 @@ export default function TryOnScreen({ navigation }) {
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}
                         contentContainerStyle={{ gap: t.space[3] }}>
-              {CULTURAL_SETS.map((c) => (
+              {culturalSets.map((c) => (
                 <Card key={c.id} style={{ width: 150 }} onPress={() => run(c)}>
                   <Text style={[t.type('bodySm'), { color: t.color.textPrimary }]}>{c.name}</Text>
                 </Card>

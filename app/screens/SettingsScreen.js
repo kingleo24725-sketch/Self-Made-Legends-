@@ -9,7 +9,9 @@
  * docs/wireframes.md W-A1.
  */
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, Switch, Pressable, Linking } from 'react-native';
+import {
+  View, Text, SafeAreaView, ScrollView, Switch, Pressable, Linking, Alert, Share,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -22,6 +24,46 @@ export default function SettingsScreen({ navigation }) {
   const { profile, logout } = useAuth();
   const { tier, openBillingPortal } = useSubscription();
   const [remembrance, setRemembrance] = useState(!!profile?.remembranceMode);
+
+  /**
+   * Deleting the account also deletes any child profiles under it. Say so
+   * before doing it, not after -- a guardian is deciding for someone else.
+   */
+  function confirmDelete() {
+    Alert.alert(
+      'Delete your account?',
+      'This removes your account and any child profiles you manage, '
+      + 'including their memories and Legacy Vault. It cannot be undone.',
+      [
+        { text: 'Keep my account', style: 'cancel' },
+        {
+          text: 'Delete everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete('/privacy/account');
+              await logout();
+            } catch {
+              Alert.alert('Delete account', "That didn't go through. Try again?");
+            }
+          },
+        },
+      ],
+    );
+  }
+
+  /** Always free, every tier, every region. NOTICE.md ALWAYS_FREE. */
+  async function exportMyData() {
+    try {
+      const data = await api.get('/privacy/export');
+      await Share.share({
+        title: 'Beauty Bond data export',
+        message: JSON.stringify(data, null, 2),
+      });
+    } catch {
+      Alert.alert('Export', "We couldn't build your export just now. Try again?");
+    }
+  }
 
   async function toggleRemembrance(v) {
     setRemembrance(v);
@@ -62,10 +104,10 @@ export default function SettingsScreen({ navigation }) {
         </Group>
 
         <Group title="PRIVACY">
-          <Row label="Camera, photos, mic" onPress={() => {}} />
+          <Row label="Camera, photos, mic" onPress={() => Linking.openSettings()} />
           {/* Always free, every tier, every region. */}
-          <Row label="Download my data" onPress={() => api.get('/privacy/export')} />
-          <Row label="Delete my account" destructive onPress={() => {}} />
+          <Row label="Download my data" onPress={exportMyData} />
+          <Row label="Delete my account" destructive onPress={confirmDelete} />
         </Group>
 
         {isAdult && (

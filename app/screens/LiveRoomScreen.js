@@ -30,8 +30,10 @@ import { AGE_BANDS } from '../utils/constants';
 
 export default function LiveRoomScreen({ route, navigation }) {
   const t = useTheme();
-  const roomId = route?.params?.roomId;
-  const { token, url, capabilities, error } = useRoomToken(roomId);
+  // The lobby starts a room that does not exist yet, so pass the whole shape
+  // through: an existing roomId, or a type/name to create-and-join.
+  const { roomId, type, name } = route?.params ?? {};
+  const { token, url, capabilities, error } = useRoomToken({ roomId, type, name });
 
   useEffect(() => {
     if (error?.status === 403) {

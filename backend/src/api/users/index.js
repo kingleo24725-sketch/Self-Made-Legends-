@@ -151,6 +151,20 @@ router.get('/guardian/children', requireAuth, requireAdult, async (req, res, nex
   } catch (err) { next(err); }
 });
 
+/**
+ * A guardian deleting a child's account. requireGuardianOf makes it their own
+ * child and nobody else's. Soft delete, matching /privacy/account.
+ */
+router.delete('/guardian/children/:childId', requireAuth, requireAdult,
+  requireGuardianOf('childId'), async (req, res, next) => {
+    try {
+      await db.query(
+        'UPDATE profiles SET deleted_at = now() WHERE id = $1 AND guardian_id = $2',
+        [req.params.childId, req.profile.id]);
+      res.json({ ok: true });
+    } catch (err) { next(err); }
+  });
+
 router.patch('/guardian/permissions/:childId', requireAuth, requireAdult,
   requireGuardianOf('childId'), async (req, res, next) => {
     try {

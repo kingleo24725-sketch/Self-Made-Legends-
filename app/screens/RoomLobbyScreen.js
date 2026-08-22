@@ -31,7 +31,7 @@ export default function RoomLobbyScreen({ navigation }) {
           <Text style={[t.type('bodySm'), { color: t.color.textSecondary, marginBottom: t.space[3] }]}>
             Invite-only. Your grown-up sets who can join.
           </Text>
-          <PrimaryButton title="Start" onPress={() => navigation.navigate('LiveRoom', { name: 'Family Room' })} />
+          <PrimaryButton title="Start" onPress={() => navigation.navigate('LiveRoom', { type: 'family', name: 'Family Room' })} />
         </Card>
 
         {age >= 13 && (

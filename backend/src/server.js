@@ -16,6 +16,7 @@ const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const authRoutes = require('./api/auth');
 const userRoutes = require('./api/users');
+const contentRoutes = require('./api/content');
 const tryonRoutes = require('./api/tryon');
 const videoRoutes = require('./api/video');
 const { router: stripeRoutes, webhook: stripeWebhook } = require('./api/stripe');
@@ -55,6 +56,7 @@ app.get('/health', (req, res) => res.json({
 
 app.use('/api/auth', authRoutes);
 app.use('/api', userRoutes);
+app.use('/api', contentRoutes);
 app.use('/api/tryon', tryonRoutes);
 app.use('/api/video', videoRoutes);
 app.use('/api/stripe', stripeRoutes);
