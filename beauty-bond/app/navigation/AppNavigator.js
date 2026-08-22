@@ -18,6 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import { AGE_BANDS } from '../utils/constants';
 
 import WelcomeScreen from '../screens/WelcomeScreen';
+import { featureOn } from '../utils/config';
 import SignInScreen from '../screens/SignInScreen';
 import SignUpScreen from '../screens/SignUpScreen';
 import AgeGateScreen from '../screens/AgeGateScreen';
@@ -76,8 +77,15 @@ function MainTabs() {
     <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Learn" component={SafeLearningScreen} />
-      <Tab.Screen name="TryOn" component={TryOnScreen} options={{ title: 'Try-On' }} />
-      <Tab.Screen name="Rooms" component={RoomLobbyScreen} />
+      {/* Built and switched off for v1 — utils/config.js. Left registered
+          conditionally rather than removed so turning them on is one flag. */}
+      {featureOn('tryOn') && (
+        <Tab.Screen name="TryOn" component={TryOnScreen} options={{ title: 'Try-On' }} />
+      )}
+      {featureOn('rooms') && (
+        <Tab.Screen name="Rooms" component={RoomLobbyScreen} />
+      )}
+      <Tab.Screen name="Legacy" component={LegacyScreen} options={{ title: 'Legacy' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
@@ -110,16 +118,19 @@ export default function AppNavigator() {
             <Stack.Screen name="Main" component={MainTabs} />
             <Stack.Screen name="LessonPlayer" component={LessonPlayerScreen} />
             <Stack.Screen name="BrushEducation" component={BrushEducationScreen} />
-            <Stack.Screen name="ShadeMatch" component={ShadeMatchScreen} />
+            {featureOn('tryOn') && (
+              <Stack.Screen name="ShadeMatch" component={ShadeMatchScreen} />
+            )}
             <Stack.Screen name="CulturalLibrary" component={CulturalLibraryScreen} />
             <Stack.Screen name="CollectionDetail" component={CollectionDetailScreen} />
             <Stack.Screen name="RespectNote" component={RespectNoteScreen} />
             <Stack.Screen name="DadSchool" component={DadSchoolScreen} />
             <Stack.Screen name="SafeLearning" component={SafeLearningScreen} />
-            <Stack.Screen name="LiveRoom" component={LiveRoomScreen}
-              options={{ gestureEnabled: false }} />
+            {featureOn('rooms') && (
+              <Stack.Screen name="LiveRoom" component={LiveRoomScreen}
+                options={{ gestureEnabled: false }} />
+            )}
             <Stack.Screen name="Bond" component={BondScreen} />
-            <Stack.Screen name="Legacy" component={LegacyScreen} />
             <Stack.Screen name="MakeupBag" component={MakeupBagScreen} />
             <Stack.Screen name="MemoryGallery" component={MemoryGalleryScreen} />
             <Stack.Screen name="Settings" component={SettingsScreen} />

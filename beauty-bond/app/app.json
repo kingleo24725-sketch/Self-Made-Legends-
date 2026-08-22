@@ -102,6 +102,11 @@
       "product": "Dad + Daughter Beauty Bond",
       "eas": {
         "projectId": ""
+      },
+      "features": {
+        "tryOn": false,
+        "rooms": false,
+        "billing": false
       }
     }
   }

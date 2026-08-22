@@ -10,6 +10,7 @@
  * Plans: Free (no card) -> Basic -> Premium -> Family.
  */
 const db = require('../config/db');
+const config = require('../config');
 
 const TIERS = ['free', 'basic', 'premium', 'family'];
 
@@ -115,6 +116,41 @@ async function effectiveTierFor(profileId) {
   return getTier(profile.user_id);
 }
 
+/**
+ * What this profile may actually do, right now.
+ *
+ * v1 SHIPS FREE. When billing is not configured there is no way to take a
+ * payment, so withholding a paid capability would not sell anything — it would
+ * just break the app for everyone. Commercial gates therefore open when
+ * billing is off.
+ *
+ * This is ONLY about commercial gating. Age bands, guardian permissions and
+ * every safety rule are enforced by separate middleware and are untouched by
+ * it: requireAgeBand always runs before requireEntitlement, and a 403 there is
+ * never reachable from here.
+ *
+ * The PLANS catalogue and the price table are deliberately not modified, so
+ * turning billing on restores the ladder exactly as designed.
+ */
+async function capabilitiesFor(profileId) {
+  const tier = await effectiveTierFor(profileId);
+  if (!config.enabled.billing) {
+    return { tier, ...ENTITLEMENTS[tier], ...V1_UNGATED };
+  }
+  return { tier, ...ENTITLEMENTS[tier] };
+}
+
+/**
+ * What v1 grants everyone while there is nothing to buy. Deliberately narrow:
+ * only the Legacy module, which is the whole of v1. Try-on and room limits are
+ * left alone because neither feature is reachable.
+ */
+const V1_UNGATED = Object.freeze({
+  vaultItems: 'unlimited',
+  lettersForward: true,
+  bondBooksPerYear: 1,
+});
+
 async function setEntitlement(userId, tier) {
   await db.query(
     `INSERT INTO entitlement_audit (user_id, tier, changed_at)
@@ -141,6 +177,7 @@ async function quotaUsed(profileId, metric) {
 }
 
 module.exports = {
-  TIERS, PLANS, ENTITLEMENTS, ALWAYS_FREE, RANK, atLeast,
-  getTier, effectiveTierFor, setEntitlement, consumeQuota, quotaUsed,
+  TIERS, PLANS, ENTITLEMENTS, ALWAYS_FREE, RANK, atLeast, V1_UNGATED,
+  getTier, effectiveTierFor, capabilitiesFor, setEntitlement,
+  consumeQuota, quotaUsed,
 };

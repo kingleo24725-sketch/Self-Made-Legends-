@@ -31,8 +31,9 @@ export function ThemeProvider({ children }) {
       mode: profile?.mode ?? MODES.SOLO_GIRL,
       isChild: profile?.ageBand === 'child',
       reduceMotion,
+      remembrance: !!profile?.remembranceMode,
     }),
-    [scheme, profile?.mode, profile?.ageBand, reduceMotion]);
+    [scheme, profile?.mode, profile?.ageBand, reduceMotion, profile?.remembranceMode]);
 
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }
