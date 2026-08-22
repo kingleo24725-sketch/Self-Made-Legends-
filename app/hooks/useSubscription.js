@@ -9,9 +9,13 @@
  * This is a UI-affordance layer ONLY. The server is the source of truth and
  * returns 402 for an entitlement violation regardless of what the client
  * believes. docs/stripe-flow.md §3.5.
+ *
+ * BILLING IS OFF IN v1 (utils/config.js -> FEATURES.billing), so the payment
+ * sheet — and with it @stripe/stripe-react-native — is not installed. Only
+ * `subscribe()` depended on it; every other member here is a plain API call
+ * and works unchanged. docs/stripe-flow.md §3.7 holds the restore procedure.
  */
 import { useState, useCallback, useMemo } from 'react';
-import { useStripe } from '@stripe/stripe-react-native';
 import api from '../utils/api';
 import { useSubscriptionContext } from '../context/SubscriptionContext';
 
@@ -35,7 +39,6 @@ const REQUIRES = {
 
 export function useSubscription() {
   const ctx = useSubscriptionContext();
-  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [checkoutStatus, setCheckoutStatus] = useState('idle');
 
   const tier = ctx.tier ?? 'free';
@@ -58,38 +61,29 @@ export function useSubscription() {
   const requiredPlanFor = useCallback((feature) => REQUIRES[feature] ?? null, []);
 
   /**
-   * Create a subscription. Entitlement is granted by the WEBHOOK, never by
-   * this function returning — so on success we poll the status endpoint.
+   * v1 takes no payments, so there is nothing to open. This returns the same
+   * shape a real checkout returns rather than throwing, because PlanSelection
+   * renders the message and a thrown error there would look like a fault.
+   *
+   * TO RESTORE: npm i @stripe/stripe-react-native, add
+   * "@stripe/stripe-react-native" to app.json -> expo.plugins (required on
+   * Android — without it the SDK crashes on a non-AppCompat theme), restore
+   * StripeProvider in App.js, put back the initPaymentSheet /
+   * presentPaymentSheet body and its pollForPlan helper (both in git history
+   * at the commit that removed them), set
+   * extra.features.billing = true, and make a NEW build. A native module is
+   * never a flag flip alone.
+   *
+   * Entitlement is granted by the WEBHOOK, never by this function returning —
+   * so the restored body must keep polling the status endpoint afterwards.
    */
-  const subscribe = useCallback(async (plan, interval = 'monthly') => {
-    setCheckoutStatus('pending');
-    try {
-      const { clientSecret, ephemeralKey, customerId } =
-        await api.post('/stripe/subscription', { plan, interval });
-
-      const { error: initErr } = await initPaymentSheet({
-        merchantDisplayName: 'Beauty Bond',
-        customerId,
-        customerEphemeralKeySecret: ephemeralKey,
-        paymentIntentClientSecret: clientSecret,
-        allowsDelayedPaymentMethods: false,
-      });
-      if (initErr) throw new Error(initErr.message);
-
-      const { error } = await presentPaymentSheet();
-      if (error) {
-        setCheckoutStatus('failed');
-        return { status: 'failed', message: error.message };
-      }
-
-      const confirmed = await pollForPlan(ctx.reload, plan);
-      setCheckoutStatus(confirmed ? 'success' : 'pending');
-      return { status: confirmed ? 'success' : 'pending' };
-    } catch (e) {
-      setCheckoutStatus('failed');
-      return { status: 'failed', message: e.message };
-    }
-  }, [initPaymentSheet, presentPaymentSheet, ctx]);
+  const subscribe = useCallback(async () => {
+    setCheckoutStatus('unavailable');
+    return {
+      status: 'unavailable',
+      message: 'Beauty Bond is free in this version — there is nothing to buy yet.',
+    };
+  }, []);
 
   const cancel = useCallback(async () => {
     const res = await api.post('/stripe/subscription/cancel');
@@ -118,16 +112,6 @@ export function useSubscription() {
     checkoutStatus,
   }), [ctx, tier, atLeast, isUnlocked, isLocked, requiredPlanFor,
        subscribe, cancel, openBillingPortal, checkoutStatus]);
-}
-
-/** Covers the webhook gap shown on the "Finishing up" screen. */
-async function pollForPlan(reload, expectedPlan, tries = 8) {
-  for (let i = 0; i < tries; i++) {
-    await new Promise((r) => setTimeout(r, 750 * (i + 1)));
-    const next = await reload();
-    if (next?.tier === expectedPlan) return true;
-  }
-  return false;
 }
 
 export default useSubscription;

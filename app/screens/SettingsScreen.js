@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import {
   View, Text, SafeAreaView, ScrollView, Switch, Pressable, Linking, Alert, Share,
 } from 'react-native';
+import { featureOn } from '../utils/config';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -109,7 +110,9 @@ export default function SettingsScreen({ navigation }) {
           <Row label="Delete my account" destructive onPress={confirmDelete} />
         </Group>
 
-        {isAdult && (
+        {/* v1 is free: with billing off there is no plan to manage, so the
+            row is absent rather than leading to a wall nobody can buy past. */}
+        {isAdult && featureOn('billing') && (
           <Group title="BILLING">
             <Row label={`Plan: ${tier}`} onPress={() => navigation.navigate('PlanSelection')} />
             <Text style={[t.type('caption'), {

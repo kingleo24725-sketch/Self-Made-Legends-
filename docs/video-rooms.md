@@ -575,4 +575,38 @@ webhooks.post('/livekit', verifyLiveKitSignature, async (req, res) => {
 
 ---
 
+## 5.11 v1 ships with Glam Rooms OFF — and without the SDK
+
+`app/utils/config.js` → `FEATURES.rooms` is `false`, and the backend's room
+routes fail closed with a 503 naming themselves when `LIVEKIT_API_KEY` and
+friends are unset. Everything in §5.1–5.10 is the design and is unchanged.
+
+**`@livekit/react-native` and `livekit-client` are not installed**, and the
+client implementation lives at `app/screens/_disabled/LiveRoomScreen.livekit.js`
+— intact, commented, not deleted. `app/screens/LiveRoomScreen.js` is a
+placeholder that imports nothing native.
+
+The placeholder is necessary, not cosmetic. `navigation/AppNavigator.js` imports
+the screen at module scope, and **a module-scope import is what puts a file in
+the bundle**. `featureOn('rooms')` decides whether the screen is *registered*,
+never whether it is *bundled* — so with the real screen in place, Metro would
+still pull in a LiveKit SDK that has no Expo config plugin registered in
+`app.json`. Same class of problem as the Stripe SDK (`stripe-flow.md` §3.9).
+
+### Turning Glam Rooms back on
+
+1. `npm i @livekit/react-native livekit-client @livekit/react-native-expo-plugin`
+2. Add `"@livekit/react-native-expo-plugin"` to `app/app.json` → `expo.plugins`
+3. `git mv app/screens/_disabled/LiveRoomScreen.livekit.js app/screens/LiveRoomScreen.js`
+4. Set `extra.features.rooms = true`, set `LIVEKIT_API_KEY`,
+   `LIVEKIT_API_SECRET` and `LIVEKIT_WS_URL` on the server, and make a **new
+   build**
+
+Nothing in §5.4–5.7 changes. The safety envelope — chat absent for U13, the
+always-mounted panic button, the 403-means-leave-now rule — comes back exactly
+as archived, and `backend/tests/safety/` still enforces it today: those tests
+never depended on the client SDK.
+
+---
+
 *Continue to `api-reference.md`.*
