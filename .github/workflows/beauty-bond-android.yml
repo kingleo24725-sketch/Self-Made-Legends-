@@ -74,10 +74,19 @@ jobs:
           cache: npm
           cache-dependency-path: beauty-bond/app/package-lock.json
 
+      # This installs eas-cli GLOBALLY and puts it on PATH, so the command
+      # below is `eas`, not `npx eas`. `npx eas` fails with "could not
+      # determine executable to run": npx resolves a LOCAL package named
+      # "eas", and no such package exists — the package is "eas-cli" and
+      # "eas" is merely its binary. `npx expo` works only because expo IS a
+      # local dependency, which is what made the difference easy to miss.
       - uses: expo/expo-github-action@v8
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Confirm eas is on PATH
+        run: eas --version
 
       - run: npm ci
         working-directory: beauty-bond/app
@@ -94,7 +103,7 @@ jobs:
       # checkout to that account's project; the edit stays in the runner and is
       # never committed. Nothing in the app reads projectId.
       - name: Link the Expo project
-        run: npx eas init --force --non-interactive
+        run: eas init --force --non-interactive
         working-directory: beauty-bond/app
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -106,7 +115,7 @@ jobs:
       # distribution: internal, android.buildType: apk. An APK installs
       # straight from a link; an app-bundle does not.
       - name: Build the APK
-        run: npx eas build --platform android --profile preview --non-interactive --wait
+        run: eas build --platform android --profile preview --non-interactive --wait
         working-directory: beauty-bond/app
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
