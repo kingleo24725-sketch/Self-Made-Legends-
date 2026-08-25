@@ -65,6 +65,9 @@ jobs:
     needs: setup-check
     if: needs.setup-check.outputs.ready == 'true'
     runs-on: ubuntu-latest
+    # Needed to attach the APK to a release. Nothing else is granted.
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -73,6 +76,13 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: beauty-bond/app/package-lock.json
+
+      # Gradle runs HERE now (see "Build the APK"), so this runner needs the JDK
+      # React Native 0.76 targets. The Android SDK is already preinstalled.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
 
       # This installs eas-cli GLOBALLY and puts it on PATH, so the command
       # below is `eas`, not `npx eas`. `npx eas` fails with "could not
@@ -108,21 +118,58 @@ jobs:
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
-      # --wait, not --no-wait: waiting puts the outcome in THIS log, which is
-      # readable without an expo.dev session. --no-wait would put it only there.
+      # --local: run the build on THIS runner rather than on EAS's servers.
       #
-      # The `preview` profile in eas.json is the one that matters —
-      # distribution: internal, android.buildType: apk. An APK installs
-      # straight from a link; an app-bundle does not.
+      # The cloud build failed with "Gradle build failed with unknown error.
+      # See logs for the Run gradlew phase" — and that phase's log lives only
+      # on expo.dev, which the environment maintaining this workflow cannot
+      # reach. A failure nobody can read is a failure nobody can fix, and
+      # relaying it by hand is exactly the loop this whole workflow exists to
+      # remove. --local puts every Gradle line in THIS log instead.
+      #
+      # It is not a downgrade: --local runs the same build steps, and still
+      # pulls the SAME keystore from the EAS servers (EXPO_TOKEN below), so
+      # builds stay signed by one key and each new APK installs over the last.
+      # It also skips the free-tier queue, which cost 45 minutes on the last
+      # attempt before Gradle even started.
+      #
+      # The `preview` profile is what makes this an APK rather than an app
+      # bundle: distribution internal, android.buildType apk. An APK installs
+      # straight from a link; an .aab cannot be installed at all.
       - name: Build the APK
-        run: eas build --platform android --profile preview --non-interactive --wait
+        run: eas build --platform android --profile preview --local --non-interactive --output "$RUNNER_TEMP/beauty-bond.apk"
         working-directory: beauty-bond/app
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Check the APK is real
+        run: |
+          ls -lh "$RUNNER_TEMP/beauty-bond.apk"
+          # An APK is a zip. If Gradle produced something malformed, catch it
+          # here rather than on a phone that refuses to install it.
+          unzip -l "$RUNNER_TEMP/beauty-bond.apk" | grep -q AndroidManifest.xml
+          echo "APK looks valid."
+
+      # A workflow artifact needs a GitHub login and arrives as a .zip, which
+      # a phone cannot install. A release asset is a direct, tappable file.
+      - name: Publish it somewhere tappable
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="android-latest"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" "$RUNNER_TEMP/beauty-bond.apk" \
+            --title "Beauty Bond — Android" \
+            --notes "Tap the .apk below on an Android phone to install. Allow installs from your browser when asked." \
+            --target "$GITHUB_SHA" \
+            --prerelease
+          echo "::notice::APK published. Link: $(gh release view "$TAG" --json url -q .url)"
+
       - name: Where to get it
         if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          echo "::notice::Build finished. Check your email for the install link."
-          echo "Or: https://expo.dev -> Projects -> dad-daughter-beauty-bond -> Builds"
-          echo "Open it on the phone, tap Install, and allow installs from the browser once."
+          echo "Done. On the Android phone, open this and tap the .apk file:"
+          gh release view android-latest --json url -q .url
+          echo "Android will ask once whether to allow installs from your browser. Say yes."
