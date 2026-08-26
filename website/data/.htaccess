@@ -1,0 +1,14 @@
+# Self-Made Legends — block all web access to collected signup data.
+# Without this file, anyone could download your entire email list by
+# visiting selfmadelegendsz.com/data/newsletter.csv
+
+# Apache 2.4
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+
+# Apache 2.2
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
