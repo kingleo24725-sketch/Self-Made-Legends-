@@ -36,7 +36,7 @@
  * mojibake. The UI has to say this out loud before someone writes their first
  * entry — see LegacyScreen.
  */
-import * as SecureStore from 'expo-secure-store';
+import { getItem, setItem, deleteItem, SECURE_OPTS } from './secureStore';
 import * as Crypto from 'expo-crypto';
 import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
 
@@ -45,11 +45,6 @@ const KEY_ID_STORE = 'bb.journal.keyid.v1';
 
 const KEY_BYTES = 32;
 const NONCE_BYTES = 24;
-
-/** Keychain flags: on this device, only while unlocked, never in a backup. */
-const SECURE_OPTS = {
-  keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
-};
 
 /* ── base64 <-> bytes, without assuming a Buffer polyfill ──────────── */
 
@@ -98,8 +93,8 @@ export async function getJournalKey() {
   if (cached) return cached;
 
   const [stored, storedId] = await Promise.all([
-    SecureStore.getItemAsync(KEY_STORE, SECURE_OPTS),
-    SecureStore.getItemAsync(KEY_ID_STORE, SECURE_OPTS),
+    getItem(KEY_STORE, SECURE_OPTS),
+    getItem(KEY_ID_STORE, SECURE_OPTS),
   ]);
 
   if (stored && storedId) {
@@ -115,8 +110,8 @@ export async function getJournalKey() {
   )).slice(0, 16);
 
   await Promise.all([
-    SecureStore.setItemAsync(KEY_STORE, toBase64(key), SECURE_OPTS),
-    SecureStore.setItemAsync(KEY_ID_STORE, keyId, SECURE_OPTS),
+    setItem(KEY_STORE, toBase64(key), SECURE_OPTS),
+    setItem(KEY_ID_STORE, keyId, SECURE_OPTS),
   ]);
 
   cached = { key, keyId };
@@ -125,7 +120,7 @@ export async function getJournalKey() {
 
 /** Whether this device holds a journal key at all. */
 export async function hasJournalKey() {
-  return !!(await SecureStore.getItemAsync(KEY_ID_STORE, SECURE_OPTS));
+  return !!(await getItem(KEY_ID_STORE, SECURE_OPTS));
 }
 
 /**
@@ -135,8 +130,8 @@ export async function hasJournalKey() {
 export async function forgetJournalKey() {
   cached = null;
   await Promise.all([
-    SecureStore.deleteItemAsync(KEY_STORE, SECURE_OPTS),
-    SecureStore.deleteItemAsync(KEY_ID_STORE, SECURE_OPTS),
+    deleteItem(KEY_STORE, SECURE_OPTS),
+    deleteItem(KEY_ID_STORE, SECURE_OPTS),
   ]);
 }
 

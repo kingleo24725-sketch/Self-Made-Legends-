@@ -26,6 +26,7 @@ import PrimaryButton from '../components/Buttons/PrimaryButton';
 import { COPY, HELPLINES, VAULT_KINDS, JOURNAL_PROMPTS } from '../utils/constants';
 import api from '../utils/api';
 import { encryptEntry, decryptEntry, hasJournalKey } from '../utils/journalCrypto';
+import { journalAvailable, JOURNAL_UNAVAILABLE_REASON } from '../utils/config';
 
 export default function LegacyScreen() {
   const t = useTheme();
@@ -218,6 +219,25 @@ export default function LegacyScreen() {
         </Section>
 
         {/* ── The Healing Journal ─────────────────────────────────── */}
+        {/* Native only. The card below claims we hold no key and could not read
+            an entry if asked — true on a phone, where the key sits in the OS
+            keychain, and NOT true in a browser, which has no keychain. So on
+            web the journal is absent with its reason rather than present and
+            quietly weaker. utils/config.js -> journalAvailable. */}
+        {!journalAvailable ? (
+          <Section title="HEALING JOURNAL">
+            <Card>
+              <Text style={[t.type('body'), { color: t.color.textPrimary }]}>
+                Not here — on purpose.
+              </Text>
+              <Text style={[t.type('bodySm'), {
+                color: t.color.textSecondary, marginTop: t.space[2],
+              }]}>
+                {JOURNAL_UNAVAILABLE_REASON}
+              </Text>
+            </Card>
+          </Section>
+        ) : (
         <Section title="HEALING JOURNAL">
           <Card>
             <Text style={[t.type('body'), { color: t.color.textPrimary }]}>
@@ -272,6 +292,7 @@ export default function LegacyScreen() {
             </Card>
           ))}
         </Section>
+        )}
 
         {/* Persistent and region-aware. Always visible in this module. */}
         <Pressable

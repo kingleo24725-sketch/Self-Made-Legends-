@@ -100,6 +100,18 @@
       "assets/images/generated/adaptive-icon-foreground.png",
       "assets/fonts/*"
     ],
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/images/generated/icon.png",
+      "name": "Dad + Daughter Beauty Bond",
+      "shortName": "Beauty Bond",
+      "themeColor": "#E9B78E",
+      "backgroundColor": "#E9B78E",
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait",
+      "description": "Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product."
+    },
     "extra": {
       "apiBaseUrl": "https://web-production-75d20c.up.railway.app/api",
       "stripePublishableKey": "",

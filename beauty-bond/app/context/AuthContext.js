@@ -5,7 +5,7 @@
  * or use of this file, via any medium, is strictly prohibited.
  */
 import React, { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
-import * as SecureStore from 'expo-secure-store';
+import { getItem, setItem, deleteItem } from '../utils/secureStore';
 import api, { setAccessToken, setRefreshHandler } from '../utils/api';
 import { AGE_BANDS } from '../utils/constants';
 
@@ -19,15 +19,15 @@ export function AuthProvider({ children }) {
   const [status, setStatus] = useState('loading'); // loading|anon|authed|consent_pending
 
   const refresh = useCallback(async () => {
-    const stored = await SecureStore.getItemAsync(REFRESH_KEY);
+    const stored = await getItem(REFRESH_KEY);
     if (!stored) return false;
     try {
       const { accessToken, refreshToken } = await api.post('/auth/refresh', { refreshToken: stored });
       setAccessToken(accessToken);
-      await SecureStore.setItemAsync(REFRESH_KEY, refreshToken); // rotating
+      await setItem(REFRESH_KEY, refreshToken); // rotating
       return true;
     } catch {
-      await SecureStore.deleteItemAsync(REFRESH_KEY);
+      await deleteItem(REFRESH_KEY);
       return false;
     }
   }, []);
@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     const { accessToken, refreshToken } = await api.post('/auth/login', { email, password });
     setAccessToken(accessToken);
-    await SecureStore.setItemAsync(REFRESH_KEY, refreshToken);
+    await setItem(REFRESH_KEY, refreshToken);
     await load();
   }
 
@@ -66,13 +66,13 @@ export function AuthProvider({ children }) {
       email, password, birthDate, displayName,
     });
     setAccessToken(accessToken);
-    await SecureStore.setItemAsync(REFRESH_KEY, refreshToken);
+    await setItem(REFRESH_KEY, refreshToken);
     await load();
   }
 
   async function logout() {
     await api.post('/auth/logout').catch(() => {});
-    await SecureStore.deleteItemAsync(REFRESH_KEY);
+    await deleteItem(REFRESH_KEY);
     setAccessToken(null);
     setUser(null); setProfile(null); setProfiles([]);
     setStatus('anon');

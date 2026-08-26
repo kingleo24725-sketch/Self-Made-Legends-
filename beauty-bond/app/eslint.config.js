@@ -66,6 +66,9 @@ module.exports = [
         clearInterval: 'readonly',
         fetch: 'readonly',
         AbortController: 'readonly',
+        // Web build only (utils/secureStore.js). Guarded at every use —
+        // it is absent on native and throws in Safari private mode.
+        localStorage: 'readonly',
         FormData: 'readonly',
         __DEV__: 'readonly',
         TextEncoder: 'readonly',

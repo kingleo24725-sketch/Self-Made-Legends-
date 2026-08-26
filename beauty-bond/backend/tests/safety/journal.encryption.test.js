@@ -70,9 +70,45 @@ describe('the app encrypts before sending', () => {
     expect(crypto).not.toMatch(/Math\.random/);
   });
 
+  /**
+   * The keychain flags moved to utils/secureStore.js when the app gained a web
+   * build, because expo-secure-store has no web implementation. The guarantee
+   * did not move — so this checks the seam rather than the old location, and
+   * checks that journalCrypto still goes through it instead of rolling its own
+   * storage.
+   */
   test('the key is kept on this device only and out of backups', () => {
-    expect(crypto).toContain('WHEN_UNLOCKED_THIS_DEVICE_ONLY');
-    expect(crypto).toContain('SecureStore');
+    const store = readApp('utils/secureStore.js');
+    expect(store).toContain('WHEN_UNLOCKED_THIS_DEVICE_ONLY');
+    expect(store).toContain('SecureStore.getItemAsync');
+
+    expect(crypto).toMatch(/from '\.\/secureStore'/);
+    // No second storage path: the seam is the only way in or out.
+    expect(crypto).not.toMatch(/localStorage|AsyncStorage/);
+  });
+
+  /**
+   * THE WEB BUILD MUST NOT WEAKEN THIS.
+   *
+   * A browser has no keychain, so the web path stores secrets in localStorage —
+   * readable by any script that reaches the page. That is acceptable for a
+   * refresh token and NOT acceptable for the journal key, whose entire promise
+   * is that nobody but the writer can reach the words.
+   *
+   * So the journal is absent on web. This is the test that stops someone
+   * "fixing" that later by making it merely available.
+   */
+  test('the journal is absent on web, where the keychain does not exist', () => {
+    const config = readApp('utils/config.js');
+    expect(config).toMatch(/journalAvailable\s*=\s*Platform\.OS !== 'web'/);
+
+    // Not a FEATURES flag: those are shipping choices the owner may flip.
+    // This one is a property of the platform and must not be flippable.
+    expect(config).not.toMatch(/FEATURES\s*=\s*\{[^}]*journal/);
+
+    // And the screen must actually honour it.
+    const legacy = readApp('screens/LegacyScreen.js');
+    expect(legacy).toContain('journalAvailable');
   });
 
   test('the nonce is random per entry, so the same words never repeat bytes', () => {

@@ -1,0 +1,17 @@
+{
+  "name": "Dad + Daughter Beauty Bond",
+  "short_name": "Beauty Bond",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E9B78E",
+  "theme_color": "#E9B78E",
+  "description": "Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}

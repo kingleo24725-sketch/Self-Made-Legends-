@@ -10,7 +10,64 @@ needs a phone browser and nothing else.
 
 ---
 
-## How it works
+## iPhone — the free version, right now
+
+**Open this in Safari:**
+
+```
+https://web-production-75d20c.up.railway.app
+```
+
+Then tap the **Share** button (the square with the arrow), scroll down, and tap
+**Add to Home Screen**. You get an icon that opens full-screen with no address
+bar. For everyday use it is the app.
+
+No Apple account, no fee, no store. It updates itself — when the app changes,
+the page changes; there is nothing to reinstall.
+
+### What is different in the browser version
+
+| | |
+|---|---|
+| Vault, Letters Forward, Bond Meter, lessons, guardian console | All work |
+| **The Healing Journal** | **Absent, deliberately** |
+
+The journal's promise is a key generated on your phone, kept in the phone's
+secure keychain, that we cannot read even if asked. A browser has no keychain —
+the key would sit in ordinary browser storage that any script on the page can
+read. Rather than keep the feature and quietly break the promise, the web
+version says the journal is waiting in the phone app. `stripe-flow.md` §3.9 is
+the same rule applied to billing.
+
+Your sign-in token *does* live in browser storage, which is how every website
+works and is weaker than the keychain. Worth knowing; not worth hiding.
+
+### iPhone — the real app ($99/year)
+
+Apple requires a paid Developer Program membership before any app runs on an
+iPhone, and every free workaround needs a Mac. There is no way around it.
+
+All of it is still phone-only:
+
+1. **Apple Developer** app from the App Store → enroll. $99/yr, usually
+   approved in 24–48 hours.
+2. **appleid.apple.com** → Sign-In and Security → App-Specific Passwords →
+   generate one and copy it.
+3. Add two repository secrets, the same place `EXPO_TOKEN` went:
+   `EXPO_APPLE_ID` (your Apple email) and
+   `EXPO_APPLE_APP_SPECIFIC_PASSWORD` (what you just copied).
+
+Then the build runs on EAS's macOS machines and lands in **TestFlight**, which
+installs like a normal App Store app. That is also the path to the App Store
+itself later.
+
+Note for whoever maintains this: iOS cannot use `--local` the way the Android
+build does — that plugin is Linux-only — so an iOS failure means reading EAS's
+logs on expo.dev rather than the Actions log.
+
+---
+
+## Android — how it works
 
 Expo builds Android apps **on their servers**. GitHub tells them to start a
 build whenever the app code changes. Expo emails a link when it's done. You tap
@@ -99,7 +156,7 @@ No banner at all means it connected. Silence is the good outcome.
 | | |
 |---|---|
 | **The Play Store** | A separate step: $25 once, plus a review queue. This installs the app directly, which is all v1 needs. |
-| **iPhone** | Apple requires a $99/year developer account before an app can run on a phone at all. The path is still phone-only, it just isn't free. |
+| **iPhone, natively** | Covered above: the browser version is free and works today; the native app needs the $99/year Apple account. |
 | **Try-On and Glam Rooms** | Switched off in v1 and their SDKs are not in the build. `stripe-flow.md` §3.9 and `video-rooms.md` §5.11 hold the restore steps. |
 
 ---
