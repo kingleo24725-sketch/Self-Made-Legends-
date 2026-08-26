@@ -68,6 +68,7 @@ When you're done, `public_html` should look like:
 public_html/
 ├── .htaccess          ← hidden, required
 ├── index.html
+├── shipping-returns.html
 ├── 404.html
 ├── api/
 │   ├── config.php
@@ -151,10 +152,29 @@ All in `index.html`. Search for what you want and change the text.
 | Ambassador perks | `class="perks"` |
 | Contact emails | `foot-col` |
 | Contact form topics | `<section id="support"` |
+| Shipping rates and returns | `shipping-returns.html` |
 
-**The FAQ has 3 unfinished answers** marked `[ SET ... ]` — shipping times,
-returns, and international. Fill those in before you take real orders. Those
-are the questions a customer asks right before they decide not to buy.
+**No blanks are left in the FAQ.** Shipping, returns, and international are
+all written and live.
+
+### The numbers in the shipping policy are a starting point
+
+They are real, sensible defaults for a US brand shipping from Missouri —
+not guesses, but not quotes either. Before your first order ships, price
+your actual boxes with USPS or UPS and adjust these in
+`shipping-returns.html` if they don't match:
+
+| Setting | Currently |
+|---|---|
+| Free shipping threshold | $150 |
+| US standard / express | $8 / $25 |
+| Canada / UK-EU / rest of world | $25 / $35 / $45 |
+| Processing time | 1–3 business days |
+| Return window | 30 days |
+| First size exchange | Free |
+
+**Whatever you set, honour it.** A published policy is a promise you can be
+held to.
 
 ---
 
