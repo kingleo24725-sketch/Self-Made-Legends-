@@ -485,3 +485,46 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 }
 .skip:focus{left:0;}
 .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+
+/* ── shop ─────────────────────────────────────────────────────────────── */
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.15rem;}
+.prod{
+  border:1px solid var(--rule);background:var(--pitch);
+  padding:1.6rem 1.5rem;display:flex;flex-direction:column;gap:.8rem;
+  transition:border-color .25s;
+}
+.prod:hover{border-color:var(--gold-ash);}
+.prod-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;}
+.prod-sku{
+  font-family:"DM Mono",ui-monospace,Menlo,monospace;
+  font-size:.58rem;letter-spacing:.14em;color:var(--gold-ash);
+}
+.prod-badge{
+  font-family:"DM Mono",ui-monospace,Menlo,monospace;
+  font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ash-dim);border:1px solid var(--rule);
+  padding:.24em .6em;border-radius:2px;white-space:nowrap;
+}
+.prod h3{font-size:1.2rem;line-height:1.2;}
+.prod-price{
+  font-family:"Bodoni Moda",Didot,serif;
+  font-size:1.65rem;line-height:1;
+  background:linear-gradient(100deg,var(--gold-dp),var(--gold) 34%,var(--gold-lt) 52%,var(--gold));
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+}
+@supports not (background-clip:text){ .prod-price{color:var(--gold);-webkit-text-fill-color:var(--gold);} }
+.prod-blurb{font-size:.88rem;color:var(--ash);}
+.prod-details{
+  margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.35rem;
+  font-size:.8rem;color:var(--ash-dim);
+}
+.prod-details li::marker{color:var(--gold-ash);}
+.prod-colors{display:flex;flex-wrap:wrap;gap:.3rem .85rem;font-size:.76rem;color:var(--ash-dim);}
+.prod-action{margin-top:auto;padding-top:.5rem;}
+.prod-action .btn{width:100%;}
+
+.shop-note{
+  border-left:2px solid var(--gold-dp);padding:.2rem 0 .2rem 1.1rem;
+  font-size:.85rem;color:var(--ash);margin-top:2rem;
+}

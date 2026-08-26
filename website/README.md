@@ -76,7 +76,9 @@ public_html/
 ├── assets/
 │   ├── favicon.svg
 │   ├── css/sml.css
-│   └── js/sml.js
+│   └── js/
+│       ├── sml.js
+│       └── shop.js     ← your products and Stripe links
 └── data/
     └── .htaccess      ← hidden, REQUIRED
 ```
@@ -153,6 +155,7 @@ All in `index.html`. Search for what you want and change the text.
 | Contact emails | `foot-col` |
 | Contact form topics | `<section id="support"` |
 | Shipping rates and returns | `shipping-returns.html` |
+| Products, prices, Stripe links | `assets/js/shop.js` |
 
 **No blanks are left in the FAQ.** Shipping, returns, and international are
 all written and live.
@@ -178,22 +181,90 @@ held to.
 
 ---
 
+## Selling: putting products on sale
+
+The site takes money through **Stripe Payment Links**. There is no shopping
+cart and no Shopify subscription — each product is one link, and Stripe
+handles the card, the receipt, and the shipping address.
+
+**Nothing secret lives on the server.** Payment Links are public URLs by
+design. Your Stripe *secret key* must never appear in any file you upload.
+
+### Create a Payment Link (about 5 minutes per product)
+
+1. Stripe Dashboard → **Product catalogue** → **+ Add product**
+2. Name it exactly as it appears on the site, e.g. *Regent Embroidered Hoodie*
+3. Set the price — **one-off**, not recurring
+4. Save, then **Create payment link**
+5. **Before you finish, turn these on** — they are off by default:
+
+| Setting | Why it matters |
+|---|---|
+| **Collect shipping address** | Without it you get paid and have **no idea where to ship** |
+| **Shipping rates** | Add a flat rate, and a free option over $150 to match your policy |
+| **Quantity adjustable** | Lets one customer buy two |
+| **Limit the number of payments** | This is how you enforce a numbered run — set it to your run size and Stripe closes the link when it sells out |
+
+6. Copy the link. It looks like `https://buy.stripe.com/xxxxxxxx`
+
+### Put it on the site
+
+Open `assets/js/shop.js`. Find the product. Paste the link:
+
+```js
+paymentLink: 'https://buy.stripe.com/xxxxxxxx'
+```
+
+Set `price` to match, **in cents** — `6500` is $65.00. Save, upload that one
+file. The product is live.
+
+A product with an empty `paymentLink` shows **Notify Me** instead of Buy,
+which sends the visitor to the newsletter. That is deliberate: you never
+advertise something a customer cannot actually receive, and the interest
+still gets captured.
+
+Only genuine `stripe.com` links become Buy buttons. Paste something else by
+mistake and it falls back to Notify Me rather than sending a paying customer
+to the wrong place.
+
+### Sizes
+
+A Payment Link can't ask for a size on its own. Two options:
+
+- **Simplest:** in Stripe, add a **custom field** called `Size` on the link
+- **Cleaner:** create one product per size in Stripe and add a size row to
+  `shop.js` — more setup, but stock per size is then tracked properly
+
+Start with the custom field. Move to per-size products when volume justifies it.
+
+### Before your first real sale
+
+- [ ] Do one **test purchase with a real card**, then refund it in Stripe.
+      Confirm the receipt arrives and the shipping address came through.
+- [ ] Check the payout bank account in Stripe is one you can access
+- [ ] Stripe holds the first payout ~7–14 days for new accounts. Expect that.
+- [ ] Sales tax: you likely owe it in Missouri, and possibly other states once
+      you sell enough there. **Stripe Tax** can calculate it automatically —
+      worth turning on before volume, not after. Ask your accountant.
+
+---
+
 ## What this site does not do yet
 
-It's a catalog and a mailing-list builder, not a store. There is **no
-shopping cart and no checkout** — nobody can buy anything from it today.
+The shop uses Payment Links, not a full cart. That means:
 
-That's a deliberate first step, not an oversight. Build the list first, then
-add selling. When you're ready, the two realistic options:
+- One product per checkout — no basket of several items
+- No live stock counts on the page (Stripe closes a link when its payment
+  limit is reached, but the page won't grey the product out until you edit
+  `shop.js`)
+- No customer accounts or order history
 
-- **Stripe Payment Links** — free, ~30 minutes, one link per product. Fine
-  for a handful of items and limited drops. Good enough to start taking
-  money this week.
-- **Shopify or WooCommerce** — real inventory, variants, shipping rules,
-  taxes. More setup and a monthly cost, but it handles sold-out runs and
-  size stock properly, which matters once drops are real.
+For limited numbered drops this is genuinely fine, and it costs nothing per
+month. When you're selling enough that one-item-at-a-time is losing you
+money, move to **Shopify or WooCommerce** — they handle baskets, per-size
+stock, and tax properly.
 
-For numbered runs that sell out, you will eventually want the second one.
+Don't pay for that before you need it.
 
 ---
 
