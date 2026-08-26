@@ -113,25 +113,35 @@
     });
   }
 
-  wireForm('newsForm', 'newsMsg', "You're on the list.");
-  wireForm('ambForm',  'ambMsg',  'Application received.');
+  wireForm('newsForm',    'newsMsg',    "You're on the list.");
+  wireForm('ambForm',     'ambMsg',     'Application received.');
+  wireForm('supportForm', 'supportMsg', 'Message received.');
 
   /* ── no-JS fallback: surface ?sent= / ?error= from the PHP redirect ──── */
   var params = new URLSearchParams(window.location.search);
   var sent   = params.get('sent');
   var error  = params.get('error');
 
-  if (sent === 'newsletter') {
-    setMessage(document.getElementById('newsMsg'), "You're on the list.", 'ok');
-  } else if (sent === 'ambassador') {
-    setMessage(document.getElementById('ambMsg'), 'Application received. Expect a reply either way.', 'ok');
+  var boxes = {
+    newsletter: 'newsMsg',
+    ambassador: 'ambMsg',
+    support:    'supportMsg'
+  };
+
+  var successText = {
+    newsletter: "You're on the list.",
+    ambassador: 'Application received. Expect a reply either way.',
+    support:    'Message received. We read every one and will reply personally.'
+  };
+
+  if (sent && boxes[sent]) {
+    setMessage(document.getElementById(boxes[sent]), successText[sent], 'ok');
   }
 
   if (error) {
-    var box = params.get('form') === 'ambassador'
-      ? document.getElementById('ambMsg')
-      : document.getElementById('newsMsg');
-    setMessage(box, decodeURIComponent(error), 'err');
+    var which = params.get('form');
+    var id = boxes[which] || 'newsMsg';
+    setMessage(document.getElementById(id), decodeURIComponent(error), 'err');
   }
 
   // Tidy the URL so a refresh doesn't repeat the message.

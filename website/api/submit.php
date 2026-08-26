@@ -38,7 +38,12 @@ function sml_respond(bool $ok, string $message, string $formType = '', int $stat
         exit;
     }
 
-    $anchor = $formType === 'ambassador' ? '#ambassador' : '#newsletter';
+    $anchors = [
+        'ambassador' => '#ambassador',
+        'support'    => '#support',
+        'newsletter' => '#newsletter',
+    ];
+    $anchor = $anchors[$formType] ?? '#newsletter';
     $query  = $ok
         ? '?sent=' . rawurlencode($formType)
         : '?error=' . rawurlencode($message) . '&form=' . rawurlencode($formType);
@@ -172,7 +177,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 $formType = sml_clean($_POST['form_type'] ?? '', 20);
-if (!in_array($formType, ['newsletter', 'ambassador'], true)) {
+if (!in_array($formType, ['newsletter', 'ambassador', 'support'], true)) {
     sml_respond(false, 'Unknown form.', '', 400);
 }
 
@@ -216,6 +221,49 @@ if ($formType === 'newsletter') {
 
     sml_throttle_record();
     sml_respond(true, "You're on the list. Drops announce there first.", $formType);
+}
+
+/* ── support: customer problems and complaints ───────────────────────── */
+
+if ($formType === 'support') {
+    $name    = sml_clean($_POST['name']    ?? '', 80);
+    $topic   = sml_clean($_POST['topic']   ?? '', 60);
+    $order   = sml_clean($_POST['order']   ?? '', 40);
+    $message = sml_clean($_POST['message'] ?? '', 2500);
+
+    if ($name === '') {
+        sml_respond(false, 'Please enter your name.', $formType, 422);
+    }
+    if (mb_strlen($message) < 10) {
+        sml_respond(false, 'Please tell us what went wrong.', $formType, 422);
+    }
+    if ($topic === '') {
+        $topic = 'General';
+    }
+
+    $stored = sml_append_csv(
+        'support.csv',
+        ['timestamp', 'name', 'email', 'topic', 'order', 'message', 'ip'],
+        [$stamp, $name, $email, $topic, $order, $message, $ip]
+    );
+
+    // A complaint must never be silently lost because a disk write failed.
+    if (!$stored) {
+        sml_respond(false, 'We could not save your message. Please email ceo@selfmadelegendsz.com directly.', $formType, 500);
+    }
+
+    $body = "Customer message — {$topic}\n\n"
+          . "Name:  {$name}\n"
+          . "Email: {$email}\n"
+          . "Order: " . ($order !== '' ? $order : '(not given)') . "\n"
+          . "Time:  {$stamp}\n\n"
+          . "Message:\n{$message}\n\n"
+          . "— Reply directly to this email to answer them.\n";
+
+    sml_notify(SML_TO_SUPPORT, 'Customer: ' . $topic . ' — ' . $name, $body, $email);
+
+    sml_throttle_record();
+    sml_respond(true, 'Message received. We read every one and will reply personally.', $formType);
 }
 
 /* ── ambassador ──────────────────────────────────────────────────────── */

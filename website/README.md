@@ -13,12 +13,20 @@ Written for InterServer shared hosting (cPanel + Apache + PHP).
 
 In cPanel → **Email Accounts**, create these at `selfmadelegendsz.com`:
 
-| Address | Why |
+| Address | What lands there |
 |---|---|
-| `info@selfmadelegendsz.com` | Where form submissions are sent |
+| `info@selfmadelegendsz.com` | Newsletter signups + Ambassador applications |
+| `ceo@selfmadelegendsz.com` | **Customer problems and complaints** — straight to you |
 | `noreply@selfmadelegendsz.com` | The "from" address on those notifications |
 | `wholesale@selfmadelegendsz.com` | Linked in the footer |
 | `press@selfmadelegendsz.com` | Linked in the footer |
+
+**Note on `ceo@`:** the contact form sends there, but the address is
+deliberately **not printed anywhere on the site**. Published addresses get
+scraped by spam bots within weeks, and then real complaints get buried in
+junk. Customers reach you through the form; you reply from whatever address
+you like. If you'd rather publish it anyway, that's your call — say so and
+it's a one-line change.
 
 **These must exist before the forms will work.** Mail sent to an address that
 doesn't exist just disappears.
@@ -90,9 +98,12 @@ your phone too.
 
 Nothing arrived? Check the spam folder first — that's usually it.
 
-**3. The ambassador form works.** Fill it in and submit.
+**3. The ambassador form works.** Fill it in and submit. Also to `info@`.
 
-**4. ⚠️ Your email list is NOT public.** In a browser, go to:
+**4. The contact form works.** Fill it in and submit — this one should
+arrive at **`ceo@`**, not `info@`. Confirm it went to the right inbox.
+
+**5. ⚠️ Your email list is NOT public.** In a browser, go to:
 
 ```
 https://selfmadelegendsz.com/data/newsletter.csv
@@ -110,7 +121,13 @@ test again. Without it, anyone can take your entire email list.
 cPanel → File Manager → `public_html/data/`
 
 - `newsletter.csv` — email list
-- `ambassadors.csv` — applications
+- `ambassadors.csv` — Ambassador applications
+- `support.csv` — customer messages and complaints
+
+Every message is written to `support.csv` **before** the email goes out.
+So even if mail delivery fails or something lands in spam, no customer
+complaint is ever lost — it's on disk. Worth checking that file
+occasionally against your inbox.
 
 Download and open in Excel or Google Sheets.
 
@@ -133,6 +150,7 @@ All in `index.html`. Search for what you want and change the text.
 | FAQ answers | `<section id="faq"` |
 | Ambassador perks | `class="perks"` |
 | Contact emails | `foot-col` |
+| Contact form topics | `<section id="support"` |
 
 **The FAQ has 3 unfinished answers** marked `[ SET ... ]` — shipping times,
 returns, and international. Fill those in before you take real orders. Those

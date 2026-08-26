@@ -14,6 +14,9 @@
 const SML_TO_NEWSLETTER = 'info@selfmadelegendsz.com';
 const SML_TO_AMBASSADOR = 'info@selfmadelegendsz.com';
 
+// Customer problems and complaints go straight to the CEO, not to info@.
+const SML_TO_SUPPORT    = 'ceo@selfmadelegendsz.com';
+
 // The From address on outgoing notifications. This MUST be an address at
 // your own domain, or your mail will be treated as spoofed and filtered.
 // Do not put the visitor's address here — their address goes in Reply-To.

@@ -115,7 +115,7 @@
       <a href="#ambassador">Ambassador</a>
       <a href="#specs">Specs</a>
       <a href="#faq">FAQ</a>
-      <a href="#contact">Contact</a>
+      <a href="#support">Contact</a>
     </nav>
   </div>
 </header>
@@ -599,11 +599,103 @@
   </div>
 </section>
 
+<!-- ═══════════ SUPPORT ═══════════ -->
+<section id="support" class="marble">
+  <div class="shell">
+    <div class="sec-head">
+      <p class="eyebrow">08 — Customer Care</p>
+      <h2 class="foil">Something Wrong?</h2>
+      <p class="lede">Order problems, damaged pieces, returns, sizing — send it here. It goes straight to the owner's desk, not a ticket queue.</p>
+    </div>
+
+    <div class="amb">
+      <div class="perks">
+        <div class="perk">
+          <span class="num">01</span>
+          <div><h3>It reaches a person</h3><p>Every message lands with the owner of this house. Not a bot, not an outsourced desk.</p></div>
+        </div>
+        <div class="perk">
+          <span class="num">02</span>
+          <div><h3>Reply within one business day</h3><p>If your piece arrived damaged or wrong, say so and we make it right. That is not a policy, it is the whole point.</p></div>
+        </div>
+        <div class="perk">
+          <span class="num">03</span>
+          <div><h3>Have your order number ready</h3><p>It is on your confirmation email and printed on the authenticity card in the box. Not required, but it makes this faster.</p></div>
+        </div>
+        <div class="perk">
+          <span class="num">04</span>
+          <div><h3>Tell us the truth</h3><p>If we got it wrong, we would rather hear it plainly than read a polite review later.</p></div>
+        </div>
+      </div>
+
+      <div class="form-box">
+        <h3 style="font-size:1.25rem;margin-bottom:.4rem">Contact the House</h3>
+        <p style="font-size:.85rem;color:var(--ash-dim);margin-bottom:1.4rem">
+          Read personally, every one.
+        </p>
+
+        <form class="form" id="supportForm" method="post" action="api/submit.php" novalidate>
+          <input type="hidden" name="form_type" value="support">
+          <div class="hp" aria-hidden="true">
+            <label for="sup_website">Website</label>
+            <input type="text" id="sup_website" name="website" tabindex="-1" autocomplete="off">
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-lbl" for="sup_name">Your Name <span class="req">*</span></label>
+              <input type="text" id="sup_name" name="name" required maxlength="80" autocomplete="name">
+            </div>
+            <div class="field">
+              <label class="field-lbl" for="sup_email">Email <span class="req">*</span></label>
+              <input type="email" id="sup_email" name="email" required maxlength="120" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-lbl" for="sup_topic">What is this about?</label>
+              <select id="sup_topic" name="topic">
+                <option value="">Select…</option>
+                <option>Order issue — wrong or missing</option>
+                <option>Damaged or faulty item</option>
+                <option>Return or exchange</option>
+                <option>Sizing question</option>
+                <option>Shipping or delivery</option>
+                <option>Wholesale enquiry</option>
+                <option>Complaint</option>
+                <option>Something else</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field-lbl" for="sup_order">Order Number</label>
+              <input type="text" id="sup_order" name="order" maxlength="40" placeholder="If you have it">
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-lbl" for="sup_message">What happened? <span class="req">*</span></label>
+            <textarea id="sup_message" name="message" required maxlength="2500"
+              placeholder="Tell us what went wrong and what you'd like done about it."></textarea>
+          </div>
+
+          <div class="form-msg" id="supportMsg" role="status" aria-live="polite"></div>
+          <button class="btn btn-solid" type="submit">Send Message</button>
+
+          <p style="font-size:.74rem;color:var(--ash-dim)">
+            This form goes directly to the owner's inbox.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════ FAQ ═══════════ -->
 <section id="faq">
   <div class="shell">
     <div class="sec-head">
-      <p class="eyebrow">08 — Questions</p>
+      <p class="eyebrow">09 — Questions</p>
       <h2 class="foil">Frequently Asked</h2>
     </div>
 
@@ -629,7 +721,8 @@
       </details>
       <details>
         <summary>Can I return or exchange something?</summary>
-        <div class="ans"><p>[ SET YOUR RETURN POLICY — window in days, condition required, who pays return shipping, and whether numbered-run pieces are final sale. ]</p></div>
+        <div class="ans"><p>[ SET YOUR RETURN POLICY — window in days, condition required, who pays return shipping, and whether numbered-run pieces are final sale. ]</p>
+          <p>To start a return or report a problem, use the <a href="#support">contact form</a>.</p></div>
       </details>
       <details>
         <summary>Do you ship internationally?</summary>
@@ -645,7 +738,7 @@
       </details>
       <details>
         <summary>Do you sell wholesale?</summary>
-        <div class="ans"><p>Yes, to a limited number of stockists. Contact us for the line sheet and terms.</p></div>
+        <div class="ans"><p>Yes, to a limited number of stockists. Use the <a href="#support">contact form</a> and choose &ldquo;Wholesale enquiry&rdquo;, or write to wholesale@selfmadelegendsz.com for the line sheet and terms.</p></div>
       </details>
       <details>
         <summary>How do I become an ambassador?</summary>
@@ -677,6 +770,7 @@
 
       <div class="foot-col">
         <h4>Contact</h4>
+        <a href="#support">Order help &amp; complaints</a>
         <a href="mailto:info@selfmadelegendsz.com">info@selfmadelegendsz.com</a>
         <a href="mailto:wholesale@selfmadelegendsz.com">wholesale@selfmadelegendsz.com</a>
         <a href="mailto:press@selfmadelegendsz.com">press@selfmadelegendsz.com</a>
