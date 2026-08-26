@@ -153,6 +153,81 @@
     <h3>👥 All Users</h3>
     <div id="all-users-table">Loading…</div>
   </div>
+
+  <!-- ══════════════ MARKETING ENGINE ══════════════ -->
+  <h2 style="color:#ff6b6b; margin:34px 0 18px;">📣 Marketing Engine</h2>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-value" id="mkt-content" style="color:#ffd700;">—</div>
+      <div class="stat-label">Content Pieces</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="mkt-cities" style="color:#00d4ff;">—</div>
+      <div class="stat-label">Cities Covered</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="mkt-states" style="color:#00ff88;">—</div>
+      <div class="stat-label">States Covered</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="mkt-reach" style="color:#ff6b6b;">—</div>
+      <div class="stat-label">Est. Reach</div>
+    </div>
+  </div>
+
+  <!-- City campaign -->
+  <div class="section">
+    <h3>🏙️ Generate City Campaign</h3>
+    <p style="color:#888; font-size:0.85em; margin-bottom:14px;">
+      Ready-to-post copy for one city, tailored per platform. Generate, copy, paste.
+    </p>
+    <div class="action-bar">
+      <input id="mkt-city" type="text" placeholder="City (e.g. St. Louis)"
+             style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:9px 13px; color:#e0e0e0; font-size:0.9em; flex:1; min-width:160px; outline:none;">
+      <input id="mkt-state" type="text" placeholder="State (e.g. MO)"
+             style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:9px 13px; color:#e0e0e0; font-size:0.9em; flex:1; min-width:120px; outline:none;">
+      <button class="btn" onclick="mktCityCampaign()">⚡ Generate</button>
+    </div>
+    <div id="mkt-city-out"></div>
+  </div>
+
+  <!-- National campaign -->
+  <div class="section">
+    <h3>🇺🇸 National Campaign</h3>
+    <p style="color:#888; font-size:0.85em; margin-bottom:14px;">
+      One campaign across all platforms, not tied to a city.
+    </p>
+    <div class="action-bar">
+      <button class="btn" onclick="mktNationalCampaign()">🚀 Generate National Campaign</button>
+      <button class="btn btn-secondary" onclick="mktPostingGuide()">📅 Best Times to Post</button>
+    </div>
+    <div id="mkt-national-out"></div>
+    <div id="mkt-guide-out"></div>
+  </div>
+
+  <!-- Influencer outreach -->
+  <div class="section">
+    <h3>🤝 Influencer Outreach</h3>
+    <p style="color:#888; font-size:0.85em; margin-bottom:14px;">
+      A personalised DM you can send as-is.
+    </p>
+    <div class="action-bar">
+      <input id="mkt-inf-name" type="text" placeholder="Name or @handle"
+             style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:9px 13px; color:#e0e0e0; font-size:0.9em; flex:1; min-width:150px; outline:none;">
+      <select id="mkt-inf-platform"
+              style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:9px 13px; color:#e0e0e0; font-size:0.9em; min-width:130px; outline:none;">
+        <option value="instagram">Instagram</option>
+        <option value="tiktok">TikTok</option>
+        <option value="twitter">Twitter / X</option>
+        <option value="youtube">YouTube</option>
+      </select>
+      <input id="mkt-inf-followers" type="number" placeholder="Followers" min="0"
+             style="background:#0d1b2a; border:1px solid #333; border-radius:6px; padding:9px 13px; color:#e0e0e0; font-size:0.9em; min-width:130px; outline:none;">
+      <button class="btn" onclick="mktInfluencer()">✉️ Draft Message</button>
+    </div>
+    <div id="mkt-inf-out"></div>
+  </div>
 </div>
 
 <script>
@@ -177,6 +252,7 @@
         document.getElementById('admin-panel').style.display = 'block';
         document.getElementById('header-user').textContent = 'Admin authenticated';
         applyStats(data);
+        mktStats();
       })
       .catch(() => { document.getElementById('login-error').style.display = 'block'; });
   }
@@ -307,6 +383,180 @@
 
   function escHtml(str) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ══════════════════ MARKETING ENGINE ══════════════════
+  // These endpoints are admin-only. They used to sit on a player-visible
+  // dashboard tab with no authentication, which handed every player the
+  // company's own campaign copy and posting playbook.
+
+  function mktFetch(url, options) {
+    const opts = options || {};
+    opts.headers = Object.assign({}, opts.headers, { 'x-admin-key': adminKey });
+    return fetch(url, opts).then(r => {
+      if (r.status === 401 || r.status === 503) {
+        throw new Error('Admin key rejected. Reload and unlock again.');
+      }
+      return r.json();
+    });
+  }
+
+  function mktError(targetId, err) {
+    document.getElementById(targetId).innerHTML =
+      '<div style="color:#ff6b6b; font-size:0.88em; padding:10px 0;">❌ ' +
+      escHtml(err.message || 'Request failed') + '</div>';
+  }
+
+  function mktStats() {
+    mktFetch('/api/marketing/stats')
+      .then(d => {
+        document.getElementById('mkt-content').textContent = d.totalContentPieces ?? '—';
+        document.getElementById('mkt-cities').textContent  = d.citiesCovered ?? '—';
+        document.getElementById('mkt-states').textContent  = d.statesCovered ?? '—';
+        const reach = d.estimatedTotalReach;
+        document.getElementById('mkt-reach').textContent =
+          typeof reach === 'number' ? reach.toLocaleString() : '—';
+      })
+      .catch(() => { /* panel still usable without the header numbers */ });
+  }
+
+  // Renders one block of copy with a working Copy button.
+  function mktBlock(title, body) {
+    const id = 'mkt-copy-' + Math.random().toString(36).slice(2, 9);
+    return '' +
+      '<div style="background:#0d1b2a; border:1px solid #2a2f3e; border-radius:8px; padding:14px; margin-bottom:12px;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">' +
+          '<strong style="color:#00d4ff; font-size:0.9em; text-transform:capitalize;">' + escHtml(title) + '</strong>' +
+          '<button class="btn btn-secondary" style="padding:5px 12px; font-size:0.78em;" ' +
+                  'onclick="mktCopy(\'' + id + '\', this)">📋 Copy</button>' +
+        '</div>' +
+        '<pre id="' + id + '" style="white-space:pre-wrap; word-wrap:break-word; color:#ccc; ' +
+             'font-size:0.85em; line-height:1.55; margin:0; font-family:inherit;">' +
+          escHtml(body) +
+        '</pre>' +
+      '</div>';
+  }
+
+  function mktCopy(id, btn) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const done = () => {
+      const original = btn.textContent;
+      btn.textContent = '✅ Copied';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    };
+    // navigator.clipboard needs HTTPS or localhost; fall back to selection
+    // so the button still works when the panel is opened over plain HTTP.
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(el.textContent).then(done).catch(() => mktCopyFallback(el, done));
+    } else {
+      mktCopyFallback(el, done);
+    }
+  }
+
+  function mktCopyFallback(el, done) {
+    const ta = document.createElement('textarea');
+    ta.value = el.textContent;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) { /* nothing else to try */ }
+    document.body.removeChild(ta);
+  }
+
+  function mktRenderPlatforms(container, platforms) {
+    if (!platforms || !Object.keys(platforms).length) {
+      container.innerHTML = '<div style="color:#888; font-size:0.88em;">No content returned.</div>';
+      return;
+    }
+    let html = '';
+    for (const name of Object.keys(platforms)) {
+      const p = platforms[name];
+      const text = typeof p === 'string' ? p : (p.content || JSON.stringify(p, null, 2));
+      html += mktBlock(name, text);
+    }
+    container.innerHTML = html;
+  }
+
+  function mktCityCampaign() {
+    const city  = document.getElementById('mkt-city').value.trim();
+    const state = document.getElementById('mkt-state').value.trim();
+    const out   = document.getElementById('mkt-city-out');
+
+    if (!city) {
+      out.innerHTML = '<div style="color:#ff6b6b; font-size:0.88em;">Enter a city first.</div>';
+      return;
+    }
+
+    out.innerHTML = '<div style="color:#888; font-size:0.88em;">Generating…</div>';
+    mktFetch('/api/marketing/campaign/city', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ city: city, state: state || 'US',
+                             platforms: ['instagram','tiktok','twitter','facebook'] })
+    })
+      .then(d => mktRenderPlatforms(out, d.campaign && d.campaign.platforms))
+      .catch(e => mktError('mkt-city-out', e));
+  }
+
+  function mktNationalCampaign() {
+    const out = document.getElementById('mkt-national-out');
+    out.innerHTML = '<div style="color:#888; font-size:0.88em;">Generating…</div>';
+    mktFetch('/api/marketing/campaign/national', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ platforms: ['instagram','tiktok','twitter','facebook'] })
+    })
+      .then(d => mktRenderPlatforms(out, d.campaign && d.campaign.platforms))
+      .catch(e => mktError('mkt-national-out', e));
+  }
+
+  function mktPostingGuide() {
+    const out = document.getElementById('mkt-guide-out');
+    out.innerHTML = '<div style="color:#888; font-size:0.88em;">Loading…</div>';
+    mktFetch('/api/marketing/guide')
+      .then(d => {
+        const guide = d.guide || [];
+        if (!guide.length) { out.innerHTML = ''; return; }
+        let html = '<table><thead><tr><th>Platform</th><th>Best Times</th>' +
+                   '<th>Limit</th><th>Tips</th></tr></thead><tbody>';
+        guide.forEach(g => {
+          html += '<tr>' +
+            '<td style="text-transform:capitalize; color:#00d4ff;">' + escHtml(g.platform || '') + '</td>' +
+            '<td>' + escHtml(g.bestTimes || '—') + '</td>' +
+            '<td>' + escHtml(String(g.characterLimit || '—')) + '</td>' +
+            '<td style="color:#999;">' + escHtml((g.tips || []).join(' · ')) + '</td>' +
+          '</tr>';
+        });
+        out.innerHTML = html + '</tbody></table>';
+      })
+      .catch(e => mktError('mkt-guide-out', e));
+  }
+
+  function mktInfluencer() {
+    const name      = document.getElementById('mkt-inf-name').value.trim();
+    const platform  = document.getElementById('mkt-inf-platform').value;
+    const followers = parseInt(document.getElementById('mkt-inf-followers').value, 10) || 0;
+    const out       = document.getElementById('mkt-inf-out');
+
+    if (!name) {
+      out.innerHTML = '<div style="color:#ff6b6b; font-size:0.88em;">Enter a name or handle first.</div>';
+      return;
+    }
+
+    out.innerHTML = '<div style="color:#888; font-size:0.88em;">Drafting…</div>';
+    mktFetch('/api/marketing/influencer-outreach', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, platform: platform, followers: followers })
+    })
+      .then(d => {
+        const o = d.outreach || d;
+        const msg = o.message || o.dm || JSON.stringify(o, null, 2);
+        out.innerHTML = mktBlock(platform + ' — ' + name, msg);
+      })
+      .catch(e => mktError('mkt-inf-out', e));
   }
 
   // Auto-focus key input on load

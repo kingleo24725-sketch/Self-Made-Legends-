@@ -118,7 +118,15 @@ const stocks = (process.env.STOCKS || "AAPL,MSFT,GOOGL").split(",");
 const cryptos = ["bitcoin", "ethereum", "cardano", "solana", "ripple"];
 const nfts = ["pudgy-penguins", "boredapeyachtclub", "azuki"];
 
-let tradingActive = false;
+// The market analysis engine drives the AI coach's signals and the house
+// portfolio. It used to be hardcoded off with no way to enable it except a
+// manual, session-authenticated toggle that reset on every restart — so in
+// production it never ran, and /api/analysis always returned {}.
+//
+// It is now on by default and switched off only by an explicit
+// TRADING_ENABLED=false. All trading here is simulated; nothing touches a
+// real broker or real money.
+let tradingActive = process.env.TRADING_ENABLED !== "false";
 let analysisResults = new Map();
 
 const authenticateUser = (req, res, next) => {
@@ -2896,12 +2904,12 @@ app.get("/api/challenge/active", authenticateUser, async (req, res) => {
 // ===== MARKETING AGENT ENDPOINTS =====
 
 // Stats overview
-app.get("/api/marketing/stats", (req, res) => {
+app.get("/api/marketing/stats", requireAdmin, (req, res) => {
   res.json(marketingAgent.getStats());
 });
 
 // Generate a campaign for a specific city
-app.post("/api/marketing/campaign/city", (req, res) => {
+app.post("/api/marketing/campaign/city", requireAdmin, (req, res) => {
   const { city, state, platforms } = req.body;
   if (!city) return res.status(400).json({ error: "city is required" });
   const campaign = marketingAgent.generateCampaign(city, state || "US", platforms);
@@ -2909,32 +2917,32 @@ app.post("/api/marketing/campaign/city", (req, res) => {
 });
 
 // Generate a full national campaign across all major US cities
-app.post("/api/marketing/campaign/national", (req, res) => {
+app.post("/api/marketing/campaign/national", requireAdmin, (req, res) => {
   const { platforms } = req.body;
   const campaign = marketingAgent.generateNationalCampaign(platforms);
   res.json({ success: true, campaign });
 });
 
 // Get pre-built content library (filter by platform or region)
-app.get("/api/marketing/content", (req, res) => {
+app.get("/api/marketing/content", requireAdmin, (req, res) => {
   const { platform, region } = req.query;
   const content = marketingAgent.getContentLibrary(platform, region);
   res.json({ success: true, count: content.length, content });
 });
 
 // Get email campaigns for all 50 states
-app.get("/api/marketing/emails/all-states", (req, res) => {
+app.get("/api/marketing/emails/all-states", requireAdmin, (req, res) => {
   const emails = marketingAgent.generateEmailCampaignForAllStates();
   res.json({ success: true, count: emails.length, emails });
 });
 
 // Get platform-specific posting guide
-app.get("/api/marketing/guide", (req, res) => {
+app.get("/api/marketing/guide", requireAdmin, (req, res) => {
   res.json({ success: true, guide: marketingAgent.getPostingGuide() });
 });
 
 // Generate influencer outreach message
-app.post("/api/marketing/influencer-outreach", (req, res) => {
+app.post("/api/marketing/influencer-outreach", requireAdmin, (req, res) => {
   const { influencerName, platform, followerCount } = req.body;
   if (!influencerName || !platform) {
     return res.status(400).json({ error: "influencerName and platform are required" });
@@ -2948,7 +2956,7 @@ app.post("/api/marketing/influencer-outreach", (req, res) => {
 });
 
 // List all generated campaigns
-app.get("/api/marketing/campaigns", (req, res) => {
+app.get("/api/marketing/campaigns", requireAdmin, (req, res) => {
   const campaigns = marketingAgent.getCampaigns();
   res.json({ success: true, count: campaigns.length, campaigns });
 });
@@ -4367,58 +4375,100 @@ app.get("/api/creator/earnings/:period", (req, res) => {
   res.json(earnings);
 });
 
+// Each asset class is isolated. A stock feed that is rate-limited or down
+// must not stop crypto and NFT signals from being produced — before this,
+// one rejected fetch aborted the entire cycle and the coach went silent
+// across the board.
 async function runAnalysis() {
   if (!tradingActive) return;
 
-  const stocksData = await dataFetcher.fetchMultipleStocks(stocks);
   const currentPrices = {};
 
-  for (const symbol of stocks) {
-    if (stocksData[symbol].error) continue;
+  // ── Stocks ──────────────────────────────────────────────────────────
+  try {
+    const stocksData = await dataFetcher.fetchMultipleStocks(stocks);
 
-    const data = stocksData[symbol];
-    currentPrices[symbol] = data.currentPrice;
+    for (const symbol of stocks) {
+      const data = stocksData && stocksData[symbol];
+      if (!data || data.error) continue;
 
-    const signal = await engine.analyzeStock(symbol, data.priceData, data.volumeData);
-    analysisResults.set(symbol, { signal, price: data.currentPrice, type: "stock" });
+      try {
+        currentPrices[symbol] = data.currentPrice;
 
-    const execution = engine.executeSignal(signal, symbol, data.currentPrice, "stock");
-    if (execution.executed) {
-      io.emit("trade", { ...execution.trade, assetType: "stock" });
+        const signal = await engine.analyzeStock(symbol, data.priceData, data.volumeData);
+        analysisResults.set(symbol, { signal, price: data.currentPrice, type: "stock" });
+
+        const execution = engine.executeSignal(signal, symbol, data.currentPrice, "stock");
+        if (execution.executed) {
+          io.emit("trade", { ...execution.trade, assetType: "stock" });
+        }
+      } catch (err) {
+        console.error(`[analysis] stock ${symbol} failed:`, err.message);
+      }
     }
+  } catch (err) {
+    console.error("[analysis] stock feed unavailable:", err.message);
   }
 
-  const cryptosData = await cryptoFetcher.fetchMultipleCryptos(cryptos);
+  // ── Crypto ──────────────────────────────────────────────────────────
+  try {
+    const cryptosData = await cryptoFetcher.fetchMultipleCryptos(cryptos);
 
-  for (const cryptoId of cryptos) {
-    if (cryptosData[cryptoId].error) continue;
+    for (const cryptoId of cryptos) {
+      const data = cryptosData && cryptosData[cryptoId];
+      if (!data || data.error) continue;
 
-    const data = cryptosData[cryptoId];
-    currentPrices[data.symbol] = data.currentPrice;
+      try {
+        currentPrices[data.symbol] = data.currentPrice;
 
-    const signal = await engine.analyzeCrypto(cryptoId, data);
-    analysisResults.set(data.symbol, { signal, price: data.currentPrice, type: "crypto" });
+        const signal = await engine.analyzeCrypto(cryptoId, data);
+        analysisResults.set(data.symbol, { signal, price: data.currentPrice, type: "crypto" });
 
-    const execution = engine.executeSignal(signal, cryptoId, data.currentPrice, "crypto");
-    if (execution.executed) {
-      io.emit("trade", { ...execution.trade, assetType: "crypto" });
+        const execution = engine.executeSignal(signal, cryptoId, data.currentPrice, "crypto");
+        if (execution.executed) {
+          io.emit("trade", { ...execution.trade, assetType: "crypto" });
+        }
+      } catch (err) {
+        console.error(`[analysis] crypto ${cryptoId} failed:`, err.message);
+      }
     }
+  } catch (err) {
+    console.error("[analysis] crypto feed unavailable:", err.message);
   }
 
-  const nftsData = await Promise.all(nfts.map((nft) => nftFetcher.fetchCollectionData(nft)));
+  // ── NFTs ────────────────────────────────────────────────────────────
+  try {
+    // allSettled, not all: one rejected collection must not discard the rest.
+    const settled = await Promise.allSettled(
+      nfts.map((nft) => nftFetcher.fetchCollectionData(nft))
+    );
 
-  for (const data of nftsData) {
-    if (data.error) continue;
+    for (const outcome of settled) {
+      if (outcome.status !== "fulfilled") continue;
+      const data = outcome.value;
+      if (!data || data.error) continue;
 
-    const signal = await engine.analyzeNFT(data.slug, data);
-    analysisResults.set(data.slug, { signal, price: data.floorPrice, type: "nft" });
+      try {
+        const signal = await engine.analyzeNFT(data.slug, data);
+        analysisResults.set(data.slug, { signal, price: data.floorPrice, type: "nft" });
+      } catch (err) {
+        console.error(`[analysis] nft ${data.slug} failed:`, err.message);
+      }
+    }
+  } catch (err) {
+    console.error("[analysis] nft feed unavailable:", err.message);
   }
 
-  const status = engine.getPortfolioStatus(currentPrices);
-  io.emit("update", {
-    analysis: Object.fromEntries(analysisResults),
-    portfolio: status,
-  });
+  // ── Broadcast ───────────────────────────────────────────────────────
+  try {
+    const status = engine.getPortfolioStatus(currentPrices);
+    io.emit("update", {
+      analysis: Object.fromEntries(analysisResults),
+      portfolio: status,
+    });
+  } catch (err) {
+    console.error("[analysis] broadcast failed:", err.message);
+  }
 }
 
 // ==================== SECURITY ENDPOINTS ====================
@@ -6463,6 +6513,17 @@ async function startServer() {
   server.listen(PORT, () => {
     console.log(`🚀 Multi-Asset Trading Bot Server running on http://localhost:${PORT}`);
     console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard.html`);
+
+    if (tradingActive) {
+      console.log("📈 Market analysis engine: ON (technical, momentum, crypto, NFT)");
+      // Run one cycle straight away so the coach has signals immediately
+      // instead of the dashboard sitting empty for the first minute.
+      runAnalysis().catch((err) =>
+        console.error("[analysis] first run failed:", err.message)
+      );
+    } else {
+      console.log("📈 Market analysis engine: OFF (TRADING_ENABLED=false)");
+    }
   });
 }
 
