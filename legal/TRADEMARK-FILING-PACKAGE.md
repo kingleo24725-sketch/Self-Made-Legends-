@@ -91,6 +91,26 @@ real downloadable app, you add Class 009 then, as a new application.
 lock in today's priority date. Only do it if you mean it — an intent-to-use
 filing requires a *bona fide* intention, and you have three years to prove it.
 
+### Class 025 does NOT cover pet products
+
+This surprises people and it is worth writing down. **Class 025 is human
+clothing only.** If you ever sell a dog hoodie, a bandana, a collar or a bowl
+with SELF-MADE LEGENDS on it, none of it is covered by the Class 025
+registration:
+
+| Pet product | Class |
+|---|---|
+| Pet clothing, collars, leashes, harnesses, bandanas | **018** |
+| Pet beds and pet furniture | **020** |
+| Pet food and water bowls | **021** |
+| Pet toys | **028** |
+
+Each is another $350. **Do not add any of them to this filing** — you have not
+sold a human hoodie yet, and an intent-to-use class you fail to launch within
+three years is money burned. File Class 018 when a pet line actually exists.
+The only thing you give up by waiting is the priority date on goods you were
+not selling anyway.
+
 ---
 
 ## Exact answers for every field
