@@ -121,7 +121,7 @@ const CHECKS = {
     const MARKS = /\b(nike|swoosh|jumpman|air jordan|adidas|three stripes|trefoil|yeezy|puma|reebok|new balance|converse|chuck taylor|vans|supreme|balenciaga|gucci|louis vuitton|dior|prada|versace|burberry)\b/i;
 
     // Protected silhouettes, including the coy ways of naming one.
-    const SHAPES = /\b(air force ?1|\baf1\b|jordan ?1|dunk[- ]?(low|high|style)|stan smith|superstar|gazelle|samba|air max|griffey|blazer|old skool)\b/i;
+    const SHAPES = /\b(air force ?1|\baf1\b|jordan ?1|dunk[- ]?(low|high|style)|stan smith|superstar|gazelle|samba|air max|griffey|blazer|old skool|cortez|daybreak|waffle ?(trainer|racer)|forum ?(low|high)|campus ?00|new balance ?(550|574|990|991|993)|saucony ?jazz)\b/i;
 
     // Nike moulds AIR into the Air Force 1 midsole. It reads as a material
     // note and is in fact somebody's trademark on somebody's product.
