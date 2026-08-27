@@ -156,6 +156,7 @@ All in `index.html`. Search for what you want and change the text.
 | Contact form topics | `<section id="support"` |
 | Shipping rates and returns | `shipping-returns.html` |
 | Products, prices, Stripe links | `assets/js/shop.js` |
+| The pet capsule | `<section id="shop"` &mdash; the *Legends in Training* block |
 
 **No blanks are left in the FAQ.** Shipping, returns, and international are
 all written and live.
@@ -226,6 +227,25 @@ still gets captured.
 Only genuine `stripe.com` links become Buy buttons. Paste something else by
 mistake and it falls back to Notify Me rather than sending a paying customer
 to the wrong place.
+
+### The pet capsule — two things to know before you switch it on
+
+*Legends in Training* lives in `shop.js` under `pets:`. It works exactly like
+the main shop — paste a Payment Link and it goes live.
+
+**1. It is printed, not embroidered.** There is no metallic thread on a
+bandana. The block on the page says so out loud, which is deliberate: the rest
+of the collection is embroidered and a customer who assumes the same of the pet
+line will be disappointed. Don't quietly delete that sentence.
+
+**2. Your trademark filing does not cover it.** Class 025 is human clothing
+only. Pet clothing, collars and leads are **Class 018**; the bowl is **Class
+021**. See `legal/TRADEMARK-FILING-PACKAGE.md`. Selling these is not risky —
+it just means the registration you paid for doesn't reach them until you file
+that class, so don't count on it for a takedown.
+
+To drop the capsule entirely: delete the *Legends in Training* block from
+`index.html`. The main shop keeps working on its own.
 
 ### Sizes
 
