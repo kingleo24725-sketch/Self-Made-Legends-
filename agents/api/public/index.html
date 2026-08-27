@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SML — Upload a Design</title>
+<style>
+  :root{
+    --void:#06060A; --pitch:#0B0C11; --raise:#14151D; --card:#181A22;
+    --rule:#2A2C36; --rule-lt:#3A3D49;
+    --gold:#C9A227; --gold-lt:#F2DFA0; --gold-ash:#6E5A22;
+    --ivory:#EFEAE0; --ash:#9A9484; --ash-dim:#6B665B;
+    --ok:#5FBE8C; --warn:#E0B463; --err:#E08163;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--void);color:var(--ivory);
+    font:15px/1.65 ui-sans-serif,system-ui,-apple-system,sans-serif;font-weight:300;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+  .wrap{max-width:46rem;margin:0 auto;padding:3rem 1.5rem 6rem}
+  h1{
+    font-family:Georgia,"Times New Roman",serif;font-weight:400;
+    font-size:1.9rem;margin:0 0 .5rem;letter-spacing:-.01em;
+    background:linear-gradient(100deg,#8A6B14,#C9A227 25%,#F2DFA0 45%,#C9A227 65%,#8A6B14);
+    -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+  }
+  .sub{color:var(--ash);font-size:.95rem;margin:0 0 2.5rem}
+
+  .lbl{
+    display:block;font-family:ui-monospace,monospace;font-size:.62rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--gold-ash);margin:0 0 .5rem;
+  }
+  .field{margin-bottom:1.4rem}
+  input[type=text],input[type=password],textarea,select{
+    width:100%;background:var(--pitch);color:var(--ivory);border:1px solid var(--rule);
+    padding:.75rem .9rem;font:inherit;font-size:.92rem;border-radius:2px;
+  }
+  input:focus,textarea:focus,select:focus{outline:1px solid var(--gold-ash);outline-offset:1px;border-color:var(--rule-lt)}
+  textarea{resize:vertical;min-height:5rem}
+  .hint{font-size:.78rem;color:var(--ash-dim);margin-top:.4rem;line-height:1.5}
+
+  /* ── the key gate ── */
+  .gate{border:1px solid var(--rule);background:var(--pitch);padding:1.6rem;margin-bottom:2.5rem;position:relative}
+  .gate::before{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--gold)}
+  .gate h2{font-family:Georgia,serif;font-weight:400;font-size:1.05rem;margin:0 0 .6rem;color:var(--gold-lt)}
+  .gate p{margin:0 0 1rem;font-size:.86rem;color:var(--ash)}
+  .gate.ok::before{background:var(--ok)}
+  .gate.ok h2{color:var(--ok)}
+  .row{display:flex;gap:.6rem;flex-wrap:wrap}
+  .row input{flex:1;min-width:14rem}
+
+  /* ── drop zones ── */
+  .drop{
+    border:1px dashed var(--rule-lt);background:var(--pitch);padding:1.5rem;
+    text-align:center;cursor:pointer;border-radius:2px;transition:.18s;
+  }
+  .drop:hover,.drop.over{border-color:var(--gold-ash);background:var(--raise)}
+  .drop p{margin:0;font-size:.86rem;color:var(--ash-dim)}
+  .drop input{display:none}
+  .files{list-style:none;margin:.7rem 0 0;padding:0;display:flex;flex-direction:column;gap:.35rem}
+  .files li{
+    display:flex;align-items:center;gap:.7rem;font-size:.8rem;color:var(--ash);
+    padding:.45rem .6rem;background:var(--raise);border-radius:2px;
+  }
+  .files .sz{margin-left:auto;font-family:ui-monospace,monospace;font-size:.72rem;color:var(--ash-dim);font-variant-numeric:tabular-nums}
+  .files li.bad{color:var(--err);background:rgba(224,129,99,.07)}
+  .files .x{cursor:pointer;color:var(--ash-dim);font-family:ui-monospace,monospace}
+  .files .x:hover{color:var(--err)}
+
+  button{
+    font-family:ui-monospace,monospace;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+    padding:.8rem 1.6rem;border-radius:2px;cursor:pointer;border:1px solid var(--rule-lt);
+    background:transparent;color:var(--ash);transition:.18s;
+  }
+  button:hover:not(:disabled){border-color:var(--gold-ash);color:var(--gold-lt)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .primary{
+    background:linear-gradient(100deg,#8A6B14,#C9A227 40%,#F2DFA0 60%,#C9A227);
+    color:var(--void);border-color:transparent;font-weight:500;
+  }
+  .primary:hover:not(:disabled){background:#F2DFA0;color:var(--void)}
+
+  /* ── progress ── */
+  .bar{height:2px;background:var(--rule);margin-top:1.2rem;overflow:hidden;display:none}
+  .bar.on{display:block}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8A6B14,#C9A227,#F2DFA0);transition:width .18s}
+
+  /* ── result ── */
+  .msg{margin-top:1.5rem;padding:1rem 1.15rem;border-left:2px solid;font-size:.88rem;display:none}
+  .msg.on{display:block}
+  .msg.good{border-color:var(--ok);background:rgba(95,190,140,.06)}
+  .msg.bad{border-color:var(--err);background:rgba(224,129,99,.06)}
+  .msg h3{margin:0 0 .5rem;font:400 .95rem/1.4 Georgia,serif}
+  .msg.good h3{color:var(--ok)} .msg.bad h3{color:var(--err)}
+  .msg p{margin:0 0 .4rem;color:var(--ash)}
+  .msg code{font-family:ui-monospace,monospace;font-size:.8rem;color:var(--gold-lt);background:var(--raise);padding:.1em .4em;border-radius:2px}
+  .msg ul{margin:.5rem 0 0;padding-left:1.1rem;color:var(--ash);font-size:.82rem}
+
+  hr{border:0;height:1px;background:var(--rule);margin:2.5rem 0}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Upload a Design</h1>
+  <p class="sub">Images and a tech pack, filed against a SKU. This is the same endpoint the agents post to.</p>
+
+  <!-- ────────────────────────────────────────────────────────────────────
+       THE KEY GATE.
+
+       The API key is NOT in this file, and it must never be. Anything a
+       browser page contains, anyone who loads the page can read — "view
+       source" is all it takes. A key written into this page would be a key
+       given to every visitor.
+
+       So you paste it once per session. It is held in sessionStorage,
+       which clears when you close the tab and is never sent anywhere
+       except as a header on your own uploads.
+       ──────────────────────────────────────────────────────────────── -->
+  <div class="gate" id="gate">
+    <h2 id="gateTitle">Unlock</h2>
+    <p id="gateText">
+      Paste your <code class="mono">SML_API_KEY</code>. It is kept for this browser tab only
+      and cleared when you close it. It is never written into this page &mdash; anything in the
+      page source is readable by anyone who opens it.
+    </p>
+    <div class="row" id="gateRow">
+      <input type="password" id="key" placeholder="SML_API_KEY" autocomplete="off" spellcheck="false">
+      <button type="button" id="unlock">Unlock</button>
+    </div>
+    <div class="row" id="lockedRow" style="display:none">
+      <button type="button" id="lock">Forget the key</button>
+    </div>
+  </div>
+
+  <form id="form">
+    <div class="field">
+      <label class="lbl" for="sku">SKU</label>
+      <input type="text" id="sku" name="sku" placeholder="SML-AP-001" required
+             pattern="[A-Za-z0-9._-]{3,40}" maxlength="40">
+      <p class="hint">Letters, digits, dot, dash, underscore. Uploading an existing SKU updates it &mdash; it does not replace it, so anything you leave out is kept.</p>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="title">Title</label>
+      <input type="text" id="title" name="title" placeholder="Regent Embroidered Hoodie" required maxlength="200">
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="category">Category</label>
+      <select id="category" name="category">
+        <option value="">—</option>
+        <option>apparel</option><option>footwear</option><option>heels</option>
+        <option>jewellery</option><option>underwear</option><option>hats</option><option>accessories</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label class="lbl" for="description">Description</label>
+      <textarea id="description" name="description" placeholder="Heavyweight fleece with the house crest embroidered in metallic gold."></textarea>
+    </div>
+
+    <hr>
+
+    <div class="field">
+      <label class="lbl">Images &mdash; up to 10</label>
+      <div class="drop" id="imgDrop">
+        <input type="file" id="images" multiple accept="image/png,image/jpeg,image/webp">
+        <p>Drop images here, or click to choose</p>
+      </div>
+      <ul class="files" id="imgList"></ul>
+      <p class="hint">PNG, JPEG or WebP. 15MB each.</p>
+    </div>
+
+    <div class="field">
+      <label class="lbl">Tech pack &mdash; one PDF</label>
+      <div class="drop" id="tpDrop">
+        <input type="file" id="techpack" accept="application/pdf">
+        <p>Drop a PDF here, or click to choose</p>
+      </div>
+      <ul class="files" id="tpList"></ul>
+    </div>
+
+    <button type="submit" class="primary" id="submit" disabled>Upload Design</button>
+    <div class="bar" id="bar"><i></i></div>
+    <div class="msg" id="msg"></div>
+  </form>
+
+</div>
+
+<script>
+'use strict';
+
+/* The server's own limits, mirrored here so a 15MB file is refused before
+   you sit through the upload rather than after. The server enforces them
+   regardless — a client-side check is a courtesy, never a control. */
+const MAX_BYTES = 15 * 1024 * 1024;
+const MAX_IMAGES = 10;
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+
+const KEY_STORE = 'sml_api_key';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const kb = (n) => n < 1024 * 1024 ? (n / 1024).toFixed(0) + ' KB' : (n / 1048576).toFixed(1) + ' MB';
+
+/* sessionStorage, not localStorage: a credential should not outlive the
+   tab. Every access is wrapped — a private window or blocked site data
+   throws on read, and the page must still work. */
+const store = {
+  get() { try { return sessionStorage.getItem(KEY_STORE); } catch { return null; } },
+  set(v) { try { sessionStorage.setItem(KEY_STORE, v); } catch { /* held in memory only */ } },
+  clear() { try { sessionStorage.removeItem(KEY_STORE); } catch {} },
+};
+
+let apiKey = store.get() || '';
+let images = [];
+let techpack = null;
+
+/* ── the gate ─────────────────────────────────────────────────────────── */
+
+function paintGate() {
+  const on = Boolean(apiKey);
+  $('gate').classList.toggle('ok', on);
+  $('gateTitle').textContent = on ? 'Unlocked' : 'Unlock';
+  $('gateRow').style.display = on ? 'none' : 'flex';
+  $('lockedRow').style.display = on ? 'flex' : 'none';
+  if (on) {
+    $('gateText').innerHTML = 'Held for this tab only. Close the tab and it is gone.';
+  }
+  $('submit').disabled = !on;
+}
+
+$('unlock').addEventListener('click', () => {
+  const v = $('key').value.trim();
+  if (v.length < 32) {
+    return show('bad', 'That key is too short', '<p>An <code>SML_API_KEY</code> is 32 characters or more. Check you copied all of it.</p>');
+  }
+  apiKey = v;
+  store.set(v);
+  $('key').value = '';
+  paintGate();
+  hide();
+});
+
+$('key').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('unlock').click(); } });
+
+$('lock').addEventListener('click', () => {
+  apiKey = '';
+  store.clear();
+  paintGate();
+  show('good', 'Key forgotten', '<p>Nothing is stored in this browser any more.</p>');
+});
+
+/* ── file pickers ─────────────────────────────────────────────────────── */
+
+function wireDrop(dropId, inputId, onFiles) {
+  const drop = $(dropId), input = $(inputId);
+  drop.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => { onFiles([...input.files]); input.value = ''; });
+  ['dragenter', 'dragover'].forEach((e) =>
+    drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((e) =>
+    drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (ev) => onFiles([...(ev.dataTransfer?.files || [])]));
+}
+
+function problemWith(file, allowed) {
+  if (!allowed.includes(file.type)) return `not a ${allowed === IMAGE_TYPES ? 'PNG, JPEG or WebP' : 'PDF'}`;
+  if (file.size > MAX_BYTES) return `over 15MB`;
+  return null;
+}
+
+function paintList(listId, files, allowed, onRemove) {
+  $(listId).innerHTML = files.map((f, i) => {
+    const bad = problemWith(f, allowed);
+    return `<li class="${bad ? 'bad' : ''}">
+      <span>${esc(f.name)}${bad ? ` — ${esc(bad)}` : ''}</span>
+      <span class="sz">${kb(f.size)}</span>
+      <span class="x" data-i="${i}" title="Remove">×</span>
+    </li>`;
+  }).join('');
+  $(listId).querySelectorAll('.x').forEach((x) =>
+    x.addEventListener('click', () => onRemove(Number(x.dataset.i))));
+}
+
+function repaintImages() {
+  paintList('imgList', images, IMAGE_TYPES, (i) => { images.splice(i, 1); repaintImages(); });
+}
+
+wireDrop('imgDrop', 'images', (picked) => {
+  images = [...images, ...picked].slice(0, MAX_IMAGES);
+  repaintImages();
+});
+
+wireDrop('tpDrop', 'techpack', (picked) => {
+  techpack = picked[0] || null;
+  repaintTechpack();
+});
+function repaintTechpack() {
+  paintList('tpList', techpack ? [techpack] : [], ['application/pdf'], () => { techpack = null; repaintTechpack(); });
+}
+
+/* ── submit ───────────────────────────────────────────────────────────── */
+
+$('form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  hide();
+
+  if (!apiKey) return show('bad', 'Locked', '<p>Paste your key above first.</p>');
+
+  const bad = [...images, ...(techpack ? [techpack] : [])]
+    .map((f) => ({ f, why: problemWith(f, f.type === 'application/pdf' ? ['application/pdf'] : IMAGE_TYPES) }))
+    .filter((x) => x.why);
+
+  if (bad.length) {
+    return show('bad', 'Some files cannot be uploaded',
+      '<ul>' + bad.map((x) => `<li>${esc(x.f.name)} — ${esc(x.why)}</li>`).join('') + '</ul>');
+  }
+
+  const fd = new FormData();
+  fd.append('sku', $('sku').value.trim());
+  fd.append('title', $('title').value.trim());
+  if ($('description').value.trim()) fd.append('description', $('description').value.trim());
+  if ($('category').value) fd.append('category', $('category').value);
+  images.forEach((f) => fd.append('images', f));
+  if (techpack) fd.append('techpack', techpack);
+
+  send(fd);
+});
+
+/**
+ * XMLHttpRequest, not fetch.
+ *
+ * fetch cannot report upload progress. On a 15MB tech pack over a poor
+ * connection that means a button that says "Uploading…" for two minutes
+ * with no way to tell whether it is working or hung, which is when people
+ * hit it a second time and upload everything twice.
+ */
+function send(fd) {
+  const btn = $('submit');
+  const bar = $('bar');
+  const fill = bar.querySelector('i');
+
+  btn.disabled = true;
+  btn.textContent = 'Uploading…';
+  bar.classList.add('on');
+  fill.style.width = '0%';
+
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/api/designs');
+  xhr.setRequestHeader('x-sml-key', apiKey);
+
+  xhr.upload.addEventListener('progress', (e) => {
+    if (e.lengthComputable) fill.style.width = Math.round((e.loaded / e.total) * 100) + '%';
+  });
+
+  const done = () => {
+    btn.disabled = false;
+    btn.textContent = 'Upload Design';
+    setTimeout(() => bar.classList.remove('on'), 600);
+  };
+
+  xhr.addEventListener('load', () => {
+    done();
+
+    // The original swallowed every failure into alert('Error'). Read the
+    // body — the server says exactly what was wrong, and that message is
+    // the difference between a fix and an afternoon.
+    let body = null;
+    try { body = JSON.parse(xhr.responseText); } catch { /* not JSON */ }
+
+    if (xhr.status === 401) {
+      apiKey = ''; store.clear(); paintGate();
+      return show('bad', 'That key was rejected', '<p>Check <code>SML_API_KEY</code> in your <code>.env</code> and paste it again.</p>');
+    }
+
+    if (xhr.status < 200 || xhr.status >= 300 || !body?.ok) {
+      const detail = body?.detail || body?.error || xhr.responseText.slice(0, 300) || `HTTP ${xhr.status}`;
+      return show('bad', 'Upload refused', `<p>${esc(detail)}</p>`);
+    }
+
+    const p = body.product;
+    show('good', 'Uploaded', `
+      <p><code>${esc(p.sku)}</code> &mdash; ${esc(p.title)}</p>
+      <p>${p.assets.length} image${p.assets.length === 1 ? '' : 's'}${p.techpack_url ? ', tech pack attached' : ', no tech pack'}</p>
+      ${p.assets.length ? '<ul>' + p.assets.map((a) => `<li><code>${esc(a)}</code></li>`).join('') + '</ul>' : ''}
+      ${!p.techpack_url ? '<p style="color:var(--warn);margin-top:.6rem">No tech pack on this SKU. An order for it can be routed, but a factory has nothing to build from.</p>' : ''}
+    `);
+
+    images = []; techpack = null;
+    repaintImages(); repaintTechpack();
+    $('form').reset();
+  });
+
+  xhr.addEventListener('error', () => {
+    done();
+    show('bad', 'Could not reach the server', '<p>Is it running? <code>npm run agents:api</code></p>');
+  });
+
+  xhr.addEventListener('abort', () => { done(); show('bad', 'Upload cancelled', ''); });
+
+  xhr.send(fd);
+}
+
+function show(kind, title, html) {
+  const m = $('msg');
+  m.className = 'msg on ' + (kind === 'good' ? 'good' : 'bad');
+  m.innerHTML = `<h3>${esc(title)}</h3>${html}`;
+  m.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function hide() { $('msg').className = 'msg'; }
+
+paintGate();
+</script>
+</body>
+</html>

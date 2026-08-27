@@ -182,6 +182,11 @@ function requireKey(req, res, next) {
   next();
 }
 
+/* The upload page. It holds no secret — the operator pastes the key, which
+   is why it can be served at all. A page with a key baked into it would be
+   a key handed to everyone who loads it. */
+app.use('/admin', express.static(path.join(__dirname, 'public'), { index: 'index.html' }));
+
 app.get('/health', async (req, res) => {
   try {
     await get('SELECT 1');
