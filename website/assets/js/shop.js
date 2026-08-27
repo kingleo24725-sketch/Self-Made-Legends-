@@ -78,94 +78,6 @@ window.SML_SHOP = {
       paymentLink: ''
     }
 
-  ],
-
-  /* ── Legends in Training — the pet capsule ──────────────────────────────
-     Same house, same marks, no separate brand. These render into their own
-     block further down the Shop section.
-
-     Read this before you set a Payment Link on any of them:
-
-     These are PRINTED, not embroidered. There is no metallic thread on a
-     pet bandana — the rest of the line is embroidered and this is the one
-     place that is not, which is why the block on the page says so plainly.
-
-     They are also NOT covered by your Class 025 trademark filing. Pet
-     clothing, collars and leashes are Class 018; bowls are Class 021.
-     See legal/TRADEMARK-FILING-PACKAGE.md. Selling these does not put you
-     in danger — it just means the registration you are paying for does not
-     reach them until you file that class.
-     ────────────────────────────────────────────────────────────────────── */
-  pets: [
-
-    {
-      id: 'pet-bandana',
-      name: 'Crown Bandana',
-      sku: 'SML·PT·001',
-      price: 2800,                    // $28.00
-      blurb: 'Black cotton-feel bandana, crown printed in warm gold. Ties over any collar.',
-      details: [
-        'Printed crown, warm gold on black',
-        'Two sizes, ties at the neck',
-        'Machine washable'
-      ],
-      colors: [
-        { name: 'Onyx', hex: '#0B0C11' }
-      ],
-      paymentLink: ''
-    },
-
-    {
-      id: 'pet-collar',
-      name: 'House Collar',
-      sku: 'SML·PT·002',
-      price: 3800,                    // $38.00
-      blurb: 'Webbing collar with the wordmark repeated in gold and a brushed metal buckle.',
-      details: [
-        'Printed wordmark, warm gold on black',
-        'Adjustable, four sizes',
-        'D-ring for tags and lead'
-      ],
-      colors: [
-        { name: 'Onyx', hex: '#0B0C11' }
-      ],
-      paymentLink: ''
-    },
-
-    {
-      id: 'pet-leash',
-      name: 'House Lead',
-      sku: 'SML·PT·003',
-      price: 4200,                    // $42.00
-      blurb: 'Matching lead, five feet, padded handle. Made to be worn with the collar.',
-      details: [
-        'Printed wordmark, warm gold on black',
-        '5 ft, padded handle',
-        'Steel clasp'
-      ],
-      colors: [
-        { name: 'Onyx', hex: '#0B0C11' }
-      ],
-      paymentLink: ''
-    },
-
-    {
-      id: 'pet-bowl',
-      name: 'Crest Bowl',
-      sku: 'SML·PT·004',
-      price: 4500,                    // $45.00
-      blurb: 'Stoneware bowl with the house crest at the base. Heavy enough not to travel.',
-      details: [
-        'Glazed stoneware, crest at the base',
-        'Weighted foot, non-slip',
-        'Dishwasher safe'
-      ],
-      colors: [
-        { name: 'Onyx', hex: '#0B0C11' }
-      ],
-      paymentLink: ''
-    }
-
   ]
 };
 
@@ -241,9 +153,8 @@ window.SML_SHOP = {
     if (field) setTimeout(function () { field.focus(); }, 420);
   }
 
-  // Each grid renders independently. A grid whose list is empty or whose
-  // mount point is missing is skipped, so removing the pet block from the
-  // page never breaks the main shop.
+  // A grid whose mount point is missing or whose list is empty is skipped
+  // rather than throwing, so the page never breaks over a removed section.
   function renderInto(mountId, list) {
     var mount = document.getElementById(mountId);
     if (!mount || !Array.isArray(list) || list.length === 0) return;
@@ -252,7 +163,6 @@ window.SML_SHOP = {
   }
 
   renderInto('shop-grid', window.SML_SHOP.products);
-  renderInto('pet-grid', window.SML_SHOP.pets);
 
   // Tell the owner, not the customer, when nothing is purchasable yet.
   if (liveCount === 0 && window.console && console.info) {

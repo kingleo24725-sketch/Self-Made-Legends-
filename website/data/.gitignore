@@ -1,3 +1,4 @@
 # Never commit collected personal data to source control.
 *.csv
 .throttle/
+.votes/

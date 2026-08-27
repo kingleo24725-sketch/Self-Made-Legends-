@@ -72,12 +72,15 @@ public_html/
 ├── 404.html
 ├── api/
 │   ├── config.php
+│   ├── lib.php
+│   ├── poll.php      ← this week's question
 │   └── submit.php
 ├── assets/
 │   ├── favicon.svg
 │   ├── css/sml.css
 │   └── js/
 │       ├── sml.js
+│       ├── poll.js
 │       └── shop.js     ← your products and Stripe links
 └── data/
     └── .htaccess      ← hidden, REQUIRED
@@ -126,6 +129,7 @@ cPanel → File Manager → `public_html/data/`
 - `newsletter.csv` — email list
 - `legends.csv` — Legendary Pull entries, grouped by month
 - `support.csv` — customer messages and complaints
+- `poll-2026-W35.csv` — one file per weekly question, with every vote
 
 Every message is written to `support.csv` **before** the email goes out.
 So even if mail delivery fails or something lands in spam, no customer
@@ -156,7 +160,7 @@ All in `index.html`. Search for what you want and change the text.
 | Contact form topics | `<section id="support"` |
 | Shipping rates and returns | `shipping-returns.html` |
 | Products, prices, Stripe links | `assets/js/shop.js` |
-| The pet capsule | `<section id="shop"` &mdash; the *Legends in Training* block |
+| This week's question and options | `api/poll.php` |
 
 **No blanks are left in the FAQ.** Shipping, returns, and international are
 all written and live.
@@ -179,6 +183,73 @@ your actual boxes with USPS or UPS and adjust these in
 
 **Whatever you set, honour it.** A published policy is a promise you can be
 held to.
+
+---
+
+## The Question of the Week
+
+One question a week, four answers, and whatever wins you try to make real
+before the month is out. It costs nothing to run and it is the only thing on
+the site that gives someone a reason to come back next Tuesday.
+
+### Running it each week — 2 minutes
+
+Open **`api/poll.php`**. Everything you change is in the box at the top.
+
+1. **Change the `id`** to something new — `'2026-W36'`, then `'2026-W37'`.
+   This is the part that actually starts a fresh vote: a new id means a new
+   file, an empty tally, and everyone gets to vote again.
+
+   > **Reuse an old id and nothing resets.** The old votes stay, and everyone
+   > who already voted is locked out. If a week ever looks stuck with last
+   > week's numbers, this is why.
+
+2. **Change the `question` and the four `options`.**
+
+3. **Fill in `previous`** — last week's question, what won, and what you did
+   about it.
+
+4. Upload just that one file.
+
+### Step 3 is the whole thing
+
+Anyone can put a poll on a website. What nobody does is come back and show
+what happened. The `previous` block is the part people actually remember: they
+see their answer, then they see the thing you built because of it. That is what
+makes the next vote worth casting.
+
+**So only put questions on there you are willing to act on.** A poll you ignore
+is worse than no poll — you have asked people what they want and then shown
+them it did not matter.
+
+### Reading the votes
+
+`data/poll-<id>.csv`, one row per vote. The `write_in` column is where the
+real value is — that is people telling you in their own words what they want.
+Those also get emailed to `info@` as they arrive, because they are worth
+reading the day they land rather than at the end of the week.
+
+### How the voting is kept honest
+
+- **One vote per person per question,** enforced on the server by IP address.
+- Results are **hidden until you vote**, so nobody is nudged by what is already winning.
+- The honeypot and the rate limit from the forms apply here too.
+- Your browser remembers which week you voted in, so the page shows you the
+  results instead of a fresh ballot when you come back.
+
+This is a poll, not an election. Someone determined to stuff it — a phone on
+mobile data, a VPN — can vote twice. That is true of every poll on the internet
+that does not demand a login, and demanding a login would cost you nine out of
+ten votes. It is honest enough to tell you what people want, which is the job.
+
+### Writing a good question
+
+- **Four options.** Fewer feels rigged, more splits the vote so nothing wins clearly.
+- **Make every option something you would genuinely do.** Never include one as
+  a joke — it will win.
+- **Ask about the next thing, not the far future.** "Which colour next" beats
+  "where should the brand be in five years."
+- **Keep each option short enough to read at a glance.**
 
 ---
 
@@ -227,25 +298,6 @@ still gets captured.
 Only genuine `stripe.com` links become Buy buttons. Paste something else by
 mistake and it falls back to Notify Me rather than sending a paying customer
 to the wrong place.
-
-### The pet capsule — two things to know before you switch it on
-
-*Legends in Training* lives in `shop.js` under `pets:`. It works exactly like
-the main shop — paste a Payment Link and it goes live.
-
-**1. It is printed, not embroidered.** There is no metallic thread on a
-bandana. The block on the page says so out loud, which is deliberate: the rest
-of the collection is embroidered and a customer who assumes the same of the pet
-line will be disappointed. Don't quietly delete that sentence.
-
-**2. Your trademark filing does not cover it.** Class 025 is human clothing
-only. Pet clothing, collars and leads are **Class 018**; the bowl is **Class
-021**. See `legal/TRADEMARK-FILING-PACKAGE.md`. Selling these is not risky —
-it just means the registration you paid for doesn't reach them until you file
-that class, so don't count on it for a takedown.
-
-To drop the capsule entirely: delete the *Legends in Training* block from
-`index.html`. The main shop keeps working on its own.
 
 ### Sizes
 
