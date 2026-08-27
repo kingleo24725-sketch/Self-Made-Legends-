@@ -118,3 +118,46 @@ error handling.
 It binds to `127.0.0.1` and is meant to run on your own machine. **Do not expose
 it.** It writes to the example store, which steers every future output — anyone
 who can reach it can change what your agents produce.
+
+---
+
+## The commerce API
+
+`npm run agents:api` — takes designs and tech packs from the agents, takes
+orders from the storefront, and hands each order to the **routing agent** to
+decide where it goes.
+
+```bash
+export SML_API_KEY=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+npm run agents:api
+```
+
+It refuses to start without that key. Without one, anyone on the internet could
+upload files to your server.
+
+| Endpoint | |
+|---|---|
+| `POST /api/designs` | Design images + tech pack, keyed on SKU |
+| `POST /api/orders` | Accepts and answers immediately; routing happens after |
+| `GET /api/orders/:id` | Where an order actually is |
+| `GET /api/orders?status=needs_human` | **The queue that must not grow** |
+| `POST /api/orders/:id/shipped` | Requires a tracking number |
+
+### Its own database, deliberately
+
+`agents/data/sml-commerce.db` — **not** `sml.db`. That name belongs to the
+trading game, and pointing this at it would create tables inside your players'
+live database.
+
+### Nothing is "shipped" without a tracking number
+
+An order handed to a distributor is `at_manufacturer` or `at_distributor`. It
+becomes `shipped` only when a carrier has it and there is a number to prove it.
+A status that runs ahead of reality is how a customer gets told their parcel is
+on the way when it does not exist.
+
+### On Railway, the uploads directory needs a volume
+
+Same problem as the game database: without a mounted volume every deploy wipes
+`agents/data/`, including uploaded tech packs. Point `SML_API_DATA_DIR` at the
+mount.
