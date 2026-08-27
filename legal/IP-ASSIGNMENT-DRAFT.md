@@ -516,7 +516,16 @@ Bring this page to the meeting. These are the questions worth the hour.
 
 **On protection, in priority order**
 9. **File the federal trademark** for "Self-Made Legends" with the USPTO,
-   applicant = Self-Made Legends LLC. Which classes? Conflict search first.
+   applicant = Self-Made Legends LLC. The full filing package — proposed
+   classes (025 clothing, 041 online game), filing basis, goods wording,
+   specimen requirements, fees and deadlines — is prepared in
+   `legal/TRADEMARK-FILING-PACKAGE.md`. **This assignment must be signed and
+   dated before that application is filed**, or the LLC is applying to
+   register a mark it does not yet own, which can render the application void
+   ab initio and non-refundable.
+   Specific question for counsel: **LEGENDS**, Reg. No. 6164171 (The Legends
+   Brand, Inc.), is registered for clothing. Does SELF-MADE LEGENDS clear it
+   in Class 025?
 10. Is a Missouri state registration (§ 417.016, RSMo — $50 per class)
     worth adding alongside the federal filing, or redundant?
 11. **Register the copyright** in the software. What is registrable given
