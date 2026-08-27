@@ -1,0 +1,9 @@
+{
+  "name": "Routing — single domestic order",
+  "agent": "routing",
+  "input": {
+    "order": { "id": "SML-1001", "service_level": "standard", "line_items": [{ "sku": "SML-AP-001", "quantity": 1, "size": "L" }], "destination": { "country": "US", "state": "MO", "postcode": "63101" } },
+    "partners": []
+  },
+  "checks": ["unroutable_explains", "split_is_explained", "confidence_is_honest"]
+}

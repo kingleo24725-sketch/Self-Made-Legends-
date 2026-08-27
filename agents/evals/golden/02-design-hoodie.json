@@ -1,0 +1,6 @@
+{
+  "name": "Design — hoodie from a brief",
+  "agent": "design",
+  "input": { "brief": "A heavyweight hoodie for Volume II. Crest at the chest in gold." },
+  "checks": ["hyphenated_name", "gold_is_embroidered", "stitch_counts_present", "confidence_is_honest"]
+}

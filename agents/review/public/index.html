@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SML — Review</title>
+<style>
+  :root{
+    --void:#06060A; --pitch:#0B0C11; --raise:#181A22; --rule:#2C2E38;
+    --gold:#C9A227; --gold-lt:#F2DFA0; --gold-ash:#6E5A22;
+    --ivory:#EFEAE0; --ash:#96907F; --ash-dim:#6B665B;
+    --ok:#5FBE8C; --warn:#E0B463; --err:#E08163;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--void);color:var(--ivory);
+    font:15px/1.6 ui-sans-serif,system-ui,-apple-system,sans-serif;
+  }
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+  header{
+    position:sticky;top:0;z-index:10;background:rgba(6,6,10,.95);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--rule);
+    padding:1rem 1.5rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;
+  }
+  h1{font-size:.78rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);margin:0;font-weight:500}
+  .stats{display:flex;gap:1.5rem;flex-wrap:wrap;margin-left:auto;
+    font-family:ui-monospace,monospace;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ash-dim)}
+  .stats b{color:var(--ivory);font-weight:500}
+  .wrap{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 5rem}
+  .empty{text-align:center;padding:5rem 1rem;color:var(--ash-dim)}
+  .card{border:1px solid var(--rule);background:var(--pitch);margin-bottom:1.5rem}
+  .card.blocked{border-color:#5A2A20}
+  .card-head{
+    display:flex;align-items:center;gap:1rem;flex-wrap:wrap;
+    padding:.9rem 1.25rem;border-bottom:1px solid var(--rule);background:var(--raise);
+  }
+  .agent{font-size:.7rem;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-lt)}
+  .ver{font-family:ui-monospace,monospace;font-size:.64rem;color:var(--ash-dim)}
+  .when{margin-left:auto;font-family:ui-monospace,monospace;font-size:.64rem;color:var(--ash-dim)}
+  .body{padding:1.25rem}
+  .flags{display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.25rem}
+  .flag{display:flex;gap:.7rem;align-items:flex-start;font-size:.85rem;padding:.6rem .8rem;border-left:2px solid}
+  .flag.blocker{border-color:var(--err);background:rgba(224,129,99,.06)}
+  .flag.warning{border-color:var(--warn);background:rgba(224,180,99,.05)}
+  .flag.note{border-color:var(--ash-dim)}
+  .sev{font-family:ui-monospace,monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;padding-top:.18rem;flex-shrink:0;width:4.5rem}
+  .flag.blocker .sev{color:var(--err)} .flag.warning .sev{color:var(--warn)} .flag.note .sev{color:var(--ash-dim)}
+  .flag em{display:block;color:var(--ash);font-style:normal;font-size:.8rem;margin-top:.2rem}
+  label.lbl{display:block;font-family:ui-monospace,monospace;font-size:.62rem;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--gold-ash);margin:0 0 .5rem}
+  textarea{
+    width:100%;background:var(--void);color:var(--ivory);border:1px solid var(--rule);
+    font-family:ui-monospace,monospace;font-size:.76rem;line-height:1.55;padding:.9rem;
+    resize:vertical;border-radius:2px;
+  }
+  textarea:focus{outline:1px solid var(--gold-ash);outline-offset:1px}
+  textarea.bad{border-color:var(--err)}
+  .in{max-height:11rem}
+  .out{min-height:17rem}
+  .grid{display:grid;gap:1.25rem;grid-template-columns:1fr;align-items:start}
+  @media(min-width:900px){.grid{grid-template-columns:1fr 1.4fr}}
+  .notes{width:100%;background:var(--void);color:var(--ivory);border:1px solid var(--rule);
+    padding:.7rem .9rem;font:inherit;font-size:.85rem;border-radius:2px;margin-top:1rem}
+  .actions{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1.25rem;align-items:center}
+  button{
+    font-family:ui-monospace,monospace;font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;
+    padding:.75rem 1.4rem;border-radius:2px;cursor:pointer;border:1px solid var(--rule);
+    background:transparent;color:var(--ash);transition:.18s;
+  }
+  button:hover:not(:disabled){border-color:var(--gold-ash);color:var(--gold-lt)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .approve{border-color:var(--ok);color:var(--ok)}
+  .approve:hover:not(:disabled){background:var(--ok);color:var(--void)}
+  .save{border-color:var(--gold);color:var(--gold-lt)}
+  .save:hover:not(:disabled){background:var(--gold);color:var(--void)}
+  .reject{border-color:var(--err);color:var(--err)}
+  .reject:hover:not(:disabled){background:var(--err);color:var(--void)}
+  .hint{font-size:.74rem;color:var(--ash-dim);margin-left:auto;text-align:right;max-width:26rem;line-height:1.5}
+  .msg{margin-top:.9rem;font-size:.82rem;padding:.6rem .8rem;border-left:2px solid var(--ok);color:var(--ivory)}
+  .msg.err{border-color:var(--err)}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Self-Made Legends · Review</h1>
+  <div class="stats" id="stats"></div>
+</header>
+
+<div class="wrap" id="wrap">
+  <div class="empty">Loading…</div>
+</div>
+
+<script>
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pretty = v => JSON.stringify(v, null, 2);
+
+async function load() {
+  const [queue, stats] = await Promise.all([
+    fetch('/api/queue').then(r => r.json()),
+    fetch('/api/stats').then(r => r.json()),
+  ]);
+  renderStats(stats);
+  renderQueue(queue);
+}
+
+function renderStats(s) {
+  const rows = [
+    ['waiting', s.review_backlog],
+    ['events', s.events],
+    ['spend', '$' + (s.cost_usd ?? 0).toFixed(4)],
+  ];
+  for (const [name, a] of Object.entries(s.agents || {})) {
+    if (a.first_pass_rate !== null && a.first_pass_rate !== undefined) {
+      rows.push([name + ' 1st-pass', Math.round(a.first_pass_rate * 100) + '%']);
+    }
+  }
+  document.getElementById('stats').innerHTML =
+    rows.map(([k, v]) => `<span>${esc(k)} <b>${esc(v)}</b></span>`).join('');
+}
+
+function renderQueue(data) {
+  const wrap = document.getElementById('wrap');
+  if (!data.count) {
+    wrap.innerHTML = `<div class="empty">
+      <p style="font-size:1.1rem;color:var(--ash)">Nothing waiting.</p>
+      <p style="font-size:.85rem">Run <span class="mono">npm run agents:concept</span> to put something in the queue.</p>
+    </div>`;
+    return;
+  }
+
+  wrap.innerHTML = data.queue.map(card).join('');
+  data.queue.forEach(item => wire(item.event_id));
+}
+
+function card(item) {
+  const blocked = item.flags.some(f => f.severity === 'blocker');
+  const flags = item.flags.length ? `<div class="flags">${item.flags.map(f => `
+    <div class="flag ${esc(f.severity)}">
+      <span class="sev">${esc(f.severity)}</span>
+      <span>${esc(f.issue)}${f.suggestion ? `<em>${esc(f.suggestion)}</em>` : ''}</span>
+    </div>`).join('')}</div>` : '';
+
+  return `
+  <article class="card ${blocked ? 'blocked' : ''}" id="c-${esc(item.event_id)}">
+    <div class="card-head">
+      <span class="agent">${esc(item.agent)}</span>
+      <span class="ver">${esc(item.version)}</span>
+      <span class="when">${esc(item.ts.replace('T',' ').slice(0,19))} · $${(item.cost_usd||0).toFixed(4)}</span>
+    </div>
+    <div class="body">
+      ${flags}
+      <div class="grid">
+        <div>
+          <label class="lbl">What it was given</label>
+          <textarea class="in" readonly>${esc(pretty(item.input))}</textarea>
+        </div>
+        <div>
+          <label class="lbl">What it produced — edit to correct it</label>
+          <textarea class="out" id="o-${esc(item.event_id)}">${esc(pretty(item.output))}</textarea>
+        </div>
+      </div>
+      <input class="notes" id="n-${esc(item.event_id)}" placeholder="Why? One line. This is read by the next run — say what was wrong, not that it was wrong.">
+      <div class="actions">
+        <button class="approve" data-act="approved" data-id="${esc(item.event_id)}">Approve as-is</button>
+        <button class="save" data-act="edited" data-id="${esc(item.event_id)}">Save my corrections</button>
+        <button class="reject" data-act="rejected" data-id="${esc(item.event_id)}">Reject</button>
+        <span class="hint">A correction teaches more than an approval. Rejected work is recorded but never shown to the agent.</span>
+      </div>
+      <div id="m-${esc(item.event_id)}"></div>
+    </div>
+  </article>`;
+}
+
+function wire(id) {
+  const card = document.getElementById('c-' + id);
+  card.querySelectorAll('button[data-act]').forEach(btn => {
+    btn.addEventListener('click', () => decide(id, btn.dataset.act, card));
+  });
+}
+
+async function decide(id, verdict, card) {
+  const out = document.getElementById('o-' + id);
+  const notes = document.getElementById('n-' + id).value;
+  const msg = document.getElementById('m-' + id);
+  const buttons = card.querySelectorAll('button');
+
+  let edited;
+  if (verdict === 'edited') {
+    try {
+      edited = JSON.parse(out.value);
+      out.classList.remove('bad');
+    } catch (e) {
+      // Refuse rather than silently save something unusable — this value
+      // goes straight into the example store and steers every future run.
+      out.classList.add('bad');
+      msg.className = 'msg err';
+      msg.textContent = 'That is not valid JSON, so it was not saved: ' + e.message;
+      return;
+    }
+  }
+
+  buttons.forEach(b => b.disabled = true);
+
+  const res = await fetch('/api/decide', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ event_id: id, verdict, edited_output: edited, notes, reviewer: 'house' }),
+  }).then(r => r.json()).catch(() => ({ ok: false, error: 'Could not reach the server' }));
+
+  if (!res.ok) {
+    buttons.forEach(b => b.disabled = false);
+    msg.className = 'msg err';
+    msg.textContent = res.error || 'Something went wrong.';
+    return;
+  }
+
+  msg.className = 'msg';
+  msg.textContent = res.note;
+  setTimeout(load, 900);
+}
+
+load();
+setInterval(load, 20000);
+</script>
+</body>
+</html>

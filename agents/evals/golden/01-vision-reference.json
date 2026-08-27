@@ -1,0 +1,6 @@
+{
+  "name": "Vision — hoodie reference photo",
+  "agent": "vision",
+  "input": { "note": "Reference image of a black hoodie with a gold chest crest." },
+  "checks": ["hyphenated_name", "no_invented_precision", "confidence_is_honest"]
+}

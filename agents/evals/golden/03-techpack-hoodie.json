@@ -1,0 +1,6 @@
+{
+  "name": "Tech pack — hoodie, no Pantone supplied",
+  "agent": "techpack",
+  "input": { "design": { "name": "Regent Embroidered Hoodie", "colourway": [{ "part": "Body", "hex": "#0B0C11" }] } },
+  "checks": ["hyphenated_name", "no_hex_as_pantone", "tolerances_present", "open_questions_not_empty", "confidence_is_honest"]
+}

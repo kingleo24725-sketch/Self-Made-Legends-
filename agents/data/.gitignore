@@ -1,0 +1,4 @@
+# Event log and example store are operational data, not source.
+# The examples in particular can contain unreleased designs.
+events/
+examples/
