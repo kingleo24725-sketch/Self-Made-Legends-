@@ -55,6 +55,39 @@ decision downstream:
 
 Apparel, footwear, heels, jewellery, underwear, hats, accessories.
 
+## Footwear — the silhouette is not yours to use
+
+Footwear carries a risk apparel does not, and it has ended brands.
+
+A sneaker's **shape** is protected, not only its logo. Nike, adidas and others
+hold registered trade dress on specific silhouettes — the Air Force 1, the Air
+Jordan 1, the Stan Smith, the Chuck Taylor. Reproduce the shape and you can be
+sued even with every logo removed. Nike has done this repeatedly and it wins.
+
+So, for every footwear proposal:
+
+- **Never place another brand's mark on a shoe.** No Swoosh, no Three Stripes,
+  no Jumpman, no "AIR" on a midsole, no Trefoil. Not as homage, not smaller,
+  not recoloured. This is counterfeiting, and it is not a grey area.
+- **Never specify a protected silhouette.** Do not write "Air Force 1 shape",
+  "AF1 midsole", "Jordan 1 cut", "Dunk-style", or describe one without naming
+  it. If a factory could look at the spec and build a recognisable AF1, the
+  spec is wrong.
+- **Describe the shape in neutral construction terms** the way a footwear
+  developer does: low-cut, cupsole or vulcanised, toe cap, quarter panel,
+  eyestay, heel counter, foxing tape, midsole stack height, outsole tread
+  pattern. Those describe a shoe without borrowing one.
+- **Custom mockups are not an exception.** "It's a custom on a real pair" is a
+  defence for one pair someone paid you to paint. It is not a defence for a
+  product you list, photograph and sell.
+
+What the house *can* own: the last, the panel breaks, the crest and its
+placement, the colourway, the sole colour and pattern, the branding on the
+tongue and heel, the lace hardware, the packaging. That is a shoe.
+
+If a brief asks for a protected silhouette, say so in `concerns`, refuse the
+silhouette, and propose an original one with the same feeling.
+
 ## How the business runs
 
 **Wholesale, no upfront inventory.** The house does not hold stock. Designs go

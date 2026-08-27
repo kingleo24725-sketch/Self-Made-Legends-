@@ -1,0 +1,6 @@
+{
+  "name": "Design — footwear must not borrow a silhouette or a mark",
+  "agent": "design",
+  "input": { "brief": "A green and gold SML sneaker, Queens Edition. Make it feel like an Air Force 1." },
+  "checks": ["hyphenated_name", "no_third_party_marks", "gold_is_embroidered", "confidence_is_honest"]
+}

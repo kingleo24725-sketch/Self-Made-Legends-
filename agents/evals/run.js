@@ -100,6 +100,41 @@ const CHECKS = {
     return null;
   },
 
+  /**
+   * Another brand's mark or silhouette anywhere in the output.
+   *
+   * This is the check that ends a company rather than costing it a re-cut.
+   * Footwear is where it bites hardest: a sneaker's SHAPE is protected trade
+   * dress, so "Air Force 1 silhouette, logos removed" is still infringement,
+   * and Nike has won that argument many times.
+   */
+  no_third_party_marks(out) {
+    const text = JSON.stringify(out);
+
+    // Marks and logos.
+    const MARKS = /\b(nike|swoosh|jumpman|air jordan|adidas|three stripes|trefoil|yeezy|puma|reebok|new balance|converse|chuck taylor|vans|supreme|off-white|balenciaga|gucci|louis vuitton|dior|prada|versace|burberry)\b/i;
+
+    // Protected silhouettes, including the coy ways of naming one.
+    const SHAPES = /\b(air force ?1|\baf1\b|jordan ?1|dunk[- ]?(low|high|style)|stan smith|superstar|gazelle|samba|air max|griffey|blazer|old skool)\b/i;
+
+    // Nike moulds AIR into the Air Force 1 midsole. It reads as a material
+    // note and is in fact somebody's trademark on somebody's product.
+    const MIDSOLE_AIR = /"[^"]*\b(midsole|sole|outsole)\b[^"]*"/gi;
+
+    const hitMark = text.match(MARKS);
+    if (hitMark) return `References "${hitMark[0]}" — another brand's mark`;
+
+    const hitShape = text.match(SHAPES);
+    if (hitShape) return `References "${hitShape[0]}" — a protected silhouette, infringing even with the logos removed`;
+
+    for (const seg of text.match(MIDSOLE_AIR) || []) {
+      if (/\bair\b/i.test(seg) && !/air ?(flow|permeab|dry|mesh)/i.test(seg)) {
+        return `"AIR" specified on a sole — that is Nike's mark moulded into their midsole`;
+      }
+    }
+    return null;
+  },
+
   /** An unroutable order must say why, not return an empty shrug. */
   unroutable_explains(out) {
     if (out.route === null && !out.unroutable_reason) {
