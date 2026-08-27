@@ -112,7 +112,13 @@ const CHECKS = {
     const text = JSON.stringify(out);
 
     // Marks and logos.
-    const MARKS = /\b(nike|swoosh|jumpman|air jordan|adidas|three stripes|trefoil|yeezy|puma|reebok|new balance|converse|chuck taylor|vans|supreme|off-white|balenciaga|gucci|louis vuitton|dior|prada|versace|burberry)\b/i;
+    //
+    // "off-white" is deliberately NOT in this list. It is an ordinary colour
+    // word — half the footwear specs ever written use it — and the brand is
+    // written "Off-White c/o Virgil Abloh" in practice. A check that fails on
+    // a colour name gets muted within a fortnight, and a muted check protects
+    // nothing.
+    const MARKS = /\b(nike|swoosh|jumpman|air jordan|adidas|three stripes|trefoil|yeezy|puma|reebok|new balance|converse|chuck taylor|vans|supreme|balenciaga|gucci|louis vuitton|dior|prada|versace|burberry)\b/i;
 
     // Protected silhouettes, including the coy ways of naming one.
     const SHAPES = /\b(air force ?1|\baf1\b|jordan ?1|dunk[- ]?(low|high|style)|stan smith|superstar|gazelle|samba|air max|griffey|blazer|old skool)\b/i;
