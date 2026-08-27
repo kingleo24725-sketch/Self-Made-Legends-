@@ -3,7 +3,8 @@
  * Self-Made Legends — form handler
  * Copyright (c) 2026 Self-Made Legends LLC. All Rights Reserved.
  *
- * Handles the newsletter signup and the Ambassador Program application.
+ * Handles the newsletter signup, The Legendary Pull entries, and customer
+ * support messages.
  * Every submission is appended to a CSV in ../data (blocked from the web)
  * and emailed to the address configured in config.php.
  *
@@ -39,7 +40,7 @@ function sml_respond(bool $ok, string $message, string $formType = '', int $stat
     }
 
     $anchors = [
-        'ambassador' => '#ambassador',
+        'legend'     => '#legend',
         'support'    => '#support',
         'newsletter' => '#newsletter',
     ];
@@ -177,7 +178,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 }
 
 $formType = sml_clean($_POST['form_type'] ?? '', 20);
-if (!in_array($formType, ['newsletter', 'ambassador', 'support'], true)) {
+if (!in_array($formType, ['newsletter', 'legend', 'support'], true)) {
     sml_respond(false, 'Unknown form.', '', 400);
 }
 
@@ -266,46 +267,59 @@ if ($formType === 'support') {
     sml_respond(true, 'Message received. We read every one and will reply personally.', $formType);
 }
 
-/* ── ambassador ──────────────────────────────────────────────────────── */
+/* ── The Legendary Pull: monthly entry ───────────────────────────────── */
 
-$name = sml_clean($_POST['name'] ?? '', 80);
-$why  = sml_clean($_POST['why']  ?? '', 1200);
+$name  = sml_clean($_POST['name']  ?? '', 80);
+$why   = sml_clean($_POST['why']   ?? '', 4000);
+$video = sml_clean($_POST['video'] ?? '', 300);
 
 if ($name === '') {
     sml_respond(false, 'Please enter your name.', $formType, 422);
 }
-if (mb_strlen($why) < 10) {
-    sml_respond(false, 'Please tell us a little about yourself.', $formType, 422);
+
+// An entry is either a written note or a link to a video. One or the other
+// must actually be there, or there is nothing to judge.
+if (mb_strlen($why) < 20 && $video === '') {
+    sml_respond(false, 'Tell us your story, or paste a link to your video.', $formType, 422);
 }
+
+// Only accept a video link that is actually a link. A pasted handle or a
+// half-typed address would otherwise be stored as if it were an entry.
+if ($video !== '' && !filter_var($video, FILTER_VALIDATE_URL)) {
+    sml_respond(false, 'That video link does not look right. Paste the full web address.', $formType, 422);
+}
+
 if (sml_clean($_POST['consent'] ?? '', 10) !== 'yes') {
-    sml_respond(false, 'Please agree to be contacted before submitting.', $formType, 422);
+    sml_respond(false, 'Please agree to the house rules before entering.', $formType, 422);
 }
 
 $city   = sml_clean($_POST['city']   ?? '', 80);
 $social = sml_clean($_POST['social'] ?? '', 80);
-$reach  = sml_clean($_POST['reach']  ?? '', 60);
+
+// Entries are grouped by month so a month's judging is one filter, not a
+// hunt through everything ever submitted.
+$month = gmdate('Y-m');
 
 $stored = sml_append_csv(
-    'ambassadors.csv',
-    ['timestamp', 'name', 'email', 'city', 'social', 'reach', 'why', 'ip'],
-    [$stamp, $name, $email, $city, $social, $reach, $why, $ip]
+    'legends.csv',
+    ['month', 'timestamp', 'name', 'email', 'city', 'social', 'video', 'why', 'ip'],
+    [$month, $stamp, $name, $email, $city, $social, $video, $why, $ip]
 );
 
 if (!$stored) {
-    sml_respond(false, 'We could not save your application. Please email info@selfmadelegendsz.com.', $formType, 500);
+    sml_respond(false, 'We could not save your entry. Please email info@selfmadelegendsz.com.', $formType, 500);
 }
 
-$body = "New Ambassador Program application.\n\n"
+$body = "New entry — The Legendary Pull ({$month})\n\n"
       . "Name:     {$name}\n"
       . "Email:    {$email}\n"
-      . "Location: {$city}\n"
-      . "Social:   {$social}\n"
-      . "Audience: {$reach}\n"
-      . "Time:     {$stamp}\n"
-      . "IP:       {$ip}\n\n"
-      . "Why:\n{$why}\n";
+      . "Location: " . ($city   !== '' ? $city   : '(not given)') . "\n"
+      . "Social:   " . ($social !== '' ? $social : '(not given)') . "\n"
+      . "Video:    " . ($video  !== '' ? $video  : '(written entry)') . "\n"
+      . "Time:     {$stamp}\n\n"
+      . "Their story:\n" . ($why !== '' ? $why : '(video entry only)') . "\n";
 
-sml_notify(SML_TO_AMBASSADOR, 'Ambassador application — ' . $name, $body, $email);
+sml_notify(SML_TO_LEGEND, 'The Pull — ' . $name, $body, $email);
 
 sml_throttle_record();
-sml_respond(true, 'Application received. You will hear back either way.', $formType);
+sml_respond(true, 'Your entry is in. One name is called at the end of the month.', $formType);

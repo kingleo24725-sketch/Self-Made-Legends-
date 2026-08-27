@@ -117,7 +117,7 @@
       <a href="#shop">Shop</a>
       <a href="#lifestyle">Lifestyle</a>
       <a href="#drops">Drops</a>
-      <a href="#ambassador">Ambassador</a>
+      <a href="#legend">The Pull</a>
       <a href="#specs">Specs</a>
       <a href="#faq">FAQ</a>
       <a href="#support">Contact</a>
@@ -435,98 +435,113 @@
   </div>
 </section>
 
-<!-- ═══════════ AMBASSADOR ═══════════ -->
-<section id="ambassador" class="marble">
+<!-- ═══════════ THE LEGENDARY PULL ═══════════ -->
+<section id="legend" class="marble">
   <div class="shell">
     <div class="sec-head">
-      <p class="eyebrow">05 — The Court</p>
-      <h2 class="foil">Ambassador Program</h2>
-      <p class="lede">A small group. Free to join, free to stay. We are not looking for follower counts — we are looking for people who already live it.</p>
+      <p class="eyebrow">05 — Once a month</p>
+      <h2 class="foil">The Legendary Pull</h2>
+      <p class="lede">Tell us why you are worthy of Legendary status. One name is called every month. That person gets something from the house &mdash; and what it is stays sealed until it lands.</p>
     </div>
 
     <div class="amb">
       <div class="perks">
         <div class="perk">
           <span class="num">01</span>
-          <div><h3>Early access to every drop</h3><p>You see the run and buy from it before it opens to anyone else. Numbered runs sell out &mdash; you never miss one.</p></div>
+          <div><h3>Make your case</h3><p>Film it or write it. A minute of video, or a paragraph that means something. Length is not what gets read &mdash; honesty is.</p></div>
         </div>
         <div class="perk">
           <span class="num">02</span>
-          <div><h3>Your own code</h3><p>A personal code that gives your people 10% off. Your name on it, your circle using it, your reputation behind it.</p></div>
+          <div><h3>One name, every month</h3><p>Every entry is read by the founder. Not a panel, not a vote, not a random draw. One person is chosen on the strength of their story.</p></div>
         </div>
         <div class="perk">
           <span class="num">03</span>
-          <div><h3>20% off your welcome piece</h3><p>One piece, your pick, anything in the house. A single use when you join &mdash; choose it well.</p></div>
+          <div><h3>The hidden treasure</h3><p>The winner is sent a gift from the house, free, shipping covered. Nobody is told what it is beforehand &mdash; not the winner, not anyone.</p></div>
         </div>
         <div class="perk">
           <span class="num">04</span>
-          <div><h3>Your name in the house</h3><p>Ambassadors are credited on this site by name. When someone asks who built this alongside the founder, the answer is public and permanent.</p></div>
+          <div><h3>Legendary status</h3><p>Winners are named on this site permanently. Month by month, the list becomes the record of who built this alongside us.</p></div>
+        </div>
+        <div class="perk">
+          <span class="num">05</span>
+          <div><h3>Free, always</h3><p>Nothing to buy. Nothing to join. You never have to spend a dollar to be called a Legend here.</p></div>
         </div>
       </div>
 
       <div class="form-box">
-        <h3 style="font-size:1.25rem;margin-bottom:.4rem">Apply</h3>
+        <h3 style="font-size:1.25rem;margin-bottom:.4rem">Enter the Pull</h3>
         <p style="font-size:.85rem;color:var(--ash-dim);margin-bottom:1.4rem">
-          Free to apply, free to join. Applications are read personally &mdash; expect a reply either way.
+          Read personally, every one. Entries close on the last day of the month.
         </p>
 
-        <form class="form" id="ambForm" method="post" action="api/submit.php" novalidate>
-          <input type="hidden" name="form_type" value="ambassador">
+        <form class="form" id="legendForm" method="post" action="api/submit.php" novalidate>
+          <input type="hidden" name="form_type" value="legend">
           <div class="hp" aria-hidden="true">
-            <label for="amb_website">Website</label>
-            <input type="text" id="amb_website" name="website" tabindex="-1" autocomplete="off">
-          </div>
-
-          <div class="field">
-            <label class="field-lbl" for="amb_name">Full Name <span class="req">*</span></label>
-            <input type="text" id="amb_name" name="name" required maxlength="80" autocomplete="name">
-          </div>
-
-          <div class="field">
-            <label class="field-lbl" for="amb_email">Email <span class="req">*</span></label>
-            <input type="email" id="amb_email" name="email" required maxlength="120" autocomplete="email">
+            <label for="lg_website">Website</label>
+            <input type="text" id="lg_website" name="website" tabindex="-1" autocomplete="off">
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label class="field-lbl" for="amb_city">City &amp; State</label>
-              <input type="text" id="amb_city" name="city" maxlength="80" autocomplete="address-level2">
+              <label class="field-lbl" for="lg_name">Your Name <span class="req">*</span></label>
+              <input type="text" id="lg_name" name="name" required maxlength="80" autocomplete="name">
             </div>
             <div class="field">
-              <label class="field-lbl" for="amb_social">Instagram / TikTok</label>
-              <input type="text" id="amb_social" name="social" maxlength="80" placeholder="@handle">
+              <label class="field-lbl" for="lg_email">Email <span class="req">*</span></label>
+              <input type="email" id="lg_email" name="email" required maxlength="120" autocomplete="email">
+            </div>
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label class="field-lbl" for="lg_city">City &amp; State</label>
+              <input type="text" id="lg_city" name="city" maxlength="80" autocomplete="address-level2">
+            </div>
+            <div class="field">
+              <label class="field-lbl" for="lg_social">Instagram / TikTok</label>
+              <input type="text" id="lg_social" name="social" maxlength="80" placeholder="@handle">
             </div>
           </div>
 
           <div class="field">
-            <label class="field-lbl" for="amb_reach">Audience Size</label>
-            <select id="amb_reach" name="reach">
-              <option value="">Select…</option>
-              <option>Under 1,000</option>
-              <option>1,000 – 10,000</option>
-              <option>10,000 – 50,000</option>
-              <option>50,000 – 250,000</option>
-              <option>250,000+</option>
-              <option>I don't post — I just wear it</option>
-            </select>
+            <label class="field-lbl" for="lg_video">Video Link</label>
+            <input type="url" id="lg_video" name="video" maxlength="300"
+                   placeholder="Paste a link to your video &mdash; optional">
           </div>
 
           <div class="field">
-            <label class="field-lbl" for="amb_why">Why you <span class="req">*</span></label>
-            <textarea id="amb_why" name="why" required maxlength="1200"
-              placeholder="Tell us what you're building. Short is fine — honest matters more than long."></textarea>
+            <label class="field-lbl" for="lg_why">Why are you a Legend? <span class="req">*</span></label>
+            <textarea id="lg_why" name="why" maxlength="4000"
+              placeholder="What did you build, what did it cost you, what are you still climbing toward? Say it plain."></textarea>
           </div>
 
           <label class="consent">
             <input type="checkbox" name="consent" value="yes" required>
-            <span>I agree to be contacted about the Ambassador Program and consent to Self-Made Legends LLC storing the details above. If accepted, I will clearly mark any post featuring gifted or discounted product as an ad or gift, as the FTC requires.</span>
+            <span>I am 18 or older, this is my own work, and I agree to the House Rules below &mdash; including letting Self-Made Legends LLC share my entry if I am chosen.</span>
           </label>
 
-          <div class="form-msg" id="ambMsg" role="status" aria-live="polite"></div>
-          <button class="btn btn-solid" type="submit">Submit Application</button>
+          <div class="form-msg" id="legendMsg" role="status" aria-live="polite"></div>
+          <button class="btn btn-solid" type="submit">Enter the Pull</button>
         </form>
       </div>
     </div>
+
+    <!-- ── House Rules ── -->
+    <details style="margin-top:2.5rem;max-width:52rem">
+      <summary>House Rules &mdash; The Legendary Pull</summary>
+      <div class="ans">
+        <p><strong>No purchase necessary.</strong> Entering is free and buying something does not improve your chances.</p>
+        <p><strong>Who can enter.</strong> Open to legal residents of the United States, 18 or older. Void where prohibited.</p>
+        <p><strong>How to enter.</strong> Submit the form with a written entry, a link to a video, or both. One entry per person per month.</p>
+        <p><strong>When.</strong> Each month runs from the 1st to the last day, US Central Time. Entries after that roll into the following month.</p>
+        <p><strong>How the winner is picked.</strong> Every entry is read by the founder of Self-Made Legends and judged on honesty, the story behind it, and spirit. This is a skill contest, not a random drawing. The founder's decision is final.</p>
+        <p><strong>The prize.</strong> One winner per month receives a gift from the house, shipped free. The gift is not disclosed in advance. Approximate retail value up to <strong>[ SET VALUE ]</strong>. No cash alternative and the prize cannot be transferred.</p>
+        <p><strong>Notification.</strong> The winner is contacted by email within 7 days of the month closing, and must reply within 14 days to claim. Unclaimed prizes may be re-awarded.</p>
+        <p><strong>Your entry.</strong> You keep ownership of what you write and film. By entering you give Self-Made Legends LLC permission to show your entry, your first name and your city on this site and on social media if you are chosen. You can ask us not to &mdash; just say so when you enter.</p>
+        <p><strong>Taxes.</strong> Winners are responsible for any taxes on the prize.</p>
+        <p><strong>Sponsor.</strong> Self-Made Legends LLC, Missouri, United States.</p>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -771,8 +786,11 @@
         <div class="ans"><p>Yes, to a limited number of stockists. Use the <a href="#support">contact form</a> and choose &ldquo;Wholesale enquiry&rdquo;, or write to wholesale@selfmadelegendsz.com for the line sheet and terms.</p></div>
       </details>
       <details>
-        <summary>How do I become an ambassador?</summary>
-        <div class="ans"><p>Apply through the <a href="#ambassador">Ambassador Program</a> form. We read every application and reply either way. Follower count is not the deciding factor.</p></div>
+        <summary>What is The Legendary Pull?</summary>
+        <div class="ans">
+          <p>Every month you can tell us &mdash; in a video or in writing &mdash; why you are worthy of Legendary status. The founder reads every entry and picks one person. That person is sent a gift from the house, free, and nobody knows what it is until it arrives.</p>
+          <p>Free to enter, nothing to buy, ever. <a href="#legend">Enter here</a> &mdash; the full rules are in that section.</p>
+        </div>
       </details>
     </div>
   </div>
@@ -806,7 +824,7 @@
         <a href="mailto:info@selfmadelegendsz.com">info@selfmadelegendsz.com</a>
         <a href="mailto:wholesale@selfmadelegendsz.com">wholesale@selfmadelegendsz.com</a>
         <a href="mailto:press@selfmadelegendsz.com">press@selfmadelegendsz.com</a>
-        <a href="#ambassador">Ambassador Program</a>
+        <a href="#legend">The Legendary Pull</a>
         <a href="#faq">FAQ</a>
       </div>
     </div>

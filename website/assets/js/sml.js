@@ -114,7 +114,7 @@
   }
 
   wireForm('newsForm',    'newsMsg',    "You're on the list.");
-  wireForm('ambForm',     'ambMsg',     'Application received.');
+  wireForm('legendForm',  'legendMsg',  'Your entry is in.');
   wireForm('supportForm', 'supportMsg', 'Message received.');
 
   /* ── no-JS fallback: surface ?sent= / ?error= from the PHP redirect ──── */
@@ -124,13 +124,13 @@
 
   var boxes = {
     newsletter: 'newsMsg',
-    ambassador: 'ambMsg',
+    legend:     'legendMsg',
     support:    'supportMsg'
   };
 
   var successText = {
     newsletter: "You're on the list.",
-    ambassador: 'Application received. Expect a reply either way.',
+    legend:     'Your entry is in. One name is called at the end of the month.',
     support:    'Message received. We read every one and will reply personally.'
   };
 

@@ -316,7 +316,7 @@ section + section{border-top:1px solid var(--rule);}
   .drop .when{grid-column:1/-1;}
 }
 
-/* ── ambassador ───────────────────────────────────────────────────────── */
+/* ── the pull: perks + form layout ───────────────────────────────────────────────────────── */
 .amb{display:grid;grid-template-columns:1fr 1fr;gap:3.25rem;align-items:start;}
 @media(max-width:880px){.amb{grid-template-columns:1fr;gap:2.25rem;}}
 .perks{display:flex;flex-direction:column;gap:1.35rem;}

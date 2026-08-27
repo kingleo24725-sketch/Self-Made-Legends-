@@ -12,7 +12,7 @@
 // InterServer cPanel first — mail sent to an address that does not exist
 // will bounce or vanish.
 const SML_TO_NEWSLETTER = 'info@selfmadelegendsz.com';
-const SML_TO_AMBASSADOR = 'info@selfmadelegendsz.com';
+const SML_TO_LEGEND     = 'info@selfmadelegendsz.com';
 
 // Customer problems and complaints go straight to the CEO, not to info@.
 const SML_TO_SUPPORT    = 'ceo@selfmadelegendsz.com';

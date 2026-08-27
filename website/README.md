@@ -15,7 +15,7 @@ In cPanel → **Email Accounts**, create these at `selfmadelegendsz.com`:
 
 | Address | What lands there |
 |---|---|
-| `info@selfmadelegendsz.com` | Newsletter signups + Ambassador applications |
+| `info@selfmadelegendsz.com` | Newsletter signups + Legendary Pull entries |
 | `ceo@selfmadelegendsz.com` | **Customer problems and complaints** — straight to you |
 | `noreply@selfmadelegendsz.com` | The "from" address on those notifications |
 | `wholesale@selfmadelegendsz.com` | Linked in the footer |
@@ -101,7 +101,7 @@ your phone too.
 
 Nothing arrived? Check the spam folder first — that's usually it.
 
-**3. The ambassador form works.** Fill it in and submit. Also to `info@`.
+**3. The Legendary Pull form works.** Fill it in and submit. Also to `info@`.
 
 **4. The contact form works.** Fill it in and submit — this one should
 arrive at **`ceo@`**, not `info@`. Confirm it went to the right inbox.
@@ -124,7 +124,7 @@ test again. Without it, anyone can take your entire email list.
 cPanel → File Manager → `public_html/data/`
 
 - `newsletter.csv` — email list
-- `ambassadors.csv` — Ambassador applications
+- `legends.csv` — Legendary Pull entries, grouped by month
 - `support.csv` — customer messages and complaints
 
 Every message is written to `support.csv` **before** the email goes out.
@@ -151,7 +151,7 @@ All in `index.html`. Search for what you want and change the text.
 | Drop dates and status | `<section id="drops"` |
 | Products and prices | `<section id="collection"` |
 | FAQ answers | `<section id="faq"` |
-| Ambassador perks | `class="perks"` |
+| The Pull &mdash; perks and rules | `<section id="legend"` |
 | Contact emails | `foot-col` |
 | Contact form topics | `<section id="support"` |
 | Shipping rates and returns | `shipping-returns.html` |
