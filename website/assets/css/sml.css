@@ -651,3 +651,43 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 @media (prefers-reduced-motion:reduce){
   .poll-bar i,.poll-opt,.poll-opt input,.poll-opt input::after{transition:none;}
 }
+
+/* ── Footwear teaser ──────────────────────────────────────────────────── */
+
+.fw-grid{
+  display:grid;gap:1.5rem;grid-template-columns:1fr;
+  margin-bottom:2rem;
+}
+@media (min-width:820px){ .fw-grid{grid-template-columns:1fr 1fr;} }
+
+/* The renders are studio product shots on a near-white ground (#f9fbfa,
+   sampled from the files). Fighting that with a blend mode looked like a
+   bug — a bright slab floating on black. So the plate is set to the same
+   white instead: the seam disappears, and a lookbook plate reads as a
+   deliberate choice rather than an accident. */
+.fw{
+  margin:0;border:1px solid var(--rule);overflow:hidden;
+  background:#f9fbfa;
+}
+.fw picture{display:block;}
+.fw img{display:block;width:100%;height:auto;}
+.fw figcaption{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+  padding:1rem 1.25rem;border-top:1px solid var(--rule);background:var(--pitch);
+}
+.fw-name{
+  font-family:"Bodoni Moda",Didot,serif;font-size:1.05rem;color:var(--ivory);
+}
+.fw-cw{
+  font-family:"DM Mono",monospace;font-size:.64rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--gold-ash);
+}
+
+.fw-note{
+  max-width:60ch;border-left:2px solid var(--gold-dp);padding:.3rem 0 .3rem 1.15rem;
+  font-size:.85rem;color:var(--ash);line-height:1.65;margin-bottom:2.25rem;
+}
+.fw-note strong{color:var(--ivory);font-weight:400;}
+
+.fw-cta{display:flex;flex-wrap:wrap;align-items:center;gap:1rem 1.5rem;}
+.fw-cta-note{font-size:.8rem;color:var(--ash-dim);max-width:34ch;line-height:1.55;}

@@ -22,6 +22,28 @@
 
 window.SML_SHOP = {
 
+  /* ══════════════════════════════════════════════════════════════════════
+     THE MASTER SWITCH.
+
+       false = nothing on the site can be bought. Every product shows
+               "Notify Me" and sends the visitor to the newsletter, even
+               ones with a working Stripe link pasted in.
+
+       true  = products with a valid Stripe link become buyable. Ones
+               without a link still show "Notify Me".
+
+     Set this to false whenever you are not ready to take money — a
+     holiday, a supply problem, a drop that sold out. It is one word, and
+     it beats deleting your Stripe links and pasting them back later.
+
+     A customer who can pay for something you cannot ship costs you a
+     refund and their trust. This switch is cheaper.
+     ══════════════════════════════════════════════════════════════════════ */
+  shopOpen: false,
+
+  // Shown in place of the shop note while the shop is closed.
+  closedNote: 'The shop is not open yet. Join the list and you will hear first when it is.',
+
   products: [
 
     {
@@ -111,7 +133,9 @@ window.SML_SHOP = {
   var liveCount = 0;
 
   function card(p) {
-    var live = isStripeLink(p.paymentLink);
+    // The master switch overrides everything. A product cannot be sold
+    // while the shop is shut, whatever its payment link says.
+    var live = window.SML_SHOP.shopOpen !== false && isStripeLink(p.paymentLink);
     if (live) liveCount++;
 
     var swatches = (p.colors || []).map(function (c) {
@@ -131,7 +155,8 @@ window.SML_SHOP = {
       '<article class="prod">' +
         '<div class="prod-head">' +
           '<span class="prod-sku">' + esc(p.sku || '') + '</span>' +
-          (live ? '' : '<span class="prod-badge">Not yet released</span>') +
+          (live ? '' : '<span class="prod-badge">' +
+          (window.SML_SHOP.shopOpen === false ? 'Coming soon' : 'Not yet released') + '</span>') +
         '</div>' +
         '<h3>' + esc(p.name) + '</h3>' +
         '<p class="prod-price">' + esc(money(p.price)) + '</p>' +
@@ -164,11 +189,19 @@ window.SML_SHOP = {
 
   renderInto('shop-grid', window.SML_SHOP.products);
 
-  // Tell the owner, not the customer, when nothing is purchasable yet.
-  if (liveCount === 0 && window.console && console.info) {
-    console.info(
-      '[SML] No Stripe Payment Links are set, so nothing can be bought yet.\n' +
-      'Add them in assets/js/shop.js — see README.md.'
-    );
+  // Swap the shop note while the shop is shut, so the page does not promise
+  // free shipping over $150 on something nobody can buy.
+  if (window.SML_SHOP.shopOpen === false) {
+    var note = document.querySelector('#shop .shop-note');
+    if (note && window.SML_SHOP.closedNote) note.textContent = window.SML_SHOP.closedNote;
+  }
+
+  // Tell the owner, not the customer, what state the shop is in.
+  if (window.console && console.info) {
+    if (window.SML_SHOP.shopOpen === false) {
+      console.info('[SML] shopOpen is false — nothing can be bought. Set it to true in assets/js/shop.js when you are ready.');
+    } else if (liveCount === 0) {
+      console.info('[SML] The shop is open but no Stripe Payment Links are set, so nothing can be bought yet.');
+    }
   }
 })();
