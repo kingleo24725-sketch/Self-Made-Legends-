@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Self-Made Legends">
+  <title>Self-Made Legends</title>
+  <!--
+    Tiny-size mark: 16 and 32 px only.
+    The SML monogram is dropped and the crown enlarged, because at these
+    sizes lettering degrades into a smudge and actively makes the icon
+    harder to recognise. The brand rule is the same one on the mark sheet:
+    below ~30px, crown alone.
+  -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#A8801C"/><stop offset="30%" stop-color="#C9A227"/>
+      <stop offset="52%" stop-color="#F2DFA0"/><stop offset="76%" stop-color="#C9A227"/>
+      <stop offset="100%" stop-color="#A8801C"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="10" fill="#06060A"/>
+  <circle cx="32" cy="32" r="27" fill="none" stroke="url(#g)" stroke-width="3.4"/>
+  <g transform="translate(32,33) scale(.46)">
+    <path d="M-40 26 L-32 -2 L-14 12 L0 -12 L14 12 L32 -2 L40 26 Z"
+          fill="none" stroke="url(#g)" stroke-width="8.5" stroke-linejoin="round"/>
+    <circle cx="-32" cy="-5" r="7.5" fill="url(#g)"/>
+    <circle cx="0" cy="-15" r="8.5" fill="url(#g)"/>
+    <circle cx="32" cy="-5" r="7.5" fill="url(#g)"/>
+    <rect x="-40" y="31" width="80" height="11" fill="url(#g)"/>
+  </g>
+</svg>
