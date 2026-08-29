@@ -12,7 +12,44 @@ import { Platform } from 'react-native';
 
 const extra = Constants.expoConfig?.extra ?? {};
 
-export const API_BASE_URL = extra.apiBaseUrl ?? 'http://localhost:4000/api';
+/**
+ * WHERE THE API IS.
+ *
+ * On web: always same-origin `/api`, never a configured URL. The browser build
+ * is served BY the Beauty Bond API (backend/src/server.js mounts public/web),
+ * so the server is by definition the one that sent the page. That makes the
+ * web app correct at whatever domain it is deployed to, with no config edit and
+ * no rebuild.
+ *
+ * This is not a shortcut. A hardcoded absolute URL here previously pointed at
+ * `web-production-75d20c.up.railway.app`, which is THE SELF-MADE LEGENDS COME
+ * UP — a different SML product — because the repo root's railway.json deploys
+ * `src/api-server.js`. Beauty Bond's own backend had never been deployed at
+ * all. Same-origin cannot make that mistake.
+ *
+ * On native there is no origin to inherit, so the URL must be configured. An
+ * unset value stays EMPTY rather than falling back to localhost: on a phone,
+ * localhost is the phone, so that fallback turns "nobody configured a server"
+ * into a confusing connection error. utils/api.js reports the empty case, and
+ * HealthBanner names it on the first screen.
+ */
+export const API_BASE_URL = Platform.OS === 'web'
+  ? '/api'
+  : (extra.apiBaseUrl || '');
+
+/** False when a native build shipped without a server. Drives the banner. */
+export const API_CONFIGURED = API_BASE_URL !== '';
+
+/**
+ * /health lives at the server ROOT, outside /api, and must answer with no
+ * credentials — that is what makes it a reachability probe.
+ */
+export const HEALTH_URL = Platform.OS === 'web'
+  ? '/health'
+  : `${API_BASE_URL.replace(/\/+$/, '').replace(/\/api$/, '')}/health`;
+
+/** Beauty Bond's /health says so. Anything else answering is the wrong service. */
+export const EXPECTED_PRODUCT = 'beauty-bond';
 export const STRIPE_PUBLISHABLE_KEY = extra.stripePublishableKey ?? '';
 export const LIVEKIT_WS_URL = extra.livekitWsUrl ?? '';
 export const ENV = extra.env ?? 'development';

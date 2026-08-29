@@ -113,7 +113,7 @@
       "description": "Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product."
     },
     "extra": {
-      "apiBaseUrl": "https://web-production-75d20c.up.railway.app/api",
+      "apiBaseUrl": "",
       "stripePublishableKey": "",
       "livekitWsUrl": "",
       "env": "production",

@@ -47,8 +47,13 @@ jobs:
       - name: Build the web app
         working-directory: beauty-bond/app
         run: |
-          rm -rf ../backend/public/web
-          npx expo export --platform web --output-dir ../backend/public/web
+          rm -rf ../backend/public/web .expo
+          # --clear is NOT optional. app.json is embedded into the bundle, and
+          # Metro's cache served a STALE copy of it once already — the export
+          # kept shipping a deleted apiBaseUrl pointing at another SML product
+          # long after the file said "". Deleting the output directory does not
+          # help; the cache lives in .expo and Metro's own store.
+          npx expo export --platform web --output-dir ../backend/public/web --clear
           # Adds the tags Apple reads. Without them "Add to Home Screen" makes a
           # bookmark that opens Safari with its address bar, not a full-screen
           # app. Idempotent, so re-running is safe.
@@ -62,7 +67,16 @@ jobs:
           test -f manifest.webmanifest
           test -f apple-touch-icon.png
           ls _expo/static/js/web/*.js >/dev/null
-          echo "Web export looks complete."
+
+          # The bundle embeds app.json. Assert what actually shipped rather than
+          # what the config file says — those diverged once and nothing noticed.
+          if grep -q 'web-production-75d20c' _expo/static/js/web/*.js; then
+            echo "::error::The bundle carries The Self-Made Legends Come Up's address."
+            echo "Beauty Bond must never point at another SML product's deploy."
+            echo "See backend/tests/safety/product-isolation.test.js"
+            exit 1
+          fi
+          echo "Web export looks complete, and carries no foreign address."
 
       - name: Commit it if it changed
         run: |
