@@ -694,3 +694,26 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 
 /* Three across on a wide screen; the two-up rule above still governs pairs. */
 @media (min-width:1000px){ .fw-grid.fw-three{grid-template-columns:repeat(3,1fr);} }
+
+/* ── Colourway range grid ─────────────────────────────────────────────── */
+
+.cw-grid{
+  display:grid;gap:1rem;margin-bottom:1.75rem;
+  grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));
+}
+.cw{margin:0;border:1px solid var(--rule);overflow:hidden;background:#f9fbfa;}
+.cw picture{display:block;}
+.cw img{display:block;width:100%;height:auto;}
+.cw figcaption{
+  padding:.7rem .9rem;border-top:1px solid var(--rule);background:var(--pitch);
+  font-family:"DM Mono",monospace;font-size:.62rem;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--gold-ash);
+}
+.cw:hover figcaption{color:var(--gold-lt);}
+
+.cw-note{
+  max-width:60ch;font-size:.85rem;color:var(--ash);line-height:1.65;
+  border-left:2px solid var(--gold-dp);padding:.3rem 0 .3rem 1.15rem;
+}
+.cw-note strong{color:var(--ivory);font-weight:400;}
+.cw-note a{color:var(--gold-md);}

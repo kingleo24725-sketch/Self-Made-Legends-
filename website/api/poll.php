@@ -41,20 +41,20 @@ require __DIR__ . '/lib.php';
 
 const SML_POLL = [
 
-    'id'       => '2026-W35',
+    'id'       => '2026-W36',
 
-    'question' => 'What should the house do next?',
+    'question' => 'Seven colourways drawn. Which two get made first?',
 
     // Shown under the question. Say when voting closes and what happens.
-    'note'     => 'Voting closes Sunday. Whatever wins, we try to make it real before the month is out.',
+    'note'     => 'Voting closes Sunday. The winner goes into the first sample run.',
 
     // Four is the sweet spot. Fewer feels rigged, more splits the vote so
     // nothing wins clearly. Keep each one short enough to read at a glance.
     'options'  => [
-        'a' => 'Drop the hoodie in a second colourway',
-        'b' => 'Lower prices and make bigger runs',
-        'c' => 'Put the crest on outerwear — a jacket, not a hoodie',
-        'd' => 'Show how it is actually made — factory, thread, stitch count',
+        'a' => 'Triple Onyx — all black, gold script, gum sole',
+        'b' => 'Onyx / Bloom — black with embroidered red roses',
+        'c' => 'Cherish — the gold and purple wings',
+        'd' => 'Blush / Gold — pink suede, black panel',
     ],
 
     // Last week's result. Leave all three as '' until you have one.
@@ -63,6 +63,9 @@ const SML_POLL = [
         'winner'   => '',
         'outcome'  => '',
     ],
+    // ↑ Fill this in next week: last week's question, what won, and what you
+    //   did about it. That block is what makes the second vote bigger than
+    //   the first.
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════
