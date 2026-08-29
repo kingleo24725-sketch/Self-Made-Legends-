@@ -871,6 +871,22 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 }
 .named span{font-size:.8rem;color:var(--ash-dim);}
 
+/* The house colourways. A swatch and a name — no product, because the whole
+   point is that these belong to no single product. */
+.ways{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(13rem,1fr));gap:.9rem 2rem;
+}
+.ways li{display:flex;align-items:center;gap:.7rem;}
+.ways i{
+  width:26px;height:26px;flex-shrink:0;border-radius:2px;
+  border:1px solid var(--gold-ash);
+}
+.ways b{
+  font-family:"DM Mono",ui-monospace,Menlo,monospace;font-weight:400;
+  font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);
+}
+
 /* The one shot that leads the section. Dark ground, unlike .cw — this render
    is lit on black and a white plate behind it would show at the edges. */
 .fw-lead{
