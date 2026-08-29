@@ -153,8 +153,11 @@ section + section{border-top:1px solid var(--rule);}
 .nav-links{display:flex;gap:.15rem;align-items:center;}
 .nav-links a{
   font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ash);text-decoration:none;padding:.5rem .62rem;border-radius:2px;
-  transition:color .2s;
+  color:var(--ash);text-decoration:none;padding:.5rem .55rem;border-radius:2px;
+  transition:color .2s;white-space:nowrap;
+}
+@media(min-width:941px) and (max-width:1200px){
+  .nav-links a{font-size:.66rem;letter-spacing:.1em;padding:.5rem .4rem;}
 }
 .nav-links a:hover,.nav-links a:focus-visible{color:var(--gold-lt);}
 
@@ -733,3 +736,60 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 .model-head p{font-size:.92rem;color:var(--ash);}
 
 .cw-grid.cw-lg{grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));}
+
+/* ── The Film ─────────────────────────────────────────────────────────── */
+
+#film{position:relative;isolation:isolate;overflow:hidden;background:var(--void);}
+.film-bg{position:absolute;inset:0;z-index:0;pointer-events:none;}
+.film-bg img{
+  width:100%;height:100%;object-fit:cover;object-position:center 30%;
+  /* Blurred as well as dimmed. At opacity alone the facade's own wordmark was
+     still readable behind the text — and it is set without the hyphen, which
+     would put the trademark on the page wrong. A backdrop is atmosphere, not
+     information; blur makes that true rather than hoped for. The scale hides
+     the soft edge blur leaves at the frame. */
+  opacity:.20;filter:saturate(.65) contrast(1.02) blur(7px);
+  transform:scale(1.06);
+}
+#film::after{
+  content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,var(--void) 0%,rgba(6,6,10,.55) 30%,rgba(6,6,10,.75) 70%,var(--void) 100%);
+}
+.film-in{position:relative;z-index:2;}
+
+.shots{
+  list-style:none;margin:0;padding:0;max-width:44rem;
+  display:flex;flex-direction:column;
+}
+.shot{
+  display:grid;grid-template-columns:4.5rem 1fr;gap:1.5rem;align-items:baseline;
+  padding:1.05rem 0;border-top:1px solid var(--rule);
+}
+.shot:first-child{border-top:0;}
+.tc{
+  font-family:"DM Mono",monospace;font-size:.66rem;letter-spacing:.14em;
+  color:var(--gold-ash);font-variant-numeric:tabular-nums;
+}
+.shot p{
+  margin:0;font-family:"Bodoni Moda",Didot,serif;
+  font-size:clamp(1.05rem,2.4vw,1.5rem);line-height:1.28;color:var(--ash);
+  text-wrap:balance;
+}
+.shot em{font-style:normal;color:var(--gold-lt);}
+
+.film-end{margin-top:3.5rem;padding-top:2.5rem;border-top:1px solid var(--rule);max-width:44rem;}
+.film-sign{
+  font-family:"Bodoni Moda",Didot,serif;font-size:clamp(1.4rem,3.2vw,2rem);
+  color:var(--ivory);line-height:1.1;
+}
+.film-earned{
+  font-family:"Bodoni Moda",Didot,serif;font-style:italic;
+  font-size:clamp(1.6rem,4vw,2.6rem);line-height:1.1;margin-top:.5rem;
+  background:linear-gradient(100deg,var(--gold-dp),var(--gold) 30%,var(--gold-lt) 50%,var(--gold) 72%,var(--gold-dp));
+  -webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;
+}
+@supports not (background-clip:text){ .film-earned{color:var(--gold);-webkit-text-fill-color:var(--gold);} }
+
+@media(max-width:560px){
+  .shot{grid-template-columns:3.4rem 1fr;gap:1rem;}
+}
