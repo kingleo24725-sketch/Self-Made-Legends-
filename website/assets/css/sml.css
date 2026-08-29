@@ -316,6 +316,33 @@ section + section{border-top:1px solid var(--rule);}
 }
 @media(max-width:700px){ .sound{right:1rem;bottom:1rem;} }
 
+/* Call the CEO. The number is injected by sml.js — see the note there. */
+.callus{
+  margin-top:1.6rem;padding-top:1.4rem;border-top:1px solid var(--rule);
+  display:flex;flex-direction:column;gap:.3rem;
+}
+.callus-n{
+  font-family:"Bodoni Moda",Didot,serif;font-size:1.45rem;letter-spacing:.02em;
+  color:var(--gold-lt);text-decoration:none;width:max-content;
+  border-bottom:1px solid transparent;transition:border-color .2s;
+}
+.callus-n:hover,.callus-n:focus-visible{border-bottom-color:var(--gold-dp);}
+.callus-t{font-size:.78rem;color:var(--ash-dim);}
+
+/* The section that stands where invented reviews would have gone. */
+.first{
+  max-width:44rem;border-left:2px solid var(--gold-dp);padding:.4rem 0 .4rem 1.6rem;
+  display:flex;flex-direction:column;gap:1rem;
+}
+.first-n{
+  font-family:"Bodoni Moda",Didot,serif;font-size:clamp(2.4rem,7vw,3.6rem);line-height:1;
+  background:linear-gradient(100deg,var(--gold-dp),var(--gold) 34%,var(--gold-lt) 52%,var(--gold));
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+}
+@supports not (background-clip:text){ .first-n{color:var(--gold);-webkit-text-fill-color:var(--gold);} }
+.first-b{font-size:.95rem;color:var(--ash);max-width:54ch;line-height:1.75;}
+
 .hero-in{
   display:flex;flex-direction:column;align-items:center;text-align:center;
   gap:1.9rem;width:100%;position:relative;z-index:2;

@@ -1,0 +1,9 @@
+# Self-Made Legends — selfmadelegendsz.com
+User-agent: *
+Allow: /
+
+# Customer data and server-side code. Never indexed, never listed.
+Disallow: /data/
+Disallow: /api/
+
+Sitemap: https://selfmadelegendsz.com/sitemap.xml
