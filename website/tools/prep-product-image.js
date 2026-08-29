@@ -65,66 +65,112 @@ const SEARCH = { top: 0, height: 0.13, left: 0.70, width: 0.30 };
  */
 const MAX_REGION = 0.45;
 
-async function groundColour(img, meta) {
-  // A 40px block from the top-left: clear of a top-right badge and, in a
-  // studio product shot, clear of the product.
-  //
-  // The stride is read from info.channels rather than assumed to be 3. A PNG
-  // with an alpha channel gives 4, and walking an RGBA buffer three bytes at
-  // a time reads red, green, blue, alpha, red... as if it were RGB — the
-  // "ground colour" then comes out as garbage and nothing is ever detected.
-  // Most PNGs carry alpha, so this was not an edge case.
-  const { data, info } = await img.clone()
-    .extract({ left: 4, top: 4, width: 40, height: 40 })
-    .raw().toBuffer({ resolveWithObject: true });
+/**
+ * Ignore anything narrower than this share of the image width.
+ *
+ * The badge is text in a pill — about 16% of the width on every file seen so
+ * far. Without a floor, a sliver of product clipping the corner reads as a
+ * tiny "badge" and gets painted over: caught on an image with no badge at
+ * all, where a 37px edge of the shoe was found and cleared. 37px was 3% of
+ * the width, so the two are not close.
+ */
+const MIN_WIDTH = 0.08;
 
+/**
+ * The background colour, taken as the MEDIAN of the search area itself.
+ *
+ * Not a patch from the far corner, which was the first approach and broke on
+ * the first image with a gradient background: the corner read as mid-grey,
+ * every pixel near the badge then differed from it, and the whole box came
+ * back as "badge".
+ *
+ * The median works because a badge is a minority of the box by definition —
+ * so the middle value is the background it sits on, gradient and all. If the
+ * product ever does fill most of the box, the median becomes the product and
+ * MAX_REGION catches it.
+ *
+ * The stride is read from info.channels, never assumed to be 3. A PNG with an
+ * alpha channel gives 4, and walking an RGBA buffer three bytes at a time
+ * reads red, green, blue, alpha, red... as if it were RGB.
+ */
+async function groundColour(img, box) {
+  const { data, info } = await img.clone().extract(box).raw().toBuffer({ resolveWithObject: true });
   const ch = info.channels;
-  let r = 0, g = 0, b = 0;
-  const n = data.length / ch;
-  for (let i = 0; i < data.length; i += ch) { r += data[i]; g += data[i + 1]; b += data[i + 2]; }
-  return { r: Math.round(r / n), g: Math.round(g / n), b: Math.round(b / n) };
+
+  const hist = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)];
+  let count = 0;
+  for (let i = 0; i < data.length; i += ch) {
+    hist[0][data[i]]++; hist[1][data[i + 1]]++; hist[2][data[i + 2]]++;
+    count++;
+  }
+
+  const median = (h) => {
+    let seen = 0;
+    for (let v = 0; v < 256; v++) { seen += h[v]; if (seen >= count / 2) return v; }
+    return 255;
+  };
+
+  return { r: median(hist[0]), g: median(hist[1]), b: median(hist[2]) };
 }
 
-/** Bounding box of everything in the search area that is not the ground. */
-async function findBadge(img, meta, ground) {
-  const box = {
+function searchBox(meta) {
+  return {
     left: Math.floor(meta.width * SEARCH.left),
     top: Math.floor(meta.height * SEARCH.top),
     width: Math.floor(meta.width * SEARCH.width),
     height: Math.floor(meta.height * SEARCH.height),
   };
+}
 
+/**
+ * The badge's box, grown inward from the top-right corner.
+ *
+ * NOT a bounding box over every deviating pixel in the strip — that was the
+ * first approach, and it merged the badge with anything else up there
+ * (a shadow, a gradient edge, the top of the shoe), producing one huge region
+ * spanning both. A corner-anchored scan walks left from the right edge while
+ * columns still have content and stops at a run of empty ones, so a separate
+ * blob further left is simply never reached.
+ */
+async function findBadge(img, box, ground) {
   const { data, info } = await img.clone().extract(box).raw().toBuffer({ resolveWithObject: true });
-
-  let minX = Infinity, minY = Infinity, maxX = -1, maxY = -1;
   const ch = info.channels;
 
-  for (let y = 0; y < info.height; y++) {
-    for (let x = 0; x < info.width; x++) {
-      const i = (y * info.width + x) * ch;
-      const off = Math.abs(data[i] - ground.r) + Math.abs(data[i + 1] - ground.g) + Math.abs(data[i + 2] - ground.b);
-      if (off > TOLERANCE) {
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
-      }
-    }
+  const differs = (x, y) => {
+    const i = (y * info.width + x) * ch;
+    return Math.abs(data[i] - ground.r) + Math.abs(data[i + 1] - ground.g) + Math.abs(data[i + 2] - ground.b) > TOLERANCE;
+  };
+
+  const colHas = (x) => { for (let y = 0; y < info.height; y++) if (differs(x, y)) return true; return false; };
+  const rowHas = (y, fromX) => { for (let x = fromX; x < info.width; x++) if (differs(x, y)) return true; return false; };
+
+  // A badge has internal gaps — the space between letters. Tolerate a short
+  // run of empty columns before deciding the badge has ended.
+  const GAP = Math.max(8, Math.round(info.width * 0.03));
+
+  let x = info.width - 1;
+  while (x >= 0 && !colHas(x)) x--;          // skip the margin to the right of it
+  if (x < 0) return null;                     // nothing in the corner at all
+
+  let left = x, empty = 0;
+  for (let cx = x; cx >= 0; cx--) {
+    if (colHas(cx)) { left = cx; empty = 0; } else if (++empty > GAP) break;
   }
 
-  if (maxX < 0) return null; // nothing there — no badge to clear
+  let bottom = 0;
+  for (let y = info.height - 1; y >= 0; y--) if (rowHas(y, left)) { bottom = y; break; }
 
-  // A few pixels of margin, so no anti-aliased edge survives.
   const pad = 6;
   const region = {
-    left: Math.max(0, box.left + minX - pad),
-    top: Math.max(0, box.top + minY - pad),
-    width: Math.min(meta.width, box.left + maxX + pad) - Math.max(0, box.left + minX - pad),
-    height: Math.min(meta.height, box.top + maxY + pad) - Math.max(0, box.top + minY - pad),
+    left: Math.max(0, box.left + left - pad),
+    top: box.top,
+    width: (box.left + Math.min(info.width - 1, x + pad)) - Math.max(0, box.left + left - pad),
+    height: Math.min(info.height - 1, bottom + pad) + 1,
   };
 
   const share = (region.width * region.height) / (box.width * box.height);
-  return { region, share };
+  const tooNarrow = region.width < box.width / SEARCH.width * MIN_WIDTH;
+  return { region, share, tooNarrow };
 }
 
 async function main() {
@@ -160,10 +206,11 @@ async function main() {
   let pipeline = img;
 
   if (!keepBadge) {
-    const ground = await groundColour(img, meta);
-    const found = await findBadge(img, meta, ground);
+    const box = searchBox(meta);
+    const ground = await groundColour(img, box);
+    const found = await findBadge(img, box, ground);
 
-    if (!found) {
+    if (!found || found.tooNarrow) {
       console.log('  · no corner badge found — nothing to clear');
     } else if (found.share > MAX_REGION) {
       // Loud, and it does not silently proceed. Better to ship the badge than

@@ -691,3 +691,6 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 
 .fw-cta{display:flex;flex-wrap:wrap;align-items:center;gap:1rem 1.5rem;}
 .fw-cta-note{font-size:.8rem;color:var(--ash-dim);max-width:34ch;line-height:1.55;}
+
+/* Three across on a wide screen; the two-up rule above still governs pairs. */
+@media (min-width:1000px){ .fw-grid.fw-three{grid-template-columns:repeat(3,1fr);} }
