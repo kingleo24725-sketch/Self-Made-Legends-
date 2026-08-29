@@ -887,6 +887,37 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
   font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);
 }
 
+/* The hidden tag. Given room and silence rather than a bullet in a spec list —
+   it is the one thing on these sheets that is about a person rather than a
+   product, and setting it in the same grey as a fabric weight would be wrong. */
+.clb{
+  margin:3rem auto 0;max-width:34rem;text-align:center;
+  padding:2.6rem 1.6rem;border:1px solid var(--gold-ash);
+  display:flex;flex-direction:column;align-items:center;gap:.5rem;
+  background:
+    radial-gradient(80% 100% at 50% 0%, rgba(207,165,41,.07) 0%, transparent 70%),
+    var(--pitch);
+}
+.clb-mark{
+  font-family:"Bodoni Moda",Didot,serif;font-size:2.6rem;line-height:1;
+  letter-spacing:.14em;margin-left:.14em;
+  background:linear-gradient(100deg,var(--gold-dp),var(--gold) 34%,var(--gold-lt) 52%,var(--gold));
+  -webkit-background-clip:text;background-clip:text;
+  color:transparent;-webkit-text-fill-color:transparent;
+}
+@supports not (background-clip:text){ .clb-mark{color:var(--gold);-webkit-text-fill-color:var(--gold);} }
+.clb-name{
+  font-family:"Bodoni Moda",Didot,serif;font-size:1.18rem;color:var(--ivory);
+  letter-spacing:.02em;
+}
+.clb-line{
+  font-family:"DM Mono",ui-monospace,Menlo,monospace;
+  font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--gold-ash);
+}
+.clb-body{
+  margin-top:1rem;font-size:.86rem;color:var(--ash);max-width:34ch;line-height:1.7;
+}
+
 /* The one shot that leads the section. Dark ground, unlike .cw — this render
    is lit on black and a white plate behind it would show at the edges. */
 .fw-lead{
