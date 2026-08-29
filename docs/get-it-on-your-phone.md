@@ -12,11 +12,22 @@ needs a phone browser and nothing else.
 
 ## iPhone — the free version, right now
 
-**Open this in Safari:**
+> **The address is not live yet.** Beauty Bond's backend has never been
+> deployed. `web-production-75d20c.up.railway.app` — which appeared here
+> previously — is **The Self-Made Legends Come Up**: the repository root's
+> `railway.json` deploys `src/api-server.js`, a different SML product.
+> `deploy-railway.md` §1 is the procedure that produces Beauty Bond's own
+> address, and **Root Directory `beauty-bond/backend`** is the field that
+> decides which product a Railway service actually runs.
+
+**Once that project exists, open its address in Safari:**
 
 ```
-https://web-production-75d20c.up.railway.app
+https://<your-beauty-bond>.up.railway.app
 ```
+
+Both the API and this web app answer there — the browser build is served by the
+Beauty Bond API itself, so there is one address, not two.
 
 Then tap the **Share** button (the square with the arrow), scroll down, and tap
 **Add to Home Screen**. You get an icon that opens full-screen with no address

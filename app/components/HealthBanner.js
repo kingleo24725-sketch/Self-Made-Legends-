@@ -19,21 +19,33 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Pressable, ActivityIndicator } from 'react-native';
 
 import { useTheme } from '../context/ThemeContext';
-import { API_BASE_URL } from '../utils/config';
+import { HEALTH_URL, EXPECTED_PRODUCT, API_CONFIGURED } from '../utils/config';
 
-/** https://host/api -> https://host/health */
-export const healthUrl = (base = API_BASE_URL) =>
-  `${String(base).replace(/\/+$/, '').replace(/\/api$/, '')}/health`;
 
 /** fetch has no timeout of its own in React Native, so this supplies one. */
 async function probe(timeoutMs = 6000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(healthUrl(), { signal: controller.signal });
+    const res = await fetch(HEALTH_URL, { signal: controller.signal });
     if (!res.ok) throw new Error(`server answered ${res.status}`);
     const body = await res.json();
     if (body?.ok !== true) throw new Error('server is not healthy');
+
+    /**
+     * "Reachable" is not "correct". This app shares a repository and a Stripe
+     * account with The Self-Made Legends Come Up, and it spent days pointed at
+     * Come Up's Railway deployment — a healthy server that simply is not this
+     * product. Checking `ok` alone would have called that a success.
+     *
+     * /health names the product (backend/src/server.js:48). Trust that, not
+     * reachability.
+     */
+    if (body.product !== EXPECTED_PRODUCT) {
+      const err = new Error(`that server is "${body.product ?? 'unknown'}", not Beauty Bond`);
+      err.wrongProduct = true;
+      throw err;
+    }
     return body;
   } catch (err) {
     // A phone on a bad connection should not sit on "Checking…" forever, and
@@ -51,11 +63,23 @@ export default function HealthBanner({ style }) {
   const [state, setState] = useState({ status: 'checking' });
 
   const check = useCallback(() => {
+    if (!API_CONFIGURED) {
+      setState({
+        status: 'down',
+        reason: 'this build has no server address set',
+        unconfigured: true,
+      });
+      return undefined;
+    }
     let live = true;
     setState({ status: 'checking' });
     probe()
       .then((body) => { if (live) setState({ status: 'up', body }); })
-      .catch((err) => { if (live) setState({ status: 'down', reason: err.message }); });
+      .catch((err) => {
+        if (live) {
+          setState({ status: 'down', reason: err.message, wrongProduct: !!err.wrongProduct });
+        }
+      });
     return () => { live = false; };
   }, []);
 
@@ -86,7 +110,11 @@ export default function HealthBanner({ style }) {
       {checking && <ActivityIndicator size="small" color={tone} />}
       <View style={{ flex: 1 }}>
         <Text style={[t.type('bodySm'), { color: tone }]}>
-          {checking ? 'Checking the connection…' : "Can't reach Beauty Bond's server."}
+          {checking
+            ? 'Checking the connection…'
+            : state.wrongProduct
+              ? 'Connected to the wrong service.'
+              : "Can't reach Beauty Bond's server."}
         </Text>
         {!checking && (
           <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>
