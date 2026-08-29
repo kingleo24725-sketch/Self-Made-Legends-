@@ -64,7 +64,7 @@ window.SML_SHOP = {
       id: 'throne-hoodie',
       name: 'Golden Throne Hoodie',
       sku: 'SML·GT·001',
-      price: 6500,                    // $65.00 — in cents
+      price: 45000,                   // $450.00 — in cents
       blurb: 'Heavyweight black fleece. The lion crest carried large across the ' +
              'back, small at the chest, and NOT GIVEN. EARNED. below it.',
       details: [
@@ -83,7 +83,7 @@ window.SML_SHOP = {
       id: 'throne-tee',
       name: 'Golden Throne Tee',
       sku: 'SML·GT·002',
-      price: 3800,                    // $38.00
+      price: 19500,                   // $195.00
       blurb: 'The foundation piece. Crest at the chest, LEAD THE KINGDOM down the sleeve.',
       details: [
         'Combed ring-spun cotton',
