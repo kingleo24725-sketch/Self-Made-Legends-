@@ -369,3 +369,42 @@ Not included, and worth knowing:
 Copyright © 2026 Self-Made Legends LLC. All Rights Reserved.
 
 The name is always written **Self-Made Legends**, hyphenated, everywhere.
+
+---
+
+## Adding a product image
+
+```bash
+node website/tools/prep-product-image.js ~/Downloads/hoodie.png regent-hoodie-onyx
+```
+
+One command. It clears a corner watermark, resizes to web size, and writes a
+WebP with a JPEG fallback into `assets/img/concepts/`. Typically **95% smaller** —
+a 1.1MB export comes out at about 50KB, which is the difference between a page
+that loads and one that doesn't.
+
+Then reference it:
+
+```html
+<picture>
+  <source srcset="assets/img/concepts/NAME.webp" type="image/webp">
+  <img src="assets/img/concepts/NAME.jpg" width="1200" height="800"
+       loading="lazy" decoding="async" alt="Describe what is in the picture.">
+</picture>
+```
+
+**If it says the area is too big for a badge, believe it.** That means what it
+found is probably your product, not a watermark, and it refused to paint over
+it rather than quietly deleting part of your shoe. Crop by hand, or re-run with
+`--keep-badge`.
+
+### The one thing this changes
+
+Re-encoding strips the file's metadata, and for an AI-generated image that
+includes its **Content Credentials**. Instagram, TikTok and Facebook read that
+metadata and label AI content automatically — after this tool runs, they can't.
+
+On your own site that doesn't matter: the page says what these are, in plainer
+words than any badge. **On social it does.** Those platforms require you to
+disclose AI content yourself, and the FTC cares about it in a paid ad. The tool
+removed the automatic disclosure. It did not remove the duty.
