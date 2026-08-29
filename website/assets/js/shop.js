@@ -61,69 +61,35 @@ window.SML_SHOP = {
   products: [
 
     {
-      id: 'regent-hoodie',
-      name: 'Regent Embroidered Hoodie',
-      sku: 'SML·AP·001',
+      id: 'throne-hoodie',
+      name: 'Golden Throne Hoodie',
+      sku: 'SML·GT·001',
       price: 6500,                    // $65.00 — in cents
-      image: 'hoodie-onyx',
-      imageAlt: 'Black Regent hoodie, front and back, with the gold Self-Made ' +
-                'Legends crest across the back and a small crest at the chest.',
-      blurb: 'Heavyweight fleece with the house crest embroidered in metallic gold thread.',
+      blurb: 'Heavyweight black fleece. The lion crest carried large across the ' +
+             'back, small at the chest, and NOT GIVEN. EARNED. below it.',
       details: [
         'Heavyweight brushed fleece',
-        'Gold metallic embroidered crest',
-        'Unisex fit, ribbed cuff and hem'
+        'Gold embroidered lion crest',
+        'Crest at chest, full crest at back',
+        'Numbered 001 / 1000'
       ],
-      // A colour with an `image` becomes a button that swaps the photo.
-      // Leave `image` off and it stays a plain label, exactly as before.
       colors: [
-        { name: 'Onyx', hex: '#0B0C11', image: 'hoodie-onyx',
-          imageAlt: 'The Regent hoodie in black, front and back, with the gold ' +
-                    'Self-Made Legends crest across the back.' },
-        { name: 'Oxblood', hex: '#6B1220', image: 'hoodie-oxblood',
-          imageAlt: 'The Regent hoodie in oxblood, front and back, with the gold ' +
-                    'Self-Made Legends crest across the back.' }
+        { name: 'Onyx', hex: '#0B0C11' }
       ],
       paymentLink: ''                 // ← paste your Stripe Payment Link
     },
 
     {
-      id: 'legacy-duffle',
-      name: 'Legacy Weekender Duffle',
-      sku: 'SML·AC·007',
-      price: 14500,                   // $145.00 — CONFIRM THIS BEFORE YOU OPEN
-      image: 'duffle-bone',
-      imageAlt: 'Bone and black weekender duffle with gold hardware and the ' +
-                'Self-Made Legends crest debossed on the side panel.',
-      blurb: 'Full-grain body, gold hardware, the crest debossed rather than ' +
-             'printed. Built for the weekend you earned.',
+      id: 'throne-tee',
+      name: 'Golden Throne Tee',
+      sku: 'SML·GT·002',
+      price: 3800,                    // $38.00
+      blurb: 'The foundation piece. Crest at the chest, LEAD THE KINGDOM down the sleeve.',
       details: [
-        'Debossed crest, EST. MMXXVI',
-        'Gold-tone zips, D-rings and feet',
-        'Detachable adjustable shoulder strap',
-        'End pocket for shoes'
-      ],
-      colors: [
-        { name: 'Bone / Onyx', hex: '#E7E1D4', image: 'duffle-bone',
-          imageAlt: 'The Legacy weekender duffle in bone with black leather ' +
-                    'corners and gold hardware.' },
-        { name: 'Oxblood', hex: '#6B1220', image: 'duffle-oxblood',
-          imageAlt: 'The Legacy weekender duffle in oxblood leather with gold ' +
-                    'hardware and the crest debossed on the side panel.' }
-      ],
-      paymentLink: ''
-    },
-
-    {
-      id: 'crown-cap',
-      name: 'Crown Embroidered Cap',
-      sku: 'SML·AC·003',
-      price: 3500,                    // $35.00
-      blurb: 'Structured six-panel cap with the crown emblem raised in gold.',
-      details: [
-        'Structured six-panel, mid profile',
-        '3D gold embroidered crown',
-        'Adjustable strap-back, one size'
+        'Combed ring-spun cotton',
+        'Gold crest at the chest',
+        'Sleeve text, tonal',
+        'Numbered 001 / 1000'
       ],
       colors: [
         { name: 'Onyx', hex: '#0B0C11' }
@@ -132,20 +98,47 @@ window.SML_SHOP = {
     },
 
     {
-      id: 'heir-tee',
-      name: 'Heir Embroidered Tee',
-      sku: 'SML·AP·003',
-      price: 3800,                    // $38.00
-      blurb: 'The foundation piece. Tonal crown at the nape, crest at the chest.',
+      id: 'throne-suit',
+      name: 'Golden Throne Suit',
+      sku: 'SML·GT·010',
+      price: 0,                       // ← PRICE NOT SET. Tailoring is priced
+                                      //   after the factory quotes; a made-up
+                                      //   number here would be a promise.
+      blurb: 'Three cuts, four colourways. Crest embroidered at the chest and again ' +
+             'across the back, 24k gold lapel pin, engraved crest buttons.',
       details: [
-        'Combed ring-spun cotton',
-        'Embroidered chest crest',
-        'Boxy cut, dropped shoulder'
+        'Royal Black Gold · Empire Midnight · Legacy Ivory Gold',
+        'Sizes 36 to 52',
+        'Silk-blend lining, message inside the pocket',
+        'Numbered 001 / 1000'
       ],
       colors: [
-        { name: 'Onyx', hex: '#0B0C11' },
-        { name: 'Bone', hex: '#E7E1D4' },
-        { name: 'Oxblood', hex: '#3A1020' }
+        { name: 'Midnight Black', hex: '#0B0C11' },
+        { name: 'Royal Navy',     hex: '#141C33' },
+        { name: 'Empire Purple',  hex: '#2A1440' },
+        { name: 'Ivory Gold',     hex: '#E7E1D4' }
+      ],
+      paymentLink: ''
+    },
+
+    {
+      id: 'throne-dress-shoe',
+      name: 'Golden Throne Dress Shoe',
+      sku: 'SML·GT·020',
+      price: 0,                       // ← PRICE NOT SET. See above.
+      blurb: 'Leather, embossed crest, gold at the toe and the heel. The sole ' +
+             'carries the mark, so you leave it behind you.',
+      details: [
+        'Premium leather, comfort insole',
+        'Embossed crest, gold toe plate',
+        'US 6 to 13',
+        'Numbered 001 / 1000'
+      ],
+      colors: [
+        { name: 'Royal Black Gold', hex: '#0B0C11' },
+        { name: 'Empire Wine Gold', hex: '#4A1220' },
+        { name: 'Stealth All Black', hex: '#08090C' },
+        { name: 'Ivory Gold',       hex: '#E7E1D4' }
       ],
       paymentLink: ''
     }
@@ -167,8 +160,15 @@ window.SML_SHOP = {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // Zero is "not priced yet", not "free". Tailoring and dress shoes get their
+  // price after a factory quotes them, and a card reading "$0" until then is
+  // worse than a card that says so.
+  function hasPrice(cents) {
+    return typeof cents === 'number' && isFinite(cents) && cents > 0;
+  }
+
   function money(cents) {
-    if (typeof cents !== 'number' || !isFinite(cents) || cents < 0) return '';
+    if (!hasPrice(cents)) return '';
     return '$' + (cents / 100).toFixed(2).replace(/\.00$/, '');
   }
 
@@ -230,7 +230,8 @@ window.SML_SHOP = {
   function card(p) {
     // The master switch overrides everything. A product cannot be sold
     // while the shop is shut, whatever its payment link says.
-    var live = window.SML_SHOP.shopOpen !== false && isStripeLink(p.paymentLink);
+    var live = window.SML_SHOP.shopOpen !== false &&
+               hasPrice(p.price) && isStripeLink(p.paymentLink);
     if (live) liveCount++;
 
     // A colourway with its own photograph becomes a button that swaps the shot.
@@ -269,7 +270,9 @@ window.SML_SHOP = {
           (window.SML_SHOP.shopOpen === false ? 'Coming soon' : 'Not yet released') + '</span>') +
         '</div>' +
         '<h3>' + esc(p.name) + '</h3>' +
-        '<p class="prod-price">' + esc(money(p.price)) + '</p>' +
+        (hasPrice(p.price)
+          ? '<p class="prod-price">' + esc(money(p.price)) + '</p>'
+          : '<p class="prod-price is-tbd">Price on request</p>') +
         '<p class="prod-blurb">' + esc(p.blurb || '') + '</p>' +
         (details ? '<ul class="prod-details">' + details + '</ul>' : '') +
         (swatches ? '<p class="prod-colors">' + swatches + '</p>' : '') +

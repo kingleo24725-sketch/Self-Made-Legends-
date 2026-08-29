@@ -615,6 +615,15 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
   color:transparent;-webkit-text-fill-color:transparent;
 }
 @supports not (background-clip:text){ .prod-price{color:var(--gold);-webkit-text-fill-color:var(--gold);} }
+/* A product whose price is not set yet. Deliberately not the big gold number —
+   it is a state, not an amount, and dressing it up as one invites the reader
+   to look for a figure that is not there. */
+.prod-price.is-tbd{
+  font-family:"DM Mono",ui-monospace,Menlo,monospace;
+  font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ash-dim);-webkit-text-fill-color:var(--ash-dim);
+  background:none;align-self:start;
+}
 .prod-blurb{font-size:.88rem;color:var(--ash);}
 .prod-details{
   margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.35rem;
@@ -829,6 +838,38 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
   max-width:60ch;font-size:.85rem;color:var(--ash);line-height:1.65;
   border-left:2px solid var(--gold-dp);padding:.3rem 0 .3rem 1.15rem;
 }
+
+/* A collection sheet. These are laid out to be read whole rather than cropped
+   into tiles — each one already carries its own titles, callouts and captions,
+   so the page gives it width and gets out of the way. */
+.sheet{
+  margin:0 0 2.8rem;border:1px solid var(--rule);overflow:hidden;
+  background:var(--void);max-width:900px;
+}
+.sheet img{display:block;width:100%;height:auto;}
+.sheet figcaption{
+  padding:.85rem 1.1rem;border-top:1px solid var(--rule);background:var(--pitch);
+  font-family:"DM Mono",monospace;font-size:.64rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold-ash);
+}
+
+/* The named pieces in a collection. A list, not a grid — there is no photograph
+   for each one yet, and a grid of empty cards would promise images that do not
+   exist. */
+.named{
+  list-style:none;margin:0;padding:0;
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));
+  gap:0 2rem;
+}
+.named li{
+  display:flex;flex-direction:column;gap:.1rem;
+  padding:.85rem 0;border-bottom:1px solid var(--rule);
+}
+.named b{
+  font-family:"Bodoni Moda",Didot,serif;font-weight:400;
+  font-size:1.02rem;color:var(--ivory);
+}
+.named span{font-size:.8rem;color:var(--ash-dim);}
 
 /* The one shot that leads the section. Dark ground, unlike .cw — this render
    is lit on black and a white plate behind it would show at the edges. */

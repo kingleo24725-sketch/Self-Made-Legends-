@@ -41,27 +41,29 @@ require __DIR__ . '/lib.php';
 
 const SML_POLL = [
 
-    'id'       => '2026-W36',
+    'id'       => '2026-W37',
 
-    'question' => 'Ten drawn. Which two get made first?',
+    'question' => 'The Golden Throne is drawn. What gets made first?',
 
     // Shown under the question. Say when voting closes and what happens.
-    'note'     => 'Voting closes Sunday. The winner goes into the first sample run.',
+    'note'     => 'Voting closes Sunday. Whatever wins goes to the factory first.',
 
     // Four is the sweet spot. Fewer feels rigged, more splits the vote so
     // nothing wins clearly. Keep each one short enough to read at a glance.
     'options'  => [
-        'a' => 'SML 2s — Triple Onyx, all black with a gum sole',
-        'b' => 'SML Rose Golds — black with embroidered red roses',
-        'c' => 'Cherish SML — the gold and purple wings',
-        'd' => 'SML 1s — Onyx / Gold, the court low',
+        'a' => 'The hoodie — crest at the chest, full crest at the back',
+        'b' => 'Royal Legacy — the black and gold high',
+        'c' => 'Stealth Wealth — all black, nothing announced',
+        'd' => 'The suit — Royal Black Gold, sizes 36 to 52',
     ],
 
     // Last week's result. Leave all three as '' until you have one.
     'previous' => [
-        'question' => '',
-        'winner'   => '',
-        'outcome'  => '',
+        'question' => 'Ten drawn. Which two get made first?',
+        'winner'   => 'Nothing — the line was redrawn before the vote closed.',
+        'outcome'  => 'The whole range was replaced with the Golden Throne '
+                    . 'Collection. Saying so beats quietly dropping a vote and '
+                    . 'hoping nobody kept the tab open.',
     ],
     // ↑ Fill this in next week: last week's question, what won, and what you
     //   did about it. That block is what makes the second vote bigger than

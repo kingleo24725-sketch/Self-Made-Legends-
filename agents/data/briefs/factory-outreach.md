@@ -11,7 +11,7 @@ round of renders.
 Send it to three. Not one — you need to compare, and the first quote always
 looks reasonable until you see the second.
 
-> **Subject:** Court low / retro runner — new US brand, 250–500 pairs, stock last
+> **Subject:** Leather trainer — new US brand, 250–500 pairs, stock last
 >
 > Hello,
 >
@@ -48,7 +48,7 @@ looks reasonable until you see the second.
 > Self-Made Legends LLC · Missouri, United States
 > selfmadelegendsz.com
 
-**Attach:** `agents/data/briefs/regent-low-spec.md`
+**Attach:** the Golden Throne collection sheet for whatever you are quoting.
 
 ---
 

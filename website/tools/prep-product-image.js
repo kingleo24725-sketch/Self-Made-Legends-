@@ -12,8 +12,8 @@
  * Usage:
  *   node website/tools/prep-product-image.js <input> <name> [--keep-badge|--crop-top=N]
  *
- *   node website/tools/prep-product-image.js ~/Downloads/shoe.png regent-low-onyx
- *   → website/assets/img/concepts/regent-low-onyx.webp  (+ .jpg)
+ *   node website/tools/prep-product-image.js ~/Downloads/shoe.png royal-legacy
+ *   → website/assets/img/concepts/royal-legacy.webp  (+ .jpg)
  *
  * Add --products to write into assets/img/products/ instead, which is where
  * a shot that appears on a shop card next to a price belongs.
@@ -244,7 +244,7 @@ async function main() {
                      rather than assets/img/concepts/ (a teaser or render).
 
   Example:
-    node website/tools/prep-product-image.js ~/Downloads/hoodie.png regent-hoodie-onyx
+    node website/tools/prep-product-image.js ~/Downloads/hoodie.png throne-hoodie
 `);
     process.exit(1);
   }
