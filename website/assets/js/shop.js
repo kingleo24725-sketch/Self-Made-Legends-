@@ -15,6 +15,20 @@
    │  something a customer cannot actually receive.                       │
    └──────────────────────────────────────────────────────────────────────┘
 
+   ┌──────────────────────────────────────────────────────────────────────┐
+   │  TO PUT A PICTURE ON A PRODUCT                                       │
+   │                                                                      │
+   │  1. node website/tools/prep-product-image.js <your-photo> <name>     │
+   │     That writes assets/img/products/<name>.webp and .jpg.            │
+   │  2. Add   image: '<name>'   to the product below. Just the name —    │
+   │     no folder, no .jpg.                                              │
+   │  3. Add   imageAlt: '...'   describing it for a blind visitor and    │
+   │     for Google. One plain sentence.                                  │
+   │                                                                      │
+   │  Leave `image` off and the card renders exactly as it does today.    │
+   │  A product never breaks for want of a photo.                         │
+   └──────────────────────────────────────────────────────────────────────┘
+
    Payment Links are public URLs by design. There are no secret keys in
    this file and none belong here — your Stripe secret key must never
    appear in anything you upload to a web server.
@@ -51,6 +65,9 @@ window.SML_SHOP = {
       name: 'Regent Embroidered Hoodie',
       sku: 'SML·AP·001',
       price: 6500,                    // $65.00 — in cents
+      image: 'hoodie-onyx',
+      imageAlt: 'Black Regent hoodie, front and back, with the gold Self-Made ' +
+                'Legends crest across the back and a small crest at the chest.',
       blurb: 'Heavyweight fleece with the house crest embroidered in metallic gold thread.',
       details: [
         'Heavyweight brushed fleece',
@@ -59,9 +76,31 @@ window.SML_SHOP = {
       ],
       colors: [
         { name: 'Onyx', hex: '#0B0C11' },
-        { name: 'Bone', hex: '#E7E1D4' }
+        { name: 'Oxblood', hex: '#6B1220' }
       ],
       paymentLink: ''                 // ← paste your Stripe Payment Link
+    },
+
+    {
+      id: 'legacy-duffle',
+      name: 'Legacy Weekender Duffle',
+      sku: 'SML·AC·007',
+      price: 14500,                   // $145.00 — CONFIRM THIS BEFORE YOU OPEN
+      image: 'duffle-bone',
+      imageAlt: 'Bone and black weekender duffle with gold hardware and the ' +
+                'Self-Made Legends crest debossed on the side panel.',
+      blurb: 'Bone body, black leather corners, solid gold hardware. Built for the ' +
+             'weekend you earned.',
+      details: [
+        'Bone panel with black leather trim',
+        'Gold-tone zips, D-rings and feet',
+        'Detachable adjustable shoulder strap',
+        'Debossed crest, EST. MMXXVI'
+      ],
+      colors: [
+        { name: 'Bone / Onyx', hex: '#E7E1D4' }
+      ],
+      paymentLink: ''
     },
 
     {
@@ -130,6 +169,51 @@ window.SML_SHOP = {
     return /^https:\/\/(buy\.stripe\.com|checkout\.stripe\.com|[a-z0-9-]+\.stripe\.com)\//i.test(url.trim());
   }
 
+  var IMG_DIR = 'assets/img/products/';
+
+  // Only a bare filename is accepted — no slashes, no dots, no scheme. The
+  // field is owner-edited, so this is not about a hostile input; it is about
+  // a typed 'products/duffle.jpg' or a pasted URL silently producing a
+  // broken image on the live shop. It either matches the tool's output or it
+  // is ignored and the card renders without a picture.
+  function imageName(value) {
+    return typeof value === 'string' && /^[a-z0-9][a-z0-9-]{0,60}$/.test(value.trim())
+      ? value.trim()
+      : '';
+  }
+
+  // WebP first with a JPEG fallback — prep-product-image.js writes both, and
+  // every browser reads at least one of them.
+  //
+  // A product with no photo still gets a panel of the same height, carrying the
+  // house seal. Without it the cards with photos and the cards without stopped
+  // lining up across the row — the title on one sat level with the picture on
+  // its neighbour — and a shop that does not line up reads as broken rather
+  // than as a shop that is missing two photographs.
+  function picture(p) {
+    var name = imageName(p.image);
+
+    if (!name) {
+      return '' +
+        '<div class="prod-shot is-empty" aria-hidden="true">' +
+          '<svg viewBox="0 0 200 200"><use href="#seal"/></svg>' +
+        '</div>';
+    }
+
+    // Never leave alt empty on a product shot: a screen reader then announces
+    // the filename, and the image is the product.
+    var alt = esc(p.imageAlt || p.name || '');
+
+    return '' +
+      '<div class="prod-shot">' +
+        '<picture>' +
+          '<source srcset="' + IMG_DIR + name + '.webp" type="image/webp">' +
+          '<img src="' + IMG_DIR + name + '.jpg" alt="' + alt + '" ' +
+               'width="1200" height="800" loading="lazy" decoding="async">' +
+        '</picture>' +
+      '</div>';
+  }
+
   var liveCount = 0;
 
   function card(p) {
@@ -152,7 +236,8 @@ window.SML_SHOP = {
       : '<button class="btn btn-ghost" type="button" data-notify="1">Notify Me</button>';
 
     return '' +
-      '<article class="prod">' +
+      '<article class="prod has-shot">' +
+        picture(p) +
         '<div class="prod-head">' +
           '<span class="prod-sku">' + esc(p.sku || '') + '</span>' +
           (live ? '' : '<span class="prod-badge">' +

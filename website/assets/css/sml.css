@@ -497,6 +497,30 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
   transition:border-color .25s;
 }
 .prod:hover{border-color:var(--gold-ash);}
+
+/* The shot bleeds to the card edge. Negative margins rather than moving the
+   padding onto the inner elements, so a card with no photo is untouched. */
+.prod.has-shot{padding-top:0;}
+.prod-shot{
+  margin:0 -1.5rem .4rem;
+  aspect-ratio:3/2;overflow:hidden;
+  border-bottom:1px solid var(--rule);background:var(--void);
+}
+.prod-shot img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .5s ease;
+}
+/* The stand-in for a product that has no photograph yet. */
+.prod-shot.is-empty{display:grid;place-items:center;background:var(--pitch);}
+.prod-shot.is-empty svg{width:64px;height:64px;opacity:.28;}
+.prod:hover .prod-shot img{transform:scale(1.03);}
+@media (prefers-reduced-motion:reduce){
+  .prod-shot img,.prod:hover .prod-shot img{transition:none;transform:none;}
+}
+/* Older engines with no aspect-ratio get a fixed band rather than a
+   zero-height strip where the photo should be. */
+@supports not (aspect-ratio:3/2){ .prod-shot{height:190px;} }
+
 .prod-head{display:flex;justify-content:space-between;align-items:center;gap:.75rem;flex-wrap:wrap;}
 .prod-sku{
   font-family:"DM Mono",ui-monospace,Menlo,monospace;
@@ -717,6 +741,18 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 .cw-note{
   max-width:60ch;font-size:.85rem;color:var(--ash);line-height:1.65;
   border-left:2px solid var(--gold-dp);padding:.3rem 0 .3rem 1.15rem;
+}
+
+/* The one shot that leads the section. Dark ground, unlike .cw — this render
+   is lit on black and a white plate behind it would show at the edges. */
+.fw-lead{
+  margin:0 0 2.6rem;border:1px solid var(--rule);overflow:hidden;background:var(--void);
+}
+.fw-lead img{display:block;width:100%;height:auto;}
+.fw-lead figcaption{
+  padding:.85rem 1.1rem;border-top:1px solid var(--rule);background:var(--pitch);
+  font-family:"DM Mono",monospace;font-size:.66rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--gold-ash);
 }
 .cw-note strong{color:var(--ivory);font-weight:400;}
 .cw-note a{color:var(--gold-md);}
