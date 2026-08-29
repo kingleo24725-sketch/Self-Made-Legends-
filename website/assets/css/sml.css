@@ -4,19 +4,41 @@
    ========================================================================== */
 
 :root{
-  /* ground */
-  --void:#06060A;
-  --pitch:#0B0C11;
-  --marble:#14151D;
-  --slate:#1B1D27;
-  --raise:#23252F;
+  /* ── ground ──────────────────────────────────────────────────────────
+     Black, but biased green rather than blue. The old neutrals were cool
+     greys, which fight malachite; these carry a trace of it, so the jade
+     architecture below reads as the same material rather than a colour
+     laid on top.
 
-  /* gold */
-  --gold:#C9A227;
-  --gold-lt:#F2DFA0;
-  --gold-md:#D9BC55;
-  --gold-dp:#8A6B14;
-  --gold-ash:#6E5A22;
+     It stays BLACK on purpose. Every product photograph in the shop is
+     shot on a black backdrop — put them on an emerald page and each one
+     sits in a visible rectangle of the wrong colour. The green belongs to
+     the building, not the floor.                                        */
+  --void:#040706;
+  --pitch:#080D0B;
+  --marble:#101A16;
+  --slate:#16231E;
+  --raise:#1E2E28;
+
+  /* ── malachite ───────────────────────────────────────────────────────
+     The domes. Deep body, lit edge, and the shadow under the colonnade. */
+  --jade:#0E4A3C;
+  --jade-lt:#1C7A63;
+  --jade-dp:#072A22;
+  --jade-ash:#123A31;
+
+  /* ── gold ────────────────────────────────────────────────────────────
+     Warmed a touch toward the render's light, which is late sun rather
+     than a showroom lamp.                                               */
+  --gold:#CFA529;
+  --gold-lt:#F6E4A6;
+  --gold-md:#DFC15C;
+  --gold-dp:#8F6E15;
+  --gold-ash:#725D24;
+
+  /* The sunset behind the palace. Only ever used as LIGHT — a glow, a
+     gradient stop, a torch — never as a fill or a type colour. */
+  --ember:#E8A85C;
 
   /* velvet */
   --velvet:#3A1020;
@@ -24,9 +46,9 @@
 
   /* type */
   --ivory:#EFEAE0;
-  --ash:#96907F;
-  --ash-dim:#6B665B;
-  --rule:#2C2E38;
+  --ash:#95917E;
+  --ash-dim:#6A675A;
+  --rule:#233029;
 
   /* semantic */
   --ok:#5FBE8C;
@@ -102,20 +124,28 @@ section + section{border-top:1px solid var(--rule);}
 .sec-head .lede{font-size:1.02rem;color:var(--ash);max-width:52ch;}
 
 /* ── grounds ──────────────────────────────────────────────────────────── */
+/* Green-black marble under a low sun: malachite bleeding up from the left,
+   an ember wash from the far corner where the light is, and gold veining
+   through it. The veins are the floor inlay from the render — few, fine and
+   angled, never a pattern you could count. */
 .marble{
   background:
-    radial-gradient(120% 90% at 18% 8%, #23252F 0%, transparent 55%),
-    radial-gradient(90% 70% at 88% 92%, #1E2029 0%, transparent 60%),
-    linear-gradient(168deg,#101119 0%,#16171F 45%,#0C0D13 100%);
+    radial-gradient(120% 90% at 16% 6%, var(--jade-dp) 0%, transparent 58%),
+    radial-gradient(80% 65% at 92% 96%, rgba(232,168,92,.10) 0%, transparent 62%),
+    linear-gradient(168deg,#0C1512 0%,#122019 45%,#070C0A 100%);
   position:relative;isolation:isolate;overflow:hidden;
 }
 .marble::before{
   content:"";position:absolute;inset:-25%;pointer-events:none;z-index:0;
+  /* Weaker than they look in the numbers. Gold veining that read as texture
+     on a grey ground reads as bright banding on malachite — the ground got
+     darker and greener, so the same alpha carries far more contrast. These
+     are set to land where the old ones did by eye, not on paper. */
   background:
-    linear-gradient(72deg,transparent 46.2%,rgba(201,162,39,.26) 46.7%,rgba(242,223,160,.13) 47.1%,transparent 47.6%),
-    linear-gradient(72deg,transparent 61.4%,rgba(201,162,39,.13) 61.7%,transparent 62.1%),
-    linear-gradient(66deg,transparent 28.5%,rgba(233,228,214,.09) 28.9%,transparent 29.4%),
-    linear-gradient(58deg,transparent 15.2%,rgba(201,162,39,.08) 15.6%,transparent 16.0%);
+    linear-gradient(72deg,transparent 46.2%,rgba(207,165,41,.17) 46.7%,rgba(246,228,166,.09) 47.1%,transparent 47.6%),
+    linear-gradient(72deg,transparent 61.4%,rgba(207,165,41,.09) 61.7%,transparent 62.1%),
+    linear-gradient(66deg,transparent 28.5%,rgba(28,122,99,.11) 28.9%,transparent 29.4%),
+    linear-gradient(58deg,transparent 15.2%,rgba(207,165,41,.06) 15.6%,transparent 16.0%);
 }
 .marble::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
@@ -130,6 +160,17 @@ section + section{border-top:1px solid var(--rule);}
     radial-gradient(70% 100% at 26% 0%, #4A1529 0%, transparent 62%),
     radial-gradient(64% 90% at 84% 100%, #26091600 0%, transparent 66%),
     linear-gradient(162deg,#2E0D1A 0%,#120610 100%);
+}
+
+/* Malachite, lit from the upper left the way the domes are, with the sunset
+   catching the lower right. This is the house's own material — it carries
+   the seal, and it is the one surface on the site that is a colour rather
+   than a shade of black. */
+.jade-bg{
+  background:
+    radial-gradient(72% 100% at 24% 0%, #17604E 0%, transparent 64%),
+    radial-gradient(60% 84% at 88% 98%, rgba(232,168,92,.16) 0%, transparent 62%),
+    linear-gradient(162deg,#0E4A3C 0%,#072A22 52%,#04120F 100%);
 }
 
 /* ── nav ──────────────────────────────────────────────────────────────── */
@@ -206,7 +247,40 @@ section + section{border-top:1px solid var(--rule);}
   display:flex;align-items:center;
   padding:4rem 0;border-top:0;
 }
-.hero-in{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1.9rem;width:100%;}
+
+/* The city sits behind the hero rather than in it.
+   Held at 34% and desaturated so it reads as the world the brand lives in,
+   not as a photograph competing with the wordmark. Anchored to 50% 34% —
+   the palace and its dome — because `cover` on a portrait image in a wide
+   viewport crops from the middle by default and beheads the building. */
+.hero-city{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none;}
+.hero-city img{
+  width:100%;height:100%;object-fit:cover;object-position:50% 32%;
+  opacity:.30;
+  /* Blurred on purpose, and not only to push it back. The palace in the
+     render has SELF-MADE LEGENDS carved across its front, which landed
+     directly behind the seal — two wordmarks stacked, both unreadable.
+     Blur dissolves the building's lettering while keeping its domes,
+     towers and light, which is the half that was doing the work.
+     scale(1.06) hides the soft edge blur leaves at the frame. */
+  filter:saturate(.88) contrast(1.03) blur(4px);
+  transform:scale(1.06);
+}
+/* Three scrims: sink the corners, drop a vertical wash so type never lands
+   on a bright cloud, and put the sunset back as light low in the frame. */
+.hero-city::after{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(84% 66% at 50% 40%, transparent 0%, transparent 22%, rgba(4,7,6,.86) 100%),
+    linear-gradient(180deg, rgba(4,7,6,.80) 0%, rgba(4,7,6,.42) 36%, rgba(4,7,6,.92) 100%),
+    radial-gradient(62% 36% at 50% 78%, rgba(232,168,92,.14) 0%, transparent 70%);
+}
+@media (prefers-reduced-motion:reduce){ .hero-city img{transform:none;} }
+
+.hero-in{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  gap:1.9rem;width:100%;position:relative;z-index:2;
+}
 .hero .seal{width:132px;height:132px;}
 .hero h1{
   font-size:clamp(2.5rem,9vw,5.6rem);
