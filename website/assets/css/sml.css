@@ -150,7 +150,7 @@ section + section{border-top:1px solid var(--rule);}
 .marble::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
   background:
-    radial-gradient(80% 64% at 50% 40%, transparent 0%, transparent 44%, rgba(4,4,7,.66) 100%),
+    radial-gradient(80% 64% at 50% 40%, transparent 0%, transparent 44%, rgba(4,7,6,.66) 100%),
     repeating-linear-gradient(0deg, rgba(255,255,255,.013) 0 1px, transparent 1px 2px);
 }
 .marble > *{position:relative;z-index:2;}
@@ -176,7 +176,7 @@ section + section{border-top:1px solid var(--rule);}
 /* ── nav ──────────────────────────────────────────────────────────────── */
 .nav{
   position:sticky;top:0;z-index:80;height:var(--nav-h);
-  background:rgba(6,6,10,.92);
+  background:rgba(4,7,6,.92);
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   border-bottom:1px solid var(--rule);
 }
@@ -212,7 +212,7 @@ section + section{border-top:1px solid var(--rule);}
   .nav-links{
     position:absolute;top:var(--nav-h);left:0;right:0;
     flex-direction:column;align-items:stretch;gap:0;
-    background:rgba(6,6,10,.985);
+    background:rgba(4,7,6,.985);
     border-bottom:1px solid var(--rule);
     padding:.5rem 1.5rem 1.1rem;
     display:none;
@@ -859,9 +859,6 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 .model-head p{font-size:.92rem;color:var(--ash);}
 
 .cw-grid.cw-lg{grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));}
-/* A model with one colourway. auto-fill would give it a single narrow column
-   and strand it against an empty row; this lets the one shot carry the block. */
-.cw-grid.cw-solo{grid-template-columns:minmax(0,38rem);}
 
 /* ── The Film ─────────────────────────────────────────────────────────── */
 
@@ -879,7 +876,7 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 }
 #film::after{
   content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
-  background:linear-gradient(180deg,var(--void) 0%,rgba(6,6,10,.55) 30%,rgba(6,6,10,.75) 70%,var(--void) 100%);
+  background:linear-gradient(180deg,var(--void) 0%,rgba(4,7,6,.55) 30%,rgba(4,7,6,.75) 70%,var(--void) 100%);
 }
 .film-in{position:relative;z-index:2;}
 
