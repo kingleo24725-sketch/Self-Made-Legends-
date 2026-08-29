@@ -547,7 +547,20 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
   font-size:.8rem;color:var(--ash-dim);
 }
 .prod-details li::marker{color:var(--gold-ash);}
-.prod-colors{display:flex;flex-wrap:wrap;gap:.3rem .85rem;font-size:.76rem;color:var(--ash-dim);}
+.prod-colors{display:flex;flex-wrap:wrap;gap:.4rem .6rem;font-size:.76rem;color:var(--ash-dim);}
+
+/* A colourway you can pick. Reset the button chrome so it sits level with the
+   plain labels beside it, then earn the affordance back with a border. */
+.sw-btn{
+  font:inherit;color:inherit;background:none;cursor:pointer;
+  border:1px solid transparent;border-radius:2px;
+  padding:.16em .5em;margin:-.16em 0;
+  display:inline-flex;align-items:center;gap:.34em;
+  transition:color .2s,border-color .2s;
+}
+.sw-btn:hover{color:var(--ivory);border-color:var(--rule);}
+.sw-btn:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+.sw-btn[aria-pressed="true"]{color:var(--gold-lt);border-color:var(--gold-dp);}
 .prod-action{margin-top:auto;padding-top:.5rem;}
 .prod-action .btn{width:100%;}
 

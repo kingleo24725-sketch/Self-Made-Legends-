@@ -74,9 +74,15 @@ window.SML_SHOP = {
         'Gold metallic embroidered crest',
         'Unisex fit, ribbed cuff and hem'
       ],
+      // A colour with an `image` becomes a button that swaps the photo.
+      // Leave `image` off and it stays a plain label, exactly as before.
       colors: [
-        { name: 'Onyx', hex: '#0B0C11' },
-        { name: 'Oxblood', hex: '#6B1220' }
+        { name: 'Onyx', hex: '#0B0C11', image: 'hoodie-onyx',
+          imageAlt: 'The Regent hoodie in black, front and back, with the gold ' +
+                    'Self-Made Legends crest across the back.' },
+        { name: 'Oxblood', hex: '#6B1220', image: 'hoodie-oxblood',
+          imageAlt: 'The Regent hoodie in oxblood, front and back, with the gold ' +
+                    'Self-Made Legends crest across the back.' }
       ],
       paymentLink: ''                 // ← paste your Stripe Payment Link
     },
@@ -222,8 +228,22 @@ window.SML_SHOP = {
     var live = window.SML_SHOP.shopOpen !== false && isStripeLink(p.paymentLink);
     if (live) liveCount++;
 
+    // A colourway with its own photograph becomes a button that swaps the shot.
+    // One without stays a plain label — a control that looks clickable and does
+    // nothing is worse than no control, so the affordance only appears where
+    // there is something behind it.
+    var first = true;
     var swatches = (p.colors || []).map(function (c) {
-      return '<span class="sw"><i style="background:' + esc(c.hex) + '"></i>' + esc(c.name) + '</span>';
+      var img = imageName(c.image);
+      var dot = '<i style="background:' + esc(c.hex) + '"></i>' + esc(c.name);
+
+      if (!img) return '<span class="sw">' + dot + '</span>';
+
+      var on = first; first = false;
+      return '<button type="button" class="sw sw-btn" ' +
+             'data-img="' + esc(img) + '" ' +
+             'data-alt="' + esc(c.imageAlt || (p.name + ' in ' + c.name)) + '" ' +
+             'aria-pressed="' + (on ? 'true' : 'false') + '">' + dot + '</button>';
     }).join('');
 
     var details = (p.details || []).map(function (d) {
@@ -252,6 +272,32 @@ window.SML_SHOP = {
       '</article>';
   }
 
+  // Swap the card's photograph when a colourway is chosen.
+  //
+  // Both the <source> and the <img> have to change. Setting only the img src
+  // leaves the WebP source matching, so a modern browser keeps showing the old
+  // colour and nothing appears to happen — on Chrome and Safari, which is most
+  // of your visitors.
+  function onSwatch(e) {
+    var btn = e.target.closest('.sw-btn');
+    if (!btn) return;
+
+    var card = btn.closest('.prod');
+    var img = card && card.querySelector('.prod-shot img');
+    var src = card && card.querySelector('.prod-shot source');
+    if (!img) return;
+
+    var name = btn.getAttribute('data-img');
+    if (src) src.srcset = IMG_DIR + name + '.webp';
+    img.src = IMG_DIR + name + '.jpg';
+    img.alt = btn.getAttribute('data-alt') || '';
+
+    var all = card.querySelectorAll('.sw-btn');
+    for (var i = 0; i < all.length; i++) {
+      all[i].setAttribute('aria-pressed', all[i] === btn ? 'true' : 'false');
+    }
+  }
+
   // "Notify Me" sends people to the newsletter — the list is the asset while
   // there is nothing to sell yet.
   function onNotify(e) {
@@ -270,6 +316,7 @@ window.SML_SHOP = {
     if (!mount || !Array.isArray(list) || list.length === 0) return;
     mount.innerHTML = list.map(card).join('');
     mount.addEventListener('click', onNotify);
+    mount.addEventListener('click', onSwatch);
   }
 
   renderInto('shop-grid', window.SML_SHOP.products);
