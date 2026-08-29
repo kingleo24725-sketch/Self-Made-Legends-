@@ -772,6 +772,9 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 .model-head p{font-size:.92rem;color:var(--ash);}
 
 .cw-grid.cw-lg{grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));}
+/* A model with one colourway. auto-fill would give it a single narrow column
+   and strand it against an empty row; this lets the one shot carry the block. */
+.cw-grid.cw-solo{grid-template-columns:minmax(0,38rem);}
 
 /* ── The Film ─────────────────────────────────────────────────────────── */
 
