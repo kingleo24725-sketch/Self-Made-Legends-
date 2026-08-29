@@ -1,6 +1,6 @@
-# Regent Low — first footwear specification
+# SML 1s — first footwear specification
 
-**SML-FW-001** · Draft 1 · 27 August 2026
+**SML-1S-001** · Draft 1 · 27 August 2026
 
 From the second round of mockups: the court low in black/gold and white/gold.
 Chosen over the runners because the court low is the most generic form in
@@ -16,8 +16,8 @@ something a factory would otherwise guess at, and every one of them is in §9.
 
 | | |
 |---|---|
-| Style name | Regent Low |
-| Style code | SML-FW-001 |
+| Style name | SML 1s |
+| Style code | SML-1S-001 |
 | Silhouette | Low-cut court trainer, cupsole |
 | Gender | Unisex, men's sizing |
 | Sample size | Men's US 9 |

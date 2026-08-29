@@ -43,7 +43,7 @@ const SML_POLL = [
 
     'id'       => '2026-W36',
 
-    'question' => 'Seven colourways drawn. Which two get made first?',
+    'question' => 'Ten drawn. Which two get made first?',
 
     // Shown under the question. Say when voting closes and what happens.
     'note'     => 'Voting closes Sunday. The winner goes into the first sample run.',
@@ -51,10 +51,10 @@ const SML_POLL = [
     // Four is the sweet spot. Fewer feels rigged, more splits the vote so
     // nothing wins clearly. Keep each one short enough to read at a glance.
     'options'  => [
-        'a' => 'Triple Onyx — all black, gold script, gum sole',
-        'b' => 'Onyx / Bloom — black with embroidered red roses',
-        'c' => 'Cherish — the gold and purple wings',
-        'd' => 'Blush / Gold — pink suede, black panel',
+        'a' => 'SML 2s — Triple Onyx, all black with a gum sole',
+        'b' => 'SML Rose Golds — black with embroidered red roses',
+        'c' => 'Cherish SML — the gold and purple wings',
+        'd' => 'SML 1s — Onyx / Gold, the court low',
     ],
 
     // Last week's result. Leave all three as '' until you have one.

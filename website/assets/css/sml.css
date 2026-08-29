@@ -717,3 +717,19 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 }
 .cw-note strong{color:var(--ivory);font-weight:400;}
 .cw-note a{color:var(--gold-md);}
+
+/* ── Model blocks ─────────────────────────────────────────────────────── */
+
+.model{margin-bottom:3.25rem;}
+.model:last-of-type{margin-bottom:0;}
+.model-head{max-width:52ch;margin-bottom:1.25rem;}
+.model-head h3{
+  font-family:"Bodoni Moda",Didot,serif;font-weight:400;
+  font-size:clamp(1.5rem,3vw,2.1rem);line-height:1;margin:0 0 .45rem;color:var(--ivory);
+}
+/* The plural is a suffix, not part of the name — set it smaller so "SML 1s"
+   reads the way it is said. */
+.model-head h3 .s{font-size:.62em;color:var(--gold-md);}
+.model-head p{font-size:.92rem;color:var(--ash);}
+
+.cw-grid.cw-lg{grid-template-columns:repeat(auto-fill,minmax(21rem,1fr));}
