@@ -917,6 +917,20 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 .ded-body{
   margin-top:1rem;font-size:.86rem;color:var(--ash);max-width:34ch;line-height:1.7;
 }
+.ded-wide{max-width:42rem;}
+/* Two people, side by side, the way the sheet sets them. Collapses to one
+   column on a phone rather than squeezing two names onto one line. */
+.two{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));
+  gap:1.6rem;margin-top:1.8rem;width:100%;
+}
+.two > div{display:flex;flex-direction:column;gap:.3rem;}
+.two-n{font-family:"Bodoni Moda",Didot,serif;font-size:1.15rem;color:var(--gold-lt);}
+.two-d{
+  font-family:"DM Mono",ui-monospace,Menlo,monospace;
+  font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-ash);
+}
+.two-t{font-size:.82rem;color:var(--ash);}
 
 /* The one shot that leads the section. Dark ground, unlike .cw — this render
    is lit on black and a white plate behind it would show at the edges. */
