@@ -56,7 +56,7 @@ window.SML_SHOP = {
   shopOpen: false,
 
   // Shown in place of the shop note while the shop is closed.
-  closedNote: 'The shop is not open yet. Join the list and you will hear first when it is.',
+  closedNote: 'Numbered 001 to 1000. Join the list and you get first claim on a number.',
 
   products: [
 
@@ -65,6 +65,9 @@ window.SML_SHOP = {
       name: 'Golden Throne Hoodie',
       sku: 'SML·GT·001',
       price: 45000,                   // $450.00 — in cents
+      image: 'p-hoodie',
+      imageAlt: 'The Golden Throne hoodie in black, with the gold crowned lion crest ' +
+                'and SELF MADE LEGENDS across the chest.',
       blurb: 'Heavyweight black fleece. The lion crest carried large across the ' +
              'back, small at the chest, and NOT GIVEN. EARNED. below it.',
       details: [
@@ -84,6 +87,9 @@ window.SML_SHOP = {
       name: 'Golden Throne Tee',
       sku: 'SML·GT·002',
       price: 19500,                   // $195.00
+      image: 'p-tee',
+      imageAlt: 'The Golden Throne tee in black, front and back, with the gold SML at ' +
+                'the chest and the crowned lion crest across the back.',
       blurb: 'The foundation piece. Crest at the chest, LEAD THE KINGDOM down the sleeve.',
       details: [
         'Combed ring-spun cotton',
@@ -104,6 +110,9 @@ window.SML_SHOP = {
       price: 0,                       // ← PRICE NOT SET. Tailoring is priced
                                       //   after the factory quotes; a made-up
                                       //   number here would be a promise.
+      image: 'p-suit',
+      imageAlt: 'Three Golden Throne suits — Royal Black Gold, Empire Midnight and ' +
+                'Legacy Ivory Gold — each with the gold crest at the chest.',
       blurb: 'Three cuts, four colourways. Crest embroidered at the chest and again ' +
              'across the back, 24k gold lapel pin, engraved crest buttons.',
       details: [
@@ -126,6 +135,9 @@ window.SML_SHOP = {
       name: 'Golden Throne Dress Shoe',
       sku: 'SML·GT·020',
       price: 0,                       // ← PRICE NOT SET. See above.
+      image: 'p-dress',
+      imageAlt: 'Two Golden Throne dress shoes in black leather with the embossed gold ' +
+                'crest at the quarter and a gold toe plate.',
       blurb: 'Leather, embossed crest, gold at the toe and the heel. The sole ' +
              'carries the mark, so you leave it behind you.',
       details: [
@@ -259,7 +271,7 @@ window.SML_SHOP = {
     var action = live
       ? '<a class="btn btn-solid" href="' + esc(p.paymentLink.trim()) + '" ' +
         'rel="noopener">Buy &mdash; ' + esc(money(p.price)) + '</a>'
-      : '<button class="btn btn-ghost" type="button" data-notify="1">Notify Me</button>';
+      : '<button class="btn" type="button" data-notify="1">Claim a Number</button>';
 
     return '' +
       '<article class="prod has-shot">' +
@@ -267,7 +279,7 @@ window.SML_SHOP = {
         '<div class="prod-head">' +
           '<span class="prod-sku">' + esc(p.sku || '') + '</span>' +
           (live ? '' : '<span class="prod-badge">' +
-          (window.SML_SHOP.shopOpen === false ? 'Coming soon' : 'Not yet released') + '</span>') +
+          (window.SML_SHOP.shopOpen === false ? '001 / 1000' : 'Not yet released') + '</span>') +
         '</div>' +
         '<h3>' + esc(p.name) + '</h3>' +
         (hasPrice(p.price)
@@ -306,8 +318,9 @@ window.SML_SHOP = {
     }
   }
 
-  // "Notify Me" sends people to the newsletter — the list is the asset while
-  // there is nothing to sell yet.
+  // The button sends people to the newsletter. Worded as a claim rather than
+  // a notification: the list IS the product until the first run exists, and
+  // "Notify Me" asks for a favour where "Claim a Number" offers one.
   function onNotify(e) {
     var btn = e.target.closest('[data-notify]');
     if (!btn) return;

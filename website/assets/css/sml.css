@@ -666,10 +666,12 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
   font-family:"DM Mono",ui-monospace,Menlo,monospace;
   font-size:.58rem;letter-spacing:.14em;color:var(--gold-ash);
 }
+/* Gold, not grey. The badge used to read "Coming soon" and was styled as an
+   absence; it now carries the edition number, which is the reason to want one. */
 .prod-badge{
   font-family:"DM Mono",ui-monospace,Menlo,monospace;
   font-size:.56rem;letter-spacing:.14em;text-transform:uppercase;
-  color:var(--ash-dim);border:1px solid var(--rule);
+  color:var(--gold-md);border:1px solid var(--gold-ash);
   padding:.24em .6em;border-radius:2px;white-space:nowrap;
 }
 .prod h3{font-size:1.2rem;line-height:1.2;}
