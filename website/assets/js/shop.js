@@ -95,16 +95,21 @@ window.SML_SHOP = {
       image: 'duffle-bone',
       imageAlt: 'Bone and black weekender duffle with gold hardware and the ' +
                 'Self-Made Legends crest debossed on the side panel.',
-      blurb: 'Bone body, black leather corners, solid gold hardware. Built for the ' +
-             'weekend you earned.',
+      blurb: 'Full-grain body, gold hardware, the crest debossed rather than ' +
+             'printed. Built for the weekend you earned.',
       details: [
-        'Bone panel with black leather trim',
+        'Debossed crest, EST. MMXXVI',
         'Gold-tone zips, D-rings and feet',
         'Detachable adjustable shoulder strap',
-        'Debossed crest, EST. MMXXVI'
+        'End pocket for shoes'
       ],
       colors: [
-        { name: 'Bone / Onyx', hex: '#E7E1D4' }
+        { name: 'Bone / Onyx', hex: '#E7E1D4', image: 'duffle-bone',
+          imageAlt: 'The Legacy weekender duffle in bone with black leather ' +
+                    'corners and gold hardware.' },
+        { name: 'Oxblood', hex: '#6B1220', image: 'duffle-oxblood',
+          imageAlt: 'The Legacy weekender duffle in oxblood leather with gold ' +
+                    'hardware and the crest debossed on the side panel.' }
       ],
       paymentLink: ''
     },

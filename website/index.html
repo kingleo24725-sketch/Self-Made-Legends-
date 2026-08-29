@@ -42,7 +42,12 @@
     </linearGradient>
 
     <path id="arcTop" d="M 100,100 m -84,0 a 84,84 0 1,1 168,0" fill="none"/>
-    <path id="arcBot" d="M 100,100 m 84,0 a 84,84 0 1,1 -168,0" fill="none"/>
+    <!-- Runs LEFT to RIGHT under the seal. The first version started at the
+         right and swept clockwise, which traverses the bottom right-to-left —
+         and a textPath follows its path's direction, so EST. MMXXVI rendered
+         backwards and upside down on every page. Sweep flag 0 from the left
+         point curves down and across the correct way. -->
+    <path id="arcBot" d="M 100,100 m -84,0 a 84,84 0 0,0 168,0" fill="none"/>
 
     <!-- ── The house seal ── -->
     <g id="seal">
