@@ -56,7 +56,7 @@ window.SML_SHOP = {
   shopOpen: false,
 
   // Shown in place of the shop note while the shop is closed.
-  closedNote: 'Numbered 001 to 1000. Join the list and you get first claim on a number.',
+  closedNote: 'Made to order, shipped from the printer to you. Join the list and you will hear the day it opens.',
 
   products: [
 
@@ -85,7 +85,7 @@ window.SML_SHOP = {
         'Heavyweight brushed fleece',
         'Gold embroidered crest, chest and back',
         'Unisex, XS to 4XL',
-        'Made to order — no two runs, no dead stock'
+        'Made to order — nothing sits in a warehouse'
       ],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
       paymentLink: ''                 // ← paste your Stripe Payment Link
@@ -96,6 +96,9 @@ window.SML_SHOP = {
       name: 'Legacy Sweatpants',
       sku: 'SML·LG·002',
       price: 11000,                   // $110.00 — keeps $71.82, 65%
+      image: 'p-sweatpants',
+      imageAlt: 'The Legacy sweatpants in black, with the gold winged lion down ' +
+                'one leg and the wordmark down the other.',
       blurb: 'The other half of the set. Crest at the hip, wordmark down the leg.',
       details: [
         'Heavyweight fleece jogger',
@@ -111,6 +114,9 @@ window.SML_SHOP = {
       name: 'The Snapback',
       sku: 'SML·LG·003',
       price: 7000,                    // $70.00 — keeps $44.98, 64%
+      image: 'p-snapback',
+      imageAlt: 'The snapback in black, with the gold SML plate and crown in puff ' +
+                'embroidery at the front and an embossed lion at the side.',
       blurb: 'Structured six-panel, the crest raised in 3D puff embroidery. ' +
              'The closest thing in the line to the sheets.',
       details: [
@@ -145,6 +151,9 @@ window.SML_SHOP = {
       name: 'Empire Beanie',
       sku: 'SML·LG·005',
       price: 5500,                    // $55.00 — keeps $34.41, 63%
+      image: 'p-beanie',
+      imageAlt: 'The Empire beanie in black ribbed knit with the gold crowned lion ' +
+                'crest embroidered at the cuff.',
       blurb: 'Ribbed cuff, crest embroidered at the fold.',
       details: ['Acrylic wool blend', 'Embroidered crest', 'One size, cuffed'],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
@@ -156,6 +165,9 @@ window.SML_SHOP = {
       name: 'Legacy Socks',
       sku: 'SML·LG·006',
       price: 3200,                    // $32.00 — keeps $15.08 alone, $17.57 in a cart
+      image: 'p-socks',
+      imageAlt: 'Three pairs of Legacy socks in black with gold cuff bands, gold ' +
+                'toes and the crest knitted at the ankle.',
       blurb: 'Knitted, not printed — the gold band and the crest are in the yarn.',
       details: [
         'Ribbed crew, cushioned heel and toe',
@@ -178,6 +190,7 @@ window.SML_SHOP = {
       id: 'throne-suit',
       name: 'Golden Throne Suit',
       sku: 'SML·GT·010',
+      badge: '001 / 1000',
       price: 0,                       // priced after a factory quotes it
       image: 'p-suit',
       imageAlt: 'Three Golden Throne suits — Royal Black Gold, Empire Midnight and ' +
@@ -203,6 +216,7 @@ window.SML_SHOP = {
       id: 'throne-dress-shoe',
       name: 'Golden Throne Dress Shoe',
       sku: 'SML·GT·020',
+      badge: '001 / 1000',
       price: 0,                       // priced after a factory quotes it
       image: 'p-dress',
       imageAlt: 'Two Golden Throne dress shoes in black leather with the embossed gold ' +
@@ -306,6 +320,23 @@ window.SML_SHOP = {
       '</div>';
   }
 
+  /**
+   * What the badge says.
+   *
+   * A product's own `badge` wins. Otherwise: an unpriced piece is one waiting
+   * on a factory quote, and everything else on this shop is made to order.
+   *
+   * It deliberately does NOT default to "001 / 1000". The Legacy line is
+   * print-on-demand — made when somebody buys it, with no cap and no number.
+   * Printing an edition number on it would be a scarcity claim with nothing
+   * behind it, which is the one thing the catalog rules forbid.
+   */
+  function badgeFor(p) {
+    if (p.badge) return p.badge;
+    if (!hasPrice(p.price)) return 'Made to order';
+    return 'Made to order';
+  }
+
   var liveCount = 0;
 
   function card(p) {
@@ -347,8 +378,7 @@ window.SML_SHOP = {
         picture(p) +
         '<div class="prod-head">' +
           '<span class="prod-sku">' + esc(p.sku || '') + '</span>' +
-          (live ? '' : '<span class="prod-badge">' +
-          (window.SML_SHOP.shopOpen === false ? '001 / 1000' : 'Not yet released') + '</span>') +
+          (live ? '' : '<span class="prod-badge">' + esc(badgeFor(p)) + '</span>') +
         '</div>' +
         '<h3>' + esc(p.name) + '</h3>' +
         (hasPrice(p.price)

@@ -343,6 +343,31 @@ section + section{border-top:1px solid var(--rule);}
 @supports not (background-clip:text){ .first-n{color:var(--gold);-webkit-text-fill-color:var(--gold);} }
 .first-b{font-size:.95rem;color:var(--ash);max-width:54ch;line-height:1.75;}
 
+/* Two tiers, side by side, so the difference is structural rather than
+   asserted. The numbered one is lifted; the everyday one is not diminished. */
+.tiers{display:grid;grid-template-columns:repeat(auto-fit,minmax(19rem,1fr));gap:1.2rem;}
+.tier{
+  border:1px solid var(--rule);background:var(--pitch);border-radius:3px;
+  padding:1.6rem 1.5rem;display:flex;flex-direction:column;gap:.8rem;
+}
+.tier.lead{
+  border-color:var(--gold-dp);
+  background:radial-gradient(90% 100% at 50% 0%, rgba(207,165,41,.07) 0%, transparent 62%), var(--pitch);
+}
+.tier h3{font-size:1.3rem;color:var(--ivory);}
+.tier p{font-size:.9rem;color:var(--ash);line-height:1.7;}
+.tier ul{
+  list-style:none;margin:.2rem 0 auto;padding:0;
+  display:flex;flex-direction:column;gap:.4rem;
+}
+.tier li{
+  font-family:"DM Mono",ui-monospace,Menlo,monospace;
+  font-size:.68rem;letter-spacing:.06em;color:var(--gold-ash);
+  padding-left:1rem;position:relative;
+}
+.tier li::before{content:"—";position:absolute;left:0;color:var(--gold-dp);}
+.tier .btn{margin-top:1rem;width:100%;}
+
 .hero-in{
   display:flex;flex-direction:column;align-items:center;text-align:center;
   gap:1.9rem;width:100%;position:relative;z-index:2;
