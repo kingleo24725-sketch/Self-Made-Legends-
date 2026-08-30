@@ -24,6 +24,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const retrieval = require('./retrieval');
 
 const ROOT = path.join(__dirname, '..');
 const PROMPT_DIR = path.join(ROOT, 'prompts');
@@ -79,7 +80,7 @@ function loadBrand() {
  * a dozen the marginal one stops teaching and starts costing. Prefer
  * replacing a weak example over appending a new one.
  */
-function loadExamples(agent, { limit = 8 } = {}) {
+function loadExamples(agent, { limit = 8, query = null } = {}) {
   const dir = path.join(EXAMPLE_DIR, agent);
   let files;
   try {
@@ -99,8 +100,11 @@ function loadExamples(agent, { limit = 8 } = {}) {
     }
   }
 
-  // A human-edited example teaches more than a rubber-stamped one, so it
-  // wins the limited slots. Ties break on recency.
+  // With a query, rank by relevance to THIS request — an example of a hoodie
+  // teaches nothing about a heel. Without one, fall back to the old
+  // behaviour: edited first, then most recent.
+  if (query) return retrieval.search(examples, query, { limit });
+
   examples.sort((a, b) => {
     const w = (e) => (e.verdict === 'edited' ? 1 : 0);
     if (w(b) !== w(a)) return w(b) - w(a);
@@ -141,4 +145,4 @@ function fingerprint({ agent, promptText, promptVersion, model, settings, exampl
   return `${agent}.v${promptVersion}+${digest}`;
 }
 
-module.exports = { loadPrompt, loadBrand, loadExamples, saveExample, fingerprint, PROMPT_DIR, EXAMPLE_DIR };
+module.exports = { loadPrompt, loadBrand, loadExamples, saveExample, fingerprint, retrieval, PROMPT_DIR, EXAMPLE_DIR };

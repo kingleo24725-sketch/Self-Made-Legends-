@@ -1,0 +1,13 @@
+{
+  "name": "Fulfillment — a dispatch names the day its plan triggers",
+  "agent": "fulfillment",
+  "input": {
+    "order": {
+      "id": "SML-1042",
+      "service_level": "standard",
+      "line_items": [{ "sku": "SML-GT-001", "qty": 1 }],
+      "destination": { "country": "US", "state": "MO" }
+    }
+  },
+  "checks": ["exception_plan_has_a_trigger", "confidence_is_honest"]
+}

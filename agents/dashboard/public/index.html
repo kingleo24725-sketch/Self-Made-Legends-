@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SML Agents — Monitoring</title>
+<!-- Inline, so a local tool does not log a 404 on every load. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23040706'/%3E%3Ctext x='8' y='12' font-size='10' text-anchor='middle' fill='%23CFA529'%3ES%3C/text%3E%3C/svg%3E">
+<style>
+  :root{
+    --void:#040706; --panel:#0A100E; --raise:#111A16; --rule:#233029;
+    --gold:#CFA529; --gold-lt:#F6E4A6; --gold-dp:#8F6E15;
+    --ivory:#EFEAE0; --ash:#95917E; --dim:#6A675A;
+    --ok:#5FBE8C; --warn:#E8A85C; --err:#E08163;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;background:var(--void);color:var(--ivory);
+    font:14px/1.6 ui-sans-serif,system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;}
+  .wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+
+  header{display:flex;justify-content:space-between;align-items:baseline;
+         gap:1rem;flex-wrap:wrap;padding-bottom:1.4rem;border-bottom:1px solid var(--rule);}
+  h1{font-size:1.1rem;font-weight:500;letter-spacing:.02em;margin:0;}
+  h1 span{color:var(--gold);}
+  .stamp{font-family:ui-monospace,monospace;font-size:.68rem;color:var(--dim);}
+
+  /* ── the four numbers ── */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+        gap:1rem;margin:1.8rem 0 2.4rem;}
+  .kpi{border:1px solid var(--rule);background:var(--panel);padding:1.2rem 1.3rem;border-radius:3px;}
+  .kpi.lead{border-color:var(--gold-dp);background:linear-gradient(160deg,#0F1712,var(--panel));}
+  .kpi .k{font-family:ui-monospace,monospace;font-size:.6rem;letter-spacing:.16em;
+          text-transform:uppercase;color:var(--gold-dp);}
+  .kpi .v{font-size:2.1rem;line-height:1.15;margin-top:.35rem;font-variant-numeric:tabular-nums;}
+  .kpi.lead .v{color:var(--gold-lt);}
+  .kpi .n{font-size:.76rem;color:var(--dim);margin-top:.2rem;}
+  .v.none{color:var(--dim);font-size:1.4rem;}
+
+  h2{font-size:.66rem;font-family:ui-monospace,monospace;letter-spacing:.18em;
+     text-transform:uppercase;color:var(--gold-dp);margin:2.4rem 0 .9rem;font-weight:400;}
+
+  /* ── the one chart ── */
+  .chart{border:1px solid var(--rule);background:var(--panel);padding:1.4rem;border-radius:3px;}
+  .bars{display:flex;align-items:flex-end;gap:.5rem;height:150px;}
+  .bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;
+       align-items:center;gap:.4rem;height:100%;min-width:0;}
+  .bar i{display:block;width:100%;background:linear-gradient(180deg,var(--gold),var(--gold-dp));
+         border-radius:2px 2px 0 0;min-height:2px;}
+  .bar.empty i{background:repeating-linear-gradient(45deg,#1A241F 0 4px,transparent 4px 8px);
+               height:100%!important;border-radius:2px;}
+  .bar b{font-family:ui-monospace,monospace;font-size:.62rem;color:var(--ash);font-weight:400;
+         font-variant-numeric:tabular-nums;}
+  .bar s{font-family:ui-monospace,monospace;font-size:.55rem;color:var(--dim);
+         text-decoration:none;white-space:nowrap;}
+  .note{font-size:.78rem;color:var(--dim);margin-top:1rem;max-width:62ch;}
+
+  /* ── table ── */
+  .tw{overflow-x:auto;border:1px solid var(--rule);border-radius:3px;background:var(--panel);}
+  table{width:100%;border-collapse:collapse;font-size:.82rem;min-width:760px;}
+  th,td{padding:.7rem .85rem;text-align:left;border-bottom:1px solid var(--rule);}
+  th{font-family:ui-monospace,monospace;font-size:.58rem;letter-spacing:.13em;
+     text-transform:uppercase;color:var(--gold-dp);font-weight:400;white-space:nowrap;}
+  td{font-variant-numeric:tabular-nums;}
+  tbody tr:last-child td{border-bottom:0;}
+  tbody tr:hover{background:var(--raise);}
+  .name{color:var(--ivory);}
+  .sub{font-family:ui-monospace,monospace;font-size:.62rem;color:var(--dim);}
+  .pill{font-family:ui-monospace,monospace;font-size:.56rem;letter-spacing:.1em;
+        text-transform:uppercase;padding:.2em .55em;border-radius:2px;border:1px solid;white-space:nowrap;}
+  .p-ok{color:var(--ok);border-color:#2C5F45;}
+  .p-warn{color:var(--warn);border-color:#6B4A22;}
+  .p-err{color:var(--err);border-color:#6B3428;}
+  .p-idle{color:var(--dim);border-color:var(--rule);}
+  .dash{color:var(--dim);}
+
+  .empty-state{border:1px dashed var(--rule);border-radius:3px;padding:1.6rem;
+               color:var(--ash);font-size:.86rem;background:var(--panel);}
+  .empty-state b{color:var(--ivory);font-weight:500;}
+  code{font-family:ui-monospace,monospace;font-size:.86em;color:var(--gold-lt);
+       background:#0F1712;padding:.1em .4em;border-radius:2px;}
+  a{color:var(--gold);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Self-Made Legends <span>· agents</span></h1>
+    <span class="stamp" id="stamp">loading…</span>
+  </header>
+
+  <div class="kpis" id="kpis"></div>
+
+  <h2>First-pass rate, by week</h2>
+  <div class="chart">
+    <div class="bars" id="bars"></div>
+    <p class="note">
+      Approved without edits, out of everything a human actually reviewed.
+      This is the only number that says whether the loop is learning.
+      A hatched bar is a week nobody reviewed — that is not zero quality,
+      it is no data, and the two must never look the same.
+    </p>
+  </div>
+
+  <h2>Per agent</h2>
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>Agent</th><th>Sprint</th><th>Calls</th><th>Reviewed</th>
+          <th>First pass</th><th>Cost / accepted</th><th>Cache</th><th>Errors</th><th>State</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <h2>Review backlog</h2>
+  <div id="queue"></div>
+
+</div>
+
+<script>
+'use strict';
+
+var pct = function (v) { return v === null || v === undefined ? null : Math.round(v * 100) + '%'; };
+var usd = function (v) { return v === null || v === undefined ? null : '$' + Number(v).toFixed(2); };
+var esc = function (s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+};
+
+/** A value that has no data reads as an em dash, never as zero. */
+function cell(v) { return v === null || v === undefined ? '<span class="dash">—</span>' : esc(v); }
+
+function kpi(label, value, note, lead) {
+  var isNone = value === null || value === undefined;
+  return '<div class="kpi' + (lead ? ' lead' : '') + '">' +
+    '<div class="k">' + esc(label) + '</div>' +
+    '<div class="v' + (isNone ? ' none' : '') + '">' + (isNone ? 'no data yet' : esc(value)) + '</div>' +
+    '<div class="n">' + esc(note) + '</div></div>';
+}
+
+function render(d) {
+  document.getElementById('stamp').textContent =
+    d.totals.events + ' events · ' + usd(d.totals.cost_usd) + ' spent · ' +
+    new Date(d.generated_at).toLocaleString();
+
+  // Latest week that actually had reviews — not simply the latest week.
+  var reviewed = d.weekly.filter(function (w) { return w.reviewed > 0; });
+  var latest = reviewed.length ? reviewed[reviewed.length - 1] : null;
+  var prev = reviewed.length > 1 ? reviewed[reviewed.length - 2] : null;
+
+  var direction = '';
+  if (latest && prev) {
+    var delta = Math.round((latest.first_pass_rate - prev.first_pass_rate) * 100);
+    direction = delta === 0 ? 'flat on last week'
+      : (delta > 0 ? '+' : '') + delta + ' points on last week';
+  } else if (latest) {
+    direction = 'first week with reviews';
+  }
+
+  var accepted = d.agents.reduce(function (s, a) { return s + a.approved + a.edited; }, 0);
+  var costPer = accepted ? usd(d.totals.cost_usd / accepted) : null;
+
+  document.getElementById('kpis').innerHTML =
+    kpi('First-pass rate', latest ? pct(latest.first_pass_rate) : null,
+        latest ? direction : 'nobody has reviewed anything yet', true) +
+    kpi('Review backlog', d.totals.backlog,
+        d.totals.backlog === 0 ? 'nothing waiting' : 'outputs waiting on a person') +
+    kpi('Cost per accepted', costPer, 'per output a human kept') +
+    kpi('Agents live', d.agents.length + ' / ' + d.totals.agents_defined,
+        d.totals.agents_never_run.length
+          ? d.totals.agents_never_run.join(', ') + ' never run'
+          : 'all defined agents have run');
+
+  // ── chart ──
+  document.getElementById('bars').innerHTML = d.weekly.length
+    ? d.weekly.map(function (w) {
+        var has = w.first_pass_rate !== null;
+        var h = has ? Math.max(2, Math.round(w.first_pass_rate * 100)) : 100;
+        return '<div class="bar' + (has ? '' : ' empty') + '">' +
+          '<b>' + (has ? pct(w.first_pass_rate) : '—') + '</b>' +
+          '<i style="height:' + h + '%"></i>' +
+          '<s>' + esc(w.week.slice(5)) + '</s></div>';
+      }).join('')
+    : '<p class="note" style="margin:0">No events recorded yet.</p>';
+
+  // ── table ──
+  document.getElementById('rows').innerHTML = d.agents.map(function (a) {
+    var state = a.errors > 0
+      ? '<span class="pill p-err">errors</span>'
+      : a.reviewed === 0
+        ? '<span class="pill p-idle">unreviewed</span>'
+        : a.first_pass_rate >= 0.8
+          ? '<span class="pill p-ok">healthy</span>'
+          : '<span class="pill p-warn">learning</span>';
+
+    return '<tr>' +
+      '<td><span class="name">' + esc(a.title) + '</span><br><span class="sub">' + esc(a.model) + '</span></td>' +
+      '<td>' + cell(a.sprint) + '</td>' +
+      '<td>' + esc(a.calls) + '</td>' +
+      '<td>' + esc(a.reviewed) + (a.review_required === false ? '<br><span class="sub">no review</span>' : '') + '</td>' +
+      '<td>' + cell(pct(a.first_pass_rate)) + '</td>' +
+      '<td>' + cell(usd(a.cost_per_accepted)) + '</td>' +
+      '<td>' + cell(pct(a.cache_hit_rate)) + '</td>' +
+      '<td>' + esc(a.errors) + '</td>' +
+      '<td>' + state + '</td></tr>';
+  }).join('');
+
+  // ── queue ──
+  document.getElementById('queue').innerHTML = d.backlog.length
+    ? '<div class="tw"><table><thead><tr><th>When</th><th>Agent</th><th>Confidence</th>' +
+      '<th>Blockers</th><th>Version</th></tr></thead><tbody>' +
+      d.backlog.map(function (b) {
+        return '<tr><td class="sub">' + esc(new Date(b.ts).toLocaleString()) + '</td>' +
+          '<td>' + esc(b.agent) + '</td>' +
+          '<td>' + cell(b.confidence === null ? null : Math.round(b.confidence * 100) + '%') + '</td>' +
+          '<td>' + (b.blockers ? '<span class="pill p-err">' + b.blockers + '</span>' : '<span class="dash">—</span>') + '</td>' +
+          '<td class="sub">' + esc(b.version) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="note">Review them at <a href="http://localhost:4100">localhost:4100</a>. ' +
+      'Nothing improves until somebody does.</p>'
+    : '<div class="empty-state"><b>Nothing waiting.</b> Every output that needed a human has had one.</div>';
+}
+
+fetch('/api/overview')
+  .then(function (r) { return r.json(); })
+  .then(render)
+  .catch(function (e) {
+    document.getElementById('stamp').textContent = 'failed to load: ' + e.message;
+  });
+</script>
+</body>
+</html>

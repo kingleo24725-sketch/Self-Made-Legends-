@@ -77,6 +77,109 @@ const CHECKS = {
     return null;
   },
 
+  /* ── sprint two ────────────────────────────────────────────────────── */
+
+  /** A rejection without numbers is an argument. With them it is a correction. */
+  deviations_are_numeric(out) {
+    for (const m of out.measured || []) {
+      if (m.status === 'out_of_tolerance' && !m.deviation) {
+        return `"${m.point}" is out of tolerance with no deviation stated`;
+      }
+    }
+    return null;
+  },
+
+  /** One sample cannot speak for a lot. Claiming it can releases bad bulk. */
+  no_aql_from_one_sample(out) {
+    const t = String(out.aql_position || '');
+    if (!t) return null;
+    const claims = /(meets|passes|within|satisfies)\s+(the\s+)?aql/i.test(t);
+    const hedges = /(single|one)\s+sample|cannot|does not|says nothing|not judged/i.test(t);
+    if (claims && !hedges) return 'Claims an AQL result from sample-level evidence';
+    return null;
+  },
+
+  /** A simulation on estimated physics predicts a drape that does not exist. */
+  estimated_physics_flagged(out) {
+    const mats = out.materials_for_simulation || [];
+    const anyEstimated = mats.some((m) => m.measured === false);
+    if (!anyEstimated) return null;
+    const warned = (out.flags || []).some((f) => /estimat|measur|scan|indicative/i.test(f.issue || ''));
+    return warned ? null : 'Material physics are estimated but nothing flags the render as indicative';
+  },
+
+  /** A costing with no quoted line is a planning model. It must say so. */
+  unquoted_costing_is_blocked(out) {
+    const lines = out.lines || [];
+    if (lines.length === 0) return null;
+    const anyQuoted = lines.some((l) => l.basis === 'quoted');
+    if (anyQuoted) return null;
+    const blocked = (out.flags || []).some((f) => f.severity === 'blocker');
+    return blocked ? null : 'No line is quoted, yet nothing blocks this being used as a price';
+  },
+
+  /** Unit cost without the run size it assumes is not a number anyone can use. */
+  costing_states_quantity(out) {
+    if (out.unit_cost === undefined) return null;
+    return Number.isFinite(out.quantity) && out.quantity > 0
+      ? null : 'A unit cost is given with no quantity';
+  },
+
+  /** Fibre content is a legal statement. Every claim needs a tech-pack line. */
+  claims_are_sourced(out) {
+    const basis = out.claims_basis || [];
+    if (basis.length === 0) return 'Copy carries no claims_basis at all';
+    for (const c of basis) {
+      if (!c.supported_by || !String(c.supported_by).trim()) {
+        return `Claim "${c.claim}" has no supporting tech-pack line`;
+      }
+    }
+    return null;
+  },
+
+  /** The scarcity is a fact stated once, not a sales pitch repeated. */
+  scarcity_not_repeated(out) {
+    const text = [out.title, out.subtitle, out.blurb, ...(out.bullets || [])].join(' ');
+    const hits = (text.match(/\b\d{3}\s*\/\s*1000\b|limited edition|only a thousand/gi) || []).length;
+    return hits > 1 ? `The numbered run is stated ${hits} times; once is stronger` : null;
+  },
+
+  /** Every dispatch names the day its exception plan triggers. */
+  exception_plan_has_a_trigger(out) {
+    if (out.action !== 'dispatch' && out.action !== 'partial_dispatch') return null;
+    const p = String(out.exception_plan || '');
+    if (!p) return 'Dispatched with no exception plan';
+    return /\d+\s*(hour|day|business day)|by (mon|tue|wed|thu|fri|sat|sun)/i.test(p)
+      ? null : 'Exception plan names no trigger point — "if there are problems" is not a plan';
+  },
+
+  /** Money, law, health or a named person goes to a human. Always. */
+  cx_escalates_the_serious(out) {
+    if (out.requires_human) return null;
+    const serious = ['refund', 'legal', 'damage'];
+    if (serious.includes(out.intent)) {
+      return `Intent "${out.intent}" was not escalated to a human`;
+    }
+    const text = `${out.draft_reply || ''} ${out.suggested_resolution || ''}`;
+    if (/\b(grace|cherish|rose)\b/i.test(text)) {
+      return 'Draft mentions a real person carried by the brand and was not escalated';
+    }
+    if (/\brefund|chargeback|lawyer|attorney|sue\b/i.test(text)) {
+      return 'Draft touches money or law and was not escalated';
+    }
+    return null;
+  },
+
+  /** A ship date nobody sourced is a ship date somebody invented. */
+  cx_facts_are_sourced(out) {
+    for (const f of out.facts_used || []) {
+      if (!f.source || !String(f.source).trim()) {
+        return `Stated "${f.fact}" with no source`;
+      }
+    }
+    return null;
+  },
+
   /** Every measurement needs a tolerance or the factory cannot tell if it passed. */
   tolerances_present(out) {
     for (const p of out.measurements?.points || []) {

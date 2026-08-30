@@ -1,0 +1,10 @@
+{
+  "name": "QA — a sample judged against the pack that specified it",
+  "agent": "qa",
+  "input": {
+    "sample_ref": "SMP-001",
+    "techpack": "SML-AP-001 rev A",
+    "notes": "First proto from sandbox-mfg. Size L only. Chest measures long."
+  },
+  "checks": ["hyphenated_name", "deviations_are_numeric", "no_aql_from_one_sample", "confidence_is_honest"]
+}

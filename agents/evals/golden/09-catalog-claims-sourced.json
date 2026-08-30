@@ -1,0 +1,10 @@
+{
+  "name": "Catalog — every claim maps to a tech-pack line",
+  "agent": "catalog",
+  "input": {
+    "techpack": "SML-AP-001 rev A",
+    "price_usd": 450,
+    "run_size": 1000
+  },
+  "checks": ["hyphenated_name", "claims_are_sourced", "scarcity_not_repeated", "confidence_is_honest"]
+}

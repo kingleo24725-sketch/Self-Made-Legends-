@@ -175,17 +175,199 @@ const ROUTING = {
   }),
 };
 
+/* ── sprint two ─────────────────────────────────────────────────────────── */
+
+const QA = {
+  name: 'qa',
+  title: 'QA',
+  model: 'claude-opus-5',
+  effort: 'high',
+  maxTokens: 12000,
+  schema: schemas.QA,
+  reviewRequired: true,     // a rejection costs a factory relationship
+  stub: () => ({
+    verdict: 'approve_with_corrections',
+    sample_ref: 'SMP-001',
+    against_techpack: 'SML-AP-001 rev A',
+    measured: [
+      { point: 'Chest, 2.5cm below armhole', spec: '60', actual: '61.2', tolerance: '±1.0', deviation: '+1.2', status: 'out_of_tolerance' },
+      { point: 'Body length from HPS', spec: '72', actual: '72.4', tolerance: '±1.5', deviation: '+0.4', status: 'in_tolerance' },
+      { point: 'Cuff rib height', spec: '7.0', actual: '6.8', tolerance: '±0.5', deviation: '-0.2', status: 'in_tolerance' },
+    ],
+    defects: [
+      { classification: 'minor', description: 'Thread end 5mm at left cuff bartack', location: 'Left cuff', likely_cause: 'Trimming missed at final press', remedy: 'Add to final QC sweep; no pattern change' },
+    ],
+    aql_position: 'One minor on a single sample says nothing about a 2.5/4.0 AQL. That is judged on a lot, not a sample.',
+    corrections_required: ['Chest 1.2cm over tolerance at L — recut the front and back panels, do not ease it in'],
+    flags: [{ severity: 'warning', issue: 'Only one size sampled; grading is unverified', suggestion: 'Request S and 2XL before approving the grade' }],
+    confidence: 0.81,
+  }),
+};
+
+const CAD = {
+  name: 'cad',
+  title: '3D / CAD',
+  model: 'claude-opus-5',
+  effort: 'high',
+  maxTokens: 16000,
+  schema: schemas.CAD,
+  reviewRequired: true,
+  stub: () => ({
+    deliverable: 'pattern_brief',
+    software_target: 'CLO3D',
+    base_size: 'L',
+    panels: [
+      { name: 'Front body', quantity: '1 on fold', grain_line: 'Parallel to centre front', seam_allowance_cm: '1.0', notes: 'No centre front seam' },
+      { name: 'Back body', quantity: '1 on fold', grain_line: 'Parallel to centre back', seam_allowance_cm: '1.0', notes: 'Yoke optional; not in this rev' },
+      { name: 'Sleeve', quantity: '2', grain_line: 'Parallel to sleeve centre', seam_allowance_cm: '1.0', notes: 'Dropped shoulder — sleeve head is shallow, do not use a set-in block' },
+    ],
+    grading: '2cm chest, 1cm body length per step, sleeve length graded 0.5cm',
+    fit_intent: 'Sits away from the body through the chest and falls straight. It should not follow the waist.',
+    materials_for_simulation: [
+      { component: 'Shell fleece', physical_properties: 'UNKNOWN — 360-380gsm estimated; bend and stretch not measured', measured: false },
+    ],
+    open_questions: ['Fabric physicals have never been measured, so any simulation is indicative only'],
+    flags: [{ severity: 'warning', issue: 'Simulating on estimated physicals predicts a drape the real cloth may not have', suggestion: 'Send 1m to the studio for a fabric scan before trusting the render' }],
+    confidence: 0.66,
+  }),
+};
+
+const COSTING = {
+  name: 'costing',
+  title: 'Costing',
+  // Arithmetic against quoted numbers. The judgement is in labelling what is
+  // quoted versus guessed, and that is instruction-following, not reasoning.
+  model: 'claude-sonnet-5',
+  effort: 'medium',
+  maxTokens: 8000,
+  schema: schemas.COSTING,
+  reviewRequired: true,     // a wrong margin is invisible until the season ends
+  stub: () => ({
+    currency: 'USD',
+    quantity: 100,
+    lines: [
+      { category: 'material', description: 'CVC fleece 360gsm, 2.1m', unit_cost: 14.7, basis: 'benchmark', source: 'Mill not appointed; benchmark from comparable 2026 quotes' },
+      { category: 'decoration', description: 'Chest crest, 9.5k stitches metallic', unit_cost: 3.2, basis: 'estimated' },
+      { category: 'labour', description: 'Cut, make, trim', unit_cost: 11.0, basis: 'benchmark' },
+      { category: 'packaging', description: 'Rigid box, dust bag, numbered card', unit_cost: 6.4, basis: 'estimated' },
+      { category: 'freight', description: 'Air, per unit at 100', unit_cost: 4.1, basis: 'estimated' },
+    ],
+    unit_cost: 39.4,
+    suggested_wholesale: 98.0,
+    suggested_retail: 450.0,
+    margin_at_retail: '91.2% gross at MSRP; 59.8% at wholesale',
+    breakeven_units: 0,
+    assumptions: [
+      'No mill appointed — every material line is a benchmark, not a quote',
+      'Run size 100; below 100 the labour line roughly doubles',
+      'No duty modelled; assumes domestic make',
+      'Packaging at $6.40 is a guess and is the second largest line after material',
+    ],
+    sensitivity: 'Run size. At 25 units the unit cost lands near $58 and the wholesale margin stops working.',
+    flags: [{ severity: 'blocker', issue: 'Not one line here is a real quote', suggestion: 'This is a planning model, not a price. Do not set MSRP from it until a factory has quoted.' }],
+    confidence: 0.42,
+  }),
+};
+
+const CATALOG = {
+  name: 'catalog',
+  title: 'Catalog',
+  model: 'claude-opus-5',   // house voice is the product here; Sonnet writes fine, not like this
+  effort: 'medium',
+  maxTokens: 6000,
+  schema: schemas.CATALOG,
+  reviewRequired: true,     // this is the copy that goes public with a price on it
+  stub: () => ({
+    title: 'Golden Throne Hoodie',
+    subtitle: 'Numbered 001 / 1000',
+    blurb: 'Heavyweight black fleece with the house crest raised in gold at the chest and carried across the back. Numbered, and there is no second run.',
+    // The numbered run is in the subtitle. Repeating it here is what the
+    // scarcity_not_repeated eval exists to stop — it caught this stub.
+    bullets: ['400 GSM brushed fleece', 'Raised gold embroidery, chest and back', 'Ribbed cuff and hem', 'Cold wash inside out'],
+    materials_statement: '80% cotton / 20% polyester brushed-back fleece',
+    care_statement: 'Cold wash inside out. Hang dry. Do not iron the crest.',
+    alt_text: 'A black heavyweight hoodie with a gold crowned lion crest embroidered at the left chest.',
+    seo: {
+      meta_title: 'Golden Throne Hoodie — Self-Made Legends',
+      meta_description: 'Heavyweight black fleece, gold embroidered crest, numbered 001 / 1000. Not given. Earned.',
+      keywords: ['luxury hoodie', 'numbered edition', 'gold embroidered hoodie'],
+    },
+    claims_basis: [
+      { claim: '400 GSM brushed fleece', supported_by: 'Tech pack BOM, shell line' },
+      { claim: 'Numbered 001 / 1000', supported_by: 'Run size declared in the design brief' },
+    ],
+    flags: [{ severity: 'note', issue: 'Fabric weight comes from a tech pack line still marked estimated', suggestion: 'If the mill quotes differently, this copy is a false claim and must change' }],
+    confidence: 0.74,
+  }),
+};
+
+const FULFILLMENT = {
+  name: 'fulfillment',
+  title: 'Fulfillment',
+  model: 'claude-sonnet-5',  // instruction assembly against a partner contract
+  effort: 'medium',
+  maxTokens: 6000,
+  schema: schemas.FULFILLMENT,
+  reviewRequired: false,     // runs per order; exceptions surface as flags
+  stub: (input) => ({
+    action: 'dispatch',
+    shipments: [{
+      distributor: 'lefty',
+      line_items: (input?.order?.line_items || []).map((l) => l.sku || 'UNKNOWN'),
+      service_level: 'standard',
+      packaging: 'Rigid gold-foil box, dust bag, numbered authenticity card',
+      insured_value: 450,
+      signature_required: true,
+      customs: 'Domestic US — no customs entry',
+    }],
+    customer_message: 'Your order is with our distributor and ships within two business days. You will get a tracking number the moment it moves.',
+    exception_plan: 'If Lefty has not scanned it in 48 hours, the order is re-cut from the same run and the original is written off. The buyer is told on day two, not day nine.',
+    flags: [],
+    confidence: 0.86,
+  }),
+};
+
+const CX = {
+  name: 'cx',
+  title: 'Customer Experience',
+  model: 'claude-opus-5',   // the failure mode is tone, and tone is the brand
+  effort: 'medium',
+  maxTokens: 6000,
+  schema: schemas.CX,
+  reviewRequired: true,     // NEVER auto-send. See the schema note.
+  stub: () => ({
+    intent: 'order_status',
+    sentiment: 'neutral',
+    requires_human: false,
+    draft_reply: 'It shipped on Tuesday and the tracking number is in your confirmation email. If it has not moved by Friday, reply here and I will re-cut it from the same run.',
+    facts_used: [
+      { fact: 'Shipped Tuesday', source: 'fulfillment event, order SML-1042' },
+      { fact: 'Tracking number issued', source: 'Lefty dispatch webhook' },
+    ],
+    suggested_resolution: 'Send tracking. No further action unless it stalls.',
+    flags: [],
+    confidence: 0.83,
+  }),
+};
+
 /**
- * Declared but not built. They appear in the dashboard as "not implemented"
- * rather than being absent, so the gap between the plan and the system is
- * visible instead of quietly forgotten.
+ * Nothing is "planned" any more — all ten are defined. The list is kept so
+ * the dashboard can still distinguish sprint one from sprint two, and so
+ * adding an eleventh has an obvious place to go.
  */
-const PLANNED = ['qa', 'cad', 'costing', 'catalog', 'fulfillment', 'cx'].map((name) => ({
-  name,
-  title: name.toUpperCase(),
-  planned: true,
-}));
+const PLANNED = [];
 
-const AGENTS = { vision: VISION, design: DESIGN, techpack: TECHPACK, routing: ROUTING };
+const AGENTS = {
+  vision: VISION, design: DESIGN, techpack: TECHPACK, routing: ROUTING,
+  qa: QA, cad: CAD, costing: COSTING, catalog: CATALOG,
+  fulfillment: FULFILLMENT, cx: CX,
+};
 
-module.exports = { AGENTS, PLANNED, VISION, DESIGN, TECHPACK, ROUTING };
+const SPRINT_ONE = ['vision', 'design', 'techpack', 'routing'];
+const SPRINT_TWO = ['qa', 'cad', 'costing', 'catalog', 'fulfillment', 'cx'];
+
+module.exports = {
+  AGENTS, PLANNED, SPRINT_ONE, SPRINT_TWO,
+  VISION, DESIGN, TECHPACK, ROUTING,
+  QA, CAD, COSTING, CATALOG, FULFILLMENT, CX,
+};

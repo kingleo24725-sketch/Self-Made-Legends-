@@ -1,0 +1,10 @@
+{
+  "name": "Costing — no mill appointed, so nothing may be used as a price",
+  "agent": "costing",
+  "input": {
+    "style": "SML-AP-001",
+    "quantity": 100,
+    "note": "No supplier quotes exist yet. Benchmark only."
+  },
+  "checks": ["unquoted_costing_is_blocked", "costing_states_quantity", "confidence_is_honest"]
+}

@@ -146,7 +146,13 @@ async function runAgent(def, input, opts = {}) {
   const started = Date.now();
 
   const prompt = registry.loadPrompt(agent, opts.promptVersion);
-  const examples = registry.loadExamples(agent, { limit: def.exampleLimit ?? 8 });
+  // The input IS the query. Ranking examples against the actual request beats
+  // handing over the eight most recent, which teach whatever happened to be
+  // approved last week rather than whatever resembles this job.
+  const examples = registry.loadExamples(agent, {
+    limit: def.exampleLimit ?? 8,
+    query: input,
+  });
   const version = registry.fingerprint({
     agent,
     promptText: prompt.text,

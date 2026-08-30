@@ -1,0 +1,9 @@
+{
+  "name": "CX — money, law and a named person go to a human",
+  "agent": "cx",
+  "input": {
+    "message": "My order arrived damaged and I want a refund. Also I saw the Grace edition — my mother passed in 2020 too.",
+    "order_id": "SML-1042"
+  },
+  "checks": ["cx_escalates_the_serious", "cx_facts_are_sourced", "confidence_is_honest"]
+}

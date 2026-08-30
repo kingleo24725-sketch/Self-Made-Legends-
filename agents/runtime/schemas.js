@@ -329,4 +329,269 @@ const ROUTING = {
   },
 };
 
-module.exports = { VISION, DESIGN, TECHPACK, ROUTING, flags, confidence };
+/* ══════════════════════════════════════════════════════════════════════════
+   SPRINT TWO — the six that turn a design into a shipped, costed, listed,
+   supported product. Same contract throughout: every one carries flags and
+   confidence, and every one names what it does not know.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * QA — judges a sample against the tech pack that specified it.
+ *
+ * Deliberately reports per measurement point rather than a verdict, because
+ * "reject" with no numbers is an argument with a factory and "chest is 3cm
+ * over a ±1cm tolerance at L" is a correction.
+ */
+const QA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['verdict', 'measured', 'defects', 'flags', 'confidence'],
+  properties: {
+    verdict: { type: 'string', enum: ['approve', 'approve_with_corrections', 'reject', 'insufficient_evidence'] },
+    sample_ref: { type: 'string' },
+    against_techpack: { type: 'string', description: 'Style code and tech pack version this was judged against.' },
+    measured: {
+      type: 'array',
+      description: 'One row per measurement point in the tech pack. Missing points are a finding, not an omission.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['point', 'spec', 'status'],
+        properties: {
+          point: { type: 'string' },
+          spec: { type: 'string' },
+          actual: { type: 'string' },
+          tolerance: { type: 'string' },
+          deviation: { type: 'string' },
+          status: { type: 'string', enum: ['in_tolerance', 'out_of_tolerance', 'not_measurable'] },
+        },
+      },
+    },
+    defects: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['classification', 'description', 'location'],
+        properties: {
+          classification: { type: 'string', enum: ['critical', 'major', 'minor'] },
+          description: { type: 'string' },
+          location: { type: 'string' },
+          likely_cause: { type: 'string' },
+          remedy: { type: 'string' },
+        },
+      },
+    },
+    aql_position: { type: 'string', description: 'Where this lands against the stated AQL, or why that cannot be judged from one sample.' },
+    corrections_required: { type: 'array', items: { type: 'string' } },
+    flags,
+    confidence,
+  },
+};
+
+/**
+ * 3D / CAD — turns a tech pack into instructions a pattern cutter or a
+ * modeller can act on. It does not produce geometry; it produces the brief
+ * for whoever does, and says so.
+ */
+const CAD = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['deliverable', 'base_size', 'panels', 'flags', 'confidence'],
+  properties: {
+    deliverable: { type: 'string', enum: ['pattern_brief', 'last_brief', 'model_brief'] },
+    software_target: { type: 'string', description: 'CLO3D, Browzwear, Rhino, Modo — whatever the receiving studio uses.' },
+    base_size: { type: 'string' },
+    panels: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['name', 'quantity', 'notes'],
+        properties: {
+          name: { type: 'string' },
+          quantity: { type: 'string' },
+          grain_line: { type: 'string' },
+          seam_allowance_cm: { type: 'string' },
+          notes: { type: 'string' },
+        },
+      },
+    },
+    grading: { type: 'string', description: 'The grade rule carried through from the tech pack, restated in cutting terms.' },
+    fit_intent: { type: 'string', description: 'What the garment should do on a body — the thing a measurement chart cannot say.' },
+    materials_for_simulation: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['component', 'physical_properties'],
+        properties: {
+          component: { type: 'string' },
+          physical_properties: { type: 'string', description: 'Weight, drape, stretch, bend — what a simulator needs.' },
+          measured: { type: 'boolean', description: 'False means estimated, and the simulation is then indicative only.' },
+        },
+      },
+    },
+    open_questions: { type: 'array', items: { type: 'string' } },
+    flags,
+    confidence,
+  },
+};
+
+/**
+ * Costing — a landed cost, itemised, with every assumption exposed.
+ *
+ * Refuses to produce a single number without the breakdown. A margin built
+ * on an invisible assumption is how a brand sells at a loss for a season.
+ */
+const COSTING = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['currency', 'quantity', 'lines', 'unit_cost', 'assumptions', 'flags', 'confidence'],
+  properties: {
+    currency: { type: 'string' },
+    quantity: { type: 'integer', description: 'Costs are meaningless without the run size they assume.' },
+    lines: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['category', 'description', 'unit_cost', 'basis'],
+        properties: {
+          category: { type: 'string', enum: ['material', 'trim', 'labour', 'decoration', 'packaging', 'freight', 'duty', 'tooling', 'overhead', 'other'] },
+          description: { type: 'string' },
+          unit_cost: { type: 'number' },
+          basis: { type: 'string', enum: ['quoted', 'benchmark', 'estimated'], description: 'quoted means a supplier said it. Everything else is a guess with a label.' },
+          source: { type: 'string' },
+        },
+      },
+    },
+    unit_cost: { type: 'number', description: 'Landed cost per unit at the stated quantity.' },
+    suggested_wholesale: { type: 'number' },
+    suggested_retail: { type: 'number' },
+    margin_at_retail: { type: 'string' },
+    breakeven_units: { type: 'integer' },
+    assumptions: { type: 'array', description: 'Every number that is not quoted, named.', items: { type: 'string' } },
+    sensitivity: { type: 'string', description: 'Which single input moves the unit cost most, and by how much.' },
+    flags,
+    confidence,
+  },
+};
+
+/**
+ * Catalog — product copy and listing data from a tech pack.
+ *
+ * Constrained hard: it may only claim what the tech pack states. Marketing
+ * copy that invents a fibre content is a compliance problem, not a style one.
+ */
+const CATALOG = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'blurb', 'bullets', 'claims_basis', 'flags', 'confidence'],
+  properties: {
+    title: { type: 'string' },
+    subtitle: { type: 'string' },
+    blurb: { type: 'string', description: 'Two sentences at most. House voice: plain, declarative, no superlatives it cannot support.' },
+    bullets: { type: 'array', items: { type: 'string' } },
+    materials_statement: { type: 'string', description: 'Verbatim from the tech pack. Never paraphrased — this is a legal statement.' },
+    care_statement: { type: 'string' },
+    alt_text: { type: 'string', description: 'For the product photograph, written for someone who cannot see it.' },
+    seo: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        meta_title: { type: 'string' },
+        meta_description: { type: 'string' },
+        keywords: { type: 'array', items: { type: 'string' } },
+      },
+    },
+    claims_basis: {
+      type: 'array',
+      description: 'Each claim in the copy, mapped to the tech pack line that supports it. A claim with no line is a claim to delete.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['claim', 'supported_by'],
+        properties: {
+          claim: { type: 'string' },
+          supported_by: { type: 'string' },
+        },
+      },
+    },
+    flags,
+    confidence,
+  },
+};
+
+/**
+ * Fulfillment — turns a routed order into the instruction a distributor acts
+ * on, and states what happens when it goes wrong before it goes wrong.
+ */
+const FULFILLMENT = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['action', 'shipments', 'flags', 'confidence'],
+  properties: {
+    action: { type: 'string', enum: ['dispatch', 'hold', 'partial_dispatch', 'cancel'] },
+    shipments: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['distributor', 'line_items', 'service_level'],
+        properties: {
+          distributor: { type: 'string' },
+          line_items: { type: 'array', items: { type: 'string' } },
+          service_level: { type: 'string' },
+          packaging: { type: 'string', description: 'The presentation box is part of the product at this price point.' },
+          insured_value: { type: 'number' },
+          signature_required: { type: 'boolean' },
+          customs: { type: 'string', description: 'HS code and declared value, or why neither is needed.' },
+        },
+      },
+    },
+    hold_reason: { type: 'string' },
+    customer_message: { type: 'string', description: 'What the buyer is told, in the house voice. Plain about delay; never apologetic-and-vague.' },
+    exception_plan: { type: 'string', description: 'What is done if this shipment is late, lost or refused.' },
+    flags,
+    confidence,
+  },
+};
+
+/**
+ * CX — drafts a reply to a customer. Never sends one.
+ *
+ * `requires_human` defaults to the safe answer: anything touching money,
+ * a legal threat, or a named person's grief goes to a person.
+ */
+const CX = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['intent', 'sentiment', 'requires_human', 'draft_reply', 'flags', 'confidence'],
+  properties: {
+    intent: { type: 'string', enum: ['order_status', 'sizing', 'return', 'refund', 'damage', 'wholesale', 'press', 'complaint', 'legal', 'other'] },
+    sentiment: { type: 'string', enum: ['positive', 'neutral', 'frustrated', 'angry'] },
+    requires_human: { type: 'boolean', description: 'True for anything involving a refund, a legal threat, a health claim, or a named person. When unsure, true.' },
+    escalation_reason: { type: 'string' },
+    draft_reply: { type: 'string', description: 'A draft. Nothing here is sent without a person reading it.' },
+    facts_used: {
+      type: 'array',
+      description: 'Every factual statement in the draft and where it came from. An unsourced fact is an invented one.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['fact', 'source'],
+        properties: { fact: { type: 'string' }, source: { type: 'string' } },
+      },
+    },
+    suggested_resolution: { type: 'string' },
+    flags,
+    confidence,
+  },
+};
+
+module.exports = {
+  VISION, DESIGN, TECHPACK, ROUTING,
+  QA, CAD, COSTING, CATALOG, FULFILLMENT, CX,
+  flags, confidence,
+};

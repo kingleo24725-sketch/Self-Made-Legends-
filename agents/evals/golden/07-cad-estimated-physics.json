@@ -1,0 +1,10 @@
+{
+  "name": "CAD — a render on estimated fabric must be called indicative",
+  "agent": "cad",
+  "input": {
+    "techpack": "SML-AP-001 rev A",
+    "target": "CLO3D",
+    "note": "No fabric has been scanned; weight is carried from a design estimate."
+  },
+  "checks": ["hyphenated_name", "estimated_physics_flagged", "confidence_is_honest"]
+}

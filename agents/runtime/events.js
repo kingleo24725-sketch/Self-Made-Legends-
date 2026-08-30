@@ -204,4 +204,64 @@ function summarise({ since, until } = {}) {
   return { events: events.length, cost_usd: Number(costTotal.toFixed(4)), agents };
 }
 
-module.exports = { TYPES, emit, read, summarise, hash, stableStringify, newId, EVENT_DIR };
+/**
+ * The same numbers, bucketed by week.
+ *
+ * A single first-pass rate is a number. A first-pass rate per week is the
+ * only thing that answers the question the whole system exists to answer:
+ * is it getting better, and since when.
+ *
+ * Weeks, not days: at this volume a daily bucket holds two reviews and
+ * swings from 0% to 100% on one person's opinion, which looks like signal
+ * and is noise.
+ */
+function trend({ since, until, weeks = 12 } = {}) {
+  const all = read({ since, until });
+  const buckets = new Map();
+
+  const weekKey = (iso) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return 'unknown';
+    // ISO week start (Monday), in UTC.
+    const day = (d.getUTCDay() + 6) % 7;
+    d.setUTCDate(d.getUTCDate() - day);
+    return d.toISOString().slice(0, 10);
+  };
+
+  for (const e of all) {
+    if (!e.ts) continue;
+    const k = weekKey(e.ts);
+    const b = buckets.get(k) || { week: k, calls: 0, errors: 0, cost_usd: 0, reviewed: 0, approved: 0, edited: 0, rejected: 0 };
+
+    if (e.type === TYPES.AGENT_CALL) { b.calls++; b.cost_usd += e.cost_usd || 0; }
+    if (e.type === TYPES.AGENT_ERROR) { b.calls++; b.errors++; }
+    if (e.type === TYPES.REVIEW_DECISION) {
+      b.reviewed++;
+      if (e.verdict === 'approved') b.approved++;
+      if (e.verdict === 'edited') b.edited++;
+      if (e.verdict === 'rejected') b.rejected++;
+    }
+    buckets.set(k, b);
+  }
+
+  return [...buckets.values()]
+    .map((b) => ({
+      ...b,
+      cost_usd: Number(b.cost_usd.toFixed(4)),
+      // null, not zero. Zero means "nobody approved anything"; null means
+      // "nobody reviewed anything", and plotting those the same way invents
+      // a collapse in quality that never happened.
+      first_pass_rate: b.reviewed ? b.approved / b.reviewed : null,
+    }))
+    .sort((a, b) => a.week.localeCompare(b.week))
+    .slice(-weeks);
+}
+
+/** What is sitting in the review queue right now, oldest first. */
+function pending({ since } = {}) {
+  return read({ since })
+    .filter((e) => e.type === TYPES.AGENT_CALL && e.review?.needed && !e.review?.verdict)
+    .sort((a, b) => String(a.ts).localeCompare(String(b.ts)));
+}
+
+module.exports = { TYPES, emit, read, summarise, trend, pending, hash, stableStringify, newId, EVENT_DIR };
