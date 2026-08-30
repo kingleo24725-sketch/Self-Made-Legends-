@@ -92,6 +92,47 @@ async function main() {
       break;
     }
 
+    /* What a price actually earns, and what a target margin needs. */
+    case 'margin': {
+      const pod = require('../partners/pod');
+      const item = argv[1];
+      const retail = Number(argv[2]);
+
+      if (!item) {
+        process.stdout.write('\n  Items:\n');
+        for (const [k, v] of Object.entries(pod.CATALOG)) {
+          process.stdout.write(`    ${k.padEnd(24)} $${v.base.toFixed(2).padStart(6)}  ${v.blank}\n`);
+        }
+        process.stdout.write('\n  sml-agents margin <item> <retail>\n');
+        process.stdout.write('  sml-agents margin <item>          → the price for 60/70/80% margin\n\n');
+        break;
+      }
+
+      if (!Number.isFinite(retail)) {
+        process.stdout.write(`\n  ${pod.CATALOG[item]?.label || item}\n\n`);
+        for (const m of [0.6, 0.7, 0.8, 0.9]) {
+          process.stdout.write(`    ${(m * 100).toFixed(0)}% margin  →  $${pod.priceFor(item, m).toFixed(2)}\n`);
+        }
+        process.stdout.write('\n');
+        break;
+      }
+
+      const r = pod.margin(item, retail);
+      process.stdout.write(
+        `\n  ${r.item}\n  ${r.blank}\n\n` +
+        `    You charge      $${r.revenue.toFixed(2).padStart(8)}\n` +
+        `    Blank + print   $${r.base.toFixed(2).padStart(8)}\n` +
+        `    Shipping        $${r.shipping.toFixed(2).padStart(8)}\n` +
+        `    Stripe          $${r.stripe.toFixed(2).padStart(8)}\n` +
+        `    ─────────────────────────\n` +
+        `    You keep        $${r.profit.toFixed(2).padStart(8)}   ${(r.margin * 100).toFixed(0)}%\n\n` +
+        `    Break-even at   $${r.breakeven_retail.toFixed(2)}\n` +
+        `    100 units       $${(r.profit * 100).toFixed(2)}\n\n` +
+        (r.note ? `  ${r.note}\n\n` : '')
+      );
+      break;
+    }
+
     case 'partners': {
       const state = await partners.partnerState();
       console.log('');
@@ -112,6 +153,7 @@ async function main() {
     concept "<brief>" [--image <path|url>]   run a brief through design and tech pack
     order <file.json>                        route an order
     stats [--since YYYY-MM-DD]               what the agents have been doing
+    margin <item> [retail]                   what a price earns, print-on-demand
     partners                                 who is reachable and what they can do
 
   Add --live to use the real API. Without it everything runs on stubs,

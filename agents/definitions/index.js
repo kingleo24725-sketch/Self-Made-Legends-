@@ -150,6 +150,10 @@ const TECHPACK = {
 const ROUTING = {
   name: 'routing',
   title: 'Order Routing',
+  // DORMANT. Routing picks between manufacturers and distributors. With
+  // print-on-demand there is one printer and it ships direct, so there is
+  // nothing to choose. Wakes when a second supplier exists.
+  dormant: 'One printer, shipping direct. Nothing to route between.',
   model: 'claude-sonnet-5',   // matching an order against a capability table; not a judgement call
   effort: 'medium',
   maxTokens: 6000,
@@ -180,6 +184,9 @@ const ROUTING = {
 const QA = {
   name: 'qa',
   title: 'QA',
+  // DORMANT. Judges a sample against a tech pack. No factory is producing
+  // samples. Wakes the day the first cut-and-sew sample lands.
+  dormant: 'No factory, no samples to judge.',
   model: 'claude-opus-5',
   effort: 'high',
   maxTokens: 12000,
@@ -207,6 +214,9 @@ const QA = {
 const CAD = {
   name: 'cad',
   title: '3D / CAD',
+  // DORMANT. Briefs a pattern cutter. Print-on-demand uses stock blanks;
+  // there is no pattern to cut. Wakes with cut-and-sew.
+  dormant: 'Stock blanks have no pattern to cut.',
   model: 'claude-opus-5',
   effort: 'high',
   maxTokens: 16000,
@@ -244,28 +254,29 @@ const COSTING = {
   reviewRequired: true,     // a wrong margin is invisible until the season ends
   stub: () => ({
     currency: 'USD',
-    quantity: 100,
+    quantity: 1,
     lines: [
-      { category: 'material', description: 'CVC fleece 360gsm, 2.1m', unit_cost: 14.7, basis: 'benchmark', source: 'Mill not appointed; benchmark from comparable 2026 quotes' },
-      { category: 'decoration', description: 'Chest crest, 9.5k stitches metallic', unit_cost: 3.2, basis: 'estimated' },
-      { category: 'labour', description: 'Cut, make, trim', unit_cost: 11.0, basis: 'benchmark' },
-      { category: 'packaging', description: 'Rigid box, dust bag, numbered card', unit_cost: 6.4, basis: 'estimated' },
-      { category: 'freight', description: 'Air, per unit at 100', unit_cost: 4.1, basis: 'estimated' },
+      { category: 'material', description: 'Blank + embroidery, heavyweight hoodie', unit_cost: 45.00, basis: 'benchmark', source: 'Printful public pricing, Aug 2026 — replace with your dashboard figure' },
+      { category: 'freight', description: 'US domestic, single item', unit_cost: 4.69, basis: 'benchmark', source: 'Printful shipping, first item' },
+      { category: 'other', description: 'Stripe, 2.9% + $0.30 at $195 retail', unit_cost: 5.96, basis: 'quoted', source: 'Stripe published US rate' },
     ],
-    unit_cost: 39.4,
-    suggested_wholesale: 98.0,
-    suggested_retail: 450.0,
-    margin_at_retail: '91.2% gross at MSRP; 59.8% at wholesale',
+    unit_cost: 55.65,
+    suggested_wholesale: 98.00,
+    suggested_retail: 195.00,
+    margin_at_retail: '71.5% gross at $195',
     breakeven_units: 0,
     assumptions: [
-      'No mill appointed — every material line is a benchmark, not a quote',
-      'Run size 100; below 100 the labour line roughly doubles',
-      'No duty modelled; assumes domestic make',
-      'Packaging at $6.40 is a guess and is the second largest line after material',
+      'Print-on-demand: no minimum, no inventory, nothing paid until a customer has paid',
+      'Single-item order — the full first-item shipping lands on this unit',
+      'Embroidery digitisation is a one-off $25 per artwork, not in the unit cost',
+      'Blank is a stock heavyweight, NOT cut-and-sew',
     ],
-    sensitivity: 'Run size. At 25 units the unit cost lands near $58 and the wholesale margin stops working.',
-    flags: [{ severity: 'blocker', issue: 'Not one line here is a real quote', suggestion: 'This is a planning model, not a price. Do not set MSRP from it until a factory has quoted.' }],
-    confidence: 0.42,
+    sensitivity: 'The blank. A $27 hoodie body and a $45 one look identical in a photograph and completely different in the hand.',
+    flags: [
+      { severity: 'warning', issue: 'Base costs are researched from public pricing, not quoted from your own account', suggestion: 'Open your Printful dashboard and replace them in partners/pod.js before setting a retail price' },
+      { severity: 'note', issue: 'A stock blank caps what the price can credibly be', suggestion: 'Price the POD line where the blank can carry it; keep the numbered cut-and-sew pieces for when there is money to make them properly' },
+    ],
+    confidence: 0.71,
   }),
 };
 
@@ -304,6 +315,10 @@ const CATALOG = {
 const FULFILLMENT = {
   name: 'fulfillment',
   title: 'Fulfillment',
+  // DORMANT. The printer picks, packs and ships. Writing a dispatch
+  // instruction for a partner who already has the order is work that
+  // produces nothing. Wakes when stock is held anywhere.
+  dormant: 'The printer fulfils. There is no instruction to write.',
   model: 'claude-sonnet-5',  // instruction assembly against a partner contract
   effort: 'medium',
   maxTokens: 6000,
@@ -350,6 +365,55 @@ const CX = {
   }),
 };
 
+const SOCIAL = {
+  name: 'social',
+  title: 'Social',
+  // Opus. The whole output is voice and judgement — the two things a cheaper
+  // model gets subtly, expensively wrong in public.
+  model: 'claude-opus-5',
+  effort: 'medium',
+  maxTokens: 6000,
+  schema: schemas.SOCIAL,
+  reviewRequired: true,     // it publishes under the brand's name
+  stub: () => ({
+    asset: 'The Legacy tee sheet — hidden messages panel',
+    angle: 'Four of the five lines written on this shirt face inward.',
+    posts: [
+      {
+        platform: 'instagram',
+        format: 'carousel',
+        hook: 'Four of the five lines on this shirt face inward. Nobody who sees you wearing it can read them.',
+        caption: 'Inside the neck: greatness is earned in silence. Inside the hem: legends don\'t follow, they create the path. Down the sides: focus, discipline, loyalty, faith. Inside the tag: you were born to build, not to be average.\n\nOne line faces out. The rest are yours.',
+        on_screen_text: [],
+        shot_list: [],
+        call_to_action: 'Numbered 001 / 1000. Link in bio.',
+        hashtags: ['#selfmadelegends', '#notgivenearned'],
+      },
+      {
+        platform: 'tiktok',
+        format: 'reel',
+        hook: 'Every shirt says something. Most of them say it to everyone else.',
+        caption: 'Four messages nobody but you will ever read.',
+        on_screen_text: ['Greatness is earned in silence', 'inside the neck', 'Legends don\'t follow', 'inside the hem', 'You were born to build', 'inside the tag'],
+        shot_list: [
+          'Shirt flat on black, slow push in on the collar',
+          'Hands turning the neck inside out, message revealed',
+          'Cut to the hem, folded back',
+          'Cut to the tag',
+          'Shirt worn, back to camera — none of it visible',
+        ],
+        call_to_action: 'Claim a number.',
+        hashtags: ['#selfmadelegends', '#hiddendetails'],
+      },
+    ],
+    reuses: ['throne-tee sheet', 'shelf product shots'],
+    needs_shooting: ['Close-ups of the neck, hem and tag on a real sample — cannot be shot until one exists'],
+    claims_check: 'No numeric product claim made. "Heavyweight cotton" avoided until the blank is chosen.',
+    flags: [{ severity: 'warning', issue: 'The reel shot list needs a physical sample and none exists', suggestion: 'Post the carousel now from the sheet; hold the reel until a sample lands' }],
+    confidence: 0.79,
+  }),
+};
+
 /**
  * Nothing is "planned" any more — all ten are defined. The list is kept so
  * the dashboard can still distinguish sprint one from sprint two, and so
@@ -357,17 +421,23 @@ const CX = {
  */
 const PLANNED = [];
 
-const AGENTS = {
+const AGENTS_PRE = {
   vision: VISION, design: DESIGN, techpack: TECHPACK, routing: ROUTING,
   qa: QA, cad: CAD, costing: COSTING, catalog: CATALOG,
-  fulfillment: FULFILLMENT, cx: CX,
+  fulfillment: FULFILLMENT, cx: CX, social: SOCIAL,
 };
 
 const SPRINT_ONE = ['vision', 'design', 'techpack', 'routing'];
 const SPRINT_TWO = ['qa', 'cad', 'costing', 'catalog', 'fulfillment', 'cx'];
+const SPRINT_THREE = ['social'];
+
+/** Agents that need a supply chain the house does not have yet. */
+const DORMANT = Object.entries(AGENTS_PRE).filter(([, a]) => a.dormant).map(([k]) => k);
+
+const AGENTS = AGENTS_PRE;
 
 module.exports = {
-  AGENTS, PLANNED, SPRINT_ONE, SPRINT_TWO,
+  AGENTS, PLANNED, SPRINT_THREE, DORMANT, SPRINT_ONE, SPRINT_TWO,
   VISION, DESIGN, TECHPACK, ROUTING,
-  QA, CAD, COSTING, CATALOG, FULFILLMENT, CX,
+  QA, CAD, COSTING, CATALOG, FULFILLMENT, CX, SOCIAL,
 };

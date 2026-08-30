@@ -590,8 +590,51 @@ const CX = {
   },
 };
 
+/**
+ * Social — turns an asset the house already owns into posts.
+ *
+ * The only distribution channel that costs nothing and needs no partner.
+ * Deliberately schema-constrained to ONE asset per call: a request to
+ * "write a month of content" produces thirty forgettable posts, where one
+ * asset examined properly produces three worth posting.
+ */
+const SOCIAL = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['asset', 'angle', 'posts', 'flags', 'confidence'],
+  properties: {
+    asset: { type: 'string', description: 'The specific thing this is built from — a sheet, a film frame, a detail shot.' },
+    angle: { type: 'string', description: 'The one idea. If it cannot be said in a sentence there is no post here.' },
+    posts: {
+      type: 'array',
+      description: 'Three at most. Fewer, better.',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['platform', 'format', 'hook', 'caption'],
+        properties: {
+          platform: { type: 'string', enum: ['instagram', 'tiktok', 'x', 'threads', 'email'] },
+          format: { type: 'string', enum: ['single_image', 'carousel', 'reel', 'story', 'text', 'newsletter'] },
+          hook: { type: 'string', description: 'The first line or first two seconds. It is the whole post; everything after it is for people already stopped.' },
+          caption: { type: 'string' },
+          on_screen_text: { type: 'array', items: { type: 'string' }, description: 'For a reel: what appears, in order.' },
+          shot_list: { type: 'array', items: { type: 'string' }, description: 'For a reel: what is filmed, in order. Achievable with a phone.' },
+          call_to_action: { type: 'string' },
+          hashtags: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+    reuses: { type: 'array', description: 'Assets that already exist and are being used rather than made.', items: { type: 'string' } },
+    needs_shooting: { type: 'array', description: 'Anything that does not exist yet and would have to be filmed or made.', items: { type: 'string' } },
+    claims_check: { type: 'string', description: 'Any product claim in the copy, and what supports it. A post is an advert; the same rules apply.' },
+    flags,
+    confidence,
+  },
+};
+
 module.exports = {
   VISION, DESIGN, TECHPACK, ROUTING,
   QA, CAD, COSTING, CATALOG, FULFILLMENT, CX,
+  SOCIAL,
   flags, confidence,
 };

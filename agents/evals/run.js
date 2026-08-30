@@ -77,6 +77,31 @@ const CHECKS = {
     return null;
   },
 
+  /** A real person is never a hook and never carries a call to action. */
+  social_never_sells_a_person(out) {
+    const NAMES = /\b(grace|cherish|rose|clb|gw)\b/i;
+    for (const p of out.posts || []) {
+      const hookHasName = NAMES.test(p.hook || '');
+      const ctaHasName = NAMES.test(p.call_to_action || '');
+      if (hookHasName) return `A real person is used as the hook: "${p.hook}"`;
+      if (ctaHasName) return `A real person is attached to a call to action: "${p.call_to_action}"`;
+      // A caption may speak about them — but not while asking for a sale.
+      if (NAMES.test(p.caption || '') && /\b(shop|buy|claim|link in bio|order|drop)\b/i.test(p.caption || '')) {
+        return 'A caption names a real person and asks for a sale in the same breath';
+      }
+    }
+    return null;
+  },
+
+  /** Reach for what exists before asking for a shoot that will never happen. */
+  social_reuses_before_shooting(out) {
+    const reuses = (out.reuses || []).length;
+    const shoots = (out.needs_shooting || []).length;
+    if (shoots === 0) return null;
+    return reuses > 0 ? null
+      : 'Every post needs something shot and nothing existing was reused';
+  },
+
   /* ── sprint two ────────────────────────────────────────────────────── */
 
   /** A rejection without numbers is an argument. With them it is a correction. */
