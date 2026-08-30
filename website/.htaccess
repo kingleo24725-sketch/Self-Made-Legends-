@@ -5,12 +5,32 @@ Options -Indexes
 DirectoryIndex index.html
 
 # ── Force HTTPS and the canonical www-less host ─────────────────────────
+#
+#  IF THE SITE IS 404ing OR LOOPING, COMMENT OUT THIS WHOLE BLOCK FIRST.
+#  Put a # in front of every line from <IfModule to </IfModule>, re-upload,
+#  and reload. If the site comes back, the certificate is the problem, not
+#  the files — install SSL in the InterServer panel, then uncomment.
+#
+#  Why this block can break a working site: it sends every http:// visitor
+#  to https://. If the certificate is not installed yet, that https address
+#  has nothing listening on it. On shared hosting the visitor then lands on
+#  whatever the server answers with by default — usually a 404 that is not
+#  your site's 404 at all.
+#
+#  The three conditions below all have to be false before a redirect fires.
+#  %{HTTPS} alone is not enough: InterServer terminates SSL in front of
+#  Apache, so a request that arrived encrypted can still look plain to
+#  mod_rewrite. Checking the forwarded header and the port as well is what
+#  stops that from becoming an endless redirect to itself.
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
     RewriteCond %{HTTPS} !=on
+    RewriteCond %{HTTP:X-Forwarded-Proto} !=https
+    RewriteCond %{SERVER_PORT} !=443
     RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+    # Strip www in one hop, keeping whatever scheme the visitor already has.
     RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
     RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
 </IfModule>
