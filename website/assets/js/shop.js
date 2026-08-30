@@ -60,65 +60,134 @@ window.SML_SHOP = {
 
   products: [
 
+    /* ══════════════════════════════════════════════════════════════════════
+       THE LEGACY LINE — made to order, ships now.
+
+       Priced against what the blank can carry, not against a target margin.
+       Every one of these is a premium embroidered blank: the embroidery is
+       excellent, the body is a stock heavyweight, and the price says so.
+
+       Margins live in agents/partners/pod.js. Run:
+         node agents/bin/sml-agents.js margin hoodie-embroidered 115
+       ══════════════════════════════════════════════════════════════════════ */
+
     {
-      id: 'throne-hoodie',
-      name: 'Golden Throne Hoodie',
-      sku: 'SML·GT·001',
-      price: 45000,                   // $450.00 — in cents
+      id: 'legacy-hoodie',
+      name: 'Legacy Hoodie',
+      sku: 'SML·LG·001',
+      price: 11500,                   // $115.00 — keeps $61.68, 54%
       image: 'p-hoodie',
-      imageAlt: 'The Golden Throne hoodie in black, with the gold crowned lion crest ' +
-                'and SELF MADE LEGENDS across the chest.',
-      blurb: 'Heavyweight black fleece. The lion crest carried large across the ' +
-             'back, small at the chest, and NOT GIVEN. EARNED. below it.',
+      imageAlt: 'The Legacy hoodie in black, with the gold crowned lion crest ' +
+                'embroidered at the chest and carried across the back.',
+      blurb: 'Heavyweight fleece, the crest embroidered in gold at the chest and ' +
+             'again across the back. Made when you order it.',
       details: [
         'Heavyweight brushed fleece',
-        'Gold embroidered lion crest',
-        'Crest at chest, full crest at back',
-        'Numbered 001 / 1000'
+        'Gold embroidered crest, chest and back',
+        'Unisex, XS to 4XL',
+        'Made to order — no two runs, no dead stock'
       ],
-      colors: [
-        { name: 'Onyx', hex: '#0B0C11' }
-      ],
+      colors: [{ name: 'Onyx', hex: '#0B0C11' }],
       paymentLink: ''                 // ← paste your Stripe Payment Link
     },
 
     {
-      id: 'throne-tee',
-      name: 'Golden Throne Tee',
-      sku: 'SML·GT·002',
-      price: 19500,                   // $195.00
-      image: 'p-tee',
-      imageAlt: 'The Golden Throne tee in black, front and back, with the gold SML at ' +
-                'the chest and the crowned lion crest across the back.',
-      blurb: 'The foundation piece. Crest at the chest, LEAD THE KINGDOM down the sleeve.',
+      id: 'legacy-sweatpants',
+      name: 'Legacy Sweatpants',
+      sku: 'SML·LG·002',
+      price: 11000,                   // $110.00 — keeps $71.82, 65%
+      blurb: 'The other half of the set. Crest at the hip, wordmark down the leg.',
       details: [
-        'Combed ring-spun cotton',
-        'Gold crest at the chest',
-        'Sleeve text, tonal',
-        'Numbered 001 / 1000'
+        'Heavyweight fleece jogger',
+        'Gold embroidered crest at the hip',
+        'Elasticated cuff, XS to 2XL'
       ],
-      colors: [
-        { name: 'Onyx', hex: '#0B0C11' }
-      ],
+      colors: [{ name: 'Onyx', hex: '#0B0C11' }],
       paymentLink: ''
     },
+
+    {
+      id: 'legacy-cap',
+      name: 'The Snapback',
+      sku: 'SML·LG·003',
+      price: 7000,                    // $70.00 — keeps $44.98, 64%
+      blurb: 'Structured six-panel, the crest raised in 3D puff embroidery. ' +
+             'The closest thing in the line to the sheets.',
+      details: [
+        'Structured six-panel, flat brim',
+        '3D puff embroidered crest',
+        'Adjustable snapback, one size'
+      ],
+      colors: [{ name: 'Onyx', hex: '#0B0C11' }],
+      paymentLink: ''
+    },
+
+    {
+      id: 'legacy-tee',
+      name: 'Legacy Tee',
+      sku: 'SML·LG·004',
+      price: 6500,                    // $65.00 — keeps $42.13, 65%
+      image: 'p-tee',
+      imageAlt: 'The Legacy tee in black, front and back, with the gold SML at ' +
+                'the chest and the crowned lion crest across the back.',
+      blurb: 'The foundation piece. Crest embroidered at the chest, not printed.',
+      details: [
+        'Combed ring-spun cotton',
+        'Gold embroidered crest',
+        'Boxy cut, XS to 4XL'
+      ],
+      colors: [{ name: 'Onyx', hex: '#0B0C11' }],
+      paymentLink: ''
+    },
+
+    {
+      id: 'legacy-beanie',
+      name: 'Empire Beanie',
+      sku: 'SML·LG·005',
+      price: 5500,                    // $55.00 — keeps $34.41, 63%
+      blurb: 'Ribbed cuff, crest embroidered at the fold.',
+      details: ['Acrylic wool blend', 'Embroidered crest', 'One size, cuffed'],
+      colors: [{ name: 'Onyx', hex: '#0B0C11' }],
+      paymentLink: ''
+    },
+
+    {
+      id: 'legacy-socks',
+      name: 'Legacy Socks',
+      sku: 'SML·LG·006',
+      price: 3200,                    // $32.00 — keeps $15.08 alone, $17.57 in a cart
+      blurb: 'Knitted, not printed — the gold band and the crest are in the yarn.',
+      details: [
+        'Ribbed crew, cushioned heel and toe',
+        'Gold band at the cuff',
+        'Knitted crest at the ankle'
+      ],
+      colors: [{ name: 'Onyx', hex: '#0B0C11' }],
+      paymentLink: ''
+    },
+
+    /* ══════════════════════════════════════════════════════════════════════
+       THE GOLDEN THRONE — cut-and-sew, numbered, not yet made.
+
+       These stay unpriced on purpose. They are a different product made a
+       different way, and the price gets set when a factory quotes it — not
+       before. The Legacy line above is what funds the first sample round.
+       ══════════════════════════════════════════════════════════════════════ */
 
     {
       id: 'throne-suit',
       name: 'Golden Throne Suit',
       sku: 'SML·GT·010',
-      price: 0,                       // ← PRICE NOT SET. Tailoring is priced
-                                      //   after the factory quotes; a made-up
-                                      //   number here would be a promise.
+      price: 0,                       // priced after a factory quotes it
       image: 'p-suit',
       imageAlt: 'Three Golden Throne suits — Royal Black Gold, Empire Midnight and ' +
                 'Legacy Ivory Gold — each with the gold crest at the chest.',
-      blurb: 'Three cuts, four colourways. Crest embroidered at the chest and again ' +
-             'across the back, 24k gold lapel pin, engraved crest buttons.',
+      blurb: 'Cut and sewn, not printed. Three cuts, four colourways, crest ' +
+             'embroidered at the chest and again across the back.',
       details: [
         'Royal Black Gold · Empire Midnight · Legacy Ivory Gold',
         'Sizes 36 to 52',
-        'Silk-blend lining, message inside the pocket',
+        '24k gold lapel pin, engraved crest buttons',
         'Numbered 001 / 1000'
       ],
       colors: [
@@ -134,7 +203,7 @@ window.SML_SHOP = {
       id: 'throne-dress-shoe',
       name: 'Golden Throne Dress Shoe',
       sku: 'SML·GT·020',
-      price: 0,                       // ← PRICE NOT SET. See above.
+      price: 0,                       // priced after a factory quotes it
       image: 'p-dress',
       imageAlt: 'Two Golden Throne dress shoes in black leather with the embossed gold ' +
                 'crest at the quarter and a gold toe plate.',

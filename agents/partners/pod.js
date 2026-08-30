@@ -32,6 +32,15 @@
 /**
  * Base cost per unit, USD, before shipping and before Stripe.
  *
+ * `retail` is the recommended price and `why` is the comparable it was set
+ * against — NOT a margin target. A price picked to hit 70% is a price with
+ * no argument behind it; a price set against what a comparable brand charges
+ * for the same blank is one you can defend to a customer and to yourself.
+ *
+ * The ceiling here is the blank, not the branding. Embroidery is excellent on
+ * print-on-demand; the body is a stock heavyweight and a customer paying
+ * cut-and-sew money will feel the difference the moment the box opens.
+ *
  * `blank` names what the customer actually receives, because that is the
  * thing that decides whether a price holds. Nobody returns a hoodie over the
  * embroidery; they return it because the body felt like a promotional
@@ -40,6 +49,8 @@
 const CATALOG = {
   'hoodie-embroidered': {
     label: 'Hoodie, embroidered chest + back',
+    retail: 115.00,
+    why: 'Stussy $130-160, Aime Leon Dore $180+ — but both are cut-and-sew. A premium embroidered blank sits just under them, not among them.',
     base: 45.00,
     blank: 'Cotton Heritage / Independent Trading heavyweight',
     range: [26.92, 69.58],
@@ -48,6 +59,8 @@ const CATALOG = {
   },
   'tee-embroidered': {
     label: 'Tee, embroidered chest',
+    retail: 65.00,
+    why: 'Embroidered tee from a small brand runs $50-80. Print-only would be $35-45; the embroidery is what carries the extra.',
     base: 16.00,
     blank: 'Bella+Canvas 3001 or heavier',
     range: [12.00, 22.00],
@@ -55,6 +68,8 @@ const CATALOG = {
   },
   'tee-print': {
     label: 'Tee, printed',
+    retail: 45.00,
+    why: 'Printed tee, no embroidery. The floor of the line and the honest price for it.',
     base: 12.00,
     blank: 'Bella+Canvas 3001',
     range: [8.00, 14.00],
@@ -63,6 +78,8 @@ const CATALOG = {
   },
   'cap-embroidered': {
     label: 'Snapback, 3D puff embroidered',
+    retail: 70.00,
+    why: 'New Era custom $45, premium embroidered $65-85. 3D puff is the closest POD gets to the sheets, so the top of that band is defensible.',
     base: 18.00,
     blank: 'Structured six-panel',
     range: [15.00, 24.00],
@@ -71,6 +88,8 @@ const CATALOG = {
   },
   'sweatpants-embroidered': {
     label: 'Sweatpants, embroidered',
+    retail: 110.00,
+    why: 'Embroidered jogger $90-140. Priced to sit with the hoodie as a set.',
     base: 30.00,
     blank: 'Cotton Heritage fleece jogger',
     range: [24.00, 38.00],
@@ -78,6 +97,8 @@ const CATALOG = {
   },
   'socks': {
     label: 'Socks, all-over knit',
+    retail: 32.00,
+    why: 'Stussy $18-24, Rick Owens $60. An add-on: at $32 it clears 47% alone and 55% in a cart with something else, because shipping drops from $4.69 to $2.20.',
     base: 11.00,
     blank: 'Sublimated crew',
     range: [9.00, 14.00],
@@ -86,6 +107,8 @@ const CATALOG = {
   },
   'beanie-embroidered': {
     label: 'Beanie, embroidered',
+    retail: 55.00,
+    why: 'Embroidered beanie $40-60 from a comparable brand.',
     base: 14.00,
     blank: 'Ribbed acrylic cuffed',
     range: [11.00, 18.00],
@@ -93,6 +116,8 @@ const CATALOG = {
   },
   'tote': {
     label: 'Tote, embroidered',
+    retail: 65.00,
+    why: 'Heavy canvas embroidered $45-75.',
     base: 16.00,
     blank: 'Heavy cotton canvas',
     range: [12.00, 20.00],
