@@ -1,0 +1,116 @@
+# Dad + Daughter Beauty Bond™ — a Self-Made Legends LLC (SML) product.
+# Copyright © 2026 Self-Made Legends LLC (SML). All rights reserved.
+# Proprietary and confidential. Unauthorized use is prohibited.
+#
+# Finishes the Railway setup from a GitHub runner.
+#
+# WHY THIS EXISTS: the environment maintaining this repo cannot reach Railway at
+# all — every railway.app host returns no connection. GitHub's runners can. So
+# the remaining setup runs here instead of being read aloud to someone tapping
+# through a dashboard on a phone.
+#
+# The owner's only step is a RAILWAY_TOKEN secret. A PROJECT token is correct
+# here, not an account token: it can only touch the one project it belongs to,
+# which is the right blast radius for a job that sets variables and deploys.
+name: Beauty Bond Railway setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      generate_domain:
+        description: 'Also generate a public domain (safe to re-run)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: beauty-bond-railway
+  cancel-in-progress: false          # never interrupt a deploy mid-flight
+
+jobs:
+  railway:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the Railway token is set
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::error::RAILWAY_TOKEN is not set."
+            echo "On a phone browser: railway.app -> your Beauty Bond project"
+            echo "  -> Settings -> Tokens -> Create Token -> copy it"
+            echo "Then: this repo -> Settings -> Secrets and variables -> Actions"
+            echo "  -> New repository secret -> Name: RAILWAY_TOKEN"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm i -g @railway/cli
+      - run: railway --version
+
+      - name: Show what this token can see
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway status || echo "::warning::status unavailable; continuing"
+
+      # Postgres may already exist — adding it twice is the failure mode to
+      # avoid, so this only runs when no DATABASE_URL is visible yet.
+      - name: Add Postgres if the project has none
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if railway variables 2>/dev/null | grep -q DATABASE_URL; then
+            echo "::notice::A database is already attached. Leaving it alone."
+          else
+            echo "No DATABASE_URL yet — adding PostgreSQL."
+            railway add --database postgres || \
+              echo "::warning::Could not add automatically; add PostgreSQL in the dashboard."
+          fi
+
+      # Generated HERE, on the runner. They are never printed, never sent to
+      # chat, and never committed — the same rule the Stripe key follows.
+      # Set only if absent: regenerating them would invalidate every existing
+      # session and log every family out.
+      - name: Set the boot-critical variables
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          existing="$(railway variables 2>/dev/null || true)"
+
+          set_if_missing() {
+            if printf '%s' "$existing" | grep -q "^ *$1"; then
+              echo "  $1 already set — not touching it."
+            else
+              railway variables --set "$1=$2" --skip-deploys
+              echo "  $1 set."
+            fi
+          }
+
+          set_if_missing NODE_ENV production
+          set_if_missing JWT_SECRET     "$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")"
+          set_if_missing REFRESH_SECRET "$(node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))")"
+
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway up --ci --detach
+
+      - name: Generate a public address
+        if: ${{ inputs.generate_domain }}
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: railway domain || echo "::notice::A domain already exists — see below."
+
+      - name: Where it lives
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          railway status || true
+          echo ""
+          echo "::notice::Open the address above in Safari, then Share -> Add to Home Screen."
+          echo "Check it is the RIGHT product first: <address>/health must say"
+          echo '  "product":"beauty-bond"  — Come Up has no /health at all.'
