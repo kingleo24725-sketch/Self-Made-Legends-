@@ -470,7 +470,9 @@ window.SML_SHOP = {
     var wants = btn.getAttribute('data-name') || '';
     var hidden = document.getElementById('news_wants');
     var line = document.getElementById('newsWants');
-    if (hidden) hidden.value = btn.getAttribute('data-id') || wants;
+    // The name, not the id: this lands in a report you read, and
+    // "The Legacy Set" tells you something "legacy-set" makes you decode.
+    if (hidden) hidden.value = wants || btn.getAttribute('data-id') || '';
     if (line && wants) {
       line.textContent = 'Claiming a number on the ' + wants + '.';
       line.hidden = false;
