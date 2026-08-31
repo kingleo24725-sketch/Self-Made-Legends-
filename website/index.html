@@ -1375,8 +1375,15 @@
       <h2 class="foil">Drops Announce Here First</h2>
       <p>Numbered runs sell out. The list gets the date, the time, and the link before anyone else does.</p>
 
+      <!-- Set by shop.js when someone arrives here from a product's button, so
+           the signup records WHICH piece they came for. An untargeted list is
+           one launch email to everybody; a targeted one is "the hoodie you
+           asked about is live" to the people who asked. -->
+      <p class="news-wants" id="newsWants" hidden></p>
+
       <form id="newsForm" method="post" action="api/submit.php" novalidate>
         <input type="hidden" name="form_type" value="newsletter">
+        <input type="hidden" name="wants" id="news_wants" value="">
         <div class="hp" aria-hidden="true">
           <label for="news_website">Website</label>
           <input type="text" id="news_website" name="website" tabindex="-1" autocomplete="off">

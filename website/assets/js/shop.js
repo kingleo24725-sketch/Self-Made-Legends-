@@ -371,7 +371,8 @@ window.SML_SHOP = {
     var action = live
       ? '<a class="btn btn-solid" href="' + esc(p.paymentLink.trim()) + '" ' +
         'rel="noopener">Buy &mdash; ' + esc(money(p.price)) + '</a>'
-      : '<button class="btn" type="button" data-notify="1">Claim a Number</button>';
+      : '<button class="btn" type="button" data-notify="1" ' +
+        'data-name="' + esc(p.name) + '" data-id="' + esc(p.id || '') + '">Claim a Number</button>';
 
     return '' +
       '<article class="prod has-shot">' +
@@ -420,9 +421,26 @@ window.SML_SHOP = {
   // The button sends people to the newsletter. Worded as a claim rather than
   // a notification: the list IS the product until the first run exists, and
   // "Notify Me" asks for a favour where "Claim a Number" offers one.
+  //
+  // It also carries the piece they clicked down to the form. Which one they
+  // wanted is the most valuable thing a closed shop can learn: it says what to
+  // sample first, what to make first, and on launch day it turns one blast to
+  // everybody into "the hoodie you asked about is live" to the people who
+  // asked for the hoodie. The field is a plain hidden input, so it still works
+  // for a visitor whose JavaScript never ran — they simply send it empty.
   function onNotify(e) {
     var btn = e.target.closest('[data-notify]');
     if (!btn) return;
+
+    var wants = btn.getAttribute('data-name') || '';
+    var hidden = document.getElementById('news_wants');
+    var line = document.getElementById('newsWants');
+    if (hidden) hidden.value = btn.getAttribute('data-id') || wants;
+    if (line && wants) {
+      line.textContent = 'Claiming a number on the ' + wants + '.';
+      line.hidden = false;
+    }
+
     var field = document.getElementById('news_email');
     var target = document.getElementById('newsletter');
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });

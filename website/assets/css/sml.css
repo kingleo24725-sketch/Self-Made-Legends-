@@ -550,6 +550,14 @@ input::placeholder,textarea::placeholder{color:var(--ash-dim);opacity:1;}
 }
 .news h2{font-size:clamp(1.6rem,4vw,2.4rem);}
 .news p{color:var(--ash);max-width:46ch;}
+/* Confirms which piece brought them here, when a product button did.
+   Gold rather than grey: it is the reason they scrolled, not fine print. */
+.news-wants{
+  margin:0;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--gold-lt);border:1px solid var(--gold-ash);
+  padding:.5rem 1.1rem;border-radius:2px;
+}
+.news p.news-wants{color:var(--gold-lt);}
 .news form{display:flex;gap:.75rem;width:100%;max-width:32rem;flex-wrap:wrap;}
 .news form input[type=email]{flex:1 1 15rem;}
 .news form .btn{flex:0 0 auto;}

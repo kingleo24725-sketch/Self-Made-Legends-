@@ -49,10 +49,20 @@ $ip    = sml_client_ip();
 /* ── newsletter ──────────────────────────────────────────────────────── */
 
 if ($formType === 'newsletter') {
+    // Which piece they clicked "Claim a Number" on, if they came from one.
+    // Empty for anyone who joined from the newsletter block directly — that
+    // is a normal signup, not a fault, so it is never required.
+    //
+    // The header row is only written when the file is created. If a
+    // newsletter.csv from before this column already exists on the server,
+    // its rows keep three fields and new ones carry four, so the last column
+    // arrives unlabelled. Delete the file first if it has nothing in it yet.
+    $wants = sml_clean($_POST['wants'] ?? '', 60);
+
     $stored = sml_append_csv(
         'newsletter.csv',
-        ['timestamp', 'email', 'ip'],
-        [$stamp, $email, $ip]
+        ['timestamp', 'email', 'wants', 'ip'],
+        [$stamp, $email, $wants, $ip]
     );
 
     if (!$stored) {
@@ -61,8 +71,12 @@ if ($formType === 'newsletter') {
 
     sml_notify(
         SML_TO_NEWSLETTER,
-        'New newsletter signup',
-        "New newsletter signup.\n\nEmail: {$email}\nTime:  {$stamp}\nIP:    {$ip}\n",
+        $wants !== '' ? "Newsletter signup — wants {$wants}" : 'New newsletter signup',
+        "New newsletter signup.\n\n"
+        . "Email: {$email}\n"
+        . 'Wants: ' . ($wants !== '' ? $wants : '(joined from the newsletter block)') . "\n"
+        . "Time:  {$stamp}\n"
+        . "IP:    {$ip}\n",
         $email
     );
 
