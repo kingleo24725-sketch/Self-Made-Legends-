@@ -49,8 +49,8 @@
 const CATALOG = {
   'hoodie-embroidered': {
     label: 'Hoodie, embroidered chest + back',
-    retail: 115.00,
-    why: 'Stussy $130-160, Aime Leon Dore $180+ — but both are cut-and-sew. A premium embroidered blank sits just under them, not among them.',
+    retail: 125.00,
+    why: 'Stussy $130-160, Aime Leon Dore $180+ — but both are cut-and-sew. A premium embroidered blank sits just under them, not among them. Held at $115 it kept 60% while the rest of the line kept 71-77%, because this blank costs three times what the tee blank costs; $125 closes most of that and still undercuts the comparables.',
     base: 45.00,
     blank: 'Cotton Heritage / Independent Trading heavyweight',
     range: [26.92, 69.58],
@@ -125,8 +125,20 @@ const CATALOG = {
   },
 };
 
-/** Shipping, US domestic. First item, then each additional in the same order. */
-const SHIPPING = { first: 4.69, additional: 2.20 };
+/**
+ * Shipping, US domestic.
+ *
+ * `first` and `additional` are what the printer charges you. `charge` is what
+ * the customer pays, and `freeOver` is where you stop charging it — both are
+ * taken from the published Shipping & Returns page, so this module and the
+ * site cannot drift apart without one of them being obviously wrong.
+ *
+ * Modelling shipping as pure cost understates every order under the
+ * threshold: at $8 collected against $4.69 paid, the first item carries
+ * $3.31 of shipping profit. Modelling it as pure revenue overstates every
+ * order above it. Both happen here so neither has to be remembered.
+ */
+const SHIPPING = { first: 4.69, additional: 2.20, charge: 8.00, freeOver: 150.00 };
 
 /**
  * Stripe, US card-present-absent standard rate.
@@ -155,31 +167,66 @@ function margin(key, retail, { alone = true, quantity = 1 } = {}) {
   const item = CATALOG[key];
   if (!item) throw new Error(`Unknown POD item "${key}". Known: ${Object.keys(CATALOG).join(', ')}`);
   if (!Number.isFinite(retail) || retail <= 0) throw new Error('retail must be a positive number');
+  return order([{ key, retail, quantity }], { alone });
+}
 
-  const base = item.base * quantity;
-  const ship = alone
-    ? SHIPPING.first + SHIPPING.additional * (quantity - 1)
-    : SHIPPING.additional * quantity;
-  const revenue = retail * quantity;
-  const stripe = revenue * STRIPE.percent + STRIPE.fixed;
+/**
+ * What a whole order earns — the only honest unit.
+ *
+ * Everything that is charged once per ORDER rather than once per item has to
+ * be counted once: Stripe's 30c, the first parcel's postage, the free-shipping
+ * threshold. Adding up two margin() calls double-counts all three and flatters
+ * a two-piece order by several dollars, which is exactly the mistake this
+ * function exists to make impossible.
+ *
+ * `lines` is [{key, retail, quantity}]. `alone` false means this order rides
+ * along with something already shipping, so it skips the first-parcel rate.
+ */
+function order(lines, { alone = true } = {}) {
+  if (!Array.isArray(lines) || lines.length === 0) throw new Error('lines must be a non-empty array');
 
-  const cost = base + ship + stripe;
-  const profit = revenue - cost;
+  let base = 0, goods = 0, units = 0;
+  const labels = [];
+  for (const line of lines) {
+    const item = CATALOG[line.key];
+    if (!item) throw new Error(`Unknown POD item "${line.key}". Known: ${Object.keys(CATALOG).join(', ')}`);
+    const qty = line.quantity || 1;
+    if (!Number.isFinite(line.retail) || line.retail <= 0) throw new Error(`retail for "${line.key}" must be a positive number`);
+    base += item.base * qty;
+    goods += line.retail * qty;
+    units += qty;
+    labels.push(qty > 1 ? `${qty}x ${item.label}` : item.label);
+  }
+
+  // Postage: the first parcel costs more than each one after it, once per order.
+  const postage = alone
+    ? SHIPPING.first + SHIPPING.additional * (units - 1)
+    : SHIPPING.additional * units;
+
+  // What the customer pays for shipping, which is not what it costs.
+  const shippingPaid = goods >= SHIPPING.freeOver ? 0 : SHIPPING.charge;
+
+  const collected = goods + shippingPaid;
+  const stripe = collected * STRIPE.percent + STRIPE.fixed;   // 30c once, per order
+  const cost = base + postage + stripe;
+  const profit = collected - cost;
 
   return {
-    item: item.label,
-    blank: item.blank,
-    quantity,
-    revenue: round(revenue),
+    items: labels,
+    units,
+    goods: round(goods),
+    shipping_paid: round(shippingPaid),
+    collected: round(collected),
     base: round(base),
-    shipping: round(ship),
+    postage: round(postage),
     stripe: round(stripe),
     cost: round(cost),
     profit: round(profit),
-    margin: revenue ? profit / revenue : 0,
-    // Below this you are paying to give it away.
-    breakeven_retail: round((item.base + SHIPPING.first + STRIPE.fixed) / (1 - STRIPE.percent)),
-    note: item.note || null,
+    // Margin on the goods, not on the collected total: shipping revenue is a
+    // pass-through and counting it inflates the number you compare to a
+    // competitor's.
+    margin: goods ? profit / goods : 0,
+    free_shipping: shippingPaid === 0,
   };
 }
 
@@ -227,4 +274,4 @@ function capabilities() {
   };
 }
 
-module.exports = { CATALOG, SHIPPING, STRIPE, SETUP, margin, priceFor, unitsFor, capabilities };
+module.exports = { CATALOG, SHIPPING, STRIPE, SETUP, margin, order, priceFor, unitsFor, capabilities };

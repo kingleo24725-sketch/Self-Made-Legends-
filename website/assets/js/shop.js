@@ -68,14 +68,49 @@ window.SML_SHOP = {
        excellent, the body is a stock heavyweight, and the price says so.
 
        Margins live in agents/partners/pod.js. Run:
-         node agents/bin/sml-agents.js margin hoodie-embroidered 115
+         node agents/bin/sml-agents.js margin hoodie-embroidered 125
+
+       The hoodie is the hero and it earns least: its blank is $45, where the
+       tee's is $16. At $115 it kept 60% while everything else kept 71-77%,
+       so it went to $125 — still under Stussy, and worth $9.71 more a time.
+
+       The Set is priced at the sum of its garments, NOT at a discount. The
+       socks come with it instead. That costs $13.20 and reads as $32, where
+       taking $25 off the price would cost $24 and read as a sale — and this
+       house does not have sales. It also earns more: $132.80 against $121.72.
        ══════════════════════════════════════════════════════════════════════ */
+
+    {
+      // Leads the grid on purpose. A visitor who buys this instead of the
+      // hoodie alone is worth $132.80 rather than $79.15 — the single biggest
+      // difference any one change on this page can make to a day's takings.
+      id: 'legacy-set',
+      name: 'The Legacy Set',
+      sku: 'SML·LG·000',
+      price: 23500,                   // $235.00 — keeps $132.80. Socks cost $13.20 to include.
+      badge: 'Socks included',
+      image: 'p-set',
+      imageAlt: 'The Legacy Set: the black hoodie with the gold crowned lion ' +
+                'crest at the chest, shown beside the matching sweatpants and ' +
+                'the gold-banded Legacy socks.',
+      blurb: 'The hoodie and the sweatpants, together, with the Legacy socks ' +
+             'in the box. The set price is the two garments — the socks are ours.',
+      details: [
+        'Legacy Hoodie — heavyweight fleece, crest at chest and back',
+        'Legacy Sweatpants — crest at the hip, wordmark down the leg',
+        'Legacy Socks included, worth $32',
+        'Ships together in one box, free',
+        'Made to order — nothing sits in a warehouse'
+      ],
+      colors: [{ name: 'Onyx', hex: '#0B0C11' }],
+      paymentLink: ''
+    },
 
     {
       id: 'legacy-hoodie',
       name: 'Legacy Hoodie',
       sku: 'SML·LG·001',
-      price: 11500,                   // $115.00 — keeps $61.68, 54%
+      price: 12500,                   // $125.00 — keeps $79.15, 63%. See note below.
       image: 'p-hoodie',
       imageAlt: 'The Legacy hoodie in black, with the gold crowned lion crest ' +
                 'embroidered at the chest and carried across the back.',

@@ -118,17 +118,21 @@ async function main() {
       }
 
       const r = pod.margin(item, retail);
+      const spec = pod.CATALOG[item];
       process.stdout.write(
-        `\n  ${r.item}\n  ${r.blank}\n\n` +
-        `    You charge      $${r.revenue.toFixed(2).padStart(8)}\n` +
+        `\n  ${spec.label}\n  ${spec.blank}\n\n` +
+        `    Piece           $${r.goods.toFixed(2).padStart(8)}\n` +
+        `    Shipping paid   $${r.shipping_paid.toFixed(2).padStart(8)}` +
+          `${r.free_shipping ? '   (free over $' + pod.SHIPPING.freeOver.toFixed(0) + ')' : ''}\n` +
+        `    Collected       $${r.collected.toFixed(2).padStart(8)}\n\n` +
         `    Blank + print   $${r.base.toFixed(2).padStart(8)}\n` +
-        `    Shipping        $${r.shipping.toFixed(2).padStart(8)}\n` +
+        `    Postage         $${r.postage.toFixed(2).padStart(8)}\n` +
         `    Stripe          $${r.stripe.toFixed(2).padStart(8)}\n` +
         `    ─────────────────────────\n` +
         `    You keep        $${r.profit.toFixed(2).padStart(8)}   ${(r.margin * 100).toFixed(0)}%\n\n` +
-        `    Break-even at   $${r.breakeven_retail.toFixed(2)}\n` +
-        `    100 units       $${(r.profit * 100).toFixed(2)}\n\n` +
-        (r.note ? `  ${r.note}\n\n` : '')
+        `    Break-even at   $${pod.priceFor(item, 0.0001).toFixed(2)}\n` +
+        `    100 orders      $${(r.profit * 100).toFixed(2)}\n\n` +
+        (spec.note ? `  ${spec.note}\n\n` : '')
       );
       break;
     }
