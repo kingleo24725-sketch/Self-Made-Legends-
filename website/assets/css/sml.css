@@ -120,7 +120,7 @@ section + section{border-top:1px solid var(--rule);}
 @media(max-width:700px){ section{padding:3.75rem 0;} }
 
 .sec-head{display:flex;flex-direction:column;gap:.7rem;margin-bottom:2.75rem;max-width:44rem;}
-.sec-head h2{font-size:clamp(1.85rem,4.6vw,2.85rem);line-height:1.05;}
+.sec-head h1,.sec-head h2{font-size:clamp(1.85rem,4.6vw,2.85rem);line-height:1.05;}
 .sec-head .lede{font-size:1.02rem;color:var(--ash);max-width:52ch;}
 
 /* ── grounds ──────────────────────────────────────────────────────────── */
@@ -637,7 +637,7 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 .foot-brand svg{width:64px;height:64px;}
 .foot-brand p{font-size:.85rem;color:var(--ash-dim);max-width:30ch;}
 .foot-col{display:flex;flex-direction:column;gap:.72rem;}
-.foot-col h4{
+.foot-col h3,.foot-col h4{
   font-family:"DM Mono",monospace;font-size:.6rem;letter-spacing:.2em;
   text-transform:uppercase;color:var(--gold-ash);margin-bottom:.2rem;
 }
@@ -1155,7 +1155,7 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 .model{margin-bottom:3.25rem;}
 .model:last-of-type{margin-bottom:0;}
 .model-head{max-width:52ch;margin-bottom:1.25rem;}
-.model-head h3{
+.model-head h2,.model-head h3{
   font-family:"Bodoni Moda",Didot,serif;font-weight:400;
   font-size:clamp(1.5rem,3vw,2.1rem);line-height:1;margin:0 0 .45rem;color:var(--ivory);
 }

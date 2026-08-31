@@ -1,0 +1,31 @@
+# Self-Made Legends — protect the include-only files.
+# Copyright (c) 2026 Self-Made Legends LLC. All Rights Reserved.
+#
+# config.php and lib.php are never requested by a browser. They are pulled in
+# by submit.php, hit.php and stats.php through require, which reads them off
+# the disk and never goes near the web server — so denying them over HTTP
+# costs nothing and closes a real hole.
+#
+# The hole: if PHP ever stops executing here — a bad handler after a server
+# move, a mis-set AddType, a control panel resetting the PHP version — Apache
+# falls back to serving .php files as plain text. config.php would then hand
+# a visitor your stats key, your hash salt and your mail routing, in the
+# browser, as readable text. This file is what stops that being possible.
+
+<FilesMatch "^(config|lib)\.php$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# The stats page is for you, not for a search engine. It is already behind a
+# key; this stops it being indexed if that key ever ends up in a link.
+<FilesMatch "^stats\.php$">
+    <IfModule mod_headers.c>
+        Header always set X-Robots-Tag "noindex, nofollow, noarchive"
+    </IfModule>
+</FilesMatch>

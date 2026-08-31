@@ -75,8 +75,17 @@ if ! unzip -l "$OUT" | awk '{print $4}' | grep -qx 'data/.htaccess'; then
   exit 2
 fi
 
+# api/config.php holds the stats key, the hash salt and the mail routing. If
+# PHP ever stops executing on this host, Apache serves .php as plain text and
+# all of it is on screen. api/.htaccess is what prevents that.
+if ! unzip -l "$OUT" | awk '{print $4}' | grep -qx 'api/.htaccess'; then
+  echo "  ! api/.htaccess is missing — config.php could be served as text." >&2
+  rm -f "$OUT"
+  exit 2
+fi
+
 FILES=$(unzip -l "$OUT" | tail -1 | awk '{print $2}')
 SIZE=$(du -h "$OUT" | cut -f1)
 echo "  OK  $OUT"
 echo "      $FILES files, $SIZE, build $COMMIT"
-echo "      index.html at root, tools/ excluded, data/.htaccess present"
+echo "      index.html at root, tools/ excluded, data/ and api/ protected"
