@@ -50,6 +50,7 @@ mkdir -p "$(dirname "$OUT")"
 # served — it would put source and intent on a public URL for no benefit.
 zip -r -q "$OUT" . \
   -x 'tools/*' \
+  -x 'README.md' \
   -x '.DS_Store' -x '*/.DS_Store' \
   -x '__MACOSX/*'
 

@@ -63,9 +63,23 @@
 <link rel="manifest" href="/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,700;1,6..96,400&family=Jost:wght@200;300;400;500&family=DM+Mono:wght@400;500&display=swap">
+<!-- Non-render-blocking. media="print" is not blocking; onload promotes it
+     to the real sheet once it lands. The page paints in the fallback stack
+     immediately instead of waiting on a third-party host. -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,700;1,6..96,400&family=Jost:wght@200;300;400;500&family=DM+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,700;1,6..96,400&family=Jost:wght@200;300;400;500&family=DM+Mono:wght@400;500&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,700;1,6..96,400&family=Jost:wght@200;300;400;500&family=DM+Mono:wght@400;500&display=swap"></noscript>
 <link rel="stylesheet" href="assets/css/sml.css">
-<link rel="preload" as="image" href="assets/img/concepts/sml-city.webp" type="image/webp" fetchpriority="high">
+<!-- Preloads whichever hero the viewport will actually use.
+     These two media queries must stay identical to the <source> ones on the
+     hero <picture> below. They were not, once: the preload chose by width via
+     imagesizes while the picture chose by media query, the two disagreed, and
+     a phone downloaded BOTH files — 578KB to show 196KB of image. Matching the
+     selection mechanism is what makes it one download instead of two. -->
+<link rel="preload" as="image" fetchpriority="high" type="image/webp"
+      media="(max-width:700px)" href="assets/img/concepts/sml-city-800.webp">
+<link rel="preload" as="image" fetchpriority="high" type="image/webp"
+      media="(min-width:700.02px)" href="assets/img/concepts/sml-city.webp">
 </head>
 <body>
 
@@ -180,7 +194,14 @@
 <!-- ═══════════ HERO ═══════════ -->
 <section class="hero marble">
   <div class="hero-city" aria-hidden="true">
+    <!-- A phone was being sent the full 1024px file: 382KB to fill a 390px
+         screen. The 800px variant is 196KB and indistinguishable at that size,
+         which halves the bytes standing between a visitor and the first thing
+         they see. Order matters — the first matching <source> wins, so the
+         narrow one is listed first. -->
     <picture>
+      <source media="(max-width:700px)" srcset="assets/img/concepts/sml-city-800.webp" type="image/webp">
+      <source media="(max-width:700px)" srcset="assets/img/concepts/sml-city-800.jpg" type="image/jpeg">
       <source srcset="assets/img/concepts/sml-city.webp" type="image/webp">
       <img src="assets/img/concepts/sml-city.jpg" width="1024" height="1444"
            alt="" decoding="async" fetchpriority="high">
@@ -244,7 +265,13 @@
        words on purpose: as atmosphere it works, and shown large it would put
        an unhyphenated wordmark on the facade in front of everyone. -->
   <div class="film-bg" aria-hidden="true">
+    <!-- Same responsive pair as the hero. This copy is dimmed behind text and
+         is the one that quietly undid the hero saving: a phone was fetching
+         the 800px hero and then this 1024px one anyway, so the page still
+         carried the full file. -->
     <picture>
+      <source media="(max-width:700px)" srcset="assets/img/concepts/sml-city-800.webp" type="image/webp">
+      <source media="(max-width:700px)" srcset="assets/img/concepts/sml-city-800.jpg" type="image/jpeg">
       <source srcset="assets/img/concepts/sml-city.webp" type="image/webp">
       <img src="assets/img/concepts/sml-city.jpg" alt="" loading="lazy" decoding="async">
     </picture>
