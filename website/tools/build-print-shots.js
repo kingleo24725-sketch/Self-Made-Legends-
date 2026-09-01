@@ -36,9 +36,19 @@ const VOID = '#040706', MARBLE = '#101A16';
 const GOLD = '#CFA529', GOLD_DP = '#8F6E15', GOLD_ASH = '#725D24';
 
 const PRINTS = [
-  { sheet: 'throne-collection', out: 'p-print-collection', style: 'poster' },
-  { sheet: 'throne-signature',  out: 'p-print-signature',  style: 'canvas' },
-  { sheet: 'throne-commander',  out: 'p-print-commander',  style: 'framed' },
+  { sheet: 'throne-collection',  out: 'p-print-collection', style: 'poster' },
+  { sheet: 'throne-signature',   out: 'p-print-signature',  style: 'canvas' },
+  { sheet: 'throne-commander',   out: 'p-print-commander',  style: 'framed' },
+
+  // The two personal pieces, added at the owner's word. Both are framed or
+  // canvas rather than bare paper: these are the ones somebody hangs and
+  // keeps, and a poster in a tube is the wrong object for them.
+  //
+  // throne-momdaughter is the corrected sheet — garnet for Grace, amethyst
+  // for Cherish, and no memorial line over a living child. Print from this
+  // one, never from an older copy.
+  { sheet: 'throne-momdaughter', out: 'p-print-gracecherish', style: 'framed' },
+  { sheet: 'throne-rose',        out: 'p-print-rose',         style: 'canvas' },
 ];
 
 /** The wall: a dark room, lit from the upper left the way the site is. */

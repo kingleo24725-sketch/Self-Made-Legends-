@@ -297,6 +297,60 @@ window.SML_SHOP = {
       paymentLink: ''
     },
 
+    /* ── The personal two ───────────────────────────────────────────────────
+       Added at the owner's word, and written plainly on purpose. These are
+       about real people, so the copy says what is on the sheet and stops.
+       The grief is not a selling point and must never be used as one — the
+       same rule the catalog agent works under. If a line here ever starts
+       reaching for the reader's feelings, it is wrong.
+
+       Both are framed or canvas rather than paper in a tube. These are the
+       ones somebody hangs and keeps. */
+
+    {
+      id: 'print-gracecherish',
+      name: 'Grace & Cherish Framed',
+      sku: 'SML·AR·004',
+      price: 14500,                   // $145.00 — keeps $104.26, 72%
+      image: 'p-print-gracecherish',
+      imageAlt: 'The Mom Daughter Legacy sheet in a thin gold frame with a dark ' +
+                'mount: the black and gold pair with Grace and Cherish written ' +
+                'at the toe, the initials in the sole, and the two birthstones.',
+      blurb: 'The Mom Daughter Legacy sheet. Both names at the toe, GW and CLB ' +
+             'either side of the crest underfoot, and the two stones — garnet ' +
+             'for Grace, born 23 January; amethyst for Cherish, born 21 February.',
+      details: [
+        '18 × 24 in, matte paper',
+        'Thin gold frame, dark mount, glass',
+        'Hanging hardware fitted',
+        'Ships rigid and insured'
+      ],
+      colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
+      paymentLink: ''
+    },
+
+    {
+      id: 'print-rose',
+      name: 'Rose Edition Canvas',
+      sku: 'SML·AR·005',
+      price: 12500,                   // $125.00 — keeps $89.84, 72%
+      image: 'p-print-rose',
+      imageAlt: 'The Rose Edition sheet as a wrapped canvas: two trainers, one ' +
+                'black with red roses and one black and purple, shown with the ' +
+                'messages in the tongue linings and along the midsoles.',
+      blurb: 'Both Rose pairs on one sheet — the red edition and the purple ' +
+             'legacy, with what is printed inside the tongue and engraved along ' +
+             'the midsole of each.',
+      details: [
+        '16 × 20 in on a 1.25 in stretcher',
+        'Cotton canvas, archival inks',
+        'Arrives ready to hang',
+        'Edges wrapped, not white'
+      ],
+      colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
+      paymentLink: ''
+    },
+
     /* ══════════════════════════════════════════════════════════════════════
        THE GOLDEN THRONE — cut-and-sew, numbered, not yet made.
 
