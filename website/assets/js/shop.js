@@ -214,6 +214,90 @@ window.SML_SHOP = {
     },
 
     /* ══════════════════════════════════════════════════════════════════════
+       THE ARCHIVE — the design sheets, printed. Ships now.
+
+       The highest-margin line on this page and the only one with no work
+       left in it: the artwork was finished months ago. Nothing to digitise,
+       no sizes to get wrong, and a print that comes back is a print rather
+       than a garment somebody has worn.
+
+         Poster $65   keeps $49.08   76%
+         Canvas $125  keeps $89.84   72%
+         Framed $145  keeps $104.26  72%   ← out-earns the hoodie
+
+       Prints ship in their own parcel — rolled in a tube, or rigid and
+       insured behind glass — so they never ride along with a garment at the
+       add-on rate. agents/partners/pod.js accounts for that; do not "fix"
+       it by treating them as a second item in the same box.
+
+       Three sheets, chosen because none of them carries family. The Grace &
+       Cherish and Rose pieces are on the collection page for anyone who
+       wants to see them, and selling prints of them is your call to make,
+       not a default I should set.
+       ══════════════════════════════════════════════════════════════════════ */
+
+    {
+      id: 'print-collection',
+      name: 'The Collection Print',
+      sku: 'SML·AR·001',
+      price: 6500,                    // $65.00 — keeps $49.08, 76%
+      image: 'p-print-collection',
+      imageAlt: 'The Golden Throne collection sheet as an 18 by 24 inch matte ' +
+                'poster on a dark wall, showing the whole range in black and gold.',
+      blurb: 'The whole house on one sheet — six pairs, the apparel, the ' +
+             'regalia, the packaging. Printed on heavy matte art paper.',
+      details: [
+        '18 × 24 in, heavy matte art paper',
+        'Giclée, archival inks',
+        'Ships rolled in a tube',
+        'Unframed'
+      ],
+      colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
+      paymentLink: ''
+    },
+
+    {
+      id: 'print-signature',
+      name: 'Signature Edition Canvas',
+      sku: 'SML·AR·002',
+      price: 12500,                   // $125.00 — keeps $89.84, 72%
+      image: 'p-print-signature',
+      imageAlt: 'The Golden Throne Signature Edition sheet as a wrapped canvas ' +
+                'standing off a dark wall, the black and gold trainer with ' +
+                'emerald and purple wings shown large.',
+      blurb: 'The Signature Edition, wrapped over a stretcher and ready to ' +
+             'hang. No frame, no glass, no fixing required.',
+      details: [
+        '16 × 20 in on a 1.25 in stretcher',
+        'Cotton canvas, archival inks',
+        'Arrives ready to hang',
+        'Edges wrapped, not white'
+      ],
+      colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
+      paymentLink: ''
+    },
+
+    {
+      id: 'print-commander',
+      name: 'Empire Commander Framed',
+      sku: 'SML·AR·003',
+      price: 14500,                   // $145.00 — keeps $104.26, 72%
+      image: 'p-print-commander',
+      imageAlt: 'The Empire Commander and Future Legend sheet in a thin gold ' +
+                'frame with a dark mount, hung on a dark wall.',
+      blurb: 'Empire Commander and Future Legend, framed in thin gold behind ' +
+             'a dark mount. The one that goes on the wall you walk past.',
+      details: [
+        '18 × 24 in, matte paper',
+        'Thin gold frame, dark mount, glass',
+        'Hanging hardware fitted',
+        'Ships rigid and insured'
+      ],
+      colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
+      paymentLink: ''
+    },
+
+    /* ══════════════════════════════════════════════════════════════════════
        THE GOLDEN THRONE — cut-and-sew, numbered, not yet made.
 
        These stay unpriced on purpose. They are a different product made a

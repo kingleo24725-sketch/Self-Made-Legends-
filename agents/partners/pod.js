@@ -123,6 +123,49 @@ const CATALOG = {
     range: [12.00, 20.00],
     decoration: 'embroidery',
   },
+
+  /* ── Wall art ────────────────────────────────────────────────────────────
+     The highest-margin line here, and the only one with no creative work
+     left to do: the seventeen design sheets already exist. Nothing to
+     digitise, no sizes to get wrong, and a returned print is a returned
+     print rather than a garment somebody wore.
+
+     `ship` overrides the flat parcel rate. Print-on-demand posters travel
+     rolled in a tube and framed pieces go rigid and insured, so both cost
+     more to send than a folded hoodie. Leaving them on the garment rate
+     would flatter every number below by several dollars. */
+  'print-poster': {
+    label: 'Poster, 18x24, matte',
+    retail: 65.00,
+    why: 'An art print from a small streetwear label runs $45-85. The artwork is a finished piece, not a product photo, and is priced as one.',
+    base: 15.00,
+    blank: 'Heavy matte art paper, 18x24in',
+    range: [12.00, 19.00],
+    decoration: 'giclee',
+    ship: 6.50,
+    note: 'Ships rolled. The cheapest way in for somebody who wants the brand on a wall before they can afford it on their back.',
+  },
+  'print-canvas': {
+    label: 'Canvas, 16x20, wrapped',
+    retail: 125.00,
+    why: 'Wrapped canvas from a comparable brand is $95-160. It arrives ready to hang, which is most of why it carries the price.',
+    base: 28.00,
+    blank: 'Cotton canvas on a 1.25in stretcher',
+    range: [24.00, 34.00],
+    decoration: 'giclee',
+    ship: 11.00,
+  },
+  'print-framed': {
+    label: 'Framed print, 18x24',
+    retail: 145.00,
+    why: 'Framed art $110-200. It out-earns the hoodie, needs no sizing, and the artwork was finished months ago.',
+    base: 32.00,
+    blank: 'Matte paper, mat board, thin frame, glass',
+    range: [27.00, 40.00],
+    decoration: 'giclee',
+    ship: 12.00,
+    note: 'Glass is fragile in transit. Order this one as a sample before listing it, not after the first breakage claim.',
+  },
 };
 
 /**
@@ -198,10 +241,23 @@ function order(lines, { alone = true } = {}) {
     labels.push(qty > 1 ? `${qty}x ${item.label}` : item.label);
   }
 
-  // Postage: the first parcel costs more than each one after it, once per order.
-  const postage = alone
-    ? SHIPPING.first + SHIPPING.additional * (units - 1)
-    : SHIPPING.additional * units;
+  // Postage: the first parcel costs more than each one after it, once per
+  // order. An item carrying its own `ship` is one that cannot travel in the
+  // same parcel as a garment — a rolled tube, a framed piece behind glass —
+  // so it is charged separately and never discounted as an add-on.
+  let postage = 0;
+  let flatUnits = 0;
+  for (const line of lines) {
+    const item = CATALOG[line.key];
+    const qty = line.quantity || 1;
+    if (item.ship) postage += item.ship * qty;
+    else flatUnits += qty;
+  }
+  if (flatUnits > 0) {
+    postage += alone
+      ? SHIPPING.first + SHIPPING.additional * (flatUnits - 1)
+      : SHIPPING.additional * flatUnits;
+  }
 
   // What the customer pays for shipping, which is not what it costs.
   const shippingPaid = goods >= SHIPPING.freeOver ? 0 : SHIPPING.charge;
