@@ -103,7 +103,7 @@ window.SML_SHOP = {
         'Made to order — nothing sits in a warehouse'
       ],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/28E28sd5JeVx2mN8jV1ZS0b'
     },
 
     {
@@ -141,7 +141,7 @@ window.SML_SHOP = {
         'Elasticated cuff, XS to 2XL'
       ],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/aFa4gAc1FbJlaTjfMn1ZS09'
     },
 
     {
@@ -160,7 +160,7 @@ window.SML_SHOP = {
         'Adjustable snapback, one size'
       ],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/5kQ14o6Hl8x9aTj2ZB1ZS0a'
     },
 
     {
