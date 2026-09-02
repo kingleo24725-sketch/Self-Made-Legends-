@@ -316,9 +316,12 @@ window.SML_SHOP = {
       imageAlt: 'The Mom Daughter Legacy sheet in a thin gold frame with a dark ' +
                 'mount: the black and gold pair with Grace and Cherish written ' +
                 'at the toe, the initials in the sole, and the two birthstones.',
-      blurb: 'The Mom Daughter Legacy sheet. Both names at the toe, GW and CLB ' +
-             'either side of the crest underfoot, and the two stones — garnet ' +
-             'for Grace, born 23 January; amethyst for Cherish, born 21 February.',
+      // The print carries CLB, not the full name. See build-print-shots.js —
+      // this copy has to keep matching the artwork, so if one changes so does
+      // the other.
+      blurb: 'The Mom Daughter Legacy sheet. GW and CLB either side of the ' +
+             'crest underfoot, and the two stones — garnet for Grace, born ' +
+             '23 January; amethyst for Cherish, born 21 February.',
       details: [
         '18 × 24 in, matte paper',
         'Thin gold frame, dark mount, glass',

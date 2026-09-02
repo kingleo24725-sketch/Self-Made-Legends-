@@ -44,11 +44,17 @@ const PRINTS = [
   // canvas rather than bare paper: these are the ones somebody hangs and
   // keeps, and a poster in a tube is the wrong object for them.
   //
-  // throne-momdaughter is the corrected sheet — garnet for Grace, amethyst
-  // for Cherish, and no memorial line over a living child. Print from this
-  // one, never from an older copy.
-  { sheet: 'throne-momdaughter', out: 'p-print-gracecherish', style: 'framed' },
-  { sheet: 'throne-rose',        out: 'p-print-rose',         style: 'canvas' },
+  // The PRINT uses the -clb variant, which carries CLB where the original
+  // carries CHERISH LOVE BROWN. A print is a product that hangs on a
+  // stranger's wall, and a nine year old's full legal name does not belong
+  // on one. The original keeps her name and stays on the collection page —
+  // that is the owner's own house telling his own story, which is a
+  // different thing entirely. Do not point both at the same file.
+  //
+  // Both are the corrected sheet: garnet for Grace, amethyst for Cherish,
+  // and no memorial line over a living child.
+  { sheet: 'throne-momdaughter-clb', out: 'p-print-gracecherish', style: 'framed' },
+  { sheet: 'throne-rose',            out: 'p-print-rose',         style: 'canvas' },
 ];
 
 /** The wall: a dark room, lit from the upper left the way the site is. */
