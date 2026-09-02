@@ -351,7 +351,7 @@ window.SML_SHOP = {
         'Edges wrapped, not white'
       ],
       colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/7sY5kE4zd5kX0eF7fR1ZS02'
     },
 
     /* ══════════════════════════════════════════════════════════════════════
