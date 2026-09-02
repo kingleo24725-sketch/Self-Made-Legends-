@@ -123,7 +123,7 @@ window.SML_SHOP = {
         'Made to order — nothing sits in a warehouse'
       ],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
-      paymentLink: ''                 // ← paste your Stripe Payment Link
+      paymentLink: 'https://buy.stripe.com/7sY28sghVdRt2mNgQr1ZS0c'
     },
 
     {
