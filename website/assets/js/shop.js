@@ -329,7 +329,7 @@ window.SML_SHOP = {
         'Ships rigid and insured'
       ],
       colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/28E3cw2r5fZBaTjeIj1ZS03'
     },
 
     {
