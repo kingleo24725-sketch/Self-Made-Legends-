@@ -137,15 +137,23 @@ section + section{border-top:1px solid var(--rule);}
 }
 .marble::before{
   content:"";position:absolute;inset:-25%;pointer-events:none;z-index:0;
-  /* Weaker than they look in the numbers. Gold veining that read as texture
-     on a grey ground reads as bright banding on malachite — the ground got
-     darker and greener, so the same alpha carries far more contrast. These
-     are set to land where the old ones did by eye, not on paper. */
+  /* Veins, sized in PIXELS rather than percentages.
+     They were percentages of the element, so a vein was as wide as the
+     section was tall — fine on a short block, and on the 1,476px spec
+     section a 1.4% stop became a 30px band of gold lying across the size
+     guide. Two of them were the brightest thing on that screen.
+     A fixed background-size makes a vein the same width in a tall slab as
+     in a short one, which is how marble actually behaves. The tile is large
+     and the angles differ per layer, so the repeat does not read as a
+     pattern. Alphas are down as well: at a consistent width they no longer
+     need to be faint to survive being stretched. */
   background:
-    linear-gradient(72deg,transparent 46.2%,rgba(207,165,41,.17) 46.7%,rgba(246,228,166,.09) 47.1%,transparent 47.6%),
-    linear-gradient(72deg,transparent 61.4%,rgba(207,165,41,.09) 61.7%,transparent 62.1%),
-    linear-gradient(66deg,transparent 28.5%,rgba(28,122,99,.11) 28.9%,transparent 29.4%),
-    linear-gradient(58deg,transparent 15.2%,rgba(207,165,41,.06) 15.6%,transparent 16.0%);
+    linear-gradient(72deg,transparent 46.4%,rgba(207,165,41,.13) 46.9%,rgba(246,228,166,.07) 47.2%,transparent 47.7%),
+    linear-gradient(72deg,transparent 61.5%,rgba(207,165,41,.07) 61.8%,transparent 62.1%),
+    linear-gradient(66deg,transparent 28.6%,rgba(28,122,99,.09) 29.0%,transparent 29.4%),
+    linear-gradient(58deg,transparent 15.3%,rgba(207,165,41,.05) 15.7%,transparent 16.0%);
+  background-size:820px 820px,1180px 1180px,940px 940px,1420px 1420px;
+  background-repeat:repeat;
 }
 .marble::after{
   content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
@@ -389,7 +397,10 @@ section + section{border-top:1px solid var(--rule);}
 }
 
 /* ── collections ──────────────────────────────────────────────────────── */
-.vol-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.15rem;}
+/* align-items:start, or the grid stretches every card to match the tallest
+   and Apparel and Outerwear end with a hand's depth of empty box under the
+   last row. Each volume is a different length; the layout should say so. */
+.vol-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1.15rem;align-items:start;}
 .vol{
   border:1px solid var(--rule);background:var(--pitch);
   padding:1.6rem 1.5rem;display:flex;flex-direction:column;gap:1.05rem;
@@ -445,9 +456,22 @@ section + section{border-top:1px solid var(--rule);}
 .c-br{bottom:9px;right:9px;border-left:0;border-top:0;}
 
 /* ── lifestyle strip ──────────────────────────────────────────────────── */
-.frames{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;}
+/* Six frames, so the column count has to divide into six. auto-fit gave
+   five across and one orphaned underneath, which reads as a broken layout
+   rather than a considered one. */
+.frames{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;}
+@media(max-width:900px){ .frames{grid-template-columns:repeat(2,1fr);} }
+@media(max-width:520px){ .frames{grid-template-columns:1fr;} }
+/* One ground for all six. Two of them carried .velvet-bg and four were bare
+   outlines, which read as two finished and four unstarted rather than as a
+   set. These are shot descriptions for photography that does not exist yet —
+   the honest treatment is six cards that look deliberately alike, not two
+   dressed up and four waiting. */
 .frame{
   aspect-ratio:4/5;border:1px solid var(--rule);
+  background:
+    radial-gradient(88% 70% at 24% 0%, rgba(58,16,32,.42) 0%, transparent 64%),
+    linear-gradient(168deg, var(--pitch) 0%, var(--void) 100%);
   display:flex;flex-direction:column;justify-content:flex-end;
   padding:1.15rem;gap:.35rem;position:relative;overflow:hidden;
 }
