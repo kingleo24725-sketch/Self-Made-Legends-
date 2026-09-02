@@ -253,7 +253,7 @@ window.SML_SHOP = {
         'Unframed'
       ],
       colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/9B6bJ2d5J9Bd2mNgQr1ZS06'
     },
 
     {
