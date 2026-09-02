@@ -210,7 +210,7 @@ window.SML_SHOP = {
         'Knitted crest at the ankle'
       ],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/dRm00kghVaFh6D32ZB1ZS0d'
     },
 
     /* ══════════════════════════════════════════════════════════════════════
