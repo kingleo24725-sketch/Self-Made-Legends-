@@ -274,7 +274,7 @@ window.SML_SHOP = {
         'Edges wrapped, not white'
       ],
       colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/fZu14oghV5kX1iJfMn1ZS05'
     },
 
     {
@@ -294,7 +294,7 @@ window.SML_SHOP = {
         'Ships rigid and insured'
       ],
       colors: [{ name: 'Golden Throne', hex: '#CFA529' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/6oUaEY6Hl9Bd5yZ0Rt1ZS04'
     },
 
     /* ── The personal two ───────────────────────────────────────────────────
