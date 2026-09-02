@@ -53,7 +53,7 @@ window.SML_SHOP = {
      A customer who can pay for something you cannot ship costs you a
      refund and their trust. This switch is cheaper.
      ══════════════════════════════════════════════════════════════════════ */
-  shopOpen: false,
+  shopOpen: true,
 
   // Shown in place of the shop note while the shop is closed.
   closedNote: 'Made to order, shipped from the printer to you. Join the list and you will hear the day it opens.',
