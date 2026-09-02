@@ -1210,8 +1210,10 @@ footer{border-top:1px solid var(--rule);padding:4rem 0 3rem;background:var(--pit
 }
 .film-in{position:relative;z-index:2;}
 
+/* The transcript, inside the board disclosure. The top margin is what
+   separates it from the storyboard above it now that they share one panel. */
 .shots{
-  list-style:none;margin:0;padding:0;max-width:44rem;
+  list-style:none;margin:1.6rem 0 0;padding:0;max-width:44rem;
   display:flex;flex-direction:column;
 }
 .shot{
