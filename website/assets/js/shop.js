@@ -178,7 +178,7 @@ window.SML_SHOP = {
         'Boxy cut, XS to 4XL'
       ],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/bJe7sM6Hl7t56D3as31ZS08'
     },
 
     {
@@ -192,7 +192,7 @@ window.SML_SHOP = {
       blurb: 'Ribbed cuff, crest embroidered at the fold.',
       details: ['Acrylic wool blend', 'Embroidered crest', 'One size, cuffed'],
       colors: [{ name: 'Onyx', hex: '#0B0C11' }],
-      paymentLink: ''
+      paymentLink: 'https://buy.stripe.com/fZu7sMghV4gT4uV1Vx1ZS07'
     },
 
     {
