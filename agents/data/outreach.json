@@ -1,28 +1,38 @@
 {
   "suppliers": [
     {
+      "id": "okabashi",
+      "name": "Okabashi",
+      "contact": "rebeccac@okabashi.com",
+      "country": "US",
+      "stage": "found",
+      "added": "2026-09-03",
+      "last_touch": "2026-09-03",
+      "waiting_on": null,
+      "answers": {},
+      "notes": [
+        {
+          "at": "2026-09-03",
+          "text": "Wholesale contact is Rebecca Cripe, rebeccac@okabashi.com. General hello@okabashi.com. Phone 800.443.6573 / 770.945.1330, 9-5 EST. Verified from their site via search, Sept 2026."
+        }
+      ]
+    },
+    {
       "id": "comunitymade",
       "name": "COMUNITYmade",
       "contact": "hello@comunitymade.com",
       "country": "US",
       "stage": "found",
       "added": "2026-09-03",
-      "last_touch": null,
+      "last_touch": "2026-09-03",
       "waiting_on": null,
       "answers": {},
-      "notes": []
-    },
-    {
-      "id": "okabashi",
-      "name": "Okabashi",
-      "contact": "wholesale@okabashi.com",
-      "country": "US",
-      "stage": "found",
-      "added": "2026-09-03",
-      "last_touch": null,
-      "waiting_on": null,
-      "answers": {},
-      "notes": []
+      "notes": [
+        {
+          "at": "2026-09-03",
+          "text": "hello@comunitymade.com, verified. LA, private label, states low MOQ."
+        }
+      ]
     },
     {
       "id": "bona-shoes",
@@ -31,10 +41,15 @@
       "country": "CN",
       "stage": "found",
       "added": "2026-09-03",
-      "last_touch": null,
+      "last_touch": "2026-09-03",
       "waiting_on": null,
       "answers": {},
-      "notes": []
+      "notes": [
+        {
+          "at": "2026-09-03",
+          "text": "No direct address found — they publish an OEM guide and take enquiries through their site form."
+        }
+      ]
     }
   ]
 }
