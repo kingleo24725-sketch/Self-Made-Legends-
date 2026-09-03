@@ -42,6 +42,14 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ART = os.path.join(HERE, '..', 'website', 'assets', 'img', 'concepts')
 OUT = os.path.join(HERE, 'SML-Footwear-RFQ.pdf')
 
+# The address suppliers reply to. It MUST match the address the enquiry is
+# actually sent from: a document saying "reply to X" that arrives from Y
+# splits the answers across two inboxes, and reads to a spam filter as a
+# forged sender. ceo@ is the address business partners are meant to use;
+# info@ stays the customer-facing one on the website.
+CONTACT = 'ceo@selfmadelegendsz.com'
+PHONE = '+1 (816) 466-3083'
+
 INK = colors.HexColor('#14110C')
 BODY = colors.HexColor('#33302A')
 MUTE = colors.HexColor('#6C675C')
@@ -129,7 +137,7 @@ def cover(canvas, doc):
     canvas.setFillColor(colors.HexColor('#8A8577'))
     y = 2.5 * inch
     for line in ['Jason D. Brown Jr.  ·  Founder',
-                 'info@selfmadelegendsz.com  ·  +1 (816) 466-3083',
+                 f'{CONTACT}  ·  {PHONE}',
                  'selfmadelegendsz.com']:
         canvas.drawCentredString(LETTER[0] / 2, y, line)
         y -= 0.24 * inch
@@ -328,7 +336,7 @@ def build():
     s.append(blank)
     s.append(Spacer(1, 16))
     s.append(Paragraph(
-        'Reply to <b>info@selfmadelegendsz.com</b>, or call <b>+1 (816) 466-3083</b>. If any part of this '
+        f'Reply to <b>{CONTACT}</b>, or call <b>{PHONE}</b>. If any part of this '
         'is unrealistic, tell us plainly — we would rather be corrected now than discover it after a '
         'deposit. Our design sheets are at <b>selfmadelegendsz.com/collection.html</b>.',
         S['body']))
