@@ -1,0 +1,40 @@
+{
+  "suppliers": [
+    {
+      "id": "comunitymade",
+      "name": "COMUNITYmade",
+      "contact": "hello@comunitymade.com",
+      "country": "US",
+      "stage": "found",
+      "added": "2026-09-03",
+      "last_touch": null,
+      "waiting_on": null,
+      "answers": {},
+      "notes": []
+    },
+    {
+      "id": "okabashi",
+      "name": "Okabashi",
+      "contact": "wholesale@okabashi.com",
+      "country": "US",
+      "stage": "found",
+      "added": "2026-09-03",
+      "last_touch": null,
+      "waiting_on": null,
+      "answers": {},
+      "notes": []
+    },
+    {
+      "id": "bona-shoes",
+      "name": "Bona Shoes",
+      "contact": "",
+      "country": "CN",
+      "stage": "found",
+      "added": "2026-09-03",
+      "last_touch": null,
+      "waiting_on": null,
+      "answers": {},
+      "notes": []
+    }
+  ]
+}

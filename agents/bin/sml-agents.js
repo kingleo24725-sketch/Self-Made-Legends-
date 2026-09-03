@@ -150,6 +150,83 @@ async function main() {
       break;
     }
 
+    /* ── Supplier outreach ────────────────────────────────────────────────
+       Deliberately has no "send" verb. See agents/outreach/index.js for why
+       this tracks conversations instead of starting them. */
+    case 'outreach': {
+      const o = require('../outreach');
+      const sub = argv[1];
+
+      if (sub === 'add') {
+        const name = argv[2];
+        if (!name) { process.stdout.write('\n  sml-agents outreach add "<name>" [--contact <email>] [--country <cc>]\n\n'); break; }
+        const id = o.add(name, { contact: flag(argv, '--contact'), country: flag(argv, '--country') });
+        process.stdout.write(`\n  added ${id}\n\n`);
+        break;
+      }
+
+      if (sub === 'note') {
+        const [, , id, text] = argv;
+        if (!id || !text) { process.stdout.write('\n  sml-agents outreach note <id> "<what happened>" [--stage <s>] [--waiting them|us]\n\n'); break; }
+        const s = o.note(id, text, { stage: flag(argv, '--stage'), waiting: flag(argv, '--waiting') });
+        process.stdout.write(`\n  ${s.name}: ${s.stage}, waiting on ${s.waiting_on || '—'}\n\n`);
+        break;
+      }
+
+      if (sub === 'answer') {
+        const [, , id, key, ...rest] = argv;
+        const val = rest.filter((x) => !x.startsWith('--')).join(' ');
+        if (!id || !key || !val) {
+          process.stdout.write('\n  sml-agents outreach answer <id> <key> "<their answer>"\n\n  keys:\n');
+          for (const [k, v] of Object.entries(o.ANSWERS)) process.stdout.write(`    ${k.padEnd(9)} ${v}\n`);
+          process.stdout.write('\n');
+          break;
+        }
+        const s = o.answer(id, key, val);
+        process.stdout.write(`\n  ${s.name}: ${Object.keys(s.answers).length} of 5 answered\n\n`);
+        break;
+      }
+
+      if (sub === 'list') {
+        const db = o.load();
+        if (!db.suppliers.length) { process.stdout.write('\n  Nobody tracked yet.  sml-agents outreach add "COMUNITYmade"\n\n'); break; }
+        process.stdout.write('\n');
+        for (const s of db.suppliers) {
+          const idle = o.daysSince(s.last_touch);
+          const missing = o.gaps(s);
+          process.stdout.write(
+            `  ${s.name.padEnd(22)} ${s.stage.padEnd(10)} ` +
+            `${(5 - missing.length)}/5 answered  ` +
+            `${s.waiting_on ? 'waiting on ' + s.waiting_on : '—'}` +
+            `${idle === null ? '' : `  (${idle}d)`}\n`
+          );
+        }
+        process.stdout.write('\n');
+        break;
+      }
+
+      // Default: what to do today.
+      const items = o.due(Number(flag(argv, '--chase') || 7));
+      process.stdout.write('\n');
+      if (!items.length) {
+        const db = o.load();
+        process.stdout.write(db.suppliers.length
+          ? '  Nothing owed today. Every thread is with them and inside the chase window.\n\n'
+          : '  Nobody tracked yet.  sml-agents outreach add "COMUNITYmade"\n\n');
+        break;
+      }
+      for (const { s, why } of items) {
+        process.stdout.write(`  ${s.name}\n      ${why}\n`);
+        const missing = o.gaps(s);
+        if (missing.length && missing.length < 5) {
+          process.stdout.write(`      still unknown: ${missing.map((k) => o.ANSWERS[k]).join('; ')}\n`);
+        }
+        if (s.contact) process.stdout.write(`      ${s.contact}\n`);
+        process.stdout.write('\n');
+      }
+      break;
+    }
+
     default:
       console.log(`
   Self-Made Legends — agents
@@ -160,10 +237,23 @@ async function main() {
     margin <item> [retail]                   what a price earns, print-on-demand
     partners                                 who is reachable and what they can do
 
+    outreach                                 who owes whom a reply, today
+    outreach list                            every supplier and how far along
+    outreach add "<name>" [--contact <email>]
+    outreach note <id> "<what happened>" [--stage <s>] [--waiting them|us]
+    outreach answer <id> <key> "<their answer>"
+
   Add --live to use the real API. Without it everything runs on stubs,
-  free, and nothing reaches a real partner.
+  free, and nothing reaches a real partner. Outreach never sends anything
+  at all — it tracks conversations you have yourself.
 `);
   }
+}
+
+/** Read a --flag's value out of argv. */
+function flag(argv, name) {
+  const i = argv.indexOf(name);
+  return i === -1 ? null : argv[i + 1];
 }
 
 function report(result) {
