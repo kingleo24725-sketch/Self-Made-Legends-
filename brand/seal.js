@@ -32,6 +32,21 @@ const { GOLD, GOLD_DP, GOLD_LT, GOLD_HI } = require('./palette');
 const INK = { gradient: 'url(#gf)', gold: GOLD, black: '#000000', white: '#FFFFFF' };
 
 /**
+ * The monogram's stack, naming the SAME face twice on purpose.
+ *
+ * Google Fonts serves it as "Bodoni Moda". The TTF installed on this machine
+ * declares its family as "Bodoni Moda 11pt". A stack naming only the first
+ * renders correctly on the website and silently falls through to the generic
+ * `serif` in every file this repo builds — which is Liberation Serif, a
+ * Times clone with none of a Didone's contrast.
+ *
+ * It went unnoticed because a serif SML at seal size still looks like a
+ * serif SML. It only showed up in a PDF's embedded-font list. Naming both
+ * resolves in either place; a browser skips whichever it cannot find.
+ */
+const DIDOT = "Bodoni Moda, 'Bodoni Moda 11pt', Didot, serif";
+
+/**
  * The pair of lions under the monogram, and the three dots between them.
  *
  * Exported on its own because the homepage carries an inline copy of the
@@ -115,7 +130,7 @@ function seal({ variant, ground = '#0B0F0D', pose = 'guardant' }) {
   </g>
 
   <text x="100" y="112" text-anchor="middle" fill="${ink}"
-        font-family="Bodoni Moda, Didot, serif" font-size="30" letter-spacing="5">SML</text>
+        font-family="${DIDOT}" font-size="30" letter-spacing="5">SML</text>
 
   <!-- Two lions rampant, where the laurel sprigs used to be. -->
 ${supporters({ ink, hole, pose })}

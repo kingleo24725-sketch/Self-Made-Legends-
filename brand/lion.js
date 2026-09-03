@@ -282,7 +282,7 @@ function crest({ ink, hole, wordmark = false }) {
   ${features({ cx, cy, ink, hole })}
   ${wordmark
     ? `<text x="${cx}" y="258" text-anchor="middle" fill="${ink}"
-        font-family="Bodoni Moda" font-size="26" letter-spacing="7">SML</text>`
+        font-family="Bodoni Moda, 'Bodoni Moda 11pt', Didot, serif" font-size="26" letter-spacing="7">SML</text>`
     : ''}
 </svg>`;
 }

@@ -49,6 +49,34 @@ on the site for weeks. Change the geometry in `brand/seal.js` and rebuild.
 | A designer placing it in a layout | `sml-seal-<variant>.svg` |
 | Web, social, a supplier who insists on an image | `sml-seal-<variant>-transparent.png` |
 
+### Finished pieces, ready to quote
+
+`node brand/build-mockups.js` writes `brand/out/print/` — these are the actual
+artwork files, at real size with bleed, not pictures of them:
+
+| File | Trim | Notes |
+|---|---|---|
+| `sml-card-front.pdf` | 85 × 55 mm | seal at 30 mm |
+| `sml-card-back.pdf` | 85 × 55 mm | name, role, contact |
+| `sml-card-front-FOIL.pdf` | 85 × 55 mm | **the foil separation** — see below |
+| `sml-hangtag.pdf` | 45 × 90 mm | punch the hole yourself, 5 mm from the top |
+| `sml-sticker-50mm.pdf` | 50 mm circle | for closing tissue and boxes |
+
+Every page carries **3 mm of bleed on all four sides**, so the PDF is 6 mm
+bigger than the trim in each direction. That is deliberate — guillotines drift
+a millimetre or two, and a background that stops exactly at the trim line
+comes back with white slivers down the edge. Keep anything that must survive
+**4 mm clear of the trim**.
+
+**Send the FOIL file as a separate layer, and say so on the order.** A foil
+die is cut from a one-bit image: black is where metal goes, white is where it
+does not. `sml-card-front-FOIL.pdf` is exactly that — solid black seal on
+white, nothing else. Hand a stamper the gold-on-black visual instead and ask
+them to work it out, and you can get a die that includes the background.
+
+`brand/out/mockups/sml-mockups.png` is the sheet showing all of it together.
+That one is for deciding, not for printing.
+
 **The PDF is the one to send a printer.** It is vector, so it can be blown up
 to the side of a building without softening, and Chromium embeds the two
 typefaces inside it — the printer installs nothing and cannot substitute a
@@ -56,6 +84,16 @@ different font by accident.
 
 `BodoniModa.ttf` and `DMMono.ttf` ship alongside for anyone who has to set
 matching type themselves.
+
+**A trap worth knowing if you ever re-set the monogram.** Google Fonts serves
+that face as **Bodoni Moda**; the downloaded TTF declares its family as
+**Bodoni Moda 11pt**. Ask for only the first and a local render silently falls
+through to the generic `serif` — Liberation Serif, a Times clone with none of
+a Didone's hairline contrast. Nothing warns you, and a serif SML at seal size
+still looks like a serif SML; the only place it showed up was the embedded
+font list inside a finished PDF. Every stack in this repo names both, and
+`build-mockups.js` now reads each PDF back and refuses to ship one that
+embedded a fallback face.
 
 ---
 

@@ -29,7 +29,7 @@
   </g>
 
   <text x="100" y="112" text-anchor="middle" fill="#CFA529"
-        font-family="Bodoni Moda, Didot, serif" font-size="30" letter-spacing="5">SML</text>
+        font-family="Bodoni Moda, 'Bodoni Moda 11pt', Didot, serif" font-size="30" letter-spacing="5">SML</text>
 
   <!-- Two lions rampant, where the laurel sprigs used to be. -->
   <g transform="translate(76,161) scale(.85)">
