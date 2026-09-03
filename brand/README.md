@@ -1,5 +1,14 @@
 # Self-Made Legends — logo pack
 
+**Three marks.** The *seal* is the house mark — it carries the full name and
+the founding year, and it is what goes on a letterhead, a card, an about
+page. The *lion crest* is the product mark — it goes on a garment, a box, a
+metal badge, anywhere the name is already obvious. The *lockup* is the crest
+with SML beneath it, for when the crest needs to say who it belongs to.
+
+Never squeeze the wordmark under the bare crest yourself; the lockup exists
+because the crest's lowest mane lock sits where that type wants to be.
+
 Copyright (c) 2026 Self-Made Legends LLC. All Rights Reserved.
 
 Rebuild with `node brand/build-logo.js`. Everything lands in `brand/out/`.
@@ -128,9 +137,19 @@ Fonts published under the SIL Open Font License, which permits commercial use
 including inside a logo. Confirm each font's licence page before you file, and
 keep a copy of the licence with your filing papers.
 
-**One thing that is NOT covered by any of the above.** The crowned-lion crest
-on the product sheets is different artwork with a different history — it came
-out of image generation, not out of this file. Crowned lions are among the most
-common devices in both heraldry and fashion. **If you intend to register the
-lion crest as well as this seal, it needs its own look before you file.** They
-are two marks, not one.
+**The lion crest is drawn, not traced.** The version on the product sheets is
+a generated raster, and tracing it would have carried across whatever it
+happens to resemble — the worst possible start for something about to be
+filed. So the crest in this pack is built from geometry in `brand/lion.js`:
+a mane generated as thirteen locks of alternating length around two circles,
+a face built from four bezier curves, and features knocked out of it. Every
+curve is a number in that file.
+
+**That does not make it clear to register.** Crowned lions are among the most
+common devices in heraldry and in fashion, and originality is not the test —
+likelihood of confusion is. Treat it exactly like the name: search it, then
+pay someone to tell you what the search means.
+
+**Minimum size for the crest is 20 mm / 0.8 in on foil.** It survives to 15 mm
+in flat print, but foil fills in fine strokes and the crown is the first thing
+to go. Tested at 15, 20, 30 and 58 mm.

@@ -33,6 +33,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
+const { crest } = require('./lion');
 
 const OUT = path.join(__dirname, 'out');
 const CHROME = '/opt/pw-browsers/chromium';
@@ -127,56 +128,76 @@ const VARIANTS = [
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch({ executablePath: CHROME });
 
+  // Three marks, four inks each. The seal is the house mark; the lion is the
+  // crest that goes on product; the lockup is the crest with the wordmark and
+  // real clear space beneath it, which the crest on its own must never have
+  // crammed under it.
+  const MARKS = [
+    { name: 'seal', make: (v) => seal({ variant: v }), h: 1 },
+    { name: 'lion', make: (v, ink, hole) => crest({ ink, hole }), h: 1 },
+    { name: 'lion-lockup', make: (v, ink, hole) => crest({ ink, hole, wordmark: true }), h: 250 / 200 },
+  ];
+
+  const INK = { gradient: 'url(#gf)', gold: GOLD, black: '#000000', white: '#FFFFFF' };
+
   for (const v of VARIANTS) {
-    const svg = seal({ variant: v.id });
-    const svgPath = path.join(OUT, `sml-seal-${v.id}.svg`);
-    fs.writeFileSync(svgPath, svg);
+  for (const m of MARKS) {
+    // The lion has no gradient build: its face detail is knocked out in the
+    // background colour, and a gradient version would need a second ink that
+    // does not exist on a foil die.
+    if (m.name !== 'seal' && v.id === 'gradient') continue;
+
+    const hole = v.id === 'black' ? '#FFFFFF' : '#0B0F0D';
+    const svg = m.name === 'seal' ? m.make(v.id) : m.make(v.id, INK[v.id], hole);
+    const stem = m.name === 'seal' ? `sml-seal-${v.id}` : `sml-${m.name}-${v.id}`;
+    fs.writeFileSync(path.join(OUT, `${stem}.svg`), svg);
 
     const page = await browser.newPage();
 
     // 4000px square. Big enough that the seal can be printed at any size a
     // card or a box needs without the raster ever being the limit.
-    await page.setViewportSize({ width: 1000, height: 1000 });
+    await page.setViewportSize({ width: 1000, height: Math.round(1000 * m.h) });
     await page.setContent(
       `<style>html,body{margin:0;height:100%;display:grid;place-items:center;background:${v.bg}}
-       svg{width:920px;height:920px}</style>${svg}`
+       svg{width:920px;height:auto}</style>${svg}`
     );
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(400);
     await page.screenshot({
-      path: path.join(OUT, `sml-seal-${v.id}.png`),
+      path: path.join(OUT, `${stem}.png`),
       omitBackground: false,
       scale: 'css',
-      clip: { x: 0, y: 0, width: 1000, height: 1000 },
+      clip: { x: 0, y: 0, width: 1000, height: Math.round(1000 * m.h) },
     });
 
     // Transparent PNG as well — what a designer actually places.
     await page.setContent(
       `<style>html,body{margin:0;height:100%;display:grid;place-items:center;background:transparent}
-       svg{width:920px;height:920px}</style>${svg}`
+       svg{width:920px;height:auto}</style>${svg}`
     );
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(300);
     await page.screenshot({
-      path: path.join(OUT, `sml-seal-${v.id}-transparent.png`),
+      path: path.join(OUT, `${stem}-transparent.png`),
       omitBackground: true,
     });
 
     // PDF: vector, fonts embedded. This is the file that goes to a printer.
     await page.setContent(
-      `<style>@page{size:120mm 120mm;margin:0}
-       html,body{margin:0;height:120mm;display:grid;place-items:center;background:${v.bg}}
-       svg{width:100mm;height:100mm}</style>${svg}`
+      `<style>@page{size:120mm ${(120 * m.h).toFixed(0)}mm;margin:0}
+       html,body{margin:0;height:${(120 * m.h).toFixed(0)}mm;display:grid;place-items:center;background:${v.bg}}
+       svg{width:100mm;height:auto}</style>${svg}`
     );
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(300);
     await page.pdf({
-      path: path.join(OUT, `sml-seal-${v.id}.pdf`),
-      width: '120mm', height: '120mm', printBackground: true, margin: { top: 0, bottom: 0, left: 0, right: 0 },
+      path: path.join(OUT, `${stem}.pdf`),
+      width: '120mm', height: `${(120 * m.h).toFixed(0)}mm`, printBackground: true, margin: { top: 0, bottom: 0, left: 0, right: 0 },
     });
 
     await page.close();
-    console.log(`  ${v.id.padEnd(9)} svg + png + transparent png + pdf   ${v.label}`);
+    console.log(`  ${stem.padEnd(26)} svg png png-alpha pdf`);
+  }
   }
 
   await browser.close();
