@@ -287,4 +287,146 @@ function crest({ ink, hole, wordmark = false }) {
 </svg>`;
 }
 
-module.exports = { crest, mane, crown };
+/**
+ * A lion RAMPANT — up on its hind legs, forepaws raised, facing the viewer.
+ *
+ * Drawn in its own coordinates: the origin is on the ground between the back
+ * feet, and the animal grows upward into negative y. It stands about 41 tall
+ * and 30 wide, so the seal can place a pair of them with one transform each.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ *  THIS ONE IS DRAWN FOR ITS SIZE, NOT FOR THE SCREEN
+ *
+ *  Two of these flank the monogram inside a 200-unit seal. On a business
+ *  card printed at 15mm that makes each lion about 3mm tall — roughly the
+ *  height of the text you are reading. Nothing survives at 3mm except the
+ *  SILHOUETTE, so this is built as one:
+ *
+ *    limbs are STROKES with round caps, not filled outlines. A filled limb
+ *      needs two edges and a gap between them; at 3mm the gap closes and
+ *      you get a blob. One stroke has one weight and degrades cleanly.
+ *    the mane is BIGGER than the head and the paws stand CLEAR of the body,
+ *      because separation is the only thing the eye has left at this size.
+ *    the face is knocked out in three marks and no more. They fill in when
+ *      it is stamped small, which is the correct way for detail to die —
+ *      the head simply becomes solid rather than becoming mud.
+ *
+ *  `tail` is +1 or -1 for which side the tail sweeps. The pair mirrors, so
+ *  each lion's tail goes to the OUTSIDE of the seal.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+/** A small spiked disc: the mane, at a size where nothing else fits. */
+function maneDisc({ cx, cy, r, count, ink }) {
+  const step = 360 / count;
+  const pts = [];
+  for (let i = 0; i < count; i++) {
+    const at = (deg, rr) => `${P(cx + rr * Math.cos(RAD(deg)))} ${P(cy + rr * Math.sin(RAD(deg)))}`;
+    const mid = -90 + i * step;
+    const out = r * (i % 2 ? 1.12 : 1.26);
+    pts.push(`M ${at(mid - step * 0.44, r * 0.92)} L ${at(mid, out)} L ${at(mid + step * 0.44, r * 0.92)} Z`);
+  }
+  // Points, not overlapping circles. Circles gave a curly wig.
+  return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${ink}"/>` +
+         `<path d="${pts.join(' ')}" fill="${ink}"/>`;
+}
+
+/** The face, in three knocked-out marks. Any more closes up when stamped. */
+function tinyFace({ cx, cy, hole }) {
+  return `<circle cx="${P(cx - 2.5)}" cy="${P(cy - 1.4)}" r="1.05" fill="${hole}"/>` +
+         `<circle cx="${P(cx + 2.5)}" cy="${P(cy - 1.4)}" r="1.05" fill="${hole}"/>` +
+         `<path d="M ${P(cx - 1.8)} ${P(cy + 1.9)} L ${P(cx + 1.8)} ${P(cy + 1.9)} ` +
+         `L ${cx} ${P(cy + 4.3)} Z" fill="${hole}"/>`;
+}
+
+function rampant({ ink, hole, pose = 'guardant', face = true }) {
+  const s = [];
+  const limb = (d, w) =>
+    `<path d="${d}" fill="none" stroke="${ink}" stroke-width="${w}" stroke-linecap="round"/>`;
+
+  if (pose === 'front') {
+    // AFFRONTÉ — square on to the reader, both forelegs raised.
+    //
+    // Kept because it is the literal reading of "facing the person looking
+    // at them", but it is the weaker of the two and the reason is
+    // structural: a symmetrical biped with both arms up is the silhouette
+    // of a standing BEAR, and no amount of mane fixes that. It is drawn
+    // lean here, with the paws reaching forward rather than straight up,
+    // which is as far from a teddy bear as this pose goes.
+    s.push(limb('M 6 -14 Q 15 -17 13.5 -28', 2.4));
+    s.push(`<circle cx="13.5" cy="-30.2" r="2.6" fill="${ink}"/>`);
+
+    for (const d of [-1, 1]) {
+      s.push(limb(`M ${P(d * 4.2)} -14 Q ${P(d * 8)} -8 ${P(d * 5.6)} -3`, 4));
+      s.push(limb(`M ${P(d * 8.6)} -2 L ${P(d * 3)} -2`, 3.2));
+    }
+
+    s.push(
+      `<path fill="${ink}" d="M -6.4 -12 C -4.6 -18 -4.8 -23 -5.6 -28 ` +
+      `L 5.6 -28 C 4.8 -23 4.6 -18 6.4 -12 Z"/>`
+    );
+
+    // Forward and slightly down, not up in the air.
+    for (const d of [-1, 1]) {
+      s.push(limb(`M ${P(d * 4.4)} -26 Q ${P(d * 9.5)} -28.5 ${P(d * 12)} -31.5`, 3.6));
+      s.push(`<circle cx="${P(d * 13)}" cy="-32.4" r="2.4" fill="${ink}"/>`);
+    }
+
+    for (const d of [-1, 1]) s.push(`<circle cx="${P(d * 4.4)}" cy="-38.6" r="2.1" fill="${ink}"/>`);
+    s.push(maneDisc({ cx: 0, cy: -33.4, r: 6.4, count: 11, ink }));
+    if (face) s.push(tinyFace({ cx: 0, cy: -33.4, hole }));
+    return s.join('\n    ');
+  }
+
+  // RAMPANT GUARDANT — body in profile facing right, head turned full-face
+  // to the reader. This is the heraldic answer to "facing the person
+  // looking at them", and it is the one that survives being 3mm tall: the
+  // long diagonal of the back and the two forepaws reaching out ahead of
+  // the chest are what say LION at a glance. Square on, that diagonal
+  // disappears and the animal loses the one line that identifies it.
+
+  // Everything here is DELIBERATELY HEAVY. The first attempt drew the limbs
+  // as thin strokes and the animal came out spindly — a dog on its back
+  // legs. At 30 units inside a 200-unit seal there is no room for anatomy,
+  // only for weight, so the haunch and shoulder are solid masses and no
+  // limb is thinner than 3.
+  s.push(limb('M -8 -18 Q -17 -24 -14 -34', 3.2));
+  s.push(`<path fill="${ink}" d="M -14 -33 Q -18.4 -38 -13.6 -41.6 Q -10.6 -37.4 -14 -33 Z"/>`);
+
+  // Hind leg: short, thick, with a real haunch above it. The haunch is what
+  // says the animal is pushing up rather than merely standing.
+  s.push(limb('M -5.5 -14 Q -9 -8.5 -7 -3', 5.4));
+  s.push(limb('M -10 -1.7 L -2.4 -1.7', 3.6));
+  s.push(`<ellipse cx="-6.2" cy="-15" rx="6.6" ry="7.2" fill="${ink}"/>`);
+
+  // The torso, steeply upright. Nearly horizontal it reads as a quadruped
+  // leaning on something; at about sixty degrees it reads as rampant.
+  s.push(
+    `<path fill="${ink}" d="M -8.4 -13.6 C -8.4 -22 -4 -28 2 -32 ` +
+    `L 8 -31 C 9.2 -27 8.4 -23 5.2 -21 ` +
+    `C 1.2 -19 -1.6 -16.6 -3.2 -11.8 Z"/>`
+  );
+  s.push(`<circle cx="6" cy="-28" r="6.1" fill="${ink}"/>`);
+
+  // Forepaws reaching out AHEAD of the head, one high and one low.
+  //
+  // They were level with the mane before and the mane's spikes swallowed
+  // them — three round shapes at the same height merged into one lump. The
+  // head sits back over the shoulder instead, which is where a rampant
+  // lion's head belongs anyway, and the paws now clear it.
+  s.push(limb('M 6.5 -30 Q 12 -33.5 15.4 -35.4', 4.4));
+  s.push(`<circle cx="16.5" cy="-36.2" r="2.7" fill="${ink}"/>`);
+  s.push(limb('M 6.8 -26.6 Q 11 -28 13.6 -26', 3.9));
+  s.push(`<circle cx="14.6" cy="-25.2" r="2.4" fill="${ink}"/>`);
+
+  for (const d of [-1, 1]) s.push(`<circle cx="${P(5 + d * 4.7)}" cy="-46.2" r="2.2" fill="${ink}"/>`);
+  s.push(maneDisc({ cx: 5, cy: -40.4, r: 7.4, count: 11, ink }));
+  // Skippable, and skipped on the website. The face is three knockouts in
+  // the BACKGROUND colour, and the seal appears on more than one background
+  // there; at web sizes it is invisible anyway, so a solid head is both
+  // safer and identical to look at.
+  if (face) s.push(tinyFace({ cx: 5, cy: -40.4, hole }));
+
+  return s.join('\n    ');
+}
+
+module.exports = { crest, mane, crown, rampant };

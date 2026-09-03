@@ -1,8 +1,17 @@
 # Self-Made Legends — logo pack
 
-**The seal is the logo.** It carries the full name and the founding year, and
-it is what goes on business cards, packaging, a letterhead, an about page —
-anywhere the brand has to introduce itself. When in doubt, send the seal.
+**The seal is the logo.** It carries the full name, the founding year, the
+crown, the monogram and **two lions rampant** supporting it, and it is what
+goes on business cards, packaging, a letterhead, an about page — anywhere the
+brand has to introduce itself. When in doubt, send the seal.
+
+The lions are *rampant guardant*: up on their hind legs with their bodies
+turned in toward the monogram, and their heads full-face to the reader. The
+pair is one drawing mirrored, so only one lion exists in the source. Square
+on to the reader was tried first and abandoned — a symmetrical animal with
+both forelegs raised is the silhouette of a standing bear, and a mane does
+not fix it. Side on, the long diagonal of the back is what says lion at a
+glance, and it is the only part that survives at print size.
 
 Two other marks ship alongside it and are optional. The *lion crest* is a
 product mark, for a garment or a badge where the name is already obvious;
@@ -14,8 +23,13 @@ because the crest's lowest mane lock sits where that type wants to be.
 Copyright (c) 2026 Self-Made Legends LLC. All Rights Reserved.
 
 Rebuild with `node brand/build-logo.js`. Everything lands in `brand/out/`, and
-the two standalone seals under `website/assets/brand/` are written from the
-same function so the site and the print pack cannot drift apart again.
+the same run also writes the two standalone seals under
+`website/assets/brand/` **and** the homepage's inline copy, between the
+`SML:SUPPORTERS` markers in `website/index.html`. The seal exists in six
+places; one function draws all of them.
+
+`node brand/preview-seal.js out.png` prints a contact sheet at 58/40/25/15 mm.
+Look at it before sending anything to a printer.
 
 **Never hand-edit a seal SVG.** They did drift, and the way it showed up is
 worth knowing: the seal's arc text is set on two semicircular paths, and a
@@ -23,7 +37,7 @@ worth knowing: the seal's arc text is set on two semicircular paths, and a
 flag and nothing errors, nothing warns, the file still opens — **EST. MMXXVI
 just silently sets reversed and upside down.** At the size a seal is normally
 looked at, that is eight characters across a few dozen pixels, and it lived
-on the site for weeks. Change the geometry in `build-logo.js` and rebuild.
+on the site for weeks. Change the geometry in `brand/seal.js` and rebuild.
 
 ---
 
@@ -94,10 +108,19 @@ samples.
 Keep clear space of **at least 10% of the seal's diameter** on every side.
 Nothing sits inside that ring.
 
-Do not print the seal below **15 mm / 0.6 in** across. Under that the
-letterspaced arc text closes up and the laurel leaves fill in. If you need it
-smaller than that — a woven label, a metal pin — ask for a **simplified
-version with the arc text dropped**, keeping the crown, the SML and the rings.
+**25 mm / 1 in is the working minimum, and the lions are what set it.**
+
+Each lion is about a seventh of the seal's width, so at a 25 mm seal it is
+roughly 3.5 mm tall — about the height of this line of text. That is the
+floor at which it still reads as an animal. The seal as a whole survives down
+to 15 mm and the arc text is still legible there, but the lions have gone to
+two specks by then, so anything below 25 mm is spending the detail for
+nothing.
+
+Below 25 mm — a woven label, a metal pin, a zip pull — ask for a **simplified
+version**: the crown, the SML and the rings, with the arc text and the lions
+dropped. `website/assets/favicon.svg` is already that mark and can be the
+starting point.
 
 ---
 
@@ -146,10 +169,18 @@ is not an answer.
 ## Does the artwork belong to anyone else?
 
 **The seal is original.** It is drawn from primitives — three circles, a crown
-built from one path and three dots, six laurel ellipses, three points, and two
-lines of type set on arcs. Nothing was traced, copied or adapted from an
-existing mark. The geometry is in `build-logo.js`, so you can prove where every
-line came from.
+built from one path and three dots, two lions built from strokes and filled
+masses, three points, and two lines of type set on arcs. Nothing was traced,
+copied or adapted from an existing mark. The geometry is in `brand/seal.js`
+and `brand/lion.js`, so you can prove where every line came from.
+
+**The lions need the same caution as the crest, and then some.** A lion
+rampant is not merely a common heraldic device — it is close to the default
+one, and it appears on national arms, football clubs, banks and breweries.
+Drawing it from scratch protects you against a copyright claim on someone
+else's artwork. It does nothing about trademark, where the test is likelihood
+of confusion. Search it, and have the attorney look at the mark as a whole —
+the seal, the name and the lions together — not just the words.
 
 **The typefaces are licensed for this.** Bodoni Moda and DM Mono are Google
 Fonts published under the SIL Open Font License, which permits commercial use

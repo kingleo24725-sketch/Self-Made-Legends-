@@ -3,12 +3,8 @@
   <defs>
     
     <path id="arcTop" d="M 100,100 m -84,0 a 84,84 0 1,1 168,0" fill="none"/>
-    <!-- Sweep 0, starting from the LEFT point. A textPath runs along its
-         path's own direction, so the other way round the bottom traverses
-         right-to-left and sets EST. MMXXVI reversed and upside down. Both
-         arcs are true semicircles, which makes the large-arc flag moot and
-         leaves the sweep flag as the only thing holding this the right way
-         up. Change it and nothing errors — the year just quietly inverts. -->
+    <!-- Sweep 0, starting from the LEFT point. See the header: the other
+         way round sets EST. MMXXVI reversed and upside down, silently. -->
     <path id="arcBot" d="M 100,100 m -84,0 a 84,84 0 0,0 168,0" fill="none"/>
   </defs>
 
@@ -35,21 +31,44 @@
   <text x="100" y="112" text-anchor="middle" fill="#FFFFFF"
         font-family="Bodoni Moda, Didot, serif" font-size="30" letter-spacing="5">SML</text>
 
-  <g stroke="#FFFFFF" stroke-width="1.5" fill="none">
-    <path d="M74 128 q-11 12 -9 27"/>
-    <path d="M126 128 q11 12 9 27"/>
+  <!-- Two lions rampant, where the laurel sprigs used to be. -->
+  <g transform="translate(76,161) scale(.85)">
+    <path d="M -8 -18 Q -17 -24 -14 -34" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>
+    <path fill="#FFFFFF" d="M -14 -33 Q -18.4 -38 -13.6 -41.6 Q -10.6 -37.4 -14 -33 Z"/>
+    <path d="M -5.5 -14 Q -9 -8.5 -7 -3" fill="none" stroke="#FFFFFF" stroke-width="5.4" stroke-linecap="round"/>
+    <path d="M -10 -1.7 L -2.4 -1.7" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"/>
+    <ellipse cx="-6.2" cy="-15" rx="6.6" ry="7.2" fill="#FFFFFF"/>
+    <path fill="#FFFFFF" d="M -8.4 -13.6 C -8.4 -22 -4 -28 2 -32 L 8 -31 C 9.2 -27 8.4 -23 5.2 -21 C 1.2 -19 -1.6 -16.6 -3.2 -11.8 Z"/>
+    <circle cx="6" cy="-28" r="6.1" fill="#FFFFFF"/>
+    <path d="M 6.5 -30 Q 12 -33.5 15.4 -35.4" fill="none" stroke="#FFFFFF" stroke-width="4.4" stroke-linecap="round"/>
+    <circle cx="16.5" cy="-36.2" r="2.7" fill="#FFFFFF"/>
+    <path d="M 6.8 -26.6 Q 11 -28 13.6 -26" fill="none" stroke="#FFFFFF" stroke-width="3.9" stroke-linecap="round"/>
+    <circle cx="14.6" cy="-25.2" r="2.4" fill="#FFFFFF"/>
+    <circle cx="0.3" cy="-46.2" r="2.2" fill="#FFFFFF"/>
+    <circle cx="9.7" cy="-46.2" r="2.2" fill="#FFFFFF"/>
+    <circle cx="5" cy="-40.4" r="7.4" fill="#FFFFFF"/><path d="M 3.31 -46.99 L 5 -49.72 L 6.69 -46.99 Z M 7.14 -46.86 L 9.48 -47.37 L 9.99 -45.03 Z M 10.29 -44.68 L 13.48 -44.27 L 11.7 -41.6 Z M 11.77 -41.14 L 13.2 -39.22 L 11.29 -37.79 Z M 11.09 -37.36 L 12.05 -34.29 L 8.87 -34.8 Z M 8.48 -34.55 L 7.33 -32.45 L 5.23 -33.6 Z M 4.77 -33.6 L 2.37 -31.45 L 1.52 -34.55 Z M 1.13 -34.8 L -1.26 -34.97 L -1.09 -37.36 Z M -1.29 -37.79 L -4.23 -39.07 L -1.77 -41.14 Z M -1.7 -41.6 L -2.54 -43.84 L -0.29 -44.68 Z M 0.01 -45.03 L -0.04 -48.24 L 2.86 -46.86 Z" fill="#FFFFFF"/>
+    <circle cx="2.5" cy="-41.8" r="1.05" fill="#0B0F0D"/><circle cx="7.5" cy="-41.8" r="1.05" fill="#0B0F0D"/><path d="M 3.2 -38.5 L 6.8 -38.5 L 5 -36.1 Z" fill="#0B0F0D"/>
+  </g>
+  <g transform="translate(124,161) scale(-.85,.85)">
+    <path d="M -8 -18 Q -17 -24 -14 -34" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round"/>
+    <path fill="#FFFFFF" d="M -14 -33 Q -18.4 -38 -13.6 -41.6 Q -10.6 -37.4 -14 -33 Z"/>
+    <path d="M -5.5 -14 Q -9 -8.5 -7 -3" fill="none" stroke="#FFFFFF" stroke-width="5.4" stroke-linecap="round"/>
+    <path d="M -10 -1.7 L -2.4 -1.7" fill="none" stroke="#FFFFFF" stroke-width="3.6" stroke-linecap="round"/>
+    <ellipse cx="-6.2" cy="-15" rx="6.6" ry="7.2" fill="#FFFFFF"/>
+    <path fill="#FFFFFF" d="M -8.4 -13.6 C -8.4 -22 -4 -28 2 -32 L 8 -31 C 9.2 -27 8.4 -23 5.2 -21 C 1.2 -19 -1.6 -16.6 -3.2 -11.8 Z"/>
+    <circle cx="6" cy="-28" r="6.1" fill="#FFFFFF"/>
+    <path d="M 6.5 -30 Q 12 -33.5 15.4 -35.4" fill="none" stroke="#FFFFFF" stroke-width="4.4" stroke-linecap="round"/>
+    <circle cx="16.5" cy="-36.2" r="2.7" fill="#FFFFFF"/>
+    <path d="M 6.8 -26.6 Q 11 -28 13.6 -26" fill="none" stroke="#FFFFFF" stroke-width="3.9" stroke-linecap="round"/>
+    <circle cx="14.6" cy="-25.2" r="2.4" fill="#FFFFFF"/>
+    <circle cx="0.3" cy="-46.2" r="2.2" fill="#FFFFFF"/>
+    <circle cx="9.7" cy="-46.2" r="2.2" fill="#FFFFFF"/>
+    <circle cx="5" cy="-40.4" r="7.4" fill="#FFFFFF"/><path d="M 3.31 -46.99 L 5 -49.72 L 6.69 -46.99 Z M 7.14 -46.86 L 9.48 -47.37 L 9.99 -45.03 Z M 10.29 -44.68 L 13.48 -44.27 L 11.7 -41.6 Z M 11.77 -41.14 L 13.2 -39.22 L 11.29 -37.79 Z M 11.09 -37.36 L 12.05 -34.29 L 8.87 -34.8 Z M 8.48 -34.55 L 7.33 -32.45 L 5.23 -33.6 Z M 4.77 -33.6 L 2.37 -31.45 L 1.52 -34.55 Z M 1.13 -34.8 L -1.26 -34.97 L -1.09 -37.36 Z M -1.29 -37.79 L -4.23 -39.07 L -1.77 -41.14 Z M -1.7 -41.6 L -2.54 -43.84 L -0.29 -44.68 Z M 0.01 -45.03 L -0.04 -48.24 L 2.86 -46.86 Z" fill="#FFFFFF"/>
+    <circle cx="2.5" cy="-41.8" r="1.05" fill="#0B0F0D"/><circle cx="7.5" cy="-41.8" r="1.05" fill="#0B0F0D"/><path d="M 3.2 -38.5 L 6.8 -38.5 L 5 -36.1 Z" fill="#0B0F0D"/>
   </g>
   <g fill="#FFFFFF">
-    <ellipse cx="69"  cy="133" rx="5" ry="2.4" transform="rotate(-32 69 133)"/>
-    <ellipse cx="65"  cy="141" rx="5" ry="2.4" transform="rotate(-18 65 141)"/>
-    <ellipse cx="64"  cy="149" rx="5" ry="2.4" transform="rotate(-4 64 149)"/>
-    <ellipse cx="131" cy="133" rx="5" ry="2.4" transform="rotate(32 131 133)"/>
-    <ellipse cx="135" cy="141" rx="5" ry="2.4" transform="rotate(18 135 141)"/>
-    <ellipse cx="136" cy="149" rx="5" ry="2.4" transform="rotate(4 136 149)"/>
-  </g>
-  <g fill="#FFFFFF">
-    <circle cx="92"  cy="150" r="1.9"/>
-    <circle cx="100" cy="150" r="1.9"/>
-    <circle cx="108" cy="150" r="1.9"/>
+    <circle cx="94"  cy="156" r="1.5"/>
+    <circle cx="100" cy="156" r="1.5"/>
+    <circle cx="106" cy="156" r="1.5"/>
   </g>
 </svg>

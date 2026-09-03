@@ -34,91 +34,11 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 const { crest } = require('./lion');
+const { seal, supporters, INK } = require('./seal');
+const { GROUND } = require('./palette');
 
 const OUT = path.join(__dirname, 'out');
 const CHROME = '/opt/pw-browsers/chromium';
-
-/* The house gold. Hex is authoritative; everything else a printer matches. */
-const GOLD = '#CFA529';
-const GOLD_DP = '#8F6E15';
-const GOLD_LT = '#F6E4A6';
-
-/**
- * One seal, four inks.
- *
- * `ink` is what every stroke and fill resolves to. Only the 'gradient'
- * variant uses more than one value, and only it is unsuitable for foil.
- */
-function seal({ variant }) {
-  const gradient = variant === 'gradient';
-  const ink = { gradient: 'url(#gf)', gold: GOLD, black: '#000000', white: '#FFFFFF' }[variant];
-  // The inner ring is a half-tone of the main ink on the website. On a
-  // one-colour job there is no half-tone, so it takes the same ink.
-  const faint = gradient ? GOLD_DP : ink;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Self-Made Legends seal">
-  <title>Self-Made Legends</title>
-  <defs>
-    ${gradient ? `<linearGradient id="gf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stop-color="${GOLD_DP}"/>
-      <stop offset="22%"  stop-color="${GOLD}"/>
-      <stop offset="44%"  stop-color="${GOLD_LT}"/>
-      <stop offset="64%"  stop-color="${GOLD}"/>
-      <stop offset="84%"  stop-color="${GOLD_DP}"/>
-      <stop offset="100%" stop-color="#DFC15C"/>
-    </linearGradient>` : ''}
-    <path id="arcTop" d="M 100,100 m -84,0 a 84,84 0 1,1 168,0" fill="none"/>
-    <!-- Sweep 0, starting from the LEFT point. A textPath runs along its
-         path's own direction, so the other way round the bottom traverses
-         right-to-left and sets EST. MMXXVI reversed and upside down. Both
-         arcs are true semicircles, which makes the large-arc flag moot and
-         leaves the sweep flag as the only thing holding this the right way
-         up. Change it and nothing errors — the year just quietly inverts. -->
-    <path id="arcBot" d="M 100,100 m -84,0 a 84,84 0 0,0 168,0" fill="none"/>
-  </defs>
-
-  <circle cx="100" cy="100" r="97" fill="none" stroke="${ink}" stroke-width="1.6"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="${faint}" stroke-width=".7"${gradient ? ' opacity=".85"' : ''}/>
-  <circle cx="100" cy="100" r="72" fill="none" stroke="${ink}" stroke-width="1.1"/>
-
-  <text font-family="DM Mono, monospace" font-size="10.5" letter-spacing="3.4" fill="${ink}">
-    <textPath href="#arcTop" startOffset="50%" text-anchor="middle">SELF-MADE LEGENDS</textPath>
-  </text>
-  <text font-family="DM Mono, monospace" font-size="8.5" letter-spacing="3" fill="${faint}">
-    <textPath href="#arcBot" startOffset="50%" text-anchor="middle">EST. MMXXVI</textPath>
-  </text>
-
-  <g transform="translate(100,52) scale(.62)">
-    <path d="M-40 26 L-32 -2 L-14 12 L0 -12 L14 12 L32 -2 L40 26 Z"
-          fill="none" stroke="${ink}" stroke-width="3.4" stroke-linejoin="round"/>
-    <circle cx="-32" cy="-5"  r="4"   fill="${ink}"/>
-    <circle cx="0"   cy="-15" r="4.6" fill="${ink}"/>
-    <circle cx="32"  cy="-5"  r="4"   fill="${ink}"/>
-    <rect x="-40" y="30" width="80" height="6" fill="${ink}"/>
-  </g>
-
-  <text x="100" y="112" text-anchor="middle" fill="${ink}"
-        font-family="Bodoni Moda, Didot, serif" font-size="30" letter-spacing="5">SML</text>
-
-  <g stroke="${ink}" stroke-width="1.5" fill="none">
-    <path d="M74 128 q-11 12 -9 27"/>
-    <path d="M126 128 q11 12 9 27"/>
-  </g>
-  <g fill="${ink}"${gradient ? ' opacity=".95"' : ''}>
-    <ellipse cx="69"  cy="133" rx="5" ry="2.4" transform="rotate(-32 69 133)"/>
-    <ellipse cx="65"  cy="141" rx="5" ry="2.4" transform="rotate(-18 65 141)"/>
-    <ellipse cx="64"  cy="149" rx="5" ry="2.4" transform="rotate(-4 64 149)"/>
-    <ellipse cx="131" cy="133" rx="5" ry="2.4" transform="rotate(32 131 133)"/>
-    <ellipse cx="135" cy="141" rx="5" ry="2.4" transform="rotate(18 135 141)"/>
-    <ellipse cx="136" cy="149" rx="5" ry="2.4" transform="rotate(4 136 149)"/>
-  </g>
-  <g fill="${ink}">
-    <circle cx="92"  cy="150" r="1.9"/>
-    <circle cx="100" cy="150" r="1.9"/>
-    <circle cx="108" cy="150" r="1.9"/>
-  </g>
-</svg>`;
-}
 
 const VARIANTS = [
   { id: 'gradient', label: 'Gradient gold — screens and full-colour digital print', bg: '#0B0F0D' },
@@ -136,12 +56,10 @@ const VARIANTS = [
   // real clear space beneath it, which the crest on its own must never have
   // crammed under it.
   const MARKS = [
-    { name: 'seal', make: (v) => seal({ variant: v }) },
+    { name: 'seal', make: (v, _ink, _hole, bg) => seal({ variant: v, ground: bg }) },
     { name: 'lion', make: (v, ink, hole) => crest({ ink, hole }) },
     { name: 'lion-lockup', make: (v, ink, hole) => crest({ ink, hole, wordmark: true }) },
   ];
-
-  const INK = { gradient: 'url(#gf)', gold: GOLD, black: '#000000', white: '#FFFFFF' };
 
   for (const v of VARIANTS) {
   for (const m of MARKS) {
@@ -151,7 +69,7 @@ const VARIANTS = [
     if (m.name !== 'seal' && v.id === 'gradient') continue;
 
     const hole = v.id === 'black' ? '#FFFFFF' : '#0B0F0D';
-    const svg = m.name === 'seal' ? m.make(v.id) : m.make(v.id, INK[v.id], hole);
+    const svg = m.make(v.id, INK[v.id], hole, v.bg);
     const stem = m.name === 'seal' ? `sml-seal-${v.id}` : `sml-${m.name}-${v.id}`;
     fs.writeFileSync(path.join(OUT, `${stem}.svg`), svg);
 
@@ -226,6 +144,27 @@ const VARIANTS = [
     fs.writeFileSync(path.join(SITE, 'sml-seal-gold.svg'), seal({ variant: 'gradient' }));
     fs.writeFileSync(path.join(SITE, 'sml-seal-solid.svg'), seal({ variant: 'gold' }));
     console.log('  website/assets/brand   sml-seal-gold.svg sml-seal-solid.svg');
+  }
+
+  // And the homepage's own inline copy — it defines <g id="seal"> and five
+  // places <use> it, so it cannot just load the file. The lions go in
+  // between the markers; the face knockouts are skipped there because they
+  // are drawn in the BACKGROUND colour and that seal sits on more than one
+  // background. At web sizes those three marks are invisible anyway.
+  const HOME = path.join(__dirname, '..', 'website', 'index.html');
+  if (fs.existsSync(HOME)) {
+    const START = '<!-- SML:SUPPORTERS start';
+    const END = '<!-- SML:SUPPORTERS end -->';
+    let html = fs.readFileSync(HOME, 'utf8');
+    const a = html.indexOf(START);
+    const b = html.indexOf(END);
+    if (a === -1 || b === -1) throw new Error('index.html: SML:SUPPORTERS markers missing');
+    const keep = html.slice(a, html.indexOf('-->', a) + 3);
+    html = html.slice(0, a) + keep + '\n' +
+      supporters({ ink: 'url(#gf)', hole: GROUND, face: false, indent: '      ' }) +
+      '\n      ' + html.slice(b);
+    fs.writeFileSync(HOME, html);
+    console.log('  website/index.html     inline seal supporters');
   }
 
   // The typefaces, so nobody has to hunt for them or substitute one.
