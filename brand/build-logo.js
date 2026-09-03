@@ -133,9 +133,9 @@ const VARIANTS = [
   // real clear space beneath it, which the crest on its own must never have
   // crammed under it.
   const MARKS = [
-    { name: 'seal', make: (v) => seal({ variant: v }), h: 1 },
-    { name: 'lion', make: (v, ink, hole) => crest({ ink, hole }), h: 1 },
-    { name: 'lion-lockup', make: (v, ink, hole) => crest({ ink, hole, wordmark: true }), h: 250 / 200 },
+    { name: 'seal', make: (v) => seal({ variant: v }) },
+    { name: 'lion', make: (v, ink, hole) => crest({ ink, hole }) },
+    { name: 'lion-lockup', make: (v, ink, hole) => crest({ ink, hole, wordmark: true }) },
   ];
 
   const INK = { gradient: 'url(#gf)', gold: GOLD, black: '#000000', white: '#FFFFFF' };
@@ -152,11 +152,18 @@ const VARIANTS = [
     const stem = m.name === 'seal' ? `sml-seal-${v.id}` : `sml-${m.name}-${v.id}`;
     fs.writeFileSync(path.join(OUT, `${stem}.svg`), svg);
 
+    // Aspect comes from the artwork's own viewBox, never from a number kept
+    // here. The crest was redrawn taller and every canvas in this file went
+    // on cropping it to the old ratio until the two were tied together.
+    const box = svg.match(/viewBox="0 0 (\d+(?:\.\d+)?) (\d+(?:\.\d+)?)"/);
+    if (!box) throw new Error(`${stem}: no viewBox to take the aspect from`);
+    const h = Number(box[2]) / Number(box[1]);
+
     const page = await browser.newPage();
 
     // 4000px square. Big enough that the seal can be printed at any size a
     // card or a box needs without the raster ever being the limit.
-    await page.setViewportSize({ width: 1000, height: Math.round(1000 * m.h) });
+    await page.setViewportSize({ width: 1000, height: Math.round(1000 * h) });
     await page.setContent(
       `<style>html,body{margin:0;height:100%;display:grid;place-items:center;background:${v.bg}}
        svg{width:920px;height:auto}</style>${svg}`
@@ -167,7 +174,7 @@ const VARIANTS = [
       path: path.join(OUT, `${stem}.png`),
       omitBackground: false,
       scale: 'css',
-      clip: { x: 0, y: 0, width: 1000, height: Math.round(1000 * m.h) },
+      clip: { x: 0, y: 0, width: 1000, height: Math.round(1000 * h) },
     });
 
     // Transparent PNG as well — what a designer actually places.
@@ -184,15 +191,15 @@ const VARIANTS = [
 
     // PDF: vector, fonts embedded. This is the file that goes to a printer.
     await page.setContent(
-      `<style>@page{size:120mm ${(120 * m.h).toFixed(0)}mm;margin:0}
-       html,body{margin:0;height:${(120 * m.h).toFixed(0)}mm;display:grid;place-items:center;background:${v.bg}}
+      `<style>@page{size:120mm ${(120 * h).toFixed(0)}mm;margin:0}
+       html,body{margin:0;height:${(120 * h).toFixed(0)}mm;display:grid;place-items:center;background:${v.bg}}
        svg{width:100mm;height:auto}</style>${svg}`
     );
     await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(300);
     await page.pdf({
       path: path.join(OUT, `${stem}.pdf`),
-      width: '120mm', height: `${(120 * m.h).toFixed(0)}mm`, printBackground: true, margin: { top: 0, bottom: 0, left: 0, right: 0 },
+      width: '120mm', height: `${(120 * h).toFixed(0)}mm`, printBackground: true, margin: { top: 0, bottom: 0, left: 0, right: 0 },
     });
 
     await page.close();

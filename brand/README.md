@@ -141,8 +141,9 @@ keep a copy of the licence with your filing papers.
 a generated raster, and tracing it would have carried across whatever it
 happens to resemble — the worst possible start for something about to be
 filed. So the crest in this pack is built from geometry in `brand/lion.js`:
-a mane generated as thirteen locks of alternating length around two circles,
-a face built from four bezier curves, and features knocked out of it. Every
+a mane whose radius is a function of angle, so the silhouette is a shield
+rather than a circle; an angular skull, wide at the temple and cut off in a
+broad flat chin; and brows, eyes, muzzle and fangs knocked out of it. Every
 curve is a number in that file.
 
 **That does not make it clear to register.** Crowned lions are among the most
@@ -151,5 +152,14 @@ likelihood of confusion is. Treat it exactly like the name: search it, then
 pay someone to tell you what the search means.
 
 **Minimum size for the crest is 20 mm / 0.8 in on foil.** It survives to 15 mm
-in flat print, but foil fills in fine strokes and the crown is the first thing
-to go. Tested at 15, 20, 30 and 58 mm.
+in flat print, but foil fills in fine strokes and the mane's interior lock
+lines are the first thing to close up. Tested at 15, 20, 30 and 58 mm —
+`node brand/preview-lion.js out.png` prints that sheet, and `--one` renders
+the crest alone at full size.
+
+**Judge it at both.** The first crest shipped as a cartoon because it was
+only ever looked at large, where a soft mouth reads as character. It came
+back with one word: *weak*. The redraw changed six things, and every one of
+them is a decision anyone reworking this could make again by accident —
+they are listed at the top of `brand/lion.js` with what each one did to the
+mark.
