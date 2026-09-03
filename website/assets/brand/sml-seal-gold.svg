@@ -2,38 +2,61 @@
   <title>Self-Made Legends</title>
   <defs>
     <linearGradient id="gf" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#8A6B14"/><stop offset="22%" stop-color="#C9A227"/>
-      <stop offset="44%" stop-color="#F2DFA0"/><stop offset="64%" stop-color="#C9A227"/>
-      <stop offset="84%" stop-color="#8A6B14"/><stop offset="100%" stop-color="#D9BC55"/>
+      <stop offset="0%"   stop-color="#8F6E15"/>
+      <stop offset="22%"  stop-color="#CFA529"/>
+      <stop offset="44%"  stop-color="#F6E4A6"/>
+      <stop offset="64%"  stop-color="#CFA529"/>
+      <stop offset="84%"  stop-color="#8F6E15"/>
+      <stop offset="100%" stop-color="#DFC15C"/>
     </linearGradient>
     <path id="arcTop" d="M 100,100 m -84,0 a 84,84 0 1,1 168,0" fill="none"/>
-    <path id="arcBot" d="M 100,100 m 84,0 a 84,84 0 1,1 -168,0" fill="none"/>
+    <!-- Sweep 0, starting from the LEFT point. A textPath runs along its
+         path's own direction, so the other way round the bottom traverses
+         right-to-left and sets EST. MMXXVI reversed and upside down. Both
+         arcs are true semicircles, which makes the large-arc flag moot and
+         leaves the sweep flag as the only thing holding this the right way
+         up. Change it and nothing errors — the year just quietly inverts. -->
+    <path id="arcBot" d="M 100,100 m -84,0 a 84,84 0 0,0 168,0" fill="none"/>
   </defs>
+
   <circle cx="100" cy="100" r="97" fill="none" stroke="url(#gf)" stroke-width="1.6"/>
-  <circle cx="100" cy="100" r="92" fill="none" stroke="#8A6B14" stroke-width=".7" opacity=".85"/>
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#8F6E15" stroke-width=".7" opacity=".85"/>
   <circle cx="100" cy="100" r="72" fill="none" stroke="url(#gf)" stroke-width="1.1"/>
+
   <text font-family="DM Mono, monospace" font-size="10.5" letter-spacing="3.4" fill="url(#gf)">
     <textPath href="#arcTop" startOffset="50%" text-anchor="middle">SELF-MADE LEGENDS</textPath>
   </text>
-  <text font-family="DM Mono, monospace" font-size="8.5" letter-spacing="3" fill="#8A6B14">
+  <text font-family="DM Mono, monospace" font-size="8.5" letter-spacing="3" fill="#8F6E15">
     <textPath href="#arcBot" startOffset="50%" text-anchor="middle">EST. MMXXVI</textPath>
   </text>
+
   <g transform="translate(100,52) scale(.62)">
-    <path d="M-40 26 L-32 -2 L-14 12 L0 -12 L14 12 L32 -2 L40 26 Z" fill="none" stroke="url(#gf)" stroke-width="3.4" stroke-linejoin="round"/>
-    <circle cx="-32" cy="-5" r="4" fill="url(#gf)"/><circle cx="0" cy="-15" r="4.6" fill="url(#gf)"/>
-    <circle cx="32" cy="-5" r="4" fill="url(#gf)"/><rect x="-40" y="30" width="80" height="6" fill="url(#gf)"/>
+    <path d="M-40 26 L-32 -2 L-14 12 L0 -12 L14 12 L32 -2 L40 26 Z"
+          fill="none" stroke="url(#gf)" stroke-width="3.4" stroke-linejoin="round"/>
+    <circle cx="-32" cy="-5"  r="4"   fill="url(#gf)"/>
+    <circle cx="0"   cy="-15" r="4.6" fill="url(#gf)"/>
+    <circle cx="32"  cy="-5"  r="4"   fill="url(#gf)"/>
+    <rect x="-40" y="30" width="80" height="6" fill="url(#gf)"/>
   </g>
-  <text x="100" y="112" text-anchor="middle" fill="url(#gf)" font-family="Bodoni Moda, Didot, serif" font-size="30" letter-spacing="5">SML</text>
+
+  <text x="100" y="112" text-anchor="middle" fill="url(#gf)"
+        font-family="Bodoni Moda, Didot, serif" font-size="30" letter-spacing="5">SML</text>
+
   <g stroke="url(#gf)" stroke-width="1.5" fill="none">
-    <path d="M74 128 q-11 12 -9 27"/><path d="M126 128 q11 12 9 27"/>
+    <path d="M74 128 q-11 12 -9 27"/>
+    <path d="M126 128 q11 12 9 27"/>
   </g>
   <g fill="url(#gf)" opacity=".95">
-    <ellipse cx="69" cy="133" rx="5" ry="2.4" transform="rotate(-32 69 133)"/>
-    <ellipse cx="65" cy="141" rx="5" ry="2.4" transform="rotate(-18 65 141)"/>
-    <ellipse cx="64" cy="149" rx="5" ry="2.4" transform="rotate(-4 64 149)"/>
+    <ellipse cx="69"  cy="133" rx="5" ry="2.4" transform="rotate(-32 69 133)"/>
+    <ellipse cx="65"  cy="141" rx="5" ry="2.4" transform="rotate(-18 65 141)"/>
+    <ellipse cx="64"  cy="149" rx="5" ry="2.4" transform="rotate(-4 64 149)"/>
     <ellipse cx="131" cy="133" rx="5" ry="2.4" transform="rotate(32 131 133)"/>
     <ellipse cx="135" cy="141" rx="5" ry="2.4" transform="rotate(18 135 141)"/>
     <ellipse cx="136" cy="149" rx="5" ry="2.4" transform="rotate(4 136 149)"/>
   </g>
-  <g fill="url(#gf)"><circle cx="92" cy="150" r="1.9"/><circle cx="100" cy="150" r="1.9"/><circle cx="108" cy="150" r="1.9"/></g>
+  <g fill="url(#gf)">
+    <circle cx="92"  cy="150" r="1.9"/>
+    <circle cx="100" cy="150" r="1.9"/>
+    <circle cx="108" cy="150" r="1.9"/>
+  </g>
 </svg>

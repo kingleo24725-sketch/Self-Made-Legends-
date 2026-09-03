@@ -56,7 +56,7 @@ function seal({ variant }) {
   // one-colour job there is no half-tone, so it takes the same ink.
   const faint = gradient ? GOLD_DP : ink;
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200" role="img" aria-label="Self-Made Legends seal">
   <title>Self-Made Legends</title>
   <defs>
     ${gradient ? `<linearGradient id="gf" x1="0" y1="0" x2="1" y2="1">
@@ -68,9 +68,12 @@ function seal({ variant }) {
       <stop offset="100%" stop-color="#DFC15C"/>
     </linearGradient>` : ''}
     <path id="arcTop" d="M 100,100 m -84,0 a 84,84 0 1,1 168,0" fill="none"/>
-    <!-- Sweep 0 from the left point. The other direction traverses the
-         bottom right-to-left, and a textPath follows its path's direction —
-         which rendered EST. MMXXVI backwards and upside down for a while. -->
+    <!-- Sweep 0, starting from the LEFT point. A textPath runs along its
+         path's own direction, so the other way round the bottom traverses
+         right-to-left and sets EST. MMXXVI reversed and upside down. Both
+         arcs are true semicircles, which makes the large-arc flag moot and
+         leaves the sweep flag as the only thing holding this the right way
+         up. Change it and nothing errors — the year just quietly inverts. -->
     <path id="arcBot" d="M 100,100 m -84,0 a 84,84 0 0,0 168,0" fill="none"/>
   </defs>
 
@@ -78,10 +81,10 @@ function seal({ variant }) {
   <circle cx="100" cy="100" r="92" fill="none" stroke="${faint}" stroke-width=".7"${gradient ? ' opacity=".85"' : ''}/>
   <circle cx="100" cy="100" r="72" fill="none" stroke="${ink}" stroke-width="1.1"/>
 
-  <text font-family="DM Mono" font-size="10.5" letter-spacing="3.4" fill="${ink}">
+  <text font-family="DM Mono, monospace" font-size="10.5" letter-spacing="3.4" fill="${ink}">
     <textPath href="#arcTop" startOffset="50%" text-anchor="middle">SELF-MADE LEGENDS</textPath>
   </text>
-  <text font-family="DM Mono" font-size="8.5" letter-spacing="3" fill="${faint}">
+  <text font-family="DM Mono, monospace" font-size="8.5" letter-spacing="3" fill="${faint}">
     <textPath href="#arcBot" startOffset="50%" text-anchor="middle">EST. MMXXVI</textPath>
   </text>
 
@@ -95,7 +98,7 @@ function seal({ variant }) {
   </g>
 
   <text x="100" y="112" text-anchor="middle" fill="${ink}"
-        font-family="Bodoni Moda" font-size="30" letter-spacing="5">SML</text>
+        font-family="Bodoni Moda, Didot, serif" font-size="30" letter-spacing="5">SML</text>
 
   <g stroke="${ink}" stroke-width="1.5" fill="none">
     <path d="M74 128 q-11 12 -9 27"/>
@@ -208,6 +211,22 @@ const VARIANTS = [
   }
 
   await browser.close();
+
+  // The website's two standalone seal files are written from this same
+  // function rather than kept by hand.
+  //
+  // They had drifted badly: an older gold ramp, and EST. MMXXVI reversed and
+  // upside down because their bottom arc ran the other way round. Nothing
+  // catches that — it is valid SVG, it renders without complaint, and at the
+  // size a seal is usually looked at the year is eight characters across a
+  // few dozen pixels. It survived on the live site until the file was pasted
+  // back and read at full size.
+  const SITE = path.join(__dirname, '..', 'website', 'assets', 'brand');
+  if (fs.existsSync(SITE)) {
+    fs.writeFileSync(path.join(SITE, 'sml-seal-gold.svg'), seal({ variant: 'gradient' }));
+    fs.writeFileSync(path.join(SITE, 'sml-seal-solid.svg'), seal({ variant: 'gold' }));
+    console.log('  website/assets/brand   sml-seal-gold.svg sml-seal-solid.svg');
+  }
 
   // The typefaces, so nobody has to hunt for them or substitute one.
   for (const f of ['BodoniModa.ttf', 'DMMono.ttf']) {

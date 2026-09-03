@@ -1,17 +1,29 @@
 # Self-Made Legends — logo pack
 
-**Three marks.** The *seal* is the house mark — it carries the full name and
-the founding year, and it is what goes on a letterhead, a card, an about
-page. The *lion crest* is the product mark — it goes on a garment, a box, a
-metal badge, anywhere the name is already obvious. The *lockup* is the crest
-with SML beneath it, for when the crest needs to say who it belongs to.
+**The seal is the logo.** It carries the full name and the founding year, and
+it is what goes on business cards, packaging, a letterhead, an about page —
+anywhere the brand has to introduce itself. When in doubt, send the seal.
+
+Two other marks ship alongside it and are optional. The *lion crest* is a
+product mark, for a garment or a badge where the name is already obvious;
+the *lockup* is that crest with SML beneath it.
 
 Never squeeze the wordmark under the bare crest yourself; the lockup exists
 because the crest's lowest mane lock sits where that type wants to be.
 
 Copyright (c) 2026 Self-Made Legends LLC. All Rights Reserved.
 
-Rebuild with `node brand/build-logo.js`. Everything lands in `brand/out/`.
+Rebuild with `node brand/build-logo.js`. Everything lands in `brand/out/`, and
+the two standalone seals under `website/assets/brand/` are written from the
+same function so the site and the print pack cannot drift apart again.
+
+**Never hand-edit a seal SVG.** They did drift, and the way it showed up is
+worth knowing: the seal's arc text is set on two semicircular paths, and a
+`textPath` runs along its path's own direction. Flip the bottom arc's sweep
+flag and nothing errors, nothing warns, the file still opens — **EST. MMXXVI
+just silently sets reversed and upside down.** At the size a seal is normally
+looked at, that is eight characters across a few dozen pixels, and it lived
+on the site for weeks. Change the geometry in `build-logo.js` and rebuild.
 
 ---
 
@@ -63,6 +75,13 @@ Most box printers quote one-colour cheapest. `black` and `gold` are that job.
   Gold, light   #F6E4A6      gradient highlight only
   Ground        #0B0F0D      the near-black behind it
 ```
+
+There was a second gold in circulation — `#C9A227`, with `#8A6B14` and
+`#F2DFA0` either side of it — in the standalone seal files, both favicons and
+four pages' header crowns. Three points off `#CFA529` and invisible on screen,
+which is why nobody caught it. It is not invisible in print: hand a foil house
+two hexes and you get two golds across your cards and your boxes. Everything
+is now on `#CFA529`. **One gold. Do not let a second one back in.**
 
 Hand your printer the **hex**, and ask them to match. Do not let anyone pick a
 Pantone for you off a screen — ask for a **printed draw-down or a proof** on
