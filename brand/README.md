@@ -1,0 +1,136 @@
+# Self-Made Legends — logo pack
+
+Copyright (c) 2026 Self-Made Legends LLC. All Rights Reserved.
+
+Rebuild with `node brand/build-logo.js`. Everything lands in `brand/out/`.
+
+---
+
+## Which file to send
+
+| Job | File |
+|---|---|
+| **Business cards, boxes, anything printed** | `sml-seal-<variant>.pdf` |
+| A designer placing it in a layout | `sml-seal-<variant>.svg` |
+| Web, social, a supplier who insists on an image | `sml-seal-<variant>-transparent.png` |
+
+**The PDF is the one to send a printer.** It is vector, so it can be blown up
+to the side of a building without softening, and Chromium embeds the two
+typefaces inside it — the printer installs nothing and cannot substitute a
+different font by accident.
+
+`BodoniModa.ttf` and `DMMono.ttf` ship alongside for anyone who has to set
+matching type themselves.
+
+---
+
+## Four variants, and why
+
+The seal on the website is a gold **gradient**. That is right on a screen and
+wrong nearly everywhere print is concerned.
+
+| Variant | Use it for |
+|---|---|
+| `gradient` | Screens. Full-colour digital printing. |
+| `gold` | **Foil stamping.** One flat colour. |
+| `black` | Embossing, debossing, one-colour print, light stock. |
+| `white` | Reversing out of a dark box or dust bag. |
+
+**Foil is metal pressed into paper. It has one colour and cannot hold a
+gradient.** Send a printer the gradient for a foil job and you get back either
+a refusal or a muddy approximation. Same for embossing, where there is no ink
+at all and only the shape survives — which is why the mark is drawn to work as
+a plain silhouette.
+
+Most box printers quote one-colour cheapest. `black` and `gold` are that job.
+
+---
+
+## Colour
+
+```
+  Gold          #CFA529      the house colour, authoritative
+  Gold, deep    #8F6E15      gradient shadow only
+  Gold, light   #F6E4A6      gradient highlight only
+  Ground        #0B0F0D      the near-black behind it
+```
+
+Hand your printer the **hex**, and ask them to match. Do not let anyone pick a
+Pantone for you off a screen — ask for a **printed draw-down or a proof** on
+your actual stock before the run. Metallic gold foil in particular looks
+nothing like `#CFA529` on a monitor, and the only way to choose is to hold
+samples.
+
+## Clear space and minimum size
+
+Keep clear space of **at least 10% of the seal's diameter** on every side.
+Nothing sits inside that ring.
+
+Do not print the seal below **15 mm / 0.6 in** across. Under that the
+letterspaced arc text closes up and the laurel leaves fill in. If you need it
+smaller than that — a woven label, a metal pin — ask for a **simplified
+version with the arc text dropped**, keeping the crown, the SML and the rings.
+
+---
+
+## Before you file a trademark — read this
+
+**What follows is a screening, not a clearance search, and you must not treat
+it as one.** The USPTO's own search system is unreachable from where this was
+run, so none of this came from the register itself. It is a web search. A real
+clearance search reads the actual register, including marks that are similar
+but not identical, and interpreting it is a legal judgement.
+
+### What the screening found
+
+**No exact "Self-Made Legends" turned up** in apparel. That is mild
+encouragement and nothing more — plenty of registered marks never surface in
+a web search.
+
+**Three neighbours sit in your exact category:**
+
+- **Legends** — athlete-owned apparel, Los Angeles, founded 2019, roughly $7M
+  raised. Well-resourced, and well-resourced brands defend names.
+- **Legends Clothing Co.** — San Francisco, founded 2016, sports streetwear.
+- **SELFMADE®** — Irish streetwear and activewear, using the ® symbol.
+
+A separate **SELFMADE** registration by Stephanie Lee appears to sit in
+**Class 35** (retail services) rather than Class 25 (clothing). A different
+class helps. It does not settle anything.
+
+### The class you need
+
+**Class 25 — clothing, footwear, headwear.** It is one of the most crowded
+classes on the register, which is exactly why "nothing showed up on Google"
+is not an answer.
+
+### What to actually do
+
+1. Search `tmsearch.uspto.gov` yourself for *self made*, *selfmade*, *legends*
+   and *self made legends*, in Class 25. Free, and it takes an hour.
+2. Then pay a trademark attorney for a clearance opinion before you file.
+   A few hundred dollars against the cost of rebranding after a cease and
+   desist, once boxes and cards are printed.
+3. File in **Class 25** first. Add Class 35 later if you open retail.
+
+---
+
+## Does the artwork belong to anyone else?
+
+**The seal is original.** It is drawn from primitives — three circles, a crown
+built from one path and three dots, six laurel ellipses, three points, and two
+lines of type set on arcs. Nothing was traced, copied or adapted from an
+existing mark. The geometry is in `build-logo.js`, so you can prove where every
+line came from.
+
+**The typefaces are licensed for this.** Bodoni Moda and DM Mono are Google
+Fonts published under the SIL Open Font License, which permits commercial use
+including inside a logo. Confirm each font's licence page before you file, and
+keep a copy of the licence with your filing papers.
+
+**One thing that is NOT covered by any of the above.** The crowned-lion crest
+on the product sheets is different artwork with a different history — it came
+out of image generation, not out of this file. Crowned lions are among the most
+common devices in both heraldry and fashion. **If you intend to register the
+lion crest as well as this seal, it needs its own look before you file.** They
+are two marks, not one.

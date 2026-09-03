@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>Self-Made Legends</title>
+  <defs>
+    
+    <path id="arcTop" d="M 100,100 m -84,0 a 84,84 0 1,1 168,0" fill="none"/>
+    <!-- Sweep 0 from the left point. The other direction traverses the
+         bottom right-to-left, and a textPath follows its path's direction —
+         which rendered EST. MMXXVI backwards and upside down for a while. -->
+    <path id="arcBot" d="M 100,100 m -84,0 a 84,84 0 0,0 168,0" fill="none"/>
+  </defs>
+
+  <circle cx="100" cy="100" r="97" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+  <circle cx="100" cy="100" r="92" fill="none" stroke="#FFFFFF" stroke-width=".7"/>
+  <circle cx="100" cy="100" r="72" fill="none" stroke="#FFFFFF" stroke-width="1.1"/>
+
+  <text font-family="DM Mono" font-size="10.5" letter-spacing="3.4" fill="#FFFFFF">
+    <textPath href="#arcTop" startOffset="50%" text-anchor="middle">SELF-MADE LEGENDS</textPath>
+  </text>
+  <text font-family="DM Mono" font-size="8.5" letter-spacing="3" fill="#FFFFFF">
+    <textPath href="#arcBot" startOffset="50%" text-anchor="middle">EST. MMXXVI</textPath>
+  </text>
+
+  <g transform="translate(100,52) scale(.62)">
+    <path d="M-40 26 L-32 -2 L-14 12 L0 -12 L14 12 L32 -2 L40 26 Z"
+          fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linejoin="round"/>
+    <circle cx="-32" cy="-5"  r="4"   fill="#FFFFFF"/>
+    <circle cx="0"   cy="-15" r="4.6" fill="#FFFFFF"/>
+    <circle cx="32"  cy="-5"  r="4"   fill="#FFFFFF"/>
+    <rect x="-40" y="30" width="80" height="6" fill="#FFFFFF"/>
+  </g>
+
+  <text x="100" y="112" text-anchor="middle" fill="#FFFFFF"
+        font-family="Bodoni Moda" font-size="30" letter-spacing="5">SML</text>
+
+  <g stroke="#FFFFFF" stroke-width="1.5" fill="none">
+    <path d="M74 128 q-11 12 -9 27"/>
+    <path d="M126 128 q11 12 9 27"/>
+  </g>
+  <g fill="#FFFFFF">
+    <ellipse cx="69"  cy="133" rx="5" ry="2.4" transform="rotate(-32 69 133)"/>
+    <ellipse cx="65"  cy="141" rx="5" ry="2.4" transform="rotate(-18 65 141)"/>
+    <ellipse cx="64"  cy="149" rx="5" ry="2.4" transform="rotate(-4 64 149)"/>
+    <ellipse cx="131" cy="133" rx="5" ry="2.4" transform="rotate(32 131 133)"/>
+    <ellipse cx="135" cy="141" rx="5" ry="2.4" transform="rotate(18 135 141)"/>
+    <ellipse cx="136" cy="149" rx="5" ry="2.4" transform="rotate(4 136 149)"/>
+  </g>
+  <g fill="#FFFFFF">
+    <circle cx="92"  cy="150" r="1.9"/>
+    <circle cx="100" cy="150" r="1.9"/>
+    <circle cx="108" cy="150" r="1.9"/>
+  </g>
+</svg>
