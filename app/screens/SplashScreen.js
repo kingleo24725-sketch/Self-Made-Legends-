@@ -20,7 +20,7 @@
  */
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  View, Image, Animated, StyleSheet, useWindowDimensions,
+  View, Image, Animated, StyleSheet, useWindowDimensions, Platform,
   AccessibilityInfo,
 } from 'react-native';
 import * as ExpoSplashScreen from 'expo-splash-screen';
@@ -63,11 +63,11 @@ export default function SplashScreen({ onFinish, minimumMs = 900 }) {
 
       Animated.sequence([
         Animated.timing(fade, {
-          toValue: 1, duration: 400, useNativeDriver: true,
+          toValue: 1, duration: 400, useNativeDriver: Platform.OS !== 'web',
         }),
         Animated.delay(minimumMs),
         Animated.timing(fade, {
-          toValue: 0, duration: 300, useNativeDriver: true,
+          toValue: 0, duration: 300, useNativeDriver: Platform.OS !== 'web',
         }),
       ]).start(({ finished }) => { if (finished && !cancelled) finish(); });
     }

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Beauty Bond mobile app — a Self-Made Legends LLC (SML) product",
   "license": "UNLICENSED",
-  "main": "App.js",
+  "main": "expo/AppEntry.js",
   "scripts": {
     "start": "expo start --dev-client",
     "android": "expo run:android",
