@@ -9,8 +9,9 @@
  * they must never become an anxiety mechanic for a 9-year-old.
  * docs/wireframes.md W-90.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -28,10 +29,12 @@ export default function ProfileScreen({ navigation }) {
   const isChild = profile?.ageBand === AGE_BANDS.CHILD;
 
   // Level, streak and badge count were literals identical on every device.
+  // On focus, not on mount — the tab stays mounted, and a badge earned in a
+  // lesson should be here when the person comes to look at it.
   const [prog, setProg] = useState(null);
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     api.get('/me/progression').then(setProg).catch(() => {});
-  }, []);
+  }, []));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>

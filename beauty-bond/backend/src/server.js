@@ -70,9 +70,23 @@ app.use((req, res, next) => {
  */
 app.use('/api/webhooks', stripeWebhook);
 
+/**
+ * In production this listens behind exactly one proxy (Railway's edge), which
+ * puts the real client address in X-Forwarded-For. Without trusting that hop
+ * req.ip is the proxy for every request, so the rate limiter saw one visitor
+ * — all of them — and express-rate-limit logged a validation error on every
+ * request. One hop, not `true`: trusting every hop lets a client forge the
+ * header and pick its own bucket.
+ */
+app.set('trust proxy', config.env === 'production' ? 1 : false);
+
 // 12mb accommodates a base64 photo payload on /api/tryon.
 app.use(express.json({ limit: '12mb' }));
-app.use(limits.standard);
+
+// The API only. The limiter used to sit in front of everything, so the web
+// app's own bundle and assets counted against the bucket: loading the app
+// spent a third of a minute's allowance before a single API call was made.
+app.use('/api', limits.standard);
 
 app.get('/health', (req, res) => res.json({
   ok: true,

@@ -55,13 +55,20 @@ describe('every navigation target is registered', () => {
    * because ModeSelection *is* registered, just not there.
    */
   describe('the anonymous stack is self-contained', () => {
+    // A status may own several groups (authed splits the tab root from the
+    // pushed detail screens so the latter can share a header). Every group
+    // counts, up to the start of the next status guard or the navigator's end.
     const groupFor = (label) => {
-      const i = nav.indexOf(`status === '${label}'`);
-      if (i === -1) return '';
-      // Up to the start of the next status group, or the end of the navigator.
-      const rest = nav.slice(i);
-      const next = rest.slice(1).search(/status === '/);
-      return next === -1 ? rest : rest.slice(0, next + 1);
+      const needle = `status === '${label}'`;
+      const chunks = [];
+      let i = nav.indexOf(needle);
+      while (i !== -1) {
+        const rest = nav.slice(i);
+        const next = rest.slice(1).search(/status === '/);
+        chunks.push(next === -1 ? rest : rest.slice(0, next + 1));
+        i = nav.indexOf(needle, i + 1);
+      }
+      return chunks.join('\n');
     };
 
     const anonGroup = groupFor('anon');

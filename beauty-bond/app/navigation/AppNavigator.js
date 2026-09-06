@@ -9,6 +9,7 @@
  * docs/wireframes.md W-11, W-12.
  */
 import React from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -49,6 +50,22 @@ import RespectNoteScreen from '../screens/RespectNoteScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+/**
+ * A tab with no tabBarIcon gets React Navigation's MissingIcon — a "⏷"
+ * placeholder that reads as "somebody forgot". Every tab in the app shipped
+ * that way. There is no icon library installed and the rest of the UI speaks
+ * in emoji (🧼 🌍 💛 on Home, 🎙 📷 📝 in the Vault), so the tabs do too.
+ */
+const tabIcon = (glyph) => ({ focused }) => (
+  <Text
+    accessibilityElementsHidden
+    importantForAccessibility="no"
+    style={{ fontSize: 22, lineHeight: 26, opacity: focused ? 1 : 0.55 }}
+  >
+    {glyph}
+  </Text>
+);
+
 function MainTabs() {
   const { profile } = useAuth();
   const theme = useTheme();
@@ -67,27 +84,30 @@ function MainTabs() {
   if (isChild) {
     return (
       <Tab.Navigator screenOptions={screenOptions}>
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Learn" component={SafeLearningScreen} />
-        <Tab.Screen name="Play" component={BrushEducationScreen} options={{ title: 'Play' }} />
+        <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: tabIcon('🏠') }} />
+        <Tab.Screen name="Learn" component={SafeLearningScreen} options={{ tabBarIcon: tabIcon('📖') }} />
+        <Tab.Screen name="Play" component={BrushEducationScreen}
+          options={{ title: 'Play', tabBarIcon: tabIcon('🎨') }} />
       </Tab.Navigator>
     );
   }
 
   return (
     <Tab.Navigator screenOptions={screenOptions}>
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Learn" component={SafeLearningScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} options={{ tabBarIcon: tabIcon('🏠') }} />
+      <Tab.Screen name="Learn" component={SafeLearningScreen} options={{ tabBarIcon: tabIcon('📖') }} />
       {/* Built and switched off for v1 — utils/config.js. Left registered
           conditionally rather than removed so turning them on is one flag. */}
       {featureOn('tryOn') && (
-        <Tab.Screen name="TryOn" component={TryOnScreen} options={{ title: 'Try-On' }} />
+        <Tab.Screen name="TryOn" component={TryOnScreen}
+          options={{ title: 'Try-On', tabBarIcon: tabIcon('✨') }} />
       )}
       {featureOn('rooms') && (
-        <Tab.Screen name="Rooms" component={RoomLobbyScreen} />
+        <Tab.Screen name="Rooms" component={RoomLobbyScreen} options={{ tabBarIcon: tabIcon('🎥') }} />
       )}
-      <Tab.Screen name="Legacy" component={LegacyScreen} options={{ title: 'Legacy' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Legacy" component={LegacyScreen}
+        options={{ title: 'Legacy', tabBarIcon: tabIcon('💛') }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarIcon: tabIcon('👤') }} />
     </Tab.Navigator>
   );
 }
@@ -109,7 +129,27 @@ const ROUTED_STATUSES = ['anon', 'consent_pending', 'authed'];
 
 export default function AppNavigator() {
   const { status } = useAuth();
+  const theme = useTheme();
   const booting = !ROUTED_STATUSES.includes(status);
+
+  /**
+   * Every screen pushed on top of the tabs gets a way back. The whole stack
+   * shipped with headerShown: false, and the pushed screens draw their own
+   * titles but no back control — so on a phone that had no swipe-back (any
+   * Android, every iPhone running this as a home-screen web app, where there
+   * is no browser bar either) Settings, the Guardian Console and the Makeup
+   * Bag were rooms with no door. The header is title-less so the screens'
+   * own headings stay the heading; it carries only the back arrow.
+   */
+  const detailOptions = {
+    headerShown: true,
+    title: '',
+    headerBackTitle: 'Back',
+    headerBackButtonDisplayMode: 'minimal',
+    headerShadowVisible: false,
+    headerStyle: { backgroundColor: theme.color.ground },
+    headerTintColor: theme.color.accent,
+  };
 
   return (
     <NavigationContainer>
@@ -137,7 +177,14 @@ export default function AppNavigator() {
           <Stack.Group>
             <Stack.Screen name="ModeSelection" component={ModeSelectionScreen} />
             <Stack.Screen name="Main" component={MainTabs} />
-            <Stack.Screen name="LessonPlayer" component={LessonPlayerScreen} />
+          </Stack.Group>
+        )}
+
+        {status === 'authed' && (
+          <Stack.Group screenOptions={detailOptions}>
+            {/* Draws its own leave control; a second arrow would be noise. */}
+            <Stack.Screen name="LessonPlayer" component={LessonPlayerScreen}
+              options={{ headerShown: false }} />
             <Stack.Screen name="BrushEducation" component={BrushEducationScreen} />
             {featureOn('tryOn') && (
               <Stack.Screen name="ShadeMatch" component={ShadeMatchScreen} />
@@ -149,7 +196,7 @@ export default function AppNavigator() {
             <Stack.Screen name="SafeLearning" component={SafeLearningScreen} />
             {featureOn('rooms') && (
               <Stack.Screen name="LiveRoom" component={LiveRoomScreen}
-                options={{ gestureEnabled: false }} />
+                options={{ gestureEnabled: false, headerShown: false }} />
             )}
             <Stack.Screen name="Bond" component={BondScreen} />
             <Stack.Screen name="MakeupBag" component={MakeupBagScreen} />
