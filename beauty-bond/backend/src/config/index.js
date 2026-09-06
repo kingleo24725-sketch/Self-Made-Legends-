@@ -24,6 +24,13 @@ const FEATURES = {
   billing: ['STRIPE_SECRET_KEY_BB', 'STRIPE_WEBHOOK_SECRET_BB'],
   video: ['LIVEKIT_API_KEY', 'LIVEKIT_API_SECRET', 'LIVEKIT_WS_URL'],
   ml: ['ML_SERVICE_URL'],
+  /**
+   * Outbound email. The only thing that needs it today is the parental-consent
+   * link. Without a provider, consent is affirmed IN THE APP by the signed-in
+   * guardian — src/api/users/index.js explains the trade — rather than by a
+   * link nobody can send. The boot log below says so on every start.
+   */
+  mail: ['MAIL_API_KEY', 'MAIL_FROM'],
 };
 
 const isProd = process.env.NODE_ENV === 'production';

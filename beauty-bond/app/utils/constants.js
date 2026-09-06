@@ -205,7 +205,16 @@ export const VAULT_KINDS = [
   { key: 'recipe', icon: '📝', label: 'recipe' },
   { key: 'routine', icon: '💫', label: 'routine' },
   { key: 'shade', icon: '💄', label: 'shades' },
+  // "Something she always said." Fit none of the five above; migration 007.
+  { key: 'note', icon: '💬', label: 'she said' },
 ];
+
+/**
+ * Kinds that are WORDS and can be written straight into the vault. voice and
+ * photo need a real object store behind them, which does not exist yet — the
+ * app says so on their cards rather than offering a button that pretends.
+ */
+export const VAULT_TEXT_KINDS = ['recipe', 'routine', 'shade', 'note'];
 
 /**
  * Grief-informed prompts. Every one is answerable with silence — that is what

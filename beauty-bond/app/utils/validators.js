@@ -47,3 +47,18 @@ export function sanitizeLook(look, ageBand) {
 }
 
 export const isStrongEnough = (pw) => String(pw || '').length >= 10;
+
+/**
+ * A date typed by a person on a phone, made into ISO — or null if it isn't
+ * one. Accepts 2016-01-20, 2016/01/20 and 01/20/2016. Used wherever a prompt
+ * asks for a date (adding a daughter, dating a Letter Forward), so the rule
+ * for what counts as a date lives in one place.
+ */
+export function normaliseDate(raw) {
+  const t = String(raw ?? '').trim();
+  let m = t.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  m = t.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (m) return `${m[3]}-${m[1].padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+  return null;
+}

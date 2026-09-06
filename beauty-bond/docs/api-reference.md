@@ -474,22 +474,28 @@ CREATE TABLE legacy_people (
 CREATE TABLE legacy_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   legacy_person_id uuid NOT NULL REFERENCES legacy_people(id) ON DELETE CASCADE,
-  kind text NOT NULL,                  -- 'voice','photo','recipe','routine','shade'
-  storage_key text NOT NULL,           -- encrypted at rest
+  kind text NOT NULL,                  -- 'voice','photo','recipe','routine','shade','note'
+  body text,                           -- the words themselves (recipe, routine, shade, note)
+  storage_key text,                    -- object-store key for voice/photo (encrypted at rest)
   caption text, contributed_by uuid REFERENCES profiles(id),
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT legacy_item_has_content CHECK (body IS NOT NULL OR storage_key IS NOT NULL)
 );
 -- NOTE: legacy_items are NEVER deleted for non-payment. Over-limit ⇒ read-only.
+-- Migration 007: text lives in the row; storage_key is optional until an
+-- object store exists for voice and photo. Content is mandatory; form is not.
 
 CREATE TABLE letters_forward (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   legacy_person_id uuid REFERENCES legacy_people(id) ON DELETE CASCADE,
   to_profile_id uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
   occasion text NOT NULL, deliver_on date NOT NULL,
-  storage_key text NOT NULL,           -- encrypted
+  body text,                           -- the letter (migration 007)
+  storage_key text,                    -- optional object-store key
   status text NOT NULL DEFAULT 'sealed',   -- sealed|delivered
   delivered_at timestamptz,
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT letter_has_content CHECK (body IS NOT NULL OR storage_key IS NOT NULL)
 );
 -- Delivery job reads letters_forward.status ONLY. It never joins subscriptions.
 
@@ -600,9 +606,10 @@ per-request by the API. A guardian policy grants read on a linked child's rows
 | `GET` | `/api/bond/missions` |
 | `POST` | `/api/bond/missions/:id/confirm` (dual-confirm) |
 | `POST` | `/api/bond/compliments` |
-| `GET`/`POST` | `/api/legacy/people` · `/api/legacy/items` |
-| `POST` | `/api/legacy/letters` (seal) |
-| `GET` | `/api/legacy/letters` (sealed metadata only) |
+| `GET`/`POST` | `/api/legacy/people` · `/api/legacy/items` (`{ legacyPersonId, kind, text }` for text kinds; `body` returned) |
+| `POST` | `/api/legacy/letters` (seal: `{ toProfileId, occasion, deliverOn, text }`) |
+| `GET` | `/api/legacy/letters` (recipient's: delivered letters carry `body`; sealed are metadata only) |
+| `GET` | `/api/legacy/letters/outbox` (writer's: metadata + `toProfileId`, never `body`) |
 | `POST` | `/api/journal` (ciphertext in, never read server-side) |
 | `GET`/`POST` | `/api/memories` · `POST /api/memories/:id/consent` |
 | `POST` | `/api/bond-book` → PDF/print job |
@@ -624,6 +631,9 @@ per-request by the API. A guardian policy grants read on a linked child's rows
 - Errors: `{ error: 'snake_code', message: 'human copy', recovery?: 'action' }`.
 - Idempotency-Key required on all `POST` that create money or media.
 - Rate limits: 60 rpm default · 10 rpm try-on render · 5 rpm auth · 120 rpm reads.
+  Buckets are per **user** (from a valid bearer token) and only fall back to the
+  client IP for unauthenticated traffic. They apply to `/api` only — never to
+  `/health` or the served web app. Production trusts exactly one proxy hop.
 - Every response carries `x-request-id` for support correlation.
 
 ---

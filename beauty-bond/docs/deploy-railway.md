@@ -77,6 +77,7 @@ a feature on when set:
 | Billing | `STRIPE_SECRET_KEY_BB`, `STRIPE_WEBHOOK_SECRET_BB` | Billing routes return 503; the rest of the API works |
 | Glam Rooms | `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, `LIVEKIT_WS_URL` | Room routes return 503 |
 | AI try-on | `ML_SERVICE_URL`, `ML_PROVIDER=http` | Try-on routes return 503 |
+| Email | `MAIL_API_KEY`, `MAIL_FROM` | Parental consent is affirmed **in the app** by the signed-in guardian instead of by an emailed link. Adding a daughter still works. See `api/users/index.js` for why this is not a weakening. |
 
 This split is deliberate: the API boots and serves auth, profiles, the Legacy
 module, learning and the guardian console before Stripe or LiveKit exist. Each
@@ -108,11 +109,11 @@ curl https://<your-app>.up.railway.app/health
   "product": "beauty-bond",
   "env": "production",
   "version": "0.1.0",
-  "features": { "billing": false, "video": false, "ml": false }
+  "features": { "billing": false, "video": false, "ml": false, "mail": false }
 }
 ```
 
-**`ok: true` with all three `false` is the correct v1 deploy, not a broken one.**
+**`ok: true` with all four `false` is the correct v1 deploy, not a broken one.**
 v1 ships the Legacy module — the Vault, Letters Forward, the Healing Journal and
 the Bond Meter — and none of it needs Stripe, LiveKit or an ML service. Sign-in,
 profiles, guardian consent, lessons and the cultural library all run on this.

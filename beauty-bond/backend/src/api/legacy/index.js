@@ -91,7 +91,15 @@ router.post('/people', requireAuth, async (req, res, next) => {
 
 /* ── The Vault ────────────────────────────────────────────────────── */
 
-const VAULT_KINDS = ['voice', 'photo', 'recipe', 'routine', 'shade'];
+/**
+ * 'note' — something she always said, a memory in a sentence — is the most
+ * natural thing to put in a vault and fit none of the original five. The DB
+ * CHECK (migration 007) is the closed set this must match.
+ */
+const VAULT_KINDS = ['voice', 'photo', 'recipe', 'routine', 'shade', 'note'];
+
+/** Kinds that are words, and so can be created without an object store. */
+const TEXT_KINDS = ['recipe', 'routine', 'shade', 'note'];
 
 router.get('/items', requireAuth, async (req, res, next) => {
   try {
@@ -113,10 +121,13 @@ router.get('/items', requireAuth, async (req, res, next) => {
         legacyPersonId: i.legacy_person_id,
         kind: i.kind,
         caption: i.caption,
+        body: i.body,
         storageKey: i.storage_key,
         contributedBy: i.contributed_by,
         createdAt: i.created_at,
       })),
+      kinds: VAULT_KINDS,
+      textKinds: TEXT_KINDS,
       limit,
       // Over the limit the vault goes READ-ONLY. Nothing is ever deleted for
       // non-payment — docs/stripe-flow.md:781.
@@ -128,10 +139,14 @@ router.get('/items', requireAuth, async (req, res, next) => {
 router.post('/items', requireAuth, async (req, res, next) => {
   try {
     const { legacyPersonId, kind, storageKey, caption } = req.body;
+    const text = typeof req.body.text === 'string' ? req.body.text.trim() : '';
     if (!VAULT_KINDS.includes(kind)) {
       return res.status(400).json({ error: 'unknown_kind', allowed: VAULT_KINDS });
     }
-    if (!storageKey) return res.status(400).json({ error: 'storage_key_required' });
+    // Words live in the row (migration 007). A storage key is for the day
+    // voice and photo have a real store behind them. One of the two, always.
+    if (!text && !storageKey) return res.status(400).json({ error: 'content_required' });
+    if (text.length > 20000) return res.status(400).json({ error: 'text_too_long', max: 20000 });
 
     const family = await familyProfileIds(req.profile);
     const person = await db.one(
@@ -152,13 +167,13 @@ router.post('/items', requireAuth, async (req, res, next) => {
 
     const row = await db.one(
       `INSERT INTO legacy_items
-         (legacy_person_id, kind, storage_key, caption, contributed_by)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [person.id, kind, storageKey, caption ?? null, req.profile.id]);
+         (legacy_person_id, kind, storage_key, body, caption, contributed_by)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [person.id, kind, storageKey ?? null, text || null, caption ?? null, req.profile.id]);
 
     res.status(201).json({
       id: row.id, legacyPersonId: row.legacy_person_id, kind: row.kind,
-      caption: row.caption, storageKey: row.storage_key,
+      caption: row.caption, body: row.body, storageKey: row.storage_key,
       contributedBy: row.contributed_by, createdAt: row.created_at,
     });
   } catch (err) { next(err); }
@@ -184,9 +199,11 @@ router.delete('/items/:id', requireAuth, async (req, res, next) => {
 router.post('/letters', requireAuth, async (req, res, next) => {
   try {
     const { toProfileId, occasion, deliverOn, storageKey, legacyPersonId } = req.body;
+    const text = typeof req.body.text === 'string' ? req.body.text.trim() : '';
     if (!occasion?.trim()) return res.status(400).json({ error: 'occasion_required' });
     if (!deliverOn) return res.status(400).json({ error: 'deliver_on_required' });
-    if (!storageKey) return res.status(400).json({ error: 'storage_key_required' });
+    if (!text && !storageKey) return res.status(400).json({ error: 'content_required' });
+    if (text.length > 50000) return res.status(400).json({ error: 'text_too_long', max: 50000 });
 
     const caps = await capabilitiesFor(req.profile.id);
     if (!caps.lettersForward) {
@@ -201,9 +218,10 @@ router.post('/letters', requireAuth, async (req, res, next) => {
 
     const row = await db.one(
       `INSERT INTO letters_forward
-         (legacy_person_id, to_profile_id, occasion, deliver_on, storage_key)
-       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
-      [legacyPersonId ?? null, recipient, occasion.trim(), deliverOn, storageKey]);
+         (legacy_person_id, to_profile_id, occasion, deliver_on, storage_key, body)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [legacyPersonId ?? null, recipient, occasion.trim(), deliverOn,
+       storageKey ?? null, text || null]);
 
     res.status(201).json(legacy.sealedMetadata(row));
   } catch (err) { next(err); }
