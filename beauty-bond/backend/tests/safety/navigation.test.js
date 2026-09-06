@@ -103,3 +103,59 @@ describe('every navigation target is registered', () => {
     expect(orphans).toEqual([]);
   });
 });
+
+/**
+ * A navigator with zero screens is not an empty screen — React Navigation
+ * throws, and the app dies before its first paint. AuthContext starts in
+ * status 'loading' while it reads the refresh token, and the navigator had
+ * groups for 'anon', 'consent_pending' and 'authed' only. On web, where the
+ * splash did not mask the window, every fresh load crashed with "Couldn't
+ * find any screens for the navigator".
+ *
+ * So: every status AuthContext can set must reach at least one screen, and
+ * the fallback must actually be exercised by the real initial state.
+ */
+describe('every auth status maps to at least one screen', () => {
+  const auth = read('context/AuthContext.js');
+  // Every quoted word passed to setStatus — INCLUDING inside a ternary, which
+  // is how consent_pending/authed are set. A literal-argument regex missed
+  // both and under-counted, which is a test that passes while lying.
+  const statuses = new Set([
+    ...[...auth.matchAll(/setStatus\(([^)]*)\)/g)]
+      .flatMap((m) => [...m[1].matchAll(/'(\w+)'/g)].map((q) => q[1])),
+    ...[...auth.matchAll(/useState\('(\w+)'\)/g)].map((m) => m[1]),
+  ]);
+  const routed = new Set(
+    (nav.match(/ROUTED_STATUSES = \[([^\]]*)\]/) || ['', ''])[1]
+      .match(/'(\w+)'/g)?.map((q) => q.replace(/'/g, '')) ?? []);
+
+  test('AuthContext statuses were actually found', () => {
+    expect(statuses.size).toBeGreaterThanOrEqual(4);
+    expect(statuses.has('loading')).toBe(true);
+  });
+
+  test('every routed status has a group with at least one screen', () => {
+    routed.forEach((st) => {
+      const group = nav.slice(nav.indexOf(`status === '${st}'`));
+      expect(/<Stack\.Screen\s+name="\w+"/.test(group)).toBe(true);
+    });
+  });
+
+  test('a status the navigator does not route falls back to a screen, never to nothing', () => {
+    expect(nav).toMatch(/const booting = !ROUTED_STATUSES\.includes\(status\)/);
+    expect(nav).toMatch(/\{booting && \(\s*<Stack\.Screen\s+name="Booting"/);
+  });
+
+  test("the real initial state ('loading') takes that fallback", () => {
+    // The detector proving itself: if 'loading' were ever added to
+    // ROUTED_STATUSES without a group, the test above would still pass while
+    // the app broke. Pin it to the fallback instead.
+    expect(routed.has('loading')).toBe(false);
+  });
+
+  test('no AuthContext status is unreachable by either route', () => {
+    const unreached = [...statuses].filter((st) =>
+      !routed.has(st) && !nav.includes('name="Booting"'));
+    expect(unreached).toEqual([]);
+  });
+});

@@ -17,6 +17,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../context/ThemeContext';
 import { AGE_BANDS } from '../utils/constants';
 
+import BootScreen from '../screens/BootScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import { featureOn } from '../utils/config';
 import SignInScreen from '../screens/SignInScreen';
@@ -91,12 +92,32 @@ function MainTabs() {
   );
 }
 
+/**
+ * Every status AuthContext can produce must map to at least one screen.
+ * 'loading' — the initial state while the refresh token is read — had none,
+ * so on a fresh load the navigator rendered zero children and React
+ * Navigation threw "Couldn't find any screens for the navigator". On native
+ * the splash's minimum duration usually hid the window; on web it did not.
+ *
+ * A navigator with no screens is a crash, not an empty state. So the fallback
+ * below is written to catch 'loading' AND anything unrecognised: a new status
+ * added to AuthContext without a screen here shows the boot spinner rather
+ * than killing the app. backend/tests/safety/navigation.test.js enforces the
+ * mapping.
+ */
+const ROUTED_STATUSES = ['anon', 'consent_pending', 'authed'];
+
 export default function AppNavigator() {
   const { status } = useAuth();
+  const booting = !ROUTED_STATUSES.includes(status);
 
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {booting && (
+          <Stack.Screen name="Booting" component={BootScreen} />
+        )}
+
         {status === 'anon' && (
           <Stack.Group>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />

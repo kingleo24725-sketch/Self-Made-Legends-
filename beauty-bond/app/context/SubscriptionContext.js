@@ -12,6 +12,8 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { AppState } from 'react-native';
 import api from '../utils/api';
 import { TIERS } from '../utils/constants';
+import { featureOn } from '../utils/config';
+import { useAuthContext } from './AuthContext';
 
 const SubscriptionContext = createContext(null);
 
@@ -32,6 +34,9 @@ const FALLBACK = {
 };
 
 export function SubscriptionProvider({ children }) {
+  const { status: authStatus } = useAuthContext();
+  const signedIn = authStatus === 'authed' || authStatus === 'consent_pending';
+
   const [entitlements, setEntitlements] = useState(FALLBACK);
   const [usage, setUsage] = useState({ tryon: 0, room_minutes: 0 });
   const [loading, setLoading] = useState(true);
@@ -39,14 +44,40 @@ export function SubscriptionProvider({ children }) {
   const [plan, setPlan] = useState(null);
   const [status, setStatus] = useState('none');
 
+  /**
+   * Two sources, deliberately separate.
+   *
+   * /me/entitlements is what this profile may DO. The server applies
+   * V1_UNGATED there when billing is off — vault unlimited, Letters Forward
+   * on — so it is the only endpoint that tells the truth in v1.
+   *
+   * /stripe/subscription is what this account PAYS. It 503s when billing is
+   * not configured, and this provider used to read entitlements from it: the
+   * catch fell through to FALLBACK, the free tier, and the UI showed locks on
+   * the exact features v1 gives away while the server was happily allowing
+   * them. It is now asked only when billing is on, and only for plan/status.
+   *
+   * Neither is asked while signed out. There is no entitlement to fetch for
+   * nobody, and the old unconditional fetch put a 401 in the console on every
+   * fresh load of the Welcome screen.
+   */
   const load = useCallback(async () => {
+    if (!signedIn) {
+      setEntitlements(FALLBACK);
+      setLoading(false);
+      return FALLBACK;
+    }
     try {
-      const data = await api.get('/stripe/subscription');
-      const next = { tier: data.tier, ...data.entitlements };
+      const me = await api.get('/me/entitlements');
+      const next = { ...FALLBACK, ...me.entitlements };
       setEntitlements(next);
-      setUsage(data.usage ?? { tryon: 0, room_minutes: 0 });
-      setPlan(data.plan ?? null);
-      setStatus(data.status ?? 'none');
+      setUsage(me.usage ?? { tryon: 0, room_minutes: 0 });
+
+      if (featureOn('billing')) {
+        const sub = await api.get('/stripe/subscription').catch(() => null);
+        setPlan(sub?.plan ?? null);
+        setStatus(sub?.status ?? 'none');
+      }
       return next;
     } catch {
       // Fail to the FREE tier, never to unlocked.
@@ -55,15 +86,17 @@ export function SubscriptionProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [signedIn]);
 
   useEffect(() => { load(); }, [load]);
 
   // Refetch on foreground — a webhook may have landed while backgrounded.
+  // Only meaningful for a signed-in account with billing to reconcile.
   useEffect(() => {
+    if (!signedIn) return undefined;
     const sub = AppState.addEventListener('change', (s) => { if (s === 'active') load(); });
     return () => sub.remove();
-  }, [load]);
+  }, [load, signedIn]);
 
   const can = useCallback((capability) => {
     if (ALWAYS_FREE.has(capability)) return true;
