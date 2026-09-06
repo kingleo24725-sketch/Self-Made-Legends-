@@ -9,7 +9,8 @@
  * Child accounts get 56px targets and simplified copy — keyed off AGE BAND,
  * not mode, because a child can pick any mode. docs/wireframes.md W-11/W-12.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
@@ -26,10 +27,12 @@ export default function HomeScreen({ navigation }) {
   const isRelational = RELATIONAL_MODES.includes(profile?.mode);
 
   // The streak and Bond Meter were literals: every family saw 🔥 7 and 68%.
+  // Refetched on focus, not once on mount: tabs stay mounted, so a mount-only
+  // read meant finishing a lesson and coming Home showed yesterday's meter.
   const [prog, setProg] = useState(null);
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     api.get('/me/progression').then(setProg).catch(() => {});
-  }, []);
+  }, []));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>
