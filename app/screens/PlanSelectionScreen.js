@@ -9,12 +9,13 @@
  * docs/wireframes.md W-B0.
  */
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useSubscription } from '../hooks/useSubscription';
 import Card from '../components/Cards/Card';
 import PrimaryButton from '../components/Buttons/PrimaryButton';
 import { COPY, PLAN_META } from '../utils/constants';
+import dialog from '../utils/dialog';
 
 const PLAN_ORDER = ['free', 'basic', 'premium', 'family'];
 
@@ -29,8 +30,8 @@ export default function PlanSelectionScreen({ navigation }) {
     // 'unavailable' is v1's answer: billing is switched off and subscribe()
     // has no payment sheet to open. Without this branch the button would look
     // broken — tapped, nothing happens, no reason given.
-    if (res.status === 'unavailable') Alert.alert('Beauty Bond is free', res.message);
-    if (res.status === 'failed') Alert.alert('Payment', res.message ?? COPY.paymentFailed);
+    if (res.status === 'unavailable') dialog.alert('Beauty Bond is free', res.message);
+    if (res.status === 'failed') dialog.alert('Payment', res.message ?? COPY.paymentFailed);
     if (res.status === 'success') navigation.goBack();
   }
 

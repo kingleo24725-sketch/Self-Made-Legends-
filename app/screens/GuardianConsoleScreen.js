@@ -9,11 +9,12 @@
  * docs/wireframes.md W-A0.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, Switch, Alert, Share } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, Switch, Share } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Card from '../components/Cards/Card';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 const PERMISSIONS = [
   { key: 'camera_tryon', label: 'Camera & try-on' },
@@ -56,7 +57,7 @@ export default function GuardianConsoleScreen() {
       // Never leave a permission switch showing a state the server rejected —
       // a guardian would believe video was off when it is on.
       setPerms((p) => ({ ...p, [key]: previous }));
-      Alert.alert('Permissions', "That didn't save. Check your connection.");
+      dialog.alert('Permissions', "That didn't save. Check your connection.");
     }
   }
 
@@ -68,12 +69,12 @@ export default function GuardianConsoleScreen() {
         message: JSON.stringify(data, null, 2),
       });
     } catch {
-      Alert.alert('Export', "We couldn't build that export just now.");
+      dialog.alert('Export', "We couldn't build that export just now.");
     }
   }
 
   function confirmDeleteChild() {
-    Alert.alert(
+    dialog.alert(
       `Delete ${child.name}'s account?`,
       'This removes their profile, memories and Legacy Vault items. '
       + 'It cannot be undone.',
@@ -87,7 +88,7 @@ export default function GuardianConsoleScreen() {
               await api.delete(`/guardian/children/${child.id}`);
               await loadChildren();
             } catch {
-              Alert.alert('Delete', "That didn't go through. Try again?");
+              dialog.alert('Delete', "That didn't go through. Try again?");
             }
           },
         },

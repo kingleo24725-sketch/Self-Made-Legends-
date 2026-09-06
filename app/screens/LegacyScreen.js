@@ -15,7 +15,7 @@
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View, Text, SafeAreaView, ScrollView, Linking, Alert, Pressable,
+  View, Text, SafeAreaView, ScrollView, Linking, Pressable,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
@@ -27,6 +27,7 @@ import { COPY, HELPLINES, VAULT_KINDS, JOURNAL_PROMPTS } from '../utils/constant
 import api from '../utils/api';
 import { encryptEntry, decryptEntry, hasJournalKey } from '../utils/journalCrypto';
 import { journalAvailable, JOURNAL_UNAVAILABLE_REASON } from '../utils/config';
+import dialog from '../utils/dialog';
 
 export default function LegacyScreen() {
   const t = useTheme();
@@ -79,25 +80,24 @@ export default function LegacyScreen() {
   useEffect(() => { load(); }, [load]);
 
   async function addPerson() {
-    Alert.prompt?.(
+    const name = await dialog.prompt(
       'Who are we remembering?',
       'Just their name for now. You can add more whenever you want.',
-      async (name) => {
-        if (!name?.trim()) return;
-        try {
-          await api.post('/legacy/people', { name: name.trim() });
-          load();
-        } catch {
-          Alert.alert('Legacy', "That didn't save. Try again when you're ready.");
-        }
-      },
-    ) ?? Alert.alert('Legacy', 'Adding someone arrives in the next update.');
+      { placeholder: 'Their name', ok: 'Add' },
+    );
+    if (!name) return;
+    try {
+      await api.post('/legacy/people', { name });
+      load();
+    } catch {
+      dialog.alert('Legacy', "That didn't save. Try again when you're ready.");
+    }
   }
 
   async function sitWithIt(promptId) {
     try {
       await api.post('/journal/presence', { promptId });
-      Alert.alert('', 'Logged. Nothing else needed.');
+      dialog.alert('', 'Logged. Nothing else needed.');
     } catch { /* presence is never worth an error message */ }
   }
 
@@ -326,36 +326,30 @@ export default function LegacyScreen() {
  */
 async function writeEntry(promptId, reload, firstEntry) {
   if (firstEntry) {
-    const understood = await new Promise((resolve) => {
-      Alert.alert(
-        'Before you write',
-        'Your journal is locked with a key that stays on this phone. '
-        + 'Nobody can read it — not your family, not us.\n\n'
-        + "That also means if you reinstall the app or change phones, what you "
-        + "write here can't be recovered. By anyone.",
-        [
-          { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
-          { text: 'I understand', onPress: () => resolve(true) },
-        ],
-      );
-    });
+    const understood = await dialog.confirm(
+      'Before you write',
+      'Your journal is locked with a key that stays on this phone. '
+      + 'Nobody can read it — not your family, not us.\n\n'
+      + "That also means if you reinstall the app or change phones, what you "
+      + "write here can't be recovered. By anyone.",
+      { ok: 'I understand', cancel: 'Not now' },
+    );
     if (!understood) return;
   }
 
-  Alert.prompt?.(
+  const text = await dialog.prompt(
     'Write it down',
     'Only you will ever read this.',
-    async (text) => {
-      if (!text?.trim()) return;
-      try {
-        const { ciphertext, keyId } = await encryptEntry(text);
-        await api.post('/journal', { ciphertext, keyId, promptId });
-        reload();
-      } catch {
-        Alert.alert('Journal', "That didn't save. Your words are still here.");
-      }
-    },
-  ) ?? Alert.alert('Journal', 'Writing arrives in the next update.');
+    { placeholder: 'Whatever is there', ok: 'Keep it', multiline: true },
+  );
+  if (!text) return;
+  try {
+    const { ciphertext, keyId } = await encryptEntry(text);
+    await api.post('/journal', { ciphertext, keyId, promptId });
+    reload();
+  } catch {
+    dialog.alert('Journal', "That didn't save. Your words are still here.");
+  }
 }
 
 function formatDate(value) {
