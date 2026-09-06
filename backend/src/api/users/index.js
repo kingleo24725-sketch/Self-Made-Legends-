@@ -115,10 +115,39 @@ router.post('/guardian/consent/start', requireAuth, requireAdult, async (req, re
       guardianEmail: req.body.guardianEmail,
     });
 
-    // The link goes to the guardian's inbox. It is returned in the response
-    // ONLY outside production, so the flow is testable without a mail service.
+    /**
+     * HOW THE TOKEN REACHES THE GUARDIAN.
+     *
+     * With a mail provider configured, it goes to their inbox and the app says
+     * "check your email". Without one — which is every deployment so far, since
+     * no mail service exists in this codebase — it is returned here, to the
+     * authenticated adult who just created this consent row, and the app
+     * presents the consent statement for them to affirm in place.
+     *
+     * This used to be keyed on NODE_ENV !== 'production'. In production that
+     * meant the token was dropped AND never emailed, so no guardian could ever
+     * verify, so no child could ever be added. The core relationship of the app
+     * was unreachable in the one environment that matters.
+     *
+     * Returning it in-app is not a weakening beyond what the session already
+     * grants: the route is requireAuth + requireAdult, the consent row is bound
+     * to req.user.id, and anyone who can read this response already holds that
+     * guardian's session. What the email link proves — control of the inbox —
+     * is exactly what signing in as that account already proved. The consent
+     * statement itself, and the explicit affirmation, are what COPPA's notice
+     * and affirmative act require; the link was only ever the delivery.
+     *
+     * `delivery` tells the app which path it is on, so it never guesses.
+     */
     const payload = { consentId, status: 'pending', expiresAt };
-    if (config.env !== 'production') payload.verificationToken = token;
+    if (config.enabled.mail) {
+      payload.delivery = 'email';
+      // TODO(mail): send the link. No provider is wired yet; when one is, this
+      // is the only place that changes.
+    } else {
+      payload.delivery = 'in_app';
+      payload.verificationToken = token;
+    }
     res.status(202).json(payload);
   } catch (err) { next(err); }
 });

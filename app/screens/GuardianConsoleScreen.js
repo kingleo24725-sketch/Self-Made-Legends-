@@ -11,7 +11,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, SafeAreaView, ScrollView, Switch, Share } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../hooks/useAuth';
+import { normaliseDate } from '../utils/validators';
 import Card from '../components/Cards/Card';
+import PrimaryButton from '../components/Buttons/PrimaryButton';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
 import api from '../utils/api';
 import dialog from '../utils/dialog';
@@ -26,6 +29,8 @@ const PERMISSIONS = [
 
 export default function GuardianConsoleScreen() {
   const t = useTheme();
+  const { user, reload } = useAuth();
+  const [adding, setAdding] = useState(false);
 
   // The child used to be a hardcoded placeholder, so every permission toggle
   // wrote to /guardian/permissions/c1 -- an id that does not exist.
@@ -46,6 +51,81 @@ export default function GuardianConsoleScreen() {
   }, []);
 
   useEffect(() => { loadChildren(); }, [loadChildren]);
+
+  /**
+   * ADDING A DAUGHTER — the flow that did not exist.
+   *
+   * The API had the whole COPPA sequence for months (consent/start -> verify
+   * -> children) and no screen called it, so no father could form the
+   * relationship the app is named after. In order, and none skippable:
+   *
+   *   1. Her name and birth date. Nothing is sent yet.
+   *   2. Consent is STARTED for the signed-in guardian's own email. Data about
+   *      her is still not collected — the server stores only that this adult
+   *      asked. (userService.startConsent)
+   *   3. The consent statement is shown and affirmed. With a mail provider
+   *      configured the token arrives by email and we wait; without one — every
+   *      deployment so far — the server hands it back to this authenticated
+   *      guardian and the affirmation happens here. api/users/index.js.
+   *   4. Only now is her profile created, bound to that consent.
+   */
+  async function addDaughter() {
+    if (adding) return;
+    const name = await dialog.prompt('What is her name?', 'Just her first name is fine.',
+      { placeholder: 'Her name', ok: 'Next' });
+    if (!name) return;
+
+    const dobRaw = await dialog.prompt(`When was ${name} born?`,
+      'We use this to set which features are right for her age. It is never shared.',
+      { placeholder: 'YYYY-MM-DD', ok: 'Next' });
+    if (!dobRaw) return;
+    const birthDate = normaliseDate(dobRaw);
+    if (!birthDate) {
+      dialog.alert('That date', 'Please write it as YYYY-MM-DD, like 2016-01-20.');
+      return;
+    }
+
+    setAdding(true);
+    try {
+      const started = await api.post('/guardian/consent/start', { guardianEmail: user?.email });
+
+      if (started.delivery === 'email') {
+        await dialog.alert('Check your email',
+          `We sent a consent link to ${user?.email}. Tap it, then come back here and `
+          + `add ${name} again — it will pick up where you left off.`);
+        return;
+      }
+
+      const agreed = await dialog.confirm(
+        'Parental consent',
+        `You are ${name}'s parent or legal guardian, and you consent to Beauty Bond `
+        + 'creating a profile for her.\n\n'
+        + 'What we keep: her first name, her date of birth, and what she does in the '
+        + 'app. What we never do: sell it, show her ads, or let her buy anything. '
+        + 'You can export or delete all of it from this screen, any time.',
+        { ok: 'I consent', cancel: 'Not now' },
+      );
+      if (!agreed) return;
+
+      await api.post(`/guardian/consent/${started.consentId}/verify`,
+        { token: started.verificationToken });
+      await api.post('/guardian/children',
+        { displayName: name, birthDate, consentId: started.consentId });
+
+      await loadChildren();
+      await reload?.();
+      dialog.alert(`${name} is in`, 'Her permissions, screen time and data controls are all here.');
+    } catch (e) {
+      const why = {
+        child_profile_must_be_a_minor: 'That birth date makes her an adult. Grown-ups hold their own accounts.',
+        consent_expired: 'That consent expired. Start again and it will be fresh.',
+        parental_consent_required: 'Consent was not recorded. Try again from the start.',
+      }[e?.code] ?? "That didn't go through. Check your connection and try again.";
+      dialog.alert('Adding her', why);
+    } finally {
+      setAdding(false);
+    }
+  }
 
   async function toggle(key, value) {
     if (!child) return;
@@ -112,6 +192,8 @@ export default function GuardianConsoleScreen() {
               data controls all live here.
             </Text>
           </Card>
+          <PrimaryButton title={adding ? 'Adding…' : 'Add your daughter'}
+            onPress={addDaughter} disabled={adding} />
         </ScrollView>
       </SafeAreaView>
     );

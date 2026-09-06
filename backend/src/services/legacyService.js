@@ -56,7 +56,13 @@ function sealedMetadata(row) {
     deliverOn: row.deliver_on,
     status: 'sealed',
     legacyPersonId: row.legacy_person_id,
-    // storage_key is deliberately absent. A sealed letter has no readable body.
+    // Who it is for. The writer's outbox says "for Imani · opens Jan 20,
+    // 2032"; without this it could only say "opens", which for a dad with
+    // two daughters is a letter with no name on the envelope.
+    toProfileId: row.to_profile_id,
+    // storage_key AND body are deliberately absent. A sealed letter has no
+    // readable content of any form — that is what "sealed" means, and
+    // tests/safety/legacy.delivery.test.js checks both fields stay out.
   };
 }
 
@@ -69,6 +75,7 @@ function deliveredLetter(row) {
     deliveredAt: row.delivered_at,
     legacyPersonId: row.legacy_person_id,
     storageKey: row.storage_key,
+    body: row.body,   // the words themselves — migration 007
   };
 }
 
