@@ -14,7 +14,7 @@
  */
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, SafeAreaView, ScrollView, Image, Pressable, Alert, ActivityIndicator,
+  View, Text, SafeAreaView, ScrollView, Image, Pressable, ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useTheme } from '../context/ThemeContext';
@@ -27,6 +27,7 @@ import ConsentGate from '../components/Modals/ConsentGate';
 import PaywallSheet from '../components/Modals/PaywallSheet';
 import { AGE_BANDS, TRYON_LAYERS, COPY } from '../utils/constants';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 const FALLBACK_PRESETS = [
   { id: 'everyday',   name: 'Everyday' },
@@ -80,7 +81,7 @@ export default function TryOnScreen({ navigation }) {
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      return Alert.alert('Permission needed', 'We need access to continue.');
+      return dialog.alert('Permission needed', 'We need access to continue.');
     }
 
     const picker = fromCamera
@@ -102,7 +103,7 @@ export default function TryOnScreen({ navigation }) {
 
   async function run(preset) {
     if (!source && !isChild) {
-      return Alert.alert('Pick a photo first', 'Take one or choose from your library.');
+      return dialog.alert('Pick a photo first', 'Take one or choose from your library.');
     }
     try {
       const out = await apply(
@@ -113,11 +114,11 @@ export default function TryOnScreen({ navigation }) {
     } catch (e) {
       if (e.isUpgradeRequired) return setPaywall(true);
       if (e.isOnDeviceUnavailable) {
-        return Alert.alert('Try-on', COPY.errorOnDeviceUnavailable);
+        return dialog.alert('Try-on', COPY.errorOnDeviceUnavailable);
       }
       // e.message is a machine code (server_render_forbidden_for_minor and
       // friends) -- never show it to a family.
-      Alert.alert('Try-on', COPY.errorGeneric);
+      dialog.alert('Try-on', COPY.errorGeneric);
     }
   }
 

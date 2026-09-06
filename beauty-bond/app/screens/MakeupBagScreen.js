@@ -9,12 +9,13 @@
  * docs/wireframes.md W-80.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Card from '../components/Cards/Card';
 import EmptyState from '../components/EmptyState';
 import { PAO_MONTHS } from '../utils/constants';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 export default function MakeupBagScreen() {
   const t = useTheme();
@@ -32,19 +33,18 @@ export default function MakeupBagScreen() {
   const items = tab === 'wishlist' ? bag.wishlist : bag.items;
 
   async function addProduct() {
-    Alert.prompt?.(
+    const customName = await dialog.prompt(
       'Add a product',
-      "What is it? You can add the shade later.",
-      async (customName) => {
-        if (!customName?.trim()) return;
-        try {
-          await api.post('/bag', { customName: customName.trim(), isWishlist: tab === 'wishlist' });
-          load();
-        } catch {
-          Alert.alert('My Bag', "That didn't save. Try again?");
-        }
-      },
-    ) ?? Alert.alert('Add a product', 'Adding products arrives with shade matching.');
+      'What is it? You can add the shade later.',
+      { placeholder: 'e.g. rose lip balm', ok: 'Add' },
+    );
+    if (!customName) return;
+    try {
+      await api.post('/bag', { customName, isWishlist: tab === 'wishlist' });
+      load();
+    } catch {
+      dialog.alert('My Bag', "That didn't save. Try again?");
+    }
   }
 
   return (

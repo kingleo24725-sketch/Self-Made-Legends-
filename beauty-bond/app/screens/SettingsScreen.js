@@ -10,7 +10,7 @@
  */
 import React, { useState } from 'react';
 import {
-  View, Text, SafeAreaView, ScrollView, Switch, Pressable, Linking, Alert, Share,
+  View, Text, SafeAreaView, ScrollView, Switch, Pressable, Linking, Share,
 } from 'react-native';
 import { featureOn } from '../utils/config';
 import { useTheme } from '../context/ThemeContext';
@@ -19,6 +19,7 @@ import { useSubscription } from '../hooks/useSubscription';
 import Card from '../components/Cards/Card';
 import { OWNER, AGE_BANDS } from '../utils/constants';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 export default function SettingsScreen({ navigation }) {
   const t = useTheme();
@@ -31,7 +32,7 @@ export default function SettingsScreen({ navigation }) {
    * before doing it, not after -- a guardian is deciding for someone else.
    */
   function confirmDelete() {
-    Alert.alert(
+    dialog.alert(
       'Delete your account?',
       'This removes your account and any child profiles you manage, '
       + 'including their memories and Legacy Vault. It cannot be undone.',
@@ -45,7 +46,7 @@ export default function SettingsScreen({ navigation }) {
               await api.delete('/privacy/account');
               await logout();
             } catch {
-              Alert.alert('Delete account', "That didn't go through. Try again?");
+              dialog.alert('Delete account', "That didn't go through. Try again?");
             }
           },
         },
@@ -62,7 +63,7 @@ export default function SettingsScreen({ navigation }) {
         message: JSON.stringify(data, null, 2),
       });
     } catch {
-      Alert.alert('Export', "We couldn't build your export just now. Try again?");
+      dialog.alert('Export', "We couldn't build your export just now. Try again?");
     }
   }
 

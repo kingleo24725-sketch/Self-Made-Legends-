@@ -23,6 +23,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import AppNavigator from './navigation/AppNavigator';
+import DialogHost from './components/Modals/DialogHost';
 import SplashScreen from './screens/SplashScreen';
 
 export default function App() {
@@ -53,6 +54,9 @@ export default function App() {
           <SubscriptionProvider>
             <StatusBar style="auto" />
             <AppNavigator />
+            {/* Every alert/confirm/prompt in the app renders here. After the
+                navigator so it overlays every screen. utils/dialog.js. */}
+            <DialogHost />
           </SubscriptionProvider>
         </ThemeProvider>
       </AuthProvider>

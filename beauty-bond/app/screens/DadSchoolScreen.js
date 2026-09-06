@@ -10,11 +10,12 @@
  * docs/wireframes.md W-60, docs/branding.md §7.6.
  */
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, TextInput } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import Card from '../components/Cards/Card';
 import PrimaryButton from '../components/Buttons/PrimaryButton';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 const LESSONS = [
   { id: 'ponytail', title: 'The puff ponytail', secs: 60 },
@@ -34,12 +35,12 @@ export default function DadSchoolScreen() {
 
   async function send() {
     if (!trait.trim() || !action.trim()) {
-      return Alert.alert('Almost there', 'Fill in both parts so it lands.');
+      return dialog.alert('Almost there', 'Fill in both parts so it lands.');
     }
     await api.post('/bond/compliments', {
       templateId: 'effort_v1', filled: { trait, action },
     }).catch(() => {});
-    Alert.alert('Sent 💛', 'She\'ll see it next time she opens the app.');
+    dialog.alert('Sent 💛', 'She\'ll see it next time she opens the app.');
     setTrait(''); setAction('');
   }
 
