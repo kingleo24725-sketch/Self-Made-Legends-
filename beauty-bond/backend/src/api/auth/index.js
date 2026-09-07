@@ -19,5 +19,8 @@ router.post('/login', limits.auth, ctrl.login);
 router.get('/me', requireAuth, ctrl.me);
 router.post('/refresh', ctrl.refresh);
 router.post('/logout', requireAuth, ctrl.logout);
+// Stepping up to an adult profile checks the password, so it shares the
+// login limiter: five guesses a minute, not sixty.
+router.post('/switch-profile', requireAuth, limits.auth, ctrl.switchProfile);
 
 module.exports = router;

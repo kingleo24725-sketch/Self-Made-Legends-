@@ -128,9 +128,15 @@ function MainTabs() {
 const ROUTED_STATUSES = ['anon', 'consent_pending', 'authed'];
 
 export default function AppNavigator() {
-  const { status } = useAuth();
+  const { status, profile, freshSignup } = useAuth();
   const theme = useTheme();
   const booting = !ROUTED_STATUSES.includes(status);
+
+  // A profile switch is a different person holding the phone. The whole
+  // navigation tree is keyed by profile so the hand-over starts her on HER
+  // Home with her tab set, rather than leaving the Guardian Console — the
+  // screen the switch was made from — sitting on top of the stack.
+  const navKey = profile?.id ?? status;
 
   /**
    * Every screen pushed on top of the tabs gets a way back. The whole stack
@@ -152,8 +158,20 @@ export default function AppNavigator() {
   };
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <NavigationContainer key={navKey}>
+      {/* ModeSelection is the last step of sign-up and nothing else.
+          It was the first screen of every launch — every reload on web,
+          every hand-over to a daughter — and the mode chip on Home is the
+          way back to it for anyone who wants to change their mind. */}
+      <Stack.Navigator
+        screenOptions={{ headerShown: false }}
+        // Named only while authed: React Navigation throws, before first
+        // paint, if initialRouteName names a screen the current group does
+        // not register — and the anon group has neither of these.
+        initialRouteName={status === 'authed'
+          ? (freshSignup || !profile?.mode ? 'ModeSelection' : 'Main')
+          : undefined}
+      >
         {booting && (
           <Stack.Screen name="Booting" component={BootScreen} />
         )}

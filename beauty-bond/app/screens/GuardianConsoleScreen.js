@@ -29,7 +29,23 @@ const PERMISSIONS = [
 
 export default function GuardianConsoleScreen() {
   const t = useTheme();
-  const { user, reload } = useAuth();
+  const { user, reload, switchProfile } = useAuth();
+
+  /**
+   * One phone, two people. Her profile has no password of its own; the
+   * way she uses the app is being handed the phone. Coming back to this
+   * side asks for the account password, so she cannot open this console.
+   */
+  async function handOver() {
+    const go = await dialog.confirm(`Hand the phone to ${child.name}?`,
+      `The app becomes hers — her Home, her lessons, her missions. To get back to your `
+      + 'side, tap "Give the phone back" on her Home and enter your password.',
+      { ok: 'Hand it over' });
+    if (!go) return;
+    try { await switchProfile(child.id); } catch {
+      dialog.alert('Hand over', "That didn't work. Check your connection and try again.");
+    }
+  }
   const [adding, setAdding] = useState(false);
 
   // The child used to be a hardcoded placeholder, so every permission toggle
@@ -209,6 +225,8 @@ export default function GuardianConsoleScreen() {
             {child.name}
           </Text>
           <Text style={[t.type('caption'), { color: t.color.textSecondary }]}>Child account</Text>
+          <PrimaryButton title={`Hand the phone to ${child.name}`} onPress={handOver}
+            style={{ marginTop: t.space[3] }} />
         </Card>
 
         <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>PERMISSIONS</Text>

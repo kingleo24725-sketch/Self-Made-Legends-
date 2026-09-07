@@ -160,6 +160,19 @@ describe('every auth status maps to at least one screen', () => {
     expect(routed.has('loading')).toBe(false);
   });
 
+  /**
+   * initialRouteName is a throw, not a hint: naming a screen the current
+   * group does not register kills the app before its first paint. Both
+   * candidates live in the authed group only, so the prop must be guarded
+   * by status — an unguarded version crashed every anonymous launch.
+   */
+  test('initialRouteName is only named while authed', () => {
+    const m = nav.match(/initialRouteName=\{([\s\S]*?)\}\s*\n/);
+    expect(m).toBeTruthy();
+    expect(m[1]).toMatch(/status === 'authed'/);
+    expect(m[1]).toMatch(/undefined/);
+  });
+
   test('no AuthContext status is unreachable by either route', () => {
     const unreached = [...statuses].filter((st) =>
       !routed.has(st) && !nav.includes('name="Booting"'));

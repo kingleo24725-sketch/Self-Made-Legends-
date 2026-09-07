@@ -104,6 +104,45 @@ async function refresh(req, res) {
 
 function logout(req, res) { res.json({ ok: true }); }
 
+/**
+ * POST /api/auth/switch-profile  { profileId, password? }
+ *
+ * One phone, two people. A child profile has no email and no password — it
+ * exists under the guardian's account — so the only way a daughter can use
+ * the app is for her dad to hand her the phone. Until this route existed
+ * there was no way to do that: the token named one profile forever, so
+ * missions could never get her tick and her letters could never be read by
+ * her. The tokens are re-issued for the target profile.
+ *
+ * Down is free; up costs the password. Switching to a child asks nothing.
+ * Switching from a child back to an adult profile requires the account
+ * password, so a child holding the phone cannot walk into the Guardian
+ * Console and grant herself video rooms.
+ */
+async function switchProfile(req, res, next) {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'unauthorized' });
+    const { profileId, password } = req.body;
+    const target = await db.one(
+      'SELECT * FROM profiles WHERE id = $1 AND deleted_at IS NULL', [profileId]);
+    if (!target) return res.status(404).json({ error: 'profile_not_found' });
+
+    const mine = target.user_id === req.user.id;
+    const myChild = !!target.guardian_id && !!(await db.one(
+      'SELECT 1 FROM profiles WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL',
+      [target.guardian_id, req.user.id]));
+    if (!mine && !myChild) return res.status(403).json({ error: 'not_your_profile' });
+
+    const steppingUp = target.age_band === 'adult' && req.profile.age_band !== 'adult';
+    if (steppingUp && !(await userService.verifyPassword(req.user, password))) {
+      return res.status(401).json({ error: 'password_required' });
+    }
+
+    const tokens = userService.issueTokens(req.user, target);
+    res.json({ ...tokens, profile: publicProfile(target) });
+  } catch (err) { next(err); }
+}
+
 /* ── Serializers: never leak a password hash or a Stripe customer id ── */
 
 function publicUser(u) {
@@ -126,4 +165,6 @@ function publicProfile(p) {
   };
 }
 
-module.exports = { register, login, me, refresh, logout, publicUser, publicProfile };
+module.exports = {
+  register, login, me, refresh, logout, switchProfile, publicUser, publicProfile,
+};

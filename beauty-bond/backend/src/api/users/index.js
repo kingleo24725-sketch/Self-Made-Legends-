@@ -28,13 +28,21 @@ router.get('/me', requireAuth, async (req, res, next) => {
     // stripe_customer_id. Both serializers exist for exactly this reason —
     // never return a raw row. The client also reads camelCase (profile.ageBand),
     // which the raw snake_case row does not provide.
-    const consentPending = req.user
-      ? (await db.query(
+    /**
+     * "Consent pending" is a property of a CHILD profile: she may not use
+     * the app until a guardian has granted it. It used to be computed from
+     * the guardian's side — any open, ungranted consent row on the account —
+     * which walled the DAD out of his own account behind "Let's get a
+     * grown-up" the moment he tapped "Not now" on the consent dialog, for as
+     * long as that row took to expire. An adult is never consent-pending.
+     */
+    const consentPending = req.profile.age_band === 'adult'
+      ? false
+      : (await db.query(
           `SELECT 1 FROM guardian_consents
-            WHERE guardian_user_id = $1 AND granted_at IS NULL AND revoked_at IS NULL
-              AND (expires_at IS NULL OR expires_at > now()) LIMIT 1`,
-          [req.user.id])).length > 0
-      : false;
+            WHERE child_profile_id = $1 AND granted_at IS NOT NULL AND revoked_at IS NULL
+            LIMIT 1`,
+          [req.profile.id])).length === 0;
 
     res.json({
       user: publicUser(req.user),
