@@ -17,18 +17,24 @@ import PrimaryButton from '../components/Buttons/PrimaryButton';
 import api from '../utils/api';
 import dialog from '../utils/dialog';
 
+/**
+ * Ids are lesson slugs in the server catalogue (backend migration 008);
+ * the LessonPlayer fetches the steps. These cards used to be tappable and
+ * do nothing — five "▶" rows that never played, on the one screen written
+ * specifically for a dad who does not know where to start.
+ */
 const LESSONS = [
-  { id: 'ponytail', title: 'The puff ponytail', secs: 60 },
-  { id: 'blend', title: 'What "blend" actually means', secs: 45 },
-  { id: 'compliment', title: 'How to compliment her', secs: 50 },
-  { id: 'gift', title: 'Buying makeup she\'ll actually use', secs: 60 },
-  { id: 'edges', title: 'Edges without wrecking them', secs: 60 },
+  { id: 'dad_ponytail', title: 'The puff ponytail', secs: 60 },
+  { id: 'dad_blend', title: 'What "blend" actually means', secs: 45 },
+  { id: 'dad_compliment', title: 'How to compliment her', secs: 50 },
+  { id: 'dad_gift', title: 'Buying makeup she\'ll actually use', secs: 60 },
+  { id: 'dad_edges', title: 'Edges without wrecking them', secs: 60 },
 ];
 
 /** Structured to reward specificity about effort and character. */
 const CARD_TEMPLATE = { before: 'I liked how', middle: 'you were when you', after: '.' };
 
-export default function DadSchoolScreen() {
+export default function DadSchoolScreen({ navigation }) {
   const t = useTheme();
   const [trait, setTrait] = useState('');
   const [action, setAction] = useState('');
@@ -65,7 +71,9 @@ export default function DadSchoolScreen() {
         </Text>
 
         {LESSONS.map((l) => (
-          <Card key={l.id} onPress={() => {}}>
+          <Card key={l.id} onPress={() => navigation.navigate('LessonPlayer', {
+            lessonId: l.id, title: l.title,
+          })}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Text style={[t.type('body'), { color: t.color.textPrimary, flex: 1 }]}>
                 ▶ {l.title}

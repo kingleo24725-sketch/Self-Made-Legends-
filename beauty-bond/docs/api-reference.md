@@ -603,8 +603,10 @@ per-request by the API. A guardian policy grants read on a linked child's rows
 | Method | Path |
 |---|---|
 | `GET` | `/api/bond/:pairId` |
-| `GET` | `/api/bond/missions` |
-| `POST` | `/api/bond/missions/:id/confirm` (dual-confirm) |
+| `GET` | `/api/bond/missions` (catalogue seeded by migration 009; `confirmedBy`, `confirmedByMe`, `completedAt` per pair) |
+| `POST` | `/api/bond/missions/:id/confirm` (dual-confirm; 409 `no_bond_partner` when the account has no daughter) |
+| `GET` | `/api/lessons/:idOrSlug` (catalogue seeded by migration 008; steps camelCase; resumable `progress`) |
+| `POST` | `/api/lessons/:idOrSlug/progress` (`{ stepIndex, completed }` → first completion awards badges, streak and +10 Bond Meter) |
 | `POST` | `/api/bond/compliments` |
 | `GET`/`POST` | `/api/legacy/people` · `/api/legacy/items` (`{ legacyPersonId, kind, text }` for text kinds; `body` returned) |
 | `POST` | `/api/legacy/letters` (seal: `{ toProfileId, occasion, deliverOn, text }`) |

@@ -354,9 +354,61 @@ router.post('/bond-book', requireAuth, async (req, res, next) => {
 
 /* ── Lessons & progress ───────────────────────────────────────────── */
 
+/**
+ * The client knows lessons by slug ('brush_basics', 'dad_ponytail' — the keys
+ * in app/utils/constants.js and DadSchoolScreen). The table keys them by
+ * uuid. Both resolve here; a non-uuid string used to reach the uuid column
+ * and fail the cast, which read as a 500 the app swallowed.
+ */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const findLesson = (idOrSlug) => (UUID.test(idOrSlug)
+  ? db.one('SELECT * FROM lessons WHERE id = $1', [idOrSlug])
+  : db.one('SELECT * FROM lessons WHERE slug = $1', [idOrSlug]));
+
+/** Badges a completed lesson can earn, by slug. Codes match BADGE_ICON in the app. */
+const LESSON_BADGES = {
+  brush_basics: 'brush_care',
+  skin_care_basics: 'hygiene_hero',
+  shade_matching_kids: 'colour_theory',
+};
+const LESSON_POINTS = 10;   // Bond Meter points per first completion
+
+/**
+ * What finishing a lesson for the first time is worth. Badges are
+ * idempotent inserts; the meter moves only when there is a pair to move —
+ * a dad on his own has no bond to meter yet, and the Home screen says so.
+ */
+async function rewardCompletion(profile, lesson) {
+  const awarded = [];
+  const give = async (code) => {
+    const row = await db.one(
+      `INSERT INTO badges (profile_id, badge_code) VALUES ($1,$2)
+       ON CONFLICT DO NOTHING RETURNING badge_code`, [profile.id, code]);
+    if (row) awarded.push(code);
+  };
+
+  await give('first_lesson');
+  if (LESSON_BADGES[lesson.slug]) await give(LESSON_BADGES[lesson.slug]);
+
+  const streak = await db.one('SELECT current FROM streaks WHERE profile_id = $1', [profile.id]);
+  if ((streak?.current ?? 0) >= 7) await give('streak_7');
+  if ((streak?.current ?? 0) >= 30) await give('streak_30');
+
+  const partner = await partnerOf(profile);
+  if (partner) {
+    const pair = await findOrCreatePair(profile.id, partner.id);
+    const meter = Number(pair.meter) + LESSON_POINTS;
+    await db.query(
+      `UPDATE bond_pairs SET meter = $2, level = $3, last_activity_at = now() WHERE id = $1`,
+      [pair.id, meter, levelFor(meter)]);
+    if (levelFor(meter) >= 2) await give('bond_level_2');
+  }
+  return awarded;
+}
+
 router.get('/lessons/:id', requireAuth, async (req, res, next) => {
   try {
-    const lesson = await db.one('SELECT * FROM lessons WHERE id = $1', [req.params.id]);
+    const lesson = await findLesson(req.params.id);
     if (!lesson) return res.status(404).json({ error: 'lesson_not_found' });
 
     const progress = await db.one(
@@ -365,11 +417,16 @@ router.get('/lessons/:id', requireAuth, async (req, res, next) => {
 
     res.json({
       lesson: {
-        id: lesson.id, title: lesson.title, level: lesson.level,
+        id: lesson.id, slug: lesson.slug, title: lesson.title, level: lesson.level,
         minAge: lesson.min_age, tierRequired: lesson.tier_required,
         durationSeconds: lesson.duration_seconds,
         videoUrl: lesson.video_url, captions: lesson.captions,
-        steps: lesson.steps ?? [],
+        // Stored snake_case (the schema's contract); the client speaks camel.
+        steps: (lesson.steps ?? []).map((s) => ({
+          text: s.text,
+          supervisionRequired: !!(s.supervisionRequired ?? s.supervision_required),
+          timerSeconds: s.timerSeconds ?? s.timer_s ?? null,
+        })),
       },
       progress: {
         stepIndex: progress?.step_index ?? 0,
@@ -382,8 +439,12 @@ router.get('/lessons/:id', requireAuth, async (req, res, next) => {
 router.post('/lessons/:id/progress', requireAuth, async (req, res, next) => {
   try {
     const { stepIndex, completed } = req.body;
-    const lesson = await db.one('SELECT id FROM lessons WHERE id = $1', [req.params.id]);
+    const lesson = await findLesson(req.params.id);
     if (!lesson) return res.status(404).json({ error: 'lesson_not_found' });
+
+    const before = await db.one(
+      'SELECT completed_at FROM progress WHERE profile_id = $1 AND lesson_id = $2',
+      [req.profile.id, lesson.id]);
 
     const row = await db.one(
       `INSERT INTO progress (profile_id, lesson_id, step_index, completed_at)
@@ -394,9 +455,15 @@ router.post('/lessons/:id/progress', requireAuth, async (req, res, next) => {
        RETURNING *`,
       [req.profile.id, lesson.id, stepIndex ?? 0, completed ? new Date() : null]);
 
-    if (completed) await touchStreak(req.profile.id);
+    // Finishing counts once. Replaying a lesson keeps the streak alive but
+    // does not re-earn its badge or re-pay its points.
+    let badgesAwarded = [];
+    if (completed) {
+      await touchStreak(req.profile.id);
+      if (!before?.completed_at) badgesAwarded = await rewardCompletion(req.profile, lesson);
+    }
 
-    res.json({ stepIndex: row.step_index, completedAt: row.completed_at });
+    res.json({ stepIndex: row.step_index, completedAt: row.completed_at, badgesAwarded });
   } catch (err) { next(err); }
 });
 
