@@ -32,7 +32,7 @@ export default function MemoryGalleryScreen({ navigation }) {
 
         {memories.length === 0 ? (
           <EmptyState emoji="✨" title="No memories yet."
-            body="Your first look is one lesson away."
+            body="Looks you save from Try-On land here, and Try-On arrives in a later update. Lessons and the Vault are open now."
             ctaTitle="Start a lesson"
             onPress={() => navigation.navigate('Main', { screen: 'Learn' })} />
         ) : (
