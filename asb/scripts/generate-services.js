@@ -50,6 +50,24 @@ function quoteForm(s) {
   </section>`;
 }
 
+function flyer(s) {
+  if (!s.flyer) return '';
+  const f = s.flyer;
+  const cols = f.sections.map(sec => `<div class="card"><h3>${esc(sec.h)}</h3><ul class="checks">${sec.items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`).join('');
+  return `
+  <section class="section" id="flyer">
+    <div class="container">
+      <div class="eyebrow">Straight from Rose's flyer</div>
+      <h2>${esc(f.title)}</h2>
+      <div class="grid cols-${Math.min(f.sections.length, 3)}" style="margin-top:1.5rem">${cols}</div>
+      <div class="card" style="margin-top:1.5rem;display:flex;flex-wrap:wrap;gap:1rem;align-items:center;justify-content:space-between">
+        <div><strong>Call, text, or email</strong><br><a href="tel:+18162872389">816.287.2389</a> · <a href="mailto:fyi@myasbllc.com">fyi@myasbllc.com</a> · <span class="muted">Hablamos Español</span></div>
+        <a class="btn outline small" href="../flyers/${f.file}" download>Download the flyer</a>
+      </div>
+    </div>
+  </section>`;
+}
+
 function waitlist(s) {
   if (s.status === 'live') return '';
   return `
@@ -106,6 +124,7 @@ for (const s of services) {
     </div>
   </section>
 
+  ${flyer(s)}
   ${quoteForm(s)}
   ${waitlist(s)}
 

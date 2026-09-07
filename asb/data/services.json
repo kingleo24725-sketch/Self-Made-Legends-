@@ -3,19 +3,92 @@
     "id": "organizing",
     "name": "All Shades of Order",
     "service": "Professional Organizing",
-    "tagline": "Calm, clear spaces that finally work for you.",
+    "tagline": "Not cleaning. Pure organization, structure, and systems.",
     "status": "live",
     "bookingType": "quote",
-    "startingAt": "Starting at $150 / half day",
+    "startingAt": "Free quote · packages by space",
     "deposit": 50,
     "icon": "🗂️",
-    "summary": "Closets, kitchens, garages, home offices, and whole-home resets. We declutter with you, design a system you can keep, and leave your space feeling brand new.",
-    "included": ["In-person consultation and plan", "Hands-on sorting and decluttering", "Custom labeling and storage systems", "Donation and haul-away coordination"],
-    "steps": ["Send photos and tell us about the space", "We send a quote within 24 hours", "Pay a deposit to lock in your date", "We organize, you enjoy"],
+    "summary": "Decluttering, labeling, sorting, space optimization, and digital organization for homes and businesses. We build a system you can actually keep, whether it's one closet or a whole storefront.",
+    "included": [
+      "Decluttering, sorting, and labeling",
+      "Space optimization and storage systems",
+      "Specialty collections handled with care",
+      "Digital organization: email, calendar, files"
+    ],
+    "steps": [
+      "Send photos and tell us about the space",
+      "We send a quote within 24 hours",
+      "Pay a deposit to lock in your date",
+      "We organize, you enjoy"
+    ],
     "intake": [
-      {"name": "rooms", "label": "Which spaces need help?", "type": "text", "placeholder": "e.g. primary closet, pantry, garage"},
-      {"name": "goal", "label": "What would a win look like?", "type": "textarea", "placeholder": "Tell us what's not working and what you want it to feel like"}
-    ]
+      {
+        "name": "rooms",
+        "label": "Which spaces need help?",
+        "type": "text",
+        "placeholder": "e.g. primary closet, pantry, garage"
+      },
+      {
+        "name": "goal",
+        "label": "What would a win look like?",
+        "type": "textarea",
+        "placeholder": "Tell us what's not working and what you want it to feel like"
+      }
+    ],
+    "flyer": {
+      "file": "asb-professional-organizing-flyer.pptx",
+      "title": "Professional Organization Services",
+      "sections": [
+        {
+          "h": "Organize it all",
+          "items": [
+            "Homes",
+            "Offices",
+            "Classrooms",
+            "Playrooms",
+            "Rec rooms",
+            "Breakrooms",
+            "Garages",
+            "Sheds",
+            "Basements",
+            "Sewing / laundry rooms",
+            "Kitchen cabinets",
+            "Cubby spaces",
+            "Kids' rooms",
+            "Workspaces",
+            "Shelving",
+            "Walk-in closets",
+            "Storefront shelves",
+            "Floor rooms",
+            "Inventory spaces"
+          ]
+        },
+        {
+          "h": "Specialty collections",
+          "items": [
+            "Antiques (handling experience)",
+            "Collectibles",
+            "Sports & trading cards",
+            "Pokémon cards",
+            "Music & vinyl collections",
+            "Memorabilia",
+            "Sentimental items"
+          ]
+        },
+        {
+          "h": "Digital organization",
+          "items": [
+            "Email cleanup",
+            "Calendar setup",
+            "Folder structuring",
+            "File naming systems",
+            "Workflow optimization",
+            "Small business digital tidying"
+          ]
+        }
+      ]
+    }
   },
   {
     "id": "tutoring",
@@ -28,12 +101,40 @@
     "deposit": 20,
     "icon": "📚",
     "summary": "K-12 and college tutoring in reading, writing, math, and study skills. Weekly sessions, homework help, and test prep, in person or online.",
-    "included": ["One-on-one sessions, 60 minutes", "Progress notes after every session", "Homework and test-prep support", "Weekly recurring slots available"],
-    "steps": ["Pick a time that works", "Tell us about the student", "Pay a deposit to hold the slot", "Meet your tutor"],
+    "included": [
+      "One-on-one sessions, 60 minutes",
+      "Progress notes after every session",
+      "Homework and test-prep support",
+      "Weekly recurring slots available"
+    ],
+    "steps": [
+      "Pick a time that works",
+      "Tell us about the student",
+      "Pay a deposit to hold the slot",
+      "Meet your tutor"
+    ],
     "intake": [
-      {"name": "student", "label": "Student's name and grade", "type": "text", "placeholder": "e.g. Maya, 7th grade"},
-      {"name": "subject", "label": "Subject(s)", "type": "text", "placeholder": "e.g. Algebra, reading comprehension"},
-      {"name": "format", "label": "In person or online?", "type": "select", "options": ["In person", "Online"]}
+      {
+        "name": "student",
+        "label": "Student's name and grade",
+        "type": "text",
+        "placeholder": "e.g. Maya, 7th grade"
+      },
+      {
+        "name": "subject",
+        "label": "Subject(s)",
+        "type": "text",
+        "placeholder": "e.g. Algebra, reading comprehension"
+      },
+      {
+        "name": "format",
+        "label": "In person or online?",
+        "type": "select",
+        "options": [
+          "In person",
+          "Online"
+        ]
+      }
     ],
     "notice": "For students under 18, a parent or guardian must book and be present or reachable during sessions."
   },
@@ -48,8 +149,18 @@
     "deposit": 0,
     "icon": "💅",
     "summary": "Hand-painted custom press-on nail sets in every shade, shape, and length. Reusable, damage-free, and shipped to your door with everything you need to apply them.",
-    "included": ["10-piece custom set in your size", "Application kit: glue, file, prep pad, tabs", "Sizing kit available for first orders", "Reusable with proper care"],
-    "steps": ["Order a sizing kit or send your sizes", "Choose shape, length, and design", "We hand-make your set in 5-7 days", "Shipped with an application kit"]
+    "included": [
+      "10-piece custom set in your size",
+      "Application kit: glue, file, prep pad, tabs",
+      "Sizing kit available for first orders",
+      "Reusable with proper care"
+    ],
+    "steps": [
+      "Order a sizing kit or send your sizes",
+      "Choose shape, length, and design",
+      "We hand-make your set in 5-7 days",
+      "Shipped with an application kit"
+    ]
   },
   {
     "id": "cleaning",
@@ -62,12 +173,42 @@
     "deposit": 40,
     "icon": "🧽",
     "summary": "Standard, deep, and move-in/move-out cleaning for homes and small offices. One-time visits or weekly, biweekly, and monthly plans with the same trusted team.",
-    "included": ["Kitchens, bathrooms, bedrooms, living areas", "Deep clean and move-out options", "Supplies and equipment provided", "Recurring plans with discounted rates"],
-    "steps": ["Tell us about your home", "Get a quote within 24 hours", "Pay a deposit to reserve your date", "Relax, we handle the rest"],
+    "included": [
+      "Kitchens, bathrooms, bedrooms, living areas",
+      "Deep clean and move-out options",
+      "Supplies and equipment provided",
+      "Recurring plans with discounted rates"
+    ],
+    "steps": [
+      "Tell us about your home",
+      "Get a quote within 24 hours",
+      "Pay a deposit to reserve your date",
+      "Relax, we handle the rest"
+    ],
     "intake": [
-      {"name": "home", "label": "Bedrooms / bathrooms / approx. square feet", "type": "text", "placeholder": "e.g. 3 bed, 2 bath, 1,600 sq ft"},
-      {"name": "cleanType", "label": "Type of clean", "type": "select", "options": ["Standard", "Deep clean", "Move-in / move-out", "Recurring plan"]},
-      {"name": "pets", "label": "Pets or anything we should know?", "type": "text", "placeholder": "e.g. one friendly dog, gate code, allergies"}
+      {
+        "name": "home",
+        "label": "Bedrooms / bathrooms / approx. square feet",
+        "type": "text",
+        "placeholder": "e.g. 3 bed, 2 bath, 1,600 sq ft"
+      },
+      {
+        "name": "cleanType",
+        "label": "Type of clean",
+        "type": "select",
+        "options": [
+          "Standard",
+          "Deep clean",
+          "Move-in / move-out",
+          "Recurring plan"
+        ]
+      },
+      {
+        "name": "pets",
+        "label": "Pets or anything we should know?",
+        "type": "text",
+        "placeholder": "e.g. one friendly dog, gate code, allergies"
+      }
     ]
   },
   {
@@ -81,30 +222,261 @@
     "deposit": 50,
     "icon": "🔧",
     "summary": "Mounting, assembly, repairs, painting, fixtures, small installs, and the odd jobs that never get done. Honest quotes, clean work, no surprises.",
-    "included": ["TV and shelf mounting, furniture assembly", "Drywall patching and painting", "Fixture, faucet, and hardware swaps", "Small repairs and punch lists"],
-    "steps": ["Send photos and a description", "Get a quote within 24 hours", "Pay a deposit to book the day", "We show up and get it done"],
+    "included": [
+      "TV and shelf mounting, furniture assembly",
+      "Drywall patching and painting",
+      "Fixture, faucet, and hardware swaps",
+      "Small repairs and punch lists"
+    ],
+    "steps": [
+      "Send photos and a description",
+      "Get a quote within 24 hours",
+      "Pay a deposit to book the day",
+      "We show up and get it done"
+    ],
     "intake": [
-      {"name": "job", "label": "What needs doing?", "type": "textarea", "placeholder": "List the tasks. Photos help a lot."},
-      {"name": "urgency", "label": "How soon?", "type": "select", "options": ["This week", "Within 2 weeks", "Flexible", "Urgent"]}
+      {
+        "name": "job",
+        "label": "What needs doing?",
+        "type": "textarea",
+        "placeholder": "List the tasks. Photos help a lot."
+      },
+      {
+        "name": "urgency",
+        "label": "How soon?",
+        "type": "select",
+        "options": [
+          "This week",
+          "Within 2 weeks",
+          "Flexible",
+          "Urgent"
+        ]
+      }
     ]
   },
   {
     "id": "spanish",
     "name": "All Shades of Español",
-    "service": "Spanish Classes",
-    "tagline": "Speak with confidence, from your first class.",
+    "service": "Spanish / English Lessons",
+    "tagline": "Lessons for kids and families. Lecciones para niños y familias.",
     "status": "live",
     "bookingType": "book",
-    "startingAt": "Starting at $35 / class",
-    "deposit": 20,
+    "startingAt": "$20 per person per session",
+    "deposit": 10,
     "icon": "🗣️",
-    "summary": "Conversational Spanish for beginners through intermediate, taught in a relaxed, real-life way. Private lessons, small groups, and travel-ready crash courses.",
-    "included": ["Private or small-group classes", "Beginner to intermediate levels", "Conversation-first approach", "Weekly recurring slots available"],
-    "steps": ["Pick a time", "Tell us your level and goal", "Pay a deposit to hold the slot", "¡Vamos!"],
+    "summary": "One-on-one private Spanish and English lessons for kids and/or families, online or in person. Multi-member discounts and a referral program. Hablamos Español.",
+    "included": [
+      "One-on-one / private lessons",
+      "Online or in-person availability",
+      "$20 per child or person per session",
+      "Multi-member discount and referral program"
+    ],
+    "steps": [
+      "Pick a time",
+      "Tell us who's learning and the language",
+      "Pay a small deposit to hold the slot",
+      "¡Vamos!"
+    ],
     "intake": [
-      {"name": "level", "label": "Current level", "type": "select", "options": ["Complete beginner", "Some basics", "Intermediate"]},
-      {"name": "goal", "label": "Your goal", "type": "text", "placeholder": "e.g. travel, work, family, school"}
-    ]
+      {
+        "name": "language",
+        "label": "Learning Spanish or English?",
+        "type": "select",
+        "options": [
+          "Spanish",
+          "English",
+          "Both"
+        ]
+      },
+      {
+        "name": "learners",
+        "label": "Who is learning? (names and ages)",
+        "type": "text",
+        "placeholder": "e.g. Maya (9) and Dad"
+      },
+      {
+        "name": "level",
+        "label": "Current level",
+        "type": "select",
+        "options": [
+          "Complete beginner",
+          "Some basics",
+          "Intermediate"
+        ]
+      },
+      {
+        "name": "format",
+        "label": "Online or in person?",
+        "type": "select",
+        "options": [
+          "Online",
+          "In person"
+        ]
+      }
+    ],
+    "notice": "Multi-member discount for families. Ask about our referral program. Descuento para múltiples miembros. Pregunta por nuestro programa de referidos.",
+    "flyer": {
+      "file": "asb-spanish-english-lessons-flyer.pptm",
+      "title": "Spanish/English Lessons for Kids and/or Families",
+      "sections": [
+        {
+          "h": "English",
+          "items": [
+            "One-on-one / private lessons",
+            "Online or in-person availability",
+            "$20 per child/person per session",
+            "Multi-member discount",
+            "Ask me about our referral program"
+          ]
+        },
+        {
+          "h": "Español",
+          "items": [
+            "Clases privadas / lecciones uno-a-uno",
+            "Disponibles en línea o presenciales",
+            "$20 por niño/persona por sesión",
+            "Descuento para múltiples miembros",
+            "Pregunta por nuestro programa de referidos"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "writing",
+    "name": "All Shades of Words",
+    "service": "Creative Writing Services",
+    "tagline": "The right words, when they matter most.",
+    "status": "live",
+    "bookingType": "quote",
+    "startingAt": "Free quote · priced per piece",
+    "deposit": 15,
+    "icon": "✍🏾",
+    "summary": "Resume rewrites, cover letters, dating profiles, polished texts and emails, poetry commissions, speeches, essay and homework help, obituaries, social media posts, and small business ads. Hablamos Español.",
+    "included": [
+      "Resume rewrites and cover letters",
+      "Speeches, poetry commissions, and obituaries",
+      "Essay, debate, and homework writing help",
+      "Dating profiles, texts, and emails polished"
+    ],
+    "steps": [
+      "Tell us what you need written",
+      "Get a quote within 24 hours",
+      "Pay a deposit to start",
+      "Receive your draft and one round of edits"
+    ],
+    "intake": [
+      {
+        "name": "piece",
+        "label": "What do you need written?",
+        "type": "select",
+        "options": [
+          "Resume rewrite",
+          "Cover letter",
+          "Dating profile",
+          "Text / email polishing",
+          "Poetry commission",
+          "Speech",
+          "Essay / debate / homework help",
+          "Obituary",
+          "Social media content",
+          "Small business ad",
+          "Something else"
+        ]
+      },
+      {
+        "name": "details",
+        "label": "Tell us about it",
+        "type": "textarea",
+        "placeholder": "Who it's for, the tone you want, any deadline"
+      }
+    ],
+    "flyer": {
+      "file": "asb-creative-writing-flyer.pptm",
+      "title": "Creative Writing Services",
+      "sections": [
+        {
+          "h": "What we write",
+          "items": [
+            "Resume rewrites",
+            "Cover letter writing",
+            "Help with dating profiles",
+            "Text message / email polishing",
+            "Poetry commissions",
+            "Speech / poetry speech",
+            "Help with debate / essay / homework writing",
+            "Obituaries",
+            "Social media content posting",
+            "Small business ads",
+            "And so much more!"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "freelance",
+    "name": "All Shades of Digital",
+    "service": "Social Media, Web Fixes & Tech Help",
+    "tagline": "Content, captions, quick website fixes, and small business tech help.",
+    "status": "live",
+    "bookingType": "quote",
+    "startingAt": "Free quote · project pricing",
+    "deposit": 25,
+    "icon": "💻",
+    "summary": "Social media content creation, captions and posts, flyers, e-commerce ads and marketing, quick website edits and fixes, landing page cleanup, and \"fix my website\" micro help for small businesses.",
+    "included": [
+      "Captions, posts, and flyers",
+      "Small business content and e-commerce ads",
+      "Quick website edits and landing page cleanup",
+      "Small business tech help"
+    ],
+    "steps": [
+      "Tell us what you need",
+      "Get a quote within 24 hours",
+      "Pay a deposit to start",
+      "We deliver, you post"
+    ],
+    "intake": [
+      {
+        "name": "need",
+        "label": "What do you need help with?",
+        "type": "textarea",
+        "placeholder": "e.g. 10 Instagram captions, fix my homepage, a flyer for my sale"
+      },
+      {
+        "name": "links",
+        "label": "Links to your site or pages",
+        "type": "text",
+        "placeholder": "https://"
+      }
+    ],
+    "flyer": {
+      "file": "asb-social-media-web-help-flyer.pptm",
+      "title": "Social Media Content Creation / Website Edits & Quick Fixes",
+      "sections": [
+        {
+          "h": "Content",
+          "items": [
+            "Captions",
+            "Posts",
+            "Flyers",
+            "Small business content",
+            "E-commerce ads / marketing"
+          ]
+        },
+        {
+          "h": "Website & tech",
+          "items": [
+            "Quick website edits / fixes",
+            "Landing page cleanup",
+            "\"Fix my website\" micro help",
+            "Small business tech help",
+            "And so much more…"
+          ]
+        }
+      ]
+    }
   },
   {
     "id": "lawn-care",
@@ -117,11 +489,36 @@
     "deposit": 25,
     "icon": "🌿",
     "summary": "Mowing, edging, trimming, leaf cleanup, and seasonal yard work. One-time visits or a recurring plan so it always looks fresh.",
-    "included": ["Mow, edge, trim, blow", "Hedge trimming and leaf cleanup", "Seasonal cleanups", "Weekly and biweekly plans"],
-    "steps": ["Tell us about the yard", "Get a quote within 24 hours", "Pay a deposit to book", "Enjoy the view"],
+    "included": [
+      "Mow, edge, trim, blow",
+      "Hedge trimming and leaf cleanup",
+      "Seasonal cleanups",
+      "Weekly and biweekly plans"
+    ],
+    "steps": [
+      "Tell us about the yard",
+      "Get a quote within 24 hours",
+      "Pay a deposit to book",
+      "Enjoy the view"
+    ],
     "intake": [
-      {"name": "yard", "label": "Approximate lot size and what's needed", "type": "text", "placeholder": "e.g. quarter acre, mow + edge + hedges"},
-      {"name": "frequency", "label": "How often?", "type": "select", "options": ["One time", "Weekly", "Biweekly", "Monthly"]}
+      {
+        "name": "yard",
+        "label": "Approximate lot size and what's needed",
+        "type": "text",
+        "placeholder": "e.g. quarter acre, mow + edge + hedges"
+      },
+      {
+        "name": "frequency",
+        "label": "How often?",
+        "type": "select",
+        "options": [
+          "One time",
+          "Weekly",
+          "Biweekly",
+          "Monthly"
+        ]
+      }
     ],
     "notice": "Weather policy: if rain makes the work unsafe, we reschedule to the next available day at no charge."
   },
@@ -136,21 +533,17 @@
     "deposit": 0,
     "icon": "🏋🏾",
     "summary": "One-on-one and small-group training built around your body, your schedule, and your goals. Join the waitlist and be the first to know when we launch.",
-    "included": ["Personalized programs", "In-person and virtual options", "Nutrition guidance", "Accountability check-ins"],
-    "steps": ["Join the waitlist", "We reach out when we launch", "Free consultation", "Start strong"]
-  },
-  {
-    "id": "freelance",
-    "name": "All Shades of Freelance",
-    "service": "Freelance Services",
-    "tagline": "Creative and business help, on demand.",
-    "status": "soon",
-    "bookingType": "waitlist",
-    "startingAt": "Coming soon",
-    "deposit": 0,
-    "icon": "💼",
-    "summary": "Admin support, design, content, and project help for small businesses and busy people. Tell us what you need and join the waitlist.",
-    "included": ["Admin and virtual assistance", "Content and social media support", "Design and documents", "Project-based pricing"],
-    "steps": ["Join the waitlist", "Tell us about your project", "We scope it together", "Get it done"]
+    "included": [
+      "Personalized programs",
+      "In-person and virtual options",
+      "Nutrition guidance",
+      "Accountability check-ins"
+    ],
+    "steps": [
+      "Join the waitlist",
+      "We reach out when we launch",
+      "Free consultation",
+      "Start strong"
+    ]
   }
 ]

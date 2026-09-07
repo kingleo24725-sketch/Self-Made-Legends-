@@ -69,6 +69,8 @@ p { margin: 0 0 1em; }
 .site-header { position: sticky; top: 0; z-index: 50; background: rgba(248, 242, 234, .92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
 .site-header .bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; height: 72px; }
 .brand { display: flex; align-items: center; gap: .7rem; text-decoration: none; color: var(--espresso); }
+.brand .logo { height: 52px; width: auto; }
+.brand .logo + .mark { display: none; }
 .brand .mark { width: 40px; height: 40px; border-radius: 50%; background: conic-gradient(from 200deg, var(--espresso), var(--chestnut), var(--caramel), var(--honey), var(--sand), var(--espresso)); box-shadow: inset 0 0 0 3px var(--cream); }
 .brand .name { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; letter-spacing: .01em; }
 .brand .name small { display: block; font-family: var(--font-body); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; color: var(--caramel); font-weight: 600; }
@@ -97,7 +99,10 @@ p { margin: 0 0 1em; }
 }
 
 /* Hero */
-.hero { position: relative; overflow: hidden; background: linear-gradient(160deg, var(--espresso) 0%, var(--cocoa) 45%, var(--chestnut) 100%); color: var(--latte); }
+.hero { position: relative; overflow: hidden; color: var(--latte);
+  background-color: var(--cocoa);
+  background-image: linear-gradient(160deg, rgba(43,26,16,.92) 0%, rgba(74,46,28,.88) 45%, rgba(107,63,35,.85) 100%), var(--art, none);
+  background-size: cover; background-position: center 30%; }
 .hero::after { content: ""; position: absolute; inset: auto -10% -40% auto; width: 60vw; max-width: 720px; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(212,162,76,.35), transparent 65%); pointer-events: none; }
 .hero .container { position: relative; display: grid; grid-template-columns: 1.15fr .85fr; gap: 3rem; align-items: center; padding: clamp(3.5rem, 8vw, 6.5rem) 0; }
 .hero h1 { color: var(--ivory); margin-bottom: 1rem; }
@@ -220,7 +225,19 @@ form.asb { display: grid; gap: 1rem; }
 .social a { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--chestnut); display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; font-weight: 700; }
 
 /* Page hero (inner pages) */
-.page-hero { background: linear-gradient(160deg, var(--cocoa), var(--chestnut)); color: var(--latte); padding: clamp(2.5rem, 6vw, 4.5rem) 0; }
+.page-hero { color: var(--latte); padding: clamp(2.5rem, 6vw, 4.5rem) 0;
+  background-color: var(--cocoa);
+  background-image: linear-gradient(160deg, rgba(74,46,28,.9), rgba(107,63,35,.88)), var(--art, none);
+  background-size: cover; background-position: center 30%; }
+/* Crest art per page: files come from assets-raw/ via scripts/prep-images.py. Missing files simply don't render. */
+body[data-page="home"] { --art: url(../img/bg-home.jpg); }
+body[data-page="book"] { --art: url(../img/bg-book.jpg); }
+body[data-page="community"] { --art: url(../img/bg-community.jpg); }
+body[data-page="careers"] { --art: url(../img/bg-careers.jpg); }
+body[data-page="shop"] { --art: url(../img/bg-shop.jpg); }
+body[data-page="about"] { --art: url(../img/bg-about.jpg); }
+body[data-page="contact"] { --art: url(../img/bg-contact.jpg); }
+body[data-page^="service-"] { --art: url(../img/bg-services.jpg); }
 .page-hero h1 { color: var(--ivory); }
 .page-hero .lead { color: var(--sand); max-width: 40rem; font-size: 1.1rem; }
 .page-hero .icon { font-size: 3rem; margin-bottom: .5rem; }

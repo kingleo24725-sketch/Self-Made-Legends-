@@ -1,6 +1,6 @@
 # All Shades of Brown (ASB) — Website Plan
 
-**Owner:** Rose Brown, founder of All Shades of Brown (ASB).
+**Owner:** Rose Brown, founder of All Shades Of Brown, L.L.C. (ASB). 816.287.2389 · fyi@myasbllc.com · www.myasbllc.com
 **Status:** planning draft. This captures Rose's vision plus the gaps identified during review.
 
 ASB is its own business and its own website. It is not connected to Self-Made Legends LLC or the

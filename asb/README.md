@@ -9,10 +9,17 @@ The website for **All Shades of Brown**, founded by Rose Brown. One brand, many 
 | All Shades of Beauty | Custom press-on nails | Live (shop) |
 | All Shades of Clean | Cleaning | Live (quote first) |
 | All Shades of Handy | Handyman | Live (quote first) |
-| All Shades of Español | Spanish classes | Live |
+| All Shades of Español | Spanish / English lessons for kids and families | Live |
+| All Shades of Words | Creative writing services | Live (quote first) |
+| All Shades of Digital | Social media content, website fixes, tech help | Live (quote first) |
 | All Shades of Lawn Care | Lawn care | Live (quote first) |
 | All Shades of Strength | Personal training | Coming soon (waitlist) |
-| All Shades of Freelance | Freelance services | Coming soon (waitlist) |
+
+Business details used across the site: **All Shades Of Brown, L.L.C.** · 816.287.2389 · fyi@myasbllc.com · www.myasbllc.com · Hablamos Español.
+
+Rose's original flyers live in `public/flyers/` and are offered for download on each service page. Their content is rebuilt as a native section on the page (the `flyer` field in `services.json`).
+
+Crest artwork goes in `assets-raw/` and is prepared by `scripts/prep-images.py` (removes the "Made with AI" badge, cuts out the shield for the logo). See `assets-raw/README.md`.
 
 This folder is self-contained and has no connection to the rest of this repository. Move it to its own repo whenever ready.
 
@@ -49,4 +56,4 @@ Every form writes to `data/submissions/<form>.json`. With `ADMIN_TOKEN` set, `GE
 
 ## Before launch
 
-See `../docs/asb/ASB_WEBSITE_PLAN.md` for the full checklist. The short version: real photos and video, Rose's contact details, attorney review of the legal pages (especially the sweepstakes rules), Stripe account in Rose's name, domain and hosting.
+See `../docs/asb/ASB_WEBSITE_PLAN.md` for the full checklist. The short version: real photos and video, attorney review of the legal pages (especially the sweepstakes rules), Stripe account in Rose's name, domain and hosting.

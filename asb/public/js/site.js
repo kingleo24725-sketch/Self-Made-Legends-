@@ -30,6 +30,7 @@
     <header class="site-header">
       <div class="container bar">
         <a class="brand" href="${ROOT}/index.html" aria-label="All Shades of Brown home">
+          <img class="logo" src="${ROOT}/img/logo-cutout.png" alt="" onerror="this.remove()">
           <span class="mark" aria-hidden="true"></span>
           <span class="name">All Shades of Brown<small>Services · Community · Care</small></span>
         </a>
@@ -58,8 +59,9 @@
       <div class="container">
         <div class="grid">
           <div>
-            <a class="brand" href="${ROOT}/index.html" style="color:var(--ivory)"><span class="mark" aria-hidden="true"></span><span class="name">All Shades of Brown</span></a>
+            <a class="brand" href="${ROOT}/index.html" style="color:var(--ivory)"><img class="logo" src="${ROOT}/img/logo-cutout.png" alt="" onerror="this.remove()"><span class="mark" aria-hidden="true"></span><span class="name">All Shades of Brown</span></a>
             <p style="margin-top:1rem;max-width:26rem">One family of services, every shade of care. Founded by Rose Brown to serve our community with excellence and heart.</p>
+            <p style="margin:0 0 .5rem"><a href="tel:+18162872389">816.287.2389</a><br><a href="mailto:fyi@myasbllc.com">fyi@myasbllc.com</a><br><span style="color:var(--gold)">Hablamos Español</span></p>
             <h4>Join the ASB community</h4>
             <form class="newsletter" data-form="newsletter">
               <input type="email" name="email" placeholder="Your email" required aria-label="Email address">
@@ -86,7 +88,7 @@
           </ul></div>
         </div>
         <div class="bottom">
-          <span>© ${year} All Shades of Brown. All rights reserved.</span>
+          <span>© ${year} All Shades Of Brown, L.L.C. All rights reserved.</span>
           <span class="legal"><a href="${ROOT}/legal/privacy.html">Privacy</a><a href="${ROOT}/legal/terms.html">Terms</a><a href="${ROOT}/contact.html">Contact</a></span>
         </div>
       </div>
