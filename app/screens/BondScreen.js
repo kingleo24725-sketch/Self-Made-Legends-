@@ -10,14 +10,15 @@
  * DUAL-CONFIRM is the whole mechanic — one person cannot complete a challenge
  * alone. docs/wireframes.md W-60.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, SafeAreaView, ScrollView } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
-import { useAuth } from '../hooks/useAuth';
 import Card from '../components/Cards/Card';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
 import { BOND_SECTIONS } from '../utils/constants';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 const ROUTES = {
   dad_learns: 'DadSchool',
@@ -28,42 +29,50 @@ const ROUTES = {
   legacy: 'Legacy',
 };
 
-const FALLBACK_CHALLENGES = [
-  { id: 'c1', title: 'Dad picks her lip color — and has to name it.', confirmedBy: ['a', 'b'] },
-  { id: 'c2', title: 'She teaches him one brush.', confirmedBy: ['a', 'b'] },
-  { id: 'c3', title: 'Match your looks for pizza night.', confirmedBy: ['b'] },
-];
-
 export default function BondScreen({ navigation }) {
   const t = useTheme();
-  const { profile } = useAuth();
-  const [challenges, setChallenges] = useState(FALLBACK_CHALLENGES);
+  // Missions come from the server (backend migration 009 is the catalogue).
+  // This screen used to fall back to three hardcoded challenges, two of
+  // them drawn as already done — so a brand-new dad was told on day one
+  // that he had completed things he had never heard of. No fallback now:
+  // an empty list is an empty list, and it says so.
+  const [challenges, setChallenges] = useState(null);
   const [bond, setBond] = useState(null);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     api.get('/bond/missions')
-      .then((d) => { if (d?.missions?.length) setChallenges(d.missions); })
-      .catch(() => {});
+      .then((d) => setChallenges(d?.missions ?? []))
+      .catch(() => setChallenges([]));
     api.get('/me/progression')
       .then((d) => setBond(d?.bond ?? null))
       .catch(() => {});
   }, []);
+  // On focus, not on mount: a lesson finished under this screen moves the
+  // meter, and the person comes back here to see it move.
+  useFocusEffect(load);
 
   async function confirm(id) {
-    setChallenges((cs) => cs.map((c) =>
-      c.id === id
-        ? { ...c, confirmedBy: [...new Set([...c.confirmedBy, profile?.id ?? 'me'])] }
-        : c));
     try {
       // A mission completes only when BOTH halves confirm, so the response
-      // carries the authoritative meter — never assume the optimistic one.
+      // carries the authoritative meter — never assume an optimistic one.
       const r = await api.post(`/bond/missions/${id}/confirm`);
-      if (r) {
-        setBond((b) => ({ ...(b ?? {}), meter: r.meter, level: r.level }));
-        setChallenges((cs) => cs.map((c) =>
-          (c.id === id ? { ...c, confirmedBy: r.confirmedBy, waitingOn: r.waitingOn } : c)));
+      setBond((b) => ({ ...(b ?? {}), meter: r.meter, level: r.level }));
+      setChallenges((cs) => cs.map((c) => (c.id === id
+        ? { ...c, confirmedBy: r.confirmedBy, confirmedByMe: true, waitingOn: r.waitingOn,
+            completedAt: r.complete ? new Date().toISOString() : null }
+        : c)));
+    } catch (e) {
+      if (e?.code === 'no_bond_partner') {
+        // A mission is for two. Say who is missing and where to fix it.
+        const go = await dialog.confirm('Nobody to bond with yet',
+          'Missions are for the two of you, and there is no daughter on this account yet. '
+          + 'Add her in the Guardian Console and this will be waiting.',
+          { ok: 'Add your daughter', cancel: 'Not now' });
+        if (go) navigation.navigate('GuardianConsole');
+        return;
       }
-    } catch { /* the optimistic tick stands; the next load reconciles it */ }
+      dialog.alert('Missions', "That didn't save. Try again in a moment.");
+    }
   }
 
   return (
@@ -93,26 +102,44 @@ export default function BondScreen({ navigation }) {
                   {section.title.toUpperCase()}
                 </Text>
 
-                {challenges.map((c) => {
-                  const done = (c.confirmedBy ?? []).length >= 2;
+                {challenges && challenges.length === 0 && (
+                  <Card>
+                    <Text style={[t.type('body'), { color: t.color.textSecondary }]}>
+                      No missions this week. New ones arrive here.
+                    </Text>
+                  </Card>
+                )}
+
+                {(challenges ?? []).map((c) => {
+                  const done = !!c.completedAt || (c.confirmedBy ?? []).length >= 2;
+                  const mine = !!c.confirmedByMe;
                   return (
                     <Card key={c.id}>
                       <Text style={[t.type('body'), { color: t.color.textPrimary }]}>
                         {done ? '✅ ' : '○ '}{c.title}
                       </Text>
+                      {!!c.description && (
+                        <Text style={[t.type('bodySm'), { color: t.color.textSecondary, marginTop: 2 }]}>
+                          {c.description}
+                        </Text>
+                      )}
                       {!done && (
                         <>
                           {/* Name who we're waiting on — gently. */}
                           <Text style={[t.type('caption'), {
                             color: t.color.textSecondary, marginTop: t.space[1],
                           }]}>
-                            Waiting on one more ✓
+                            {mine
+                              ? `You did it. Waiting on ${c.waitingOn ?? bond?.partner?.displayName ?? 'her'} ✓`
+                              : `Both of you tick it · ${c.points ?? 10} points`}
                           </Text>
-                          <SecondaryButton
-                            title="I did it ✓"
-                            onPress={() => confirm(c.id)}
-                            style={{ marginTop: t.space[3] }}
-                          />
+                          {!mine && (
+                            <SecondaryButton
+                              title="I did it ✓"
+                              onPress={() => confirm(c.id)}
+                              style={{ marginTop: t.space[3] }}
+                            />
+                          )}
                         </>
                       )}
                     </Card>
