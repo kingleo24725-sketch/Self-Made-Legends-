@@ -50,9 +50,13 @@ Demo mode records bookings without charging anything. Add `STRIPE_SECRET_KEY` (a
 - **Contact details, hours, service area:** `public/contact.html`.
 - **Deposit amounts:** the `deposit` field per service in `services.json`.
 
-## Seeing submissions
+## Back office
 
-Every form writes to `data/submissions/<form>.json`. With `ADMIN_TOKEN` set, `GET /api/admin/submissions` with header `x-admin-token` returns everything. A proper admin screen is next on the roadmap.
+Open `/admin.html` and enter the `ADMIN_TOKEN` from `.env` (it must be changed from the default). Rose sees every booking, quote request, message, application, and signup, can set a booking's status, add private notes, delete entries, and download any list as CSV.
+
+Set `NOTIFY_EMAIL` plus the `SMTP_*` values to get an email at fyi@myasbllc.com the moment anything comes in.
+
+Submissions are plain JSON files in `data/submissions/`. On hosts with a temporary disk (Railway, Render free tier) attach a persistent volume there, or move to a database before launch.
 
 ## Before launch
 

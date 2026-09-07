@@ -29,6 +29,24 @@ if (process.env.STRIPE_SECRET_KEY) {
 
 fs.mkdirSync(SUBMISSIONS_DIR, { recursive: true });
 
+// Optional email alerts: set SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASS and NOTIFY_EMAIL in .env
+let mailer = null;
+if (process.env.SMTP_HOST && process.env.NOTIFY_EMAIL) {
+  mailer = require('nodemailer').createTransport({
+    host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === 'true',
+    auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined
+  });
+  console.log(`Email alerts: on, sending to ${process.env.NOTIFY_EMAIL}`);
+} else {
+  console.log('Email alerts: off (set SMTP_HOST and NOTIFY_EMAIL to enable)');
+}
+function notify(subject, record) {
+  if (!mailer) return;
+  const lines = Object.entries(record).filter(([k]) => !['id', 'type'].includes(k)).map(([k, v]) => `${k}: ${v}`).join('\n');
+  mailer.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER || process.env.NOTIFY_EMAIL, to: process.env.NOTIFY_EMAIL, subject: `[ASB] ${subject}`, text: lines })
+    .catch(err => console.error('Email alert failed:', err.message));
+}
+
 const app = express();
 app.set('trust proxy', 1);
 
@@ -89,7 +107,9 @@ app.post('/api/forms/:type', (req, res) => {
   if (data.email && !isEmail(data.email)) return res.status(400).json({ error: 'Please enter a valid email address.' });
   if (type === 'newsletter' && !data.email) return res.status(400).json({ error: 'Email is required.' });
   if (data.website) return res.json({ message: 'Thank you!' }); // honeypot field
-  appendRecord(type, { id: crypto.randomUUID(), type, receivedAt: new Date().toISOString(), ...data });
+  const record = { id: crypto.randomUUID(), type, receivedAt: new Date().toISOString(), ...data };
+  appendRecord(type, record);
+  notify(`New ${type} from ${data.name || data.email || 'website'}`, record);
   const messages = {
     newsletter: "You're in! Welcome to the ASB community.",
     contact: 'Thanks for reaching out. We reply within one business day.',
@@ -123,6 +143,7 @@ app.post('/api/book', async (req, res) => {
     ...body
   };
   appendRecord('bookings', booking);
+  notify(`New booking: ${service.name} on ${booking.date} at ${booking.time} (${booking.name})`, booking);
 
   const successUrl = `${BASE_URL}/success.html?booking=${booking.id}`;
   if (!stripe || service.deposit <= 0) {
@@ -163,12 +184,31 @@ app.get('/api/bookings/:id', (req, res) => {
 });
 
 /* ---------- simple admin (token protected) ---------- */
-app.get('/api/admin/submissions', (req, res) => {
+function requireAdmin(req, res, next) {
   const token = process.env.ADMIN_TOKEN;
-  if (!token || req.headers['x-admin-token'] !== token) return res.status(401).json({ error: 'Unauthorized' });
+  if (!token || token === 'change-me' || req.headers['x-admin-token'] !== token) return res.status(401).json({ error: 'Unauthorized' });
+  next();
+}
+app.get('/api/admin/submissions', requireAdmin, (req, res) => {
   const out = {};
   for (const f of fs.readdirSync(SUBMISSIONS_DIR)) out[f.replace('.json', '')] = readJson(path.join(SUBMISSIONS_DIR, f), []);
   res.json(out);
+});
+const BOOKING_STATUSES = ['pending_deposit', 'demo_deposit', 'deposit_paid', 'requested', 'quoted', 'confirmed', 'completed', 'cancelled'];
+app.patch('/api/admin/bookings/:id', requireAdmin, (req, res) => {
+  const patch = {};
+  if (req.body.status) { if (!BOOKING_STATUSES.includes(req.body.status)) return res.status(400).json({ error: 'Bad status' }); patch.status = req.body.status; }
+  if (typeof req.body.adminNotes === 'string') patch.adminNotes = req.body.adminNotes.slice(0, 2000);
+  updateBooking(req.params.id, patch);
+  res.json({ ok: true });
+});
+app.delete('/api/admin/:type/:id', requireAdmin, (req, res) => {
+  const file = path.join(SUBMISSIONS_DIR, `${req.params.type.replace(/[^a-z-]/g, '')}.json`);
+  const list = readJson(file, []);
+  const next = list.filter(x => x.id !== req.params.id);
+  if (next.length === list.length) return res.status(404).json({ error: 'Not found' });
+  fs.writeFileSync(file, JSON.stringify(next, null, 2));
+  res.json({ ok: true });
 });
 
 app.use((req, res) => res.status(404).sendFile(path.join(__dirname, 'public', '404.html')));

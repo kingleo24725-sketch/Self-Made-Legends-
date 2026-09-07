@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ASB Admin | All Shades of Brown</title>
+  <meta name="robots" content="noindex">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+  <style>
+    .admin-bar { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; margin-bottom: 1.5rem; }
+    .counts button { text-align: left; background: var(--ivory); border: 1px solid var(--line); border-radius: 12px; padding: .8rem 1rem; cursor: pointer; font: inherit; }
+    .counts button.active { border-color: var(--chestnut); box-shadow: 0 0 0 2px var(--honey); }
+    .counts .n { font-family: var(--font-display); font-size: 1.6rem; color: var(--chestnut); }
+    .counts .l { font-size: .8rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    table { width: 100%; border-collapse: collapse; background: var(--ivory); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: .92rem; }
+    th, td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: var(--latte); font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--cocoa); }
+    tr:hover td { background: #fff; }
+    .wrap { overflow-x: auto; }
+    td select, td textarea { font: inherit; font-size: .88rem; padding: .35rem .5rem; border: 1px solid var(--line); border-radius: 6px; width: 100%; }
+    td textarea { min-height: 48px; }
+    .status { display: inline-block; padding: .2rem .55rem; border-radius: 999px; font-size: .75rem; font-weight: 600; background: var(--latte); color: var(--cocoa); }
+    .status.deposit_paid, .status.confirmed, .status.completed { background: #e3f0e6; color: #234d2e; }
+    .status.cancelled { background: #f8e1e1; color: #6e1f1f; }
+    .del { background: none; border: 0; color: var(--err); cursor: pointer; font-size: .85rem; }
+    details.extra summary { cursor: pointer; color: var(--caramel); font-size: .85rem; }
+    details.extra div { font-size: .85rem; color: var(--muted); white-space: pre-wrap; margin-top: .3rem; }
+  </style>
+</head>
+<body data-page="admin" data-root=".">
+  <div id="site-header"></div>
+
+  <section class="section tight" id="login">
+    <div class="container" style="max-width:26rem">
+      <div class="card stack">
+        <h1 style="font-size:1.8rem">ASB back office</h1>
+        <p class="muted">Enter the admin password to see bookings, quotes, applications, and signups.</p>
+        <form class="asb" id="login-form">
+          <div class="field"><label for="tok">Admin password</label><input id="tok" type="password" autocomplete="current-password" required></div>
+          <button class="btn primary" type="submit">Open dashboard</button>
+          <div id="login-msg"></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section tight" id="dash" hidden>
+    <div class="container">
+      <div class="admin-bar">
+        <div><div class="eyebrow">Back office</div><h1 style="font-size:1.9rem;margin:0">What's come in</h1></div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn outline small" id="refresh">Refresh</button>
+          <button class="btn outline small" id="export">Download CSV</button>
+          <button class="btn small" id="logout" style="background:var(--latte)">Log out</button>
+        </div>
+      </div>
+      <div class="counts" id="counts"></div>
+      <div class="wrap"><table id="table"></table></div>
+      <p class="form-note" style="margin-top:1rem">Submissions are stored on the server in <code>data/submissions/</code>. Email alerts go to the address set in <code>NOTIFY_EMAIL</code> when SMTP is configured.</p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const LABELS = { bookings: 'Bookings', quote: 'Quote requests', contact: 'Messages', newsletter: 'Newsletter', waitlist: 'Waitlist', volunteer: 'Volunteers', application: 'Job applications', contractor: 'Partner forms', giveaway: 'Giveaway entries', rsvp: 'Event RSVPs', 'nails-order': 'Nail orders' };
+    const STATUSES = ['pending_deposit', 'demo_deposit', 'deposit_paid', 'requested', 'quoted', 'confirmed', 'completed', 'cancelled'];
+    const HIDE = new Set(['id', 'type', 'website', 'acceptTerms', 'stripeSessionId']);
+    let token = sessionStorage.getItem('asb_admin') || '', data = {}, current = 'bookings';
+
+    const api = (url, opts = {}) => fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-token': token, ...(opts.headers || {}) } });
+
+    async function load() {
+      const res = await api('api/admin/submissions');
+      if (res.status === 401) { sessionStorage.removeItem('asb_admin'); token = ''; $('dash').hidden = true; $('login').hidden = false; $('login-msg').innerHTML = '<div class="alert err">Wrong password, or ADMIN_TOKEN is still set to the default.</div>'; return; }
+      data = await res.json();
+      $('login').hidden = true; $('dash').hidden = false;
+      renderCounts(); renderTable();
+    }
+    function renderCounts() {
+      const keys = ['bookings', ...Object.keys(LABELS).filter(k => k !== 'bookings')];
+      $('counts').innerHTML = keys.map(k => `<button data-k="${k}" class="${k === current ? 'active' : ''}"><div class="n">${(data[k] || []).length}</div><div class="l">${LABELS[k]}</div></button>`).join('');
+      $('counts').querySelectorAll('button').forEach(b => b.addEventListener('click', () => { current = b.dataset.k; renderCounts(); renderTable(); }));
+    }
+    const fmt = iso => iso ? new Date(iso).toLocaleString('default', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+    function renderTable() {
+      const rows = [...(data[current] || [])].reverse();
+      if (!rows.length) { $('table').innerHTML = `<tr><td class="muted">Nothing here yet.</td></tr>`; return; }
+      if (current === 'bookings') {
+        $('table').innerHTML = `<tr><th>Received</th><th>Service</th><th>When</th><th>Client</th><th>Details</th><th>Status</th><th>Notes</th><th></th></tr>` + rows.map(b => `
+          <tr data-id="${b.id}">
+            <td>${fmt(b.receivedAt)}</td>
+            <td><strong>${ASB.esc(b.serviceName)}</strong><br><span class="muted">$${b.deposit} deposit</span></td>
+            <td>${ASB.esc(b.date)}<br>${ASB.esc(b.time)}</td>
+            <td>${ASB.esc(b.name)}<br><a href="tel:${ASB.esc(b.phone)}">${ASB.esc(b.phone)}</a><br><a href="mailto:${ASB.esc(b.email)}">${ASB.esc(b.email)}</a></td>
+            <td>${extra(b, ['receivedAt', 'serviceName', 'serviceId', 'date', 'time', 'name', 'phone', 'email', 'status', 'deposit', 'adminNotes', 'paidAt'])}</td>
+            <td><select data-status>${STATUSES.map(s => `<option ${s === b.status ? 'selected' : ''}>${s}</option>`).join('')}</select></td>
+            <td><textarea data-notes placeholder="Private notes">${ASB.esc(b.adminNotes || '')}</textarea></td>
+            <td><button class="del" data-del>Delete</button></td>
+          </tr>`).join('');
+        $('table').querySelectorAll('[data-status]').forEach(sel => sel.addEventListener('change', async e => { await api('api/admin/bookings/' + e.target.closest('tr').dataset.id, { method: 'PATCH', body: JSON.stringify({ status: e.target.value }) }); load(); }));
+        $('table').querySelectorAll('[data-notes]').forEach(t => t.addEventListener('change', async e => { await api('api/admin/bookings/' + e.target.closest('tr').dataset.id, { method: 'PATCH', body: JSON.stringify({ adminNotes: e.target.value }) }); }));
+      } else {
+        const cols = [...new Set(rows.flatMap(r => Object.keys(r)))].filter(k => !HIDE.has(k) && k !== 'receivedAt');
+        $('table').innerHTML = `<tr><th>Received</th>${cols.map(c => `<th>${ASB.esc(c)}</th>`).join('')}<th></th></tr>` + rows.map(r => `
+          <tr data-id="${r.id}"><td>${fmt(r.receivedAt)}</td>${cols.map(c => `<td>${link(c, r[c])}</td>`).join('')}<td><button class="del" data-del>Delete</button></td></tr>`).join('');
+      }
+      $('table').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async e => {
+        if (!confirm('Delete this entry? This cannot be undone.')) return;
+        await api(`api/admin/${current}/${e.target.closest('tr').dataset.id}`, { method: 'DELETE' }); load();
+      }));
+    }
+    function link(k, v) { if (v == null || v === '') return ''; v = String(v); if (k === 'email') return `<a href="mailto:${ASB.esc(v)}">${ASB.esc(v)}</a>`; if (k === 'phone') return `<a href="tel:${ASB.esc(v)}">${ASB.esc(v)}</a>`; if (/^https?:\/\//.test(v)) return `<a href="${ASB.esc(v)}" target="_blank" rel="noopener">link</a>`; return ASB.esc(v); }
+    function extra(obj, skip) { const rest = Object.entries(obj).filter(([k, v]) => !skip.includes(k) && !HIDE.has(k) && v); if (!rest.length) return ''; return `<details class="extra"><summary>${rest.length} detail${rest.length > 1 ? 's' : ''}</summary><div>${rest.map(([k, v]) => `${ASB.esc(k)}: ${ASB.esc(v)}`).join('\n')}</div></details>`; }
+
+    $('login-form').addEventListener('submit', e => { e.preventDefault(); token = $('tok').value; sessionStorage.setItem('asb_admin', token); load(); });
+    $('refresh').addEventListener('click', load);
+    $('logout').addEventListener('click', () => { sessionStorage.removeItem('asb_admin'); location.reload(); });
+    $('export').addEventListener('click', () => {
+      const rows = data[current] || []; if (!rows.length) return;
+      const cols = [...new Set(rows.flatMap(r => Object.keys(r)))].filter(k => !HIDE.has(k));
+      const csv = [cols.join(','), ...rows.map(r => cols.map(c => `"${String(r[c] ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `asb-${current}.csv`; a.click();
+    });
+    if (token) load();
+  </script>
+</body>
+</html>
