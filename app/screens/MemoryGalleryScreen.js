@@ -15,8 +15,9 @@ import Card from '../components/Cards/Card';
 import PrimaryButton from '../components/Buttons/PrimaryButton';
 import EmptyState from '../components/EmptyState';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
-export default function MemoryGalleryScreen() {
+export default function MemoryGalleryScreen({ navigation }) {
   const t = useTheme();
   const [memories, setMemories] = useState([]);
 
@@ -32,7 +33,8 @@ export default function MemoryGalleryScreen() {
         {memories.length === 0 ? (
           <EmptyState emoji="✨" title="No memories yet."
             body="Your first look is one lesson away."
-            ctaTitle="Start a lesson" onPress={() => {}} />
+            ctaTitle="Start a lesson"
+            onPress={() => navigation.navigate('Main', { screen: 'Learn' })} />
         ) : (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] }}>
             {memories.map((m) => (
@@ -56,7 +58,18 @@ export default function MemoryGalleryScreen() {
           <Text style={[t.type('bodySm'), { color: t.color.textSecondary, marginBottom: t.space[3] }]}>
             A printed keepsake of your year.
           </Text>
-          <PrimaryButton title="Create" onPress={() => api.post('/bond-book')} />
+          {/* A request with no answer on screen is a button that "did nothing"
+              to the person who pressed it, whatever the server did. */}
+          <PrimaryButton title="Create" onPress={async () => {
+            try {
+              await api.post('/bond-book');
+              await dialog.alert('Bond Book', "We're putting your year together. It takes a little while — we'll let you know when it's ready.");
+            } catch (e) {
+              await dialog.alert('Bond Book', e?.code === 'upgrade_required'
+                ? 'Bond Books are part of a paid plan.'
+                : "That didn't start. Try again in a moment.");
+            }
+          }} />
         </Card>
       </ScrollView>
     </SafeAreaView>

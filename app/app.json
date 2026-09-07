@@ -114,6 +114,7 @@
     },
     "extra": {
       "apiBaseUrl": "",
+      "supportEmail": "",
       "stripePublishableKey": "",
       "livekitWsUrl": "",
       "env": "production",

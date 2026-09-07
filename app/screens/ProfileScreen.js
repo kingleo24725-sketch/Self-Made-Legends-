@@ -10,7 +10,7 @@
  * docs/wireframes.md W-90.
  */
 import React, { useCallback, useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, Pressable, Share } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
@@ -113,23 +113,46 @@ export default function ProfileScreen({ navigation }) {
         </Card>
 
         <Text style={[t.type('overline'), { color: t.color.textSecondary }]}>MY SHADE PROFILE</Text>
-        <Card>
-          <View style={{ flexDirection: 'row', gap: t.space[2], alignItems: 'center' }}>
-            <ShadeSwatch hex={t.color.shadeScale[8]} depth={9} undertone="warm" />
-            <View>
-              <Text style={[t.type('body'), { color: t.color.textPrimary }]}>Depth 9–10</Text>
-              <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
-                Warm, slight olive
-              </Text>
+        {/* The shade profile comes from the Try-On scan. Until that feature
+            is on there is nothing real to show, and this card used to show a
+            literal — "Depth 9–10, warm, slight olive" — to every person on
+            every device, with a Share button wired to nothing and a Re-scan
+            that silently did nothing. A made-up reading about someone's own
+            skin is worse than none. */}
+        {featureOn('tryOn') ? (
+          <Card>
+            <View style={{ flexDirection: 'row', gap: t.space[2], alignItems: 'center' }}>
+              <ShadeSwatch hex={t.color.shadeScale[8]} depth={9} undertone="warm" />
+              <View>
+                <Text style={[t.type('body'), { color: t.color.textPrimary }]}>Depth 9–10</Text>
+                <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
+                  Warm, slight olive
+                </Text>
+              </View>
             </View>
-          </View>
-          <View style={{ flexDirection: 'row', gap: t.space[3], marginTop: t.space[3] }}>
-            {/* Share is hidden entirely for U13. */}
-            {!isChild && <SecondaryButton title="Share card" onPress={() => {}} style={{ flex: 1 }} />}
-            <SecondaryButton title="Re-scan" style={{ flex: 1 }}
-              onPress={() => featureOn('tryOn') && navigation.navigate('ShadeMatch')} />
-          </View>
-        </Card>
+            <View style={{ flexDirection: 'row', gap: t.space[3], marginTop: t.space[3] }}>
+              {/* Share is hidden entirely for U13. */}
+              {!isChild && (
+                <SecondaryButton title="Share card" style={{ flex: 1 }}
+                  onPress={() => Share.share({
+                    message: 'My shade profile from Dad + Daughter Beauty Bond: depth 9–10, warm undertone.',
+                  }).catch(() => {})} />
+              )}
+              <SecondaryButton title="Re-scan" style={{ flex: 1 }}
+                onPress={() => navigation.navigate('ShadeMatch')} />
+            </View>
+          </Card>
+        ) : (
+          <Card>
+            <Text style={[t.type('body'), { color: t.color.textPrimary }]}>
+              Not scanned yet.
+            </Text>
+            <Text style={[t.type('bodySm'), { color: t.color.textSecondary }]}>
+              Your depth and undertone come from the Try-On scan, which arrives in
+              a later update. Nothing here is guessed.
+            </Text>
+          </Card>
+        )}
 
         <SecondaryButton title="Memory Gallery"
           onPress={() => navigation.navigate('MemoryGallery')} />
