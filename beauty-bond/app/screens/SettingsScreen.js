@@ -12,7 +12,7 @@ import React, { useState } from 'react';
 import {
   View, Text, SafeAreaView, ScrollView, Switch, Pressable, Linking, Share,
 } from 'react-native';
-import { featureOn } from '../utils/config';
+import { featureOn, SUPPORT_EMAIL } from '../utils/config';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import { useSubscription } from '../hooks/useSubscription';
@@ -99,9 +99,16 @@ export default function SettingsScreen({ navigation }) {
           {isAdult && (
             <Row label="Guardian Console" onPress={() => navigation.navigate('GuardianConsole')} />
           )}
-          <Row label="Blocked accounts" onPress={() => {}} />
-          <Row label="Report history" onPress={() => {}} />
-          <Row label="Who can reach me" onPress={() => {}} />
+          {/* Blocking, reporting and reach all concern rooms with other
+              people in them. Rooms are off in v1, so there is nobody to
+              block and nothing to report; the rows were three dead taps.
+              They return with the feature. */}
+          {featureOn('rooms') && (
+            <>
+              <Row label="Blocked accounts" onPress={() => navigation.navigate('Rooms')} />
+              <Row label="Report history" onPress={() => navigation.navigate('Rooms')} />
+            </>
+          )}
         </Group>
 
         <Group title="PRIVACY">
@@ -139,9 +146,16 @@ export default function SettingsScreen({ navigation }) {
                 accessibilityLabel="Remembrance Mode" />
             </View>
           </Card>
-          <Row label="Language / Region" onPress={() => {}} />
-          <Row label="Text size" onPress={() => {}} />
-          <Row label="Help & support" onPress={() => {}} />
+          {/* Language and text size are phone settings; the app follows
+              them. These rows open the phone's settings rather than
+              pretending to own the choice. */}
+          <Row label="Language / Region" onPress={() => Linking.openSettings()} />
+          <Row label="Text size" onPress={() => Linking.openSettings()} />
+          {!!SUPPORT_EMAIL && (
+            <Row label="Help & support" onPress={() => Linking.openURL(
+              `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('Beauty Bond help')}`)
+              .catch(() => dialog.alert('Help & support', `Email us at ${SUPPORT_EMAIL}.`))} />
+          )}
           <Row label="Sign out" onPress={logout} />
         </Group>
 

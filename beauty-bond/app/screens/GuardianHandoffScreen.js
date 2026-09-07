@@ -15,32 +15,61 @@ import PrimaryButton from '../components/Buttons/PrimaryButton';
 import SecondaryButton from '../components/Buttons/SecondaryButton';
 import { isEmail } from '../utils/validators';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 export default function GuardianHandoffScreen({ route }) {
   const t = useTheme();
   const [email, setEmail] = useState('');
-  const [sent, setSent] = useState(false);
+  // 'email' when a link went out; 'in_app' when the server has no mailer and
+  // the grown-up has to do it on this phone. This screen used to say "We
+  // sent the link! Check their email" in both cases — a promise about an
+  // email that, in v1, does not exist.
+  const [sent, setSent] = useState(null);
 
   async function send() {
-    await api.post('/guardian/consent/start', {
-      guardianEmail: email,
-      birthDate: route?.params?.birthDate,
-    });
-    setSent(true);
+    try {
+      const res = await api.post('/guardian/consent/start', {
+        guardianEmail: email,
+        birthDate: route?.params?.birthDate,
+      });
+      setSent(res?.delivery === 'email' ? 'email' : 'in_app');
+    } catch {
+      dialog.alert('Hmm', "That didn't go through. Check the email address and try again.");
+    }
+  }
+
+  /**
+   * The v1 path when the grown-up is right there: they make their own
+   * account and add the child from their Guardian Console, which asks for
+   * consent on the spot. That is the whole flow; this just says it plainly.
+   */
+  function grownUpHere() {
+    dialog.alert(
+      'Hand them the phone',
+      '1. They tap "Get started" and make their own account.\n'
+      + '2. In Profile → Settings → Guardian Console they tap "Add your daughter".\n'
+      + '3. They say yes to parental consent, and your profile is made under theirs.',
+      [{ text: 'Got it' }],
+    );
   }
 
   if (sent) {
+    const byEmail = sent === 'email';
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: t.color.ground }}>
         <View style={{ flex: 1, padding: t.gutter, justifyContent: 'center', gap: t.space[4] }}>
-          <Text style={{ fontSize: 40, textAlign: 'center' }}>⏳</Text>
+          <Text style={{ fontSize: 40, textAlign: 'center' }}>{byEmail ? '⏳' : '🤝'}</Text>
           <Text style={[t.type('h1'), { color: t.color.textPrimary, textAlign: 'center' }]}>
-            We sent the link!
+            {byEmail ? 'We sent the link!' : 'Next: your grown-up does it here.'}
           </Text>
           <Text style={[t.type('body'), { color: t.color.textSecondary, textAlign: 'center' }]}>
-            Ask them to check their email.
+            {byEmail
+              ? 'Ask them to check their email.'
+              : 'No email goes out yet — they set you up on this phone instead.'}
           </Text>
-          <SecondaryButton title="Resend" onPress={send} ghost />
+          {byEmail
+            ? <SecondaryButton title="Resend" onPress={send} ghost />
+            : <PrimaryButton title="Show them how" onPress={grownUpHere} />}
         </View>
       </SafeAreaView>
     );
@@ -67,7 +96,7 @@ export default function GuardianHandoffScreen({ route }) {
           }}
         />
         <PrimaryButton title="Send the link" onPress={send} disabled={!isEmail(email)} />
-        <SecondaryButton title="A grown-up is here with me now" ghost onPress={() => {}} />
+        <SecondaryButton title="A grown-up is here with me now" ghost onPress={grownUpHere} />
       </View>
     </SafeAreaView>
   );

@@ -55,6 +55,13 @@ export const LIVEKIT_WS_URL = extra.livekitWsUrl ?? '';
 export const ENV = extra.env ?? 'development';
 
 /**
+ * Where "Help & support" writes to. Set by the owner in app.json → extra.
+ * Empty hides the row: a support address that does not exist is worse than
+ * no row, because a person in trouble would write to it and wait.
+ */
+export const SUPPORT_EMAIL = (extra.supportEmail ?? '').trim();
+
+/**
  * v1 scope.
  *
  * AI Try-On and Glam Rooms are built, tested and switched OFF. The try-on

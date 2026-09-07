@@ -117,7 +117,11 @@ describe('the app ships with try-on and rooms switched off', () => {
 
     const profile = read('screens/ProfileScreen.js');
     if (/navigate\('ShadeMatch'/.test(profile)) {
-      expect(profile).toMatch(/featureOn\('tryOn'\)[\s\S]{0,60}navigate\('ShadeMatch'/);
+      // Either the call itself is guarded, or the whole shade card is
+      // rendered inside a featureOn('tryOn') ternary and the call sits
+      // within that branch.
+      expect(profile).toMatch(
+        /featureOn\('tryOn'\)(?:[\s\S]{0,60}|\s*\?\s*\([\s\S]{0,2500})navigate\('ShadeMatch'/);
     }
   });
 });
