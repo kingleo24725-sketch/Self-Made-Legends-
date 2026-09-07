@@ -17,6 +17,11 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);   // active profile (may be a child)
   const [profiles, setProfiles] = useState([]);
   const [status, setStatus] = useState('loading'); // loading|anon|authed|consent_pending
+  // True only in the session an account was just created. A new adult gets
+  // a default mode from the server, so "has a mode" cannot tell a first
+  // launch from a fiftieth; the navigator uses this to show ModeSelection
+  // once, at sign-up, and Home every time after.
+  const [freshSignup, setFreshSignup] = useState(false);
 
   const refresh = useCallback(async () => {
     const stored = await getItem(REFRESH_KEY);
@@ -39,7 +44,9 @@ export function AuthProvider({ children }) {
       const me = await api.get('/me');
       setUser(me.user);
       setProfiles(me.profiles || []);
-      setProfile(me.profiles?.[0] ?? null);
+      // The active profile is the one the token names — not whichever row
+      // happened to come first, which after a switch to a child could be dad.
+      setProfile(me.profile ?? me.profiles?.[0] ?? null);
       // A child account with unfinished parental consent cannot enter the app.
       setStatus(me.consentPending ? 'consent_pending' : 'authed');
     } catch {
@@ -53,6 +60,7 @@ export function AuthProvider({ children }) {
     const { accessToken, refreshToken } = await api.post('/auth/login', { email, password });
     setAccessToken(accessToken);
     await setItem(REFRESH_KEY, refreshToken);
+    setFreshSignup(false);
     await load();
   }
 
@@ -67,6 +75,23 @@ export function AuthProvider({ children }) {
     });
     setAccessToken(accessToken);
     await setItem(REFRESH_KEY, refreshToken);
+    setFreshSignup(true);
+    await load();
+  }
+
+  /**
+   * Hand the phone over. Switching to a child asks nothing; switching from
+   * a child back to an adult needs the account password, which the server
+   * checks (password_required). Tokens are re-issued for the new profile, so
+   * every later request — missions, letters, permissions — is hers or his.
+   */
+  async function switchProfile(profileId, password) {
+    const { accessToken, refreshToken } = await api.post('/auth/switch-profile', {
+      profileId, password,
+    });
+    setAccessToken(accessToken);
+    await setItem(REFRESH_KEY, refreshToken);
+    setFreshSignup(false);
     await load();
   }
 
@@ -75,16 +100,17 @@ export function AuthProvider({ children }) {
     await deleteItem(REFRESH_KEY);
     setAccessToken(null);
     setUser(null); setProfile(null); setProfiles([]);
+    setFreshSignup(false);
     setStatus('anon');
   }
 
   const value = useMemo(() => ({
-    user, profile, profiles, status,
+    user, profile, profiles, status, freshSignup,
     isChild: profile?.ageBand === AGE_BANDS.CHILD,
     isTeen: profile?.ageBand === AGE_BANDS.TEEN,
     isAdult: profile?.ageBand === AGE_BANDS.ADULT,
-    login, register, logout, reload: load, switchProfile: setProfile,
-  }), [user, profile, profiles, status, load]);
+    login, register, logout, reload: load, switchProfile,
+  }), [user, profile, profiles, status, freshSignup, load]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

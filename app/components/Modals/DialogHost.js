@@ -77,6 +77,8 @@ export default function DialogHost() {
               placeholder={spec.placeholder}
               placeholderTextColor={t.color.textSecondary}
               multiline={spec.multiline}
+              secureTextEntry={!!spec.secure}
+              autoCapitalize={spec.secure ? 'none' : 'sentences'}
               autoFocus
               accessibilityLabel={spec.placeholder || spec.title}
               onSubmitEditing={() => { if (!spec.multiline) settle(value); }}

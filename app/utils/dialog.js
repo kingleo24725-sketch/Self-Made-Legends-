@@ -90,9 +90,10 @@ async function confirm(title, message, { ok = 'OK', cancel = 'Cancel', destructi
  */
 async function prompt(title, message, {
   placeholder = '', ok = 'Save', cancel = 'Cancel', multiline = false, defaultValue = '',
+  secure = false,
 } = {}) {
   const result = await enqueue({
-    kind: 'prompt', title, message, placeholder, multiline, defaultValue,
+    kind: 'prompt', title, message, placeholder, multiline, defaultValue, secure,
     buttons: [{ text: cancel, style: 'cancel' }, { text: ok, style: 'default' }],
   });
   if (result == null) return null;

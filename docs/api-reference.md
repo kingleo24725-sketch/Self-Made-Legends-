@@ -544,6 +544,7 @@ per-request by the API. A guardian policy grants read on a linked child's rows
 | `POST` | `/api/auth/refresh` | Rotating refresh token |
 | `POST` | `/api/auth/sso/:provider` | Apple / Google |
 | `POST` | `/api/auth/logout` | |
+| `POST` | `/api/auth/switch-profile` | `{ profileId, password? }` → tokens for another profile on the same account (own, or a child of one of yours). Switching **to** a child asks nothing; switching from a child **to** an adult requires the account password (`401 password_required`). Shares the login limiter. |
 | `GET` | `/api/me` | User + profiles |
 | `GET` | `/api/me/entitlements` | Client-side UI affordances (advisory) |
 

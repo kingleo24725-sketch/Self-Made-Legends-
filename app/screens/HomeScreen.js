@@ -15,13 +15,36 @@ import { View, Text, SafeAreaView, ScrollView, Pressable } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../hooks/useAuth';
 import Card from '../components/Cards/Card';
+import SecondaryButton from '../components/Buttons/SecondaryButton';
 import { visibleHomeSections, MODE_META, RELATIONAL_MODES, COPY } from '../utils/constants';
 import { featureOn } from '../utils/config';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 export default function HomeScreen({ navigation }) {
   const t = useTheme();
-  const { profile } = useAuth();
+  const { profile, profiles, switchProfile } = useAuth();
+
+  // The grown-up whose phone this is. A child profile lives under a
+  // guardian's account; the way back to the guardian's side is here, and
+  // it costs the account password — so she can look, and not open the
+  // Guardian Console.
+  const guardian = profile?.guardianId
+    ? profiles.find((p) => p.id === profile.guardianId) : null;
+
+  async function giveBack() {
+    const password = await dialog.prompt(`Give the phone back to ${guardian.displayName}`,
+      `${guardian.displayName} types the account password here.`,
+      { placeholder: 'Account password', ok: 'Switch', secure: true });
+    if (!password) return;
+    try {
+      await switchProfile(guardian.id, password);
+    } catch (e) {
+      dialog.alert('Not yet', e?.code === 'password_required'
+        ? "That password didn't match. Try again."
+        : "That didn't work. Check your connection and try again.");
+    }
+  }
 
   const meta = MODE_META[profile?.mode];
   const isRelational = RELATIONAL_MODES.includes(profile?.mode);
@@ -66,6 +89,11 @@ export default function HomeScreen({ navigation }) {
             </Text>
           )}
         </View>
+
+        {!!guardian && (
+          <SecondaryButton title={`Give the phone back to ${guardian.displayName}`} ghost
+            onPress={giveBack} />
+        )}
 
         {/* Bond Meter — only in modes that pair two people */}
         {isRelational && (

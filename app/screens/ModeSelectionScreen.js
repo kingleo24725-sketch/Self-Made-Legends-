@@ -16,6 +16,7 @@ import Card from '../components/Cards/Card';
 import { MODES, MODE_META } from '../utils/constants';
 import { ageFromBirthDate } from '../utils/validators';
 import api from '../utils/api';
+import dialog from '../utils/dialog';
 
 const ORDER = [
   MODES.DAD_DAUGHTER,
@@ -35,7 +36,14 @@ export default function ModeSelectionScreen({ navigation }) {
 
   async function pick(mode, locked, meta) {
     if (locked) {
-      // Never a dead end — route to the guardian-request path instead.
+      // Never a dead end. A grown-up goes to their console to request it;
+      // a child holding the phone is told who to ask, since the console is
+      // the guardian's screen and not hers to open.
+      if (profile?.guardianId) {
+        dialog.alert(`${meta.title} is for ${meta.minAge}+`,
+          'A grown-up can turn it on for you from their side of the app. Ask them.');
+        return;
+      }
       navigation.navigate('GuardianConsole', { requestMode: mode, minAge: meta.minAge });
       return;
     }

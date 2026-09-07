@@ -20,6 +20,14 @@ async function requireAuth(req, res, next) {
     req.profile = await db.one('SELECT * FROM profiles WHERE id = $1 AND deleted_at IS NULL',
                                [payload.profileId]);
     if (!req.profile) return res.status(401).json({ error: 'unauthorized' });
+    // The profile named by the token must belong to the account named by
+    // the token: the user's own, or a child of one of the user's profiles.
+    if (req.user && req.profile.user_id !== req.user.id) {
+      const ownsGuardian = req.profile.guardian_id && await db.one(
+        'SELECT 1 FROM profiles WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL',
+        [req.profile.guardian_id, req.user.id]);
+      if (!ownsGuardian) return res.status(401).json({ error: 'unauthorized' });
+    }
     return next();
   } catch {
     return res.status(401).json({ error: 'unauthorized' });

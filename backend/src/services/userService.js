@@ -147,7 +147,9 @@ function issueTokens(user, profile) {
 }
 
 async function verifyPassword(user, password) {
-  if (!user?.password_hash) return false;
+  // A missing password is a wrong password, not a crash: argon2 throws on
+  // undefined, which turned "no password sent" into a 500.
+  if (!user?.password_hash || typeof password !== 'string' || !password) return false;
   return argon2.verify(user.password_hash, password);
 }
 
