@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Careers | All Shades of Brown</title>
+  <meta name="description" content="Join the All Shades of Brown team. Open roles, an always-open application, and a partner form for independent pros.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+</head>
+<body data-page="careers" data-root=".">
+  <div id="site-header"></div>
+  <section class="page-hero"><div class="container"><div class="eyebrow" style="color:var(--gold)">Careers</div><h1>Grow with us</h1><p class="lead">ASB is growing one shade at a time. If you take pride in your work and care about people, we want to know you, even before a role opens.</p></div></section>
+
+  <section class="section">
+    <div class="container">
+      <div class="eyebrow">Open roles</div>
+      <h2>Current openings</h2>
+      <div class="card"><p class="muted" style="margin:0">No openings posted right now. We're always looking, though. Fill out the application below and we'll keep it on file and reach out first when a role opens.</p></div>
+      <!-- To post a job, copy this block:
+      <div class="card" style="margin-top:1rem"><h3>Cleaning Technician (Part-time)</h3><p class="muted">Weekday mornings · $18–22/hr · [City]</p><p>What you'll do…</p><a class="btn primary small" href="#apply">Apply</a></div>
+      -->
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="container">
+      <div class="tabs" role="tablist">
+        <button class="active" data-tab="apply" id="apply">Job application</button>
+        <button data-tab="partner">Independent pro / partner form</button>
+      </div>
+
+      <div class="tab-panel active" data-panel="apply">
+        <div class="grid cols-2" style="align-items:start">
+          <div>
+            <h2>Apply to join the team</h2>
+            <p class="muted">This is our standing application. Use it for a posted role or to be considered for future openings in any service.</p>
+            <ul class="checks"><li>Reliable, on time, takes pride in the work</li><li>Great with people</li><li>Background check required for in-home and tutoring roles</li><li>Training provided</li></ul>
+            <p class="form-note">All Shades of Brown is an equal opportunity employer.</p>
+          </div>
+          <form class="asb card" data-form="application">
+            <div class="row"><div class="field"><label for="a-name">Full name</label><input id="a-name" name="name" required></div><div class="field"><label for="a-phone">Phone</label><input id="a-phone" name="phone" type="tel" required></div></div>
+            <div class="field"><label for="a-email">Email</label><input id="a-email" name="email" type="email" required></div>
+            <div class="field"><label for="a-role">Interested in</label><select id="a-role" name="role"><option>Any role</option><option>Cleaning</option><option>Handyman</option><option>Organizing</option><option>Tutoring</option><option>Spanish instruction</option><option>Lawn care</option><option>Nail artistry</option><option>Personal training</option><option>Admin / office</option></select></div>
+            <div class="field"><label for="a-avail">Availability</label><input id="a-avail" name="availability" placeholder="e.g. weekdays after 3, weekends"></div>
+            <div class="field"><label for="a-exp">Experience and why ASB</label><textarea id="a-exp" name="experience" required></textarea></div>
+            <div class="field"><label for="a-link">Resume link <span class="hint">(Google Drive, Dropbox, LinkedIn)</span></label><input id="a-link" name="resume" placeholder="https://"></div>
+            <label class="check"><input type="checkbox" name="consent" required><span>I consent to a background check if required for the role.</span></label>
+            <button class="btn primary" type="submit">Submit application</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="partner">
+        <div class="grid cols-2" style="align-items:start">
+          <div>
+            <h2>Independent pro or partner?</h2>
+            <p class="muted">If we talked and you'd like to work with ASB on a contract or partnership basis, this is your form. Tell us what you do and where, and we'll follow up.</p>
+            <ul class="checks"><li>Your own hours, your own rates</li><li>We bring the clients and the brand</li><li>Insurance and a W-9 required before the first job</li></ul>
+          </div>
+          <form class="asb card" data-form="contractor">
+            <div class="row"><div class="field"><label for="p-name">Name / business name</label><input id="p-name" name="name" required></div><div class="field"><label for="p-phone">Phone</label><input id="p-phone" name="phone" type="tel" required></div></div>
+            <div class="field"><label for="p-email">Email</label><input id="p-email" name="email" type="email" required></div>
+            <div class="field"><label for="p-skills">What do you do?</label><input id="p-skills" name="skills" required placeholder="e.g. licensed electrician, nail tech, math tutor"></div>
+            <div class="row"><div class="field"><label for="p-area">Service area</label><input id="p-area" name="area" placeholder="Cities or radius"></div><div class="field"><label for="p-rate">Typical rate</label><input id="p-rate" name="rate" placeholder="e.g. $40/hr"></div></div>
+            <div class="field"><label for="p-ins">Insured?</label><select id="p-ins" name="insured"><option>Yes</option><option>No</option><option>Not sure</option></select></div>
+            <div class="field"><label for="p-notes">Anything else</label><textarea id="p-notes" name="notes"></textarea></div>
+            <button class="btn primary" type="submit">Send partner info</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script>
+    document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+      document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x === b));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.panel === b.dataset.tab));
+    }));
+  </script>
+</body>
+</html>

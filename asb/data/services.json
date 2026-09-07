@@ -1,0 +1,156 @@
+[
+  {
+    "id": "organizing",
+    "name": "All Shades of Order",
+    "service": "Professional Organizing",
+    "tagline": "Calm, clear spaces that finally work for you.",
+    "status": "live",
+    "bookingType": "quote",
+    "startingAt": "Starting at $150 / half day",
+    "deposit": 50,
+    "icon": "🗂️",
+    "summary": "Closets, kitchens, garages, home offices, and whole-home resets. We declutter with you, design a system you can keep, and leave your space feeling brand new.",
+    "included": ["In-person consultation and plan", "Hands-on sorting and decluttering", "Custom labeling and storage systems", "Donation and haul-away coordination"],
+    "steps": ["Send photos and tell us about the space", "We send a quote within 24 hours", "Pay a deposit to lock in your date", "We organize, you enjoy"],
+    "intake": [
+      {"name": "rooms", "label": "Which spaces need help?", "type": "text", "placeholder": "e.g. primary closet, pantry, garage"},
+      {"name": "goal", "label": "What would a win look like?", "type": "textarea", "placeholder": "Tell us what's not working and what you want it to feel like"}
+    ]
+  },
+  {
+    "id": "tutoring",
+    "name": "All Shades of Learning",
+    "service": "Tutoring",
+    "tagline": "Patient, one-on-one help that builds real confidence.",
+    "status": "live",
+    "bookingType": "book",
+    "startingAt": "Starting at $40 / hour",
+    "deposit": 20,
+    "icon": "📚",
+    "summary": "K-12 and college tutoring in reading, writing, math, and study skills. Weekly sessions, homework help, and test prep, in person or online.",
+    "included": ["One-on-one sessions, 60 minutes", "Progress notes after every session", "Homework and test-prep support", "Weekly recurring slots available"],
+    "steps": ["Pick a time that works", "Tell us about the student", "Pay a deposit to hold the slot", "Meet your tutor"],
+    "intake": [
+      {"name": "student", "label": "Student's name and grade", "type": "text", "placeholder": "e.g. Maya, 7th grade"},
+      {"name": "subject", "label": "Subject(s)", "type": "text", "placeholder": "e.g. Algebra, reading comprehension"},
+      {"name": "format", "label": "In person or online?", "type": "select", "options": ["In person", "Online"]}
+    ],
+    "notice": "For students under 18, a parent or guardian must book and be present or reachable during sessions."
+  },
+  {
+    "id": "nails",
+    "name": "All Shades of Beauty",
+    "service": "Custom Press-On Nails",
+    "tagline": "Salon-quality sets, made by hand, sized to you.",
+    "status": "live",
+    "bookingType": "shop",
+    "startingAt": "Sets from $35",
+    "deposit": 0,
+    "icon": "💅",
+    "summary": "Hand-painted custom press-on nail sets in every shade, shape, and length. Reusable, damage-free, and shipped to your door with everything you need to apply them.",
+    "included": ["10-piece custom set in your size", "Application kit: glue, file, prep pad, tabs", "Sizing kit available for first orders", "Reusable with proper care"],
+    "steps": ["Order a sizing kit or send your sizes", "Choose shape, length, and design", "We hand-make your set in 5-7 days", "Shipped with an application kit"]
+  },
+  {
+    "id": "cleaning",
+    "name": "All Shades of Clean",
+    "service": "Cleaning Service",
+    "tagline": "Come home to fresh. Every time.",
+    "status": "live",
+    "bookingType": "quote",
+    "startingAt": "Starting at $120 / visit",
+    "deposit": 40,
+    "icon": "🧽",
+    "summary": "Standard, deep, and move-in/move-out cleaning for homes and small offices. One-time visits or weekly, biweekly, and monthly plans with the same trusted team.",
+    "included": ["Kitchens, bathrooms, bedrooms, living areas", "Deep clean and move-out options", "Supplies and equipment provided", "Recurring plans with discounted rates"],
+    "steps": ["Tell us about your home", "Get a quote within 24 hours", "Pay a deposit to reserve your date", "Relax, we handle the rest"],
+    "intake": [
+      {"name": "home", "label": "Bedrooms / bathrooms / approx. square feet", "type": "text", "placeholder": "e.g. 3 bed, 2 bath, 1,600 sq ft"},
+      {"name": "cleanType", "label": "Type of clean", "type": "select", "options": ["Standard", "Deep clean", "Move-in / move-out", "Recurring plan"]},
+      {"name": "pets", "label": "Pets or anything we should know?", "type": "text", "placeholder": "e.g. one friendly dog, gate code, allergies"}
+    ]
+  },
+  {
+    "id": "handyman",
+    "name": "All Shades of Handy",
+    "service": "Handyman Service",
+    "tagline": "The to-do list, done right.",
+    "status": "live",
+    "bookingType": "quote",
+    "startingAt": "Starting at $75 / hour",
+    "deposit": 50,
+    "icon": "🔧",
+    "summary": "Mounting, assembly, repairs, painting, fixtures, small installs, and the odd jobs that never get done. Honest quotes, clean work, no surprises.",
+    "included": ["TV and shelf mounting, furniture assembly", "Drywall patching and painting", "Fixture, faucet, and hardware swaps", "Small repairs and punch lists"],
+    "steps": ["Send photos and a description", "Get a quote within 24 hours", "Pay a deposit to book the day", "We show up and get it done"],
+    "intake": [
+      {"name": "job", "label": "What needs doing?", "type": "textarea", "placeholder": "List the tasks. Photos help a lot."},
+      {"name": "urgency", "label": "How soon?", "type": "select", "options": ["This week", "Within 2 weeks", "Flexible", "Urgent"]}
+    ]
+  },
+  {
+    "id": "spanish",
+    "name": "All Shades of Español",
+    "service": "Spanish Classes",
+    "tagline": "Speak with confidence, from your first class.",
+    "status": "live",
+    "bookingType": "book",
+    "startingAt": "Starting at $35 / class",
+    "deposit": 20,
+    "icon": "🗣️",
+    "summary": "Conversational Spanish for beginners through intermediate, taught in a relaxed, real-life way. Private lessons, small groups, and travel-ready crash courses.",
+    "included": ["Private or small-group classes", "Beginner to intermediate levels", "Conversation-first approach", "Weekly recurring slots available"],
+    "steps": ["Pick a time", "Tell us your level and goal", "Pay a deposit to hold the slot", "¡Vamos!"],
+    "intake": [
+      {"name": "level", "label": "Current level", "type": "select", "options": ["Complete beginner", "Some basics", "Intermediate"]},
+      {"name": "goal", "label": "Your goal", "type": "text", "placeholder": "e.g. travel, work, family, school"}
+    ]
+  },
+  {
+    "id": "lawn-care",
+    "name": "All Shades of Lawn Care",
+    "service": "Lawn Care",
+    "tagline": "A yard you're proud to pull up to.",
+    "status": "live",
+    "bookingType": "quote",
+    "startingAt": "Starting at $45 / mow",
+    "deposit": 25,
+    "icon": "🌿",
+    "summary": "Mowing, edging, trimming, leaf cleanup, and seasonal yard work. One-time visits or a recurring plan so it always looks fresh.",
+    "included": ["Mow, edge, trim, blow", "Hedge trimming and leaf cleanup", "Seasonal cleanups", "Weekly and biweekly plans"],
+    "steps": ["Tell us about the yard", "Get a quote within 24 hours", "Pay a deposit to book", "Enjoy the view"],
+    "intake": [
+      {"name": "yard", "label": "Approximate lot size and what's needed", "type": "text", "placeholder": "e.g. quarter acre, mow + edge + hedges"},
+      {"name": "frequency", "label": "How often?", "type": "select", "options": ["One time", "Weekly", "Biweekly", "Monthly"]}
+    ],
+    "notice": "Weather policy: if rain makes the work unsafe, we reschedule to the next available day at no charge."
+  },
+  {
+    "id": "personal-training",
+    "name": "All Shades of Strength",
+    "service": "Personal Training",
+    "tagline": "Real goals. Real support. Real results.",
+    "status": "soon",
+    "bookingType": "waitlist",
+    "startingAt": "Coming soon",
+    "deposit": 0,
+    "icon": "🏋🏾",
+    "summary": "One-on-one and small-group training built around your body, your schedule, and your goals. Join the waitlist and be the first to know when we launch.",
+    "included": ["Personalized programs", "In-person and virtual options", "Nutrition guidance", "Accountability check-ins"],
+    "steps": ["Join the waitlist", "We reach out when we launch", "Free consultation", "Start strong"]
+  },
+  {
+    "id": "freelance",
+    "name": "All Shades of Freelance",
+    "service": "Freelance Services",
+    "tagline": "Creative and business help, on demand.",
+    "status": "soon",
+    "bookingType": "waitlist",
+    "startingAt": "Coming soon",
+    "deposit": 0,
+    "icon": "💼",
+    "summary": "Admin support, design, content, and project help for small businesses and busy people. Tell us what you need and join the waitlist.",
+    "included": ["Admin and virtual assistance", "Content and social media support", "Design and documents", "Project-based pricing"],
+    "steps": ["Join the waitlist", "Tell us about your project", "We scope it together", "Get it done"]
+  }
+]

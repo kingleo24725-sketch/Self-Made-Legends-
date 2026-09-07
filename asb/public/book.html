@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Book a Service | All Shades of Brown</title>
+  <meta name="description" content="Schedule any All Shades of Brown service online. Pick a date and time, tell us the details, and hold your spot with a small deposit.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+</head>
+<body data-page="book" data-root=".">
+  <div id="site-header"></div>
+
+  <section class="page-hero">
+    <div class="container">
+      <div class="eyebrow" style="color:var(--gold)">Online scheduling</div>
+      <h1>Book a service</h1>
+      <p class="lead">Choose a service, pick a day and time, and hold your spot with a small non-refundable deposit. The deposit comes off your final total.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container book-layout">
+      <form class="asb" id="booking-form" novalidate>
+        <div id="cancel-note"></div>
+
+        <div class="card stack">
+          <h3>1. Choose a service</h3>
+          <div class="grid cols-2" id="service-picker"></div>
+        </div>
+
+        <div class="card stack" id="quote-box" hidden>
+          <div class="alert info">This service starts with a free quote. Tell us about the job and we'll send a price within 24 hours. Once you approve, you pay the deposit to lock in your date.</div>
+        </div>
+
+        <div class="card stack">
+          <h3>2. Pick a date and time</h3>
+          <div class="row" style="align-items:start">
+            <div id="cal"></div>
+            <div>
+              <div class="field"><label>Available times <span class="hint" id="slot-date"></span></label></div>
+              <div class="slots" id="slots"><p class="form-note">Pick a date first.</p></div>
+              <p class="form-note" style="margin-top:.75rem">Times shown are our standard windows. We confirm the exact arrival time by text.</p>
+            </div>
+          </div>
+          <input type="hidden" name="date" id="f-date"><input type="hidden" name="time" id="f-time">
+        </div>
+
+        <div class="card stack">
+          <h3>3. Your details</h3>
+          <div class="row">
+            <div class="field"><label for="f-name">Full name</label><input id="f-name" name="name" required autocomplete="name"></div>
+            <div class="field"><label for="f-phone">Phone</label><input id="f-phone" name="phone" type="tel" required autocomplete="tel"></div>
+          </div>
+          <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" required autocomplete="email"></div>
+          <div class="field"><label for="f-address">Service address <span class="hint">(leave blank for online sessions)</span></label><input id="f-address" name="address" autocomplete="street-address"></div>
+          <div id="intake"></div>
+          <div class="field"><label for="f-notes">Anything else we should know?</label><textarea id="f-notes" name="notes"></textarea></div>
+        </div>
+
+        <div class="card stack">
+          <h3>4. Deposit terms</h3>
+          <div class="notice" id="deposit-terms">
+            Your deposit is <strong id="dep-amt">$0</strong> and is <strong>non-refundable</strong>. It is applied to your final total. You may reschedule once for free with at least 24 hours' notice. If ASB has to cancel, your deposit is refunded in full or moved to a new date, your choice. Full policy: <a href="legal/refunds.html" target="_blank">Deposits, Cancellations &amp; Refunds</a>.
+          </div>
+          <label class="check"><input type="checkbox" name="acceptTerms" id="f-terms" required><span>I understand the deposit is non-refundable and I agree to the <a href="legal/terms.html" target="_blank">Terms of Service</a>.</span></label>
+          <input type="hidden" name="serviceId" id="f-service">
+          <button class="btn primary" type="submit" id="submit-btn">Continue to deposit</button>
+          <p class="form-note">We accept all major debit and credit cards through Stripe. Card details never touch our servers.</p>
+        </div>
+      </form>
+
+      <aside class="card summary">
+        <h3>Your booking</h3>
+        <div class="line"><span>Service</span><strong id="s-service">—</strong></div>
+        <div class="line"><span>Date</span><strong id="s-date">—</strong></div>
+        <div class="line"><span>Time</span><strong id="s-time">—</strong></div>
+        <div class="line"><span>Pricing</span><span id="s-price" class="muted">—</span></div>
+        <div class="line total"><span>Deposit due now</span><span id="s-deposit">$0</span></div>
+        <p class="form-note" style="margin-top:1rem">Questions? <a href="contact.html">Contact us</a> or text us any time.</p>
+      </aside>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script>
+    document.addEventListener('asb:ready', e => {
+      const services = e.detail.services.filter(s => s.bookingType !== 'shop');
+      const params = new URLSearchParams(location.search);
+      const form = document.getElementById('booking-form');
+      const picker = document.getElementById('service-picker');
+      const $ = id => document.getElementById(id);
+      const TIMES = ['8:00 AM', '10:00 AM', '12:00 PM', '2:00 PM', '4:00 PM', '6:00 PM'];
+      let current = null, date = null, time = null;
+
+      if (params.get('cancelled')) $('cancel-note').innerHTML = '<div class="alert info" style="margin-bottom:1rem">Checkout was cancelled. Your booking has not been confirmed. You can try again below.</div>';
+
+      picker.innerHTML = services.map(s => `
+        <label class="card hover service-card" style="cursor:pointer;padding:1rem">
+          <input type="radio" name="pick" value="${s.id}" style="position:absolute;opacity:0" ${s.status !== 'live' ? 'disabled' : ''}>
+          <span class="badge ${s.status === 'live' ? 'live' : ''}">${s.status === 'live' ? (s.bookingType === 'quote' ? 'Quote first' : 'Book now') : 'Coming soon'}</span>
+          <span class="icon" style="font-size:1.6rem">${s.icon}</span>
+          <strong>${ASB.esc(s.name)}</strong>
+          <span class="muted" style="font-size:.9rem">${ASB.esc(s.service)} · ${ASB.esc(s.startingAt)}</span>
+        </label>`).join('');
+
+      function selectService(id) {
+        current = services.find(s => s.id === id && s.status === 'live');
+        picker.querySelectorAll('label').forEach(l => l.style.outline = l.querySelector('input').value === id ? '3px solid var(--honey)' : '');
+        if (!current) return;
+        $('f-service').value = current.id;
+        $('quote-box').hidden = current.bookingType !== 'quote';
+        $('dep-amt').textContent = '$' + current.deposit;
+        $('s-service').textContent = current.name;
+        $('s-price').textContent = current.startingAt;
+        $('s-deposit').textContent = '$' + current.deposit;
+        $('submit-btn').textContent = current.bookingType === 'quote' ? 'Request quote & hold date' : 'Continue to deposit';
+        $('intake').innerHTML = (current.intake || []).map(f => {
+          const id = 'in-' + f.name;
+          let input;
+          if (f.type === 'select') input = `<select id="${id}" name="${f.name}">${f.options.map(o => `<option>${ASB.esc(o)}</option>`).join('')}</select>`;
+          else if (f.type === 'textarea') input = `<textarea id="${id}" name="${f.name}" placeholder="${ASB.esc(f.placeholder || '')}"></textarea>`;
+          else input = `<input id="${id}" name="${f.name}" placeholder="${ASB.esc(f.placeholder || '')}">`;
+          return `<div class="field"><label for="${id}">${ASB.esc(f.label)}</label>${input}</div>`;
+        }).join('') + (current.notice ? `<div class="notice">${ASB.esc(current.notice)}</div>` : '');
+      }
+      picker.addEventListener('change', ev => selectService(ev.target.value));
+
+      ASB.calendar($('cal'), { disableSundays: true, onSelect: k => {
+        date = k; time = null; $('f-date').value = k; $('f-time').value = '';
+        const pretty = new Date(k + 'T00:00:00').toLocaleDateString('default', { weekday: 'short', month: 'short', day: 'numeric' });
+        $('s-date').textContent = pretty; $('s-time').textContent = '—'; $('slot-date').textContent = '· ' + pretty;
+        $('slots').innerHTML = TIMES.map(t => `<button type="button" class="slot">${t}</button>`).join('');
+        $('slots').querySelectorAll('.slot').forEach(b => b.addEventListener('click', () => {
+          $('slots').querySelectorAll('.slot').forEach(x => x.classList.remove('selected')); b.classList.add('selected');
+          time = b.textContent; $('f-time').value = time; $('s-time').textContent = time;
+        }));
+      }});
+
+      form.addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const err = m => { let a = form.querySelector('.alert.err'); if (!a) { a = document.createElement('div'); a.className = 'alert err'; form.prepend(a); } a.textContent = m; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+        if (!current) return err('Please choose a service.');
+        if (!date || !time) return err('Please pick a date and time.');
+        if (!form.name.value || !form.email.value || !form.phone.value) return err('Name, email, and phone are required.');
+        if (!$('f-terms').checked) return err('Please accept the deposit terms to continue.');
+        const btn = $('submit-btn'); btn.disabled = true; btn.textContent = 'One moment…';
+        try {
+          const res = await fetch('api/book', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(new FormData(form).entries())) });
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error || 'Something went wrong.');
+          location.href = json.url;
+        } catch (e2) { err(e2.message); btn.disabled = false; btn.textContent = 'Continue to deposit'; }
+      });
+
+      const pre = params.get('service');
+      if (pre) { const r = picker.querySelector(`input[value="${pre}"]`); if (r && !r.disabled) { r.checked = true; selectService(pre); } }
+    });
+  </script>
+</body>
+</html>

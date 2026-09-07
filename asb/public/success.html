@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>You're booked | All Shades of Brown</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+</head>
+<body data-page="success" data-root=".">
+  <div id="site-header"></div>
+  <section class="section">
+    <div class="container" style="max-width:40rem">
+      <div class="card center stack">
+        <div style="font-size:3rem">🤎</div>
+        <h1 style="font-size:2rem">You're all set</h1>
+        <p class="muted" id="msg">Your booking request is in. A confirmation is on its way to your email, and we'll text you to confirm the exact arrival time.</p>
+        <div id="details" class="notice" style="text-align:left"></div>
+        <p><a class="btn primary" href="index.html">Back to home</a> <a class="btn outline" href="community.html">See community events</a></p>
+      </div>
+    </div>
+  </section>
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script>
+    const id = new URLSearchParams(location.search).get('booking');
+    if (id) fetch('api/bookings/' + id).then(r => r.ok ? r.json() : null).then(b => {
+      if (!b) return;
+      const status = { deposit_paid: 'Deposit paid', pending_deposit: 'Deposit pending', demo_deposit: 'Deposit (demo mode, no charge)', requested: 'Quote requested' }[b.status] || b.status;
+      document.getElementById('details').innerHTML = `<strong>${ASB.esc(b.serviceName)}</strong><br>${ASB.esc(b.date)} at ${ASB.esc(b.time)}<br>Status: ${ASB.esc(status)}<br><small class="muted">Reference: ${ASB.esc(b.id.slice(0, 8))}</small>`;
+    });
+  </script>
+</body>
+</html>

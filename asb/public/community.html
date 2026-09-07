@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Community | All Shades of Brown</title>
+  <meta name="description" content="ASB gives back every month: community events, volunteering, our monthly sweepstakes, and social giveaways.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+</head>
+<body data-page="community" data-root=".">
+  <div id="site-header"></div>
+  <section class="page-hero"><div class="container"><div class="eyebrow" style="color:var(--gold)">Community</div><h1>We give back. Every month.</h1><p class="lead">Cookouts, cleanups, drives, and fundraisers. Come through, bring a friend, and help us pour back into the neighborhood that made us.</p></div></section>
+
+  <section class="section" id="events">
+    <div class="container">
+      <div class="eyebrow">Upcoming</div>
+      <h2>Community calendar</h2>
+      <div class="grid cols-2" style="align-items:start">
+        <div id="event-cal"></div>
+        <div>
+          <div class="event-list" id="event-list"></div>
+          <p class="form-note" style="margin-top:1rem">Events are placeholders until Rose sets the first real dates. Edit them in this page's script.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="volunteer">
+    <div class="container grid cols-2" style="align-items:start">
+      <div>
+        <div class="eyebrow">Volunteer</div>
+        <h2>Lend a hand</h2>
+        <p class="muted">Whether you can give an hour or a whole Saturday, there's a place for you. Volunteers get first dibs on event t-shirts and a thank-you dinner every quarter.</p>
+        <ul class="checks"><li>Event setup and cleanup</li><li>Food and supply drives</li><li>Tutoring and mentoring days</li><li>Yard and home help for seniors</li></ul>
+      </div>
+      <form class="asb card" data-form="volunteer">
+        <h3>Volunteer signup</h3>
+        <div class="row"><div class="field"><label for="v-name">Name</label><input id="v-name" name="name" required></div><div class="field"><label for="v-phone">Phone</label><input id="v-phone" name="phone" type="tel"></div></div>
+        <div class="field"><label for="v-email">Email</label><input id="v-email" name="email" type="email" required></div>
+        <div class="field"><label for="v-avail">Availability</label><select id="v-avail" name="availability"><option>Weekends</option><option>Weekday evenings</option><option>Weekdays</option><option>Flexible</option></select></div>
+        <div class="field"><label for="v-int">What would you like to help with?</label><textarea id="v-int" name="interests"></textarea></div>
+        <label class="check"><input type="checkbox" name="waiver" required><span>I understand a volunteer waiver will be signed at my first event.</span></label>
+        <button class="btn primary" type="submit">Count me in</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="section" id="sweepstakes">
+    <div class="container grid cols-2" style="align-items:start">
+      <div class="card" style="background:linear-gradient(160deg,var(--espresso),var(--chestnut));color:var(--latte)">
+        <div class="eyebrow" style="color:var(--gold)">Monthly sweepstakes</div>
+        <h2 style="color:var(--ivory)">Win something. Give something.</h2>
+        <p>Every month we give away a prize to one community member. Enter for $2, and $1 of every paid entry goes straight to that month's community cause. <strong>No purchase necessary</strong>: a free entry is always available.</p>
+        <div class="line" style="border-top:1px solid rgba(220,191,154,.25);padding-top:1rem;margin-top:1rem"><strong>This month's prize:</strong> To be announced<br><strong>Drawing:</strong> Last day of the month<br><strong>Cause:</strong> To be announced</div>
+        <p style="margin-top:1rem"><a class="btn gold" href="#" aria-disabled="true">Paid entry opens at launch</a></p>
+        <p class="form-note" style="color:var(--sand)">Official rules, eligibility, and free entry method: <a href="legal/sweepstakes.html" style="color:var(--gold)">Sweepstakes Rules</a>. Void where prohibited. 18+.</p>
+      </div>
+      <div>
+        <div class="eyebrow">Free entry</div>
+        <h3>Enter without paying</h3>
+        <form class="asb card" data-form="giveaway">
+          <input type="hidden" name="promotion" value="monthly-sweepstakes-free-entry">
+          <div class="row"><div class="field"><label for="g-name">Name</label><input id="g-name" name="name" required></div><div class="field"><label for="g-email">Email</label><input id="g-email" name="email" type="email" required></div></div>
+          <div class="field"><label for="g-phone">Phone <span class="hint">(to notify you if you win)</span></label><input id="g-phone" name="phone" type="tel"></div>
+          <label class="check"><input type="checkbox" name="age" required><span>I am 18 or older and agree to the <a href="legal/sweepstakes.html">Official Rules</a>.</span></label>
+          <button class="btn primary" type="submit">Enter free</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="giveaway">
+    <div class="container">
+      <div class="grid cols-2" style="align-items:start">
+        <div>
+          <div class="eyebrow">Social giveaway</div>
+          <h2>Follow, comment, win</h2>
+          <p class="muted">A separate giveaway for our social family. Follow ASB, comment on the giveaway post during the entry window, and you're in. Winners are announced on the post and by email.</p>
+          <ul class="checks"><li>Follow @allshadesofbrown on Instagram, TikTok, or Facebook</li><li>Comment on the current giveaway post</li><li>Bonus: tag a friend who would love ASB</li></ul>
+          <p class="form-note">Not sponsored, endorsed, or administered by Instagram, TikTok, or Meta. See <a href="legal/sweepstakes.html#social">giveaway rules</a>.</p>
+        </div>
+        <div class="card">
+          <h3>Current giveaway</h3>
+          <p class="muted">Launches with our social accounts. Drop your email and we'll let you know the moment the first one goes live.</p>
+          <form class="asb" data-form="giveaway">
+            <input type="hidden" name="promotion" value="social-giveaway-notify">
+            <div class="field"><label for="sg-email">Email</label><input id="sg-email" name="email" type="email" required></div>
+            <div class="field"><label for="sg-handle">Your social handle <span class="hint">(optional)</span></label><input id="sg-handle" name="handle" placeholder="@yourname"></div>
+            <button class="btn primary" type="submit">Notify me</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark">
+    <div class="container grid cols-3">
+      <div class="stat"><div class="num" style="color:var(--gold)">$0</div><div class="muted">given back so far</div></div>
+      <div class="stat"><div class="num" style="color:var(--gold)">0</div><div class="muted">events held</div></div>
+      <div class="stat"><div class="num" style="color:var(--gold)">0</div><div class="muted">volunteers</div></div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script>
+    document.addEventListener('asb:ready', () => {
+      // Edit these to post real events. Dates are YYYY-MM-DD.
+      const EVENTS = [
+        { date: nextMonthDay(1, 15), title: 'ASB Community Cookout', where: 'Neighborhood park (TBA)', time: '12:00 PM – 4:00 PM', desc: 'Food, music, and a school-supply drive. Bring the family.' },
+        { date: nextMonthDay(2, 8), title: 'Senior Yard Day', where: 'Sign up to be matched', time: '9:00 AM – 1:00 PM', desc: 'Volunteers help seniors with yard work and small fixes.' }
+      ];
+      function nextMonthDay(offset, day) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + offset); d.setDate(day); return d.toISOString().slice(0, 10); }
+      const byDate = {}; EVENTS.forEach(ev => (byDate[ev.date] = byDate[ev.date] || []).push(ev));
+      const list = document.getElementById('event-list');
+      function render(events) {
+        list.innerHTML = events.length ? events.map(ev => {
+          const d = new Date(ev.date + 'T00:00:00');
+          return `<div class="event"><div class="date"><small>${d.toLocaleString('default', { month: 'short' })}</small>${d.getDate()}</div>
+            <div><strong>${ASB.esc(ev.title)}</strong><div class="muted" style="font-size:.9rem">${ASB.esc(ev.time)} · ${ASB.esc(ev.where)}</div><p style="margin:.4rem 0 .6rem">${ASB.esc(ev.desc)}</p>
+            <form class="asb" data-form="rsvp" style="display:flex;gap:.5rem"><input type="hidden" name="event" value="${ASB.esc(ev.title)} ${ev.date}"><input name="email" type="email" required placeholder="Email to RSVP" style="flex:1;padding:.55rem .8rem;border:1px solid var(--line);border-radius:8px;font:inherit"><button class="btn outline small" type="submit">RSVP</button></form></div></div>`;
+        }).join('') : '<p class="muted">No events on this day. Pick a highlighted date.</p>';
+        ASB.wireForms(list);
+      }
+      render(EVENTS);
+      ASB.calendar(document.getElementById('event-cal'), { disablePast: false, events: byDate, onSelect: (k, evs) => render(evs.length ? evs : EVENTS) });
+    });
+  </script>
+</body>
+</html>

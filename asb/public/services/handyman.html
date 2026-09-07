@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>All Shades of Handy | Handyman Service by All Shades of Brown</title>
+  <meta name="description" content="The to-do list, done right. Mounting, assembly, repairs, painting, fixtures, small installs, and the odd jobs that never get done. Honest quotes, clean work, no surprises.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/asb.css">
+</head>
+<body data-page="service-handyman" data-root="..">
+  <div id="site-header"></div>
+  <section class="page-hero">
+    <div class="container">
+      <div class="icon" aria-hidden="true">🔧</div>
+      <div class="eyebrow" style="color:var(--gold)">Handyman Service · <span class="badge live">Booking open</span></div>
+      <h1>All Shades of Handy</h1>
+      <p class="lead">The to-do list, done right.</p>
+      <p style="margin-top:1.25rem"><a class="btn gold" href="#quote">Get a free quote</a> <a class="btn outline" href="../book.html?service=handyman">Book a date</a></p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container grid cols-2" style="align-items:start">
+      <div class="prose">
+        <div class="eyebrow">About this service</div>
+        <h2>Handyman Service, the ASB way</h2>
+        <p>Mounting, assembly, repairs, painting, fixtures, small installs, and the odd jobs that never get done. Honest quotes, clean work, no surprises.</p>
+        <p><strong>Starting at $75 / hour</strong> · <span class="muted">$50 non-refundable deposit to book, applied to your total</span></p>
+        <div class="card" style="margin-top:1.5rem;background:var(--latte);border:0;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;color:var(--caramel)">Photo gallery coming soon</div>
+      </div>
+      <div class="stack">
+        <div class="card"><h3>What's included</h3><ul class="checks"><li>TV and shelf mounting, furniture assembly</li><li>Drywall patching and painting</li><li>Fixture, faucet, and hardware swaps</li><li>Small repairs and punch lists</li></ul></div>
+        <div class="card"><h3>How it works</h3><div class="steps" style="grid-template-columns:1fr"><div class="step">Send photos and a description</div><div class="step">Get a quote within 24 hours</div><div class="step">Pay a deposit to book the day</div><div class="step">We show up and get it done</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  
+  <section class="section alt" id="quote">
+    <div class="container grid cols-2" style="align-items:start">
+      <div>
+        <div class="eyebrow">Step one</div>
+        <h2>Get a free quote</h2>
+        <p class="muted">Tell us about the job and we reply within 24 hours with a clear price. Approve it, pay the deposit, and your date is locked.</p>
+        
+      </div>
+      <form class="asb card" data-form="quote">
+        <input type="hidden" name="service" value="All Shades of Handy">
+        <div class="row"><div class="field"><label for="q-name">Name</label><input id="q-name" name="name" required></div><div class="field"><label for="q-phone">Phone</label><input id="q-phone" name="phone" type="tel" required></div></div>
+        <div class="field"><label for="q-email">Email</label><input id="q-email" name="email" type="email" required></div>
+        <div class="field"><label for="q-address">Service address or area</label><input id="q-address" name="address"></div>
+        <div class="field"><label for="q-job">What needs doing?</label><textarea id="q-job" name="job" placeholder="List the tasks. Photos help a lot."></textarea></div><div class="field"><label for="q-urgency">How soon?</label><select id="q-urgency" name="urgency"><option>This week</option><option>Within 2 weeks</option><option>Flexible</option><option>Urgent</option></select></div>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
+        <button class="btn primary" type="submit">Send request</button>
+        <p class="form-note">Photos help. Reply to our confirmation email to attach them.</p>
+      </form>
+    </div>
+  </section>
+  
+
+  <section class="section">
+    <div class="container center">
+      <h2>Ready when you are</h2>
+      <p class="muted">Every ASB service comes with the same promise: on time, done right, treated like our own.</p>
+      <p><a class="btn gold" href="#quote">Get a free quote</a> <a class="btn outline" href="../book.html?service=handyman">Book a date</a></p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="../js/site.js"></script>
+</body>
+</html>

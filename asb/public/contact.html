@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact | All Shades of Brown</title>
+  <meta name="description" content="Get in touch with All Shades of Brown. Questions, quotes, and community. We reply within one business day.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+</head>
+<body data-page="contact" data-root=".">
+  <div id="site-header"></div>
+  <section class="page-hero"><div class="container"><div class="eyebrow" style="color:var(--gold)">Contact</div><h1>Let's talk</h1><p class="lead">Questions, quotes, ideas, or just to say hi. We reply within one business day.</p></div></section>
+
+  <section class="section">
+    <div class="container grid cols-2" style="align-items:start">
+      <form class="asb card" data-form="contact">
+        <h3>Send a message</h3>
+        <div class="row">
+          <div class="field"><label for="c-name">Name</label><input id="c-name" name="name" required></div>
+          <div class="field"><label for="c-phone">Phone</label><input id="c-phone" name="phone" type="tel"></div>
+        </div>
+        <div class="field"><label for="c-email">Email</label><input id="c-email" name="email" type="email" required></div>
+        <div class="field"><label for="c-topic">What is this about?</label>
+          <select id="c-topic" name="topic"><option>A service or quote</option><option>Press-on nails order</option><option>Community or volunteering</option><option>Careers</option><option>Partnership</option><option>Something else</option></select></div>
+        <div class="field"><label for="c-msg">Message</label><textarea id="c-msg" name="message" required></textarea></div>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="display:none" aria-hidden="true">
+        <button class="btn primary" type="submit">Send message</button>
+      </form>
+      <div class="stack">
+        <div class="card">
+          <h3>Reach us directly</h3>
+          <p><strong>Text or call:</strong> <a href="tel:+10000000000">(000) 000-0000</a><br><strong>Email:</strong> <a href="mailto:hello@allshadesofbrown.com">hello@allshadesofbrown.com</a></p>
+          <p class="form-note">Placeholders until Rose's business line and email are set up.</p>
+        </div>
+        <div class="card">
+          <h3>Hours</h3>
+          <p>Monday to Saturday, 8 AM to 6 PM.<br>Closed Sundays and major holidays.</p>
+          <h3 style="margin-top:1rem">Service area</h3>
+          <p class="muted">Serving [City] and surrounding areas within 25 miles. A small travel fee may apply outside that range. Tutoring and Spanish classes are also available online.</p>
+        </div>
+        <div class="card faq">
+          <h3>Quick answers</h3>
+          <details><summary>Is the deposit really non-refundable?</summary><p>Yes. It holds your spot and comes off your final total. You can reschedule once for free with 24 hours' notice. If we cancel, you get it back in full.</p></details>
+          <details><summary>How do I pay the rest?</summary><p>After the service, by card on site or by an emailed invoice, whichever you prefer.</p></details>
+          <details><summary>Do you bring your own supplies?</summary><p>Yes, for cleaning, lawn care, and organizing. For handyman jobs, materials are quoted separately.</p></details>
+          <details><summary>Are you insured?</summary><p>Insurance and bonding details will be listed here before launch.</p></details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+</body>
+</html>

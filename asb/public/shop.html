@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shop | All Shades of Beauty Press-On Nails</title>
+  <meta name="description" content="Custom hand-painted press-on nail sets from All Shades of Beauty. Sized to you, shipped with an application kit.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+</head>
+<body data-page="shop" data-root=".">
+  <div id="site-header"></div>
+  <section class="page-hero"><div class="container"><div class="eyebrow" style="color:var(--gold)">All Shades of Beauty</div><h1>Custom press-on nails</h1><p class="lead">Hand-painted sets in every shade, shape, and length. Sized to your hands, reusable, and shipped with everything you need.</p></div></section>
+
+  <section class="section">
+    <div class="container">
+      <div class="grid cols-4">
+        <div class="card product"><div class="swatch" style="background:linear-gradient(135deg,#e8c3a5,#c98a4b)"></div><h3>Nude Shades Set</h3><p class="muted">Almond · medium · your perfect nude</p><div class="price">$35</div></div>
+        <div class="card product"><div class="swatch" style="background:linear-gradient(135deg,#6b3f23,#2b1a10)"></div><h3>Deep Cocoa Set</h3><p class="muted">Coffin · long · glossy</p><div class="price">$40</div></div>
+        <div class="card product"><div class="swatch" style="background:linear-gradient(135deg,#d4a24c,#f8f2ea)"></div><h3>Gold Accent Set</h3><p class="muted">Square · short · chrome accents</p><div class="price">$45</div></div>
+        <div class="card product"><div class="swatch" style="background:conic-gradient(from 90deg,#2b1a10,#6b3f23,#c98a4b,#dcbf9a,#2b1a10)"></div><h3>Fully Custom Set</h3><p class="muted">Your design, your shape, your length</p><div class="price">From $50</div></div>
+      </div>
+      <p class="form-note center" style="margin-top:1rem">Placeholder designs. Real photos of Rose's sets go here.</p>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="container grid cols-2" style="align-items:start">
+      <div>
+        <div class="eyebrow">How it works</div>
+        <h2>Order your set</h2>
+        <div class="steps" style="grid-template-columns:1fr">
+          <div class="step"><strong>Get sized</strong><p class="muted">Order a $5 sizing kit (credited to your first set) or send us your sizes.</p></div>
+          <div class="step"><strong>Pick your look</strong><p class="muted">Shape, length, shade, and any art. Send inspiration photos.</p></div>
+          <div class="step"><strong>We make it by hand</strong><p class="muted">5 to 7 days. We send a photo before it ships.</p></div>
+          <div class="step"><strong>Apply and enjoy</strong><p class="muted">Application kit included. Reusable with proper care.</p></div>
+        </div>
+      </div>
+      <form class="asb card" data-form="nails-order">
+        <h3>Order request</h3>
+        <p class="form-note">Full online checkout is coming. For now, send your request and we'll confirm sizing and send an invoice within 24 hours.</p>
+        <div class="row"><div class="field"><label for="n-name">Name</label><input id="n-name" name="name" required></div><div class="field"><label for="n-email">Email</label><input id="n-email" name="email" type="email" required></div></div>
+        <div class="row">
+          <div class="field"><label for="n-set">Set</label><select id="n-set" name="set"><option>Nude Shades Set ($35)</option><option>Deep Cocoa Set ($40)</option><option>Gold Accent Set ($45)</option><option>Fully Custom Set (from $50)</option><option>Sizing kit only ($5)</option></select></div>
+          <div class="field"><label for="n-shape">Shape</label><select id="n-shape" name="shape"><option>Almond</option><option>Coffin</option><option>Square</option><option>Oval</option><option>Stiletto</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label for="n-len">Length</label><select id="n-len" name="length"><option>Short</option><option>Medium</option><option>Long</option><option>XL</option></select></div>
+          <div class="field"><label for="n-size">Sizes <span class="hint">(if known)</span></label><input id="n-size" name="sizes" placeholder="e.g. 3,6,5,6,9 / 3,6,5,6,9"></div>
+        </div>
+        <div class="field"><label for="n-design">Design notes</label><textarea id="n-design" name="design" placeholder="Colors, art, inspiration links"></textarea></div>
+        <div class="field"><label for="n-ship">Shipping address</label><input id="n-ship" name="shipping"></div>
+        <button class="btn primary" type="submit">Send order request</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container faq" style="max-width:46rem">
+      <h2>Nail care FAQ</h2>
+      <details><summary>How long do they last?</summary><p>7 to 14 days with glue, 1 to 3 days with adhesive tabs. Sets are reusable.</p></details>
+      <details><summary>Can I return a set?</summary><p>Custom sets are made to order and can't be returned, but if sizing is off we'll fix it. Sizing kits make it right the first time.</p></details>
+      <details><summary>Do you ship everywhere?</summary><p>Anywhere in the US. Shipping is calculated at invoice.</p></details>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+</body>
+</html>

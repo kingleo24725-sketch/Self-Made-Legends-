@@ -1,7 +1,11 @@
 # All Shades of Brown (ASB) — Website Plan
 
-Status: planning draft. This captures the founder's vision plus the gaps identified during review.
-The ASB site is a separate product from the Self-Made Legends trading game in this repo.
+**Owner:** Rose Brown, founder of All Shades of Brown (ASB).
+**Status:** planning draft. This captures Rose's vision plus the gaps identified during review.
+
+ASB is its own business and its own website. It is not connected to Self-Made Legends LLC or the
+trading game in this repository. The site code lives in the self-contained `asb/` folder so it can be
+moved to its own repository and hosting account under Rose's name at any time.
 
 ---
 
@@ -39,7 +43,7 @@ The ASB site is a separate product from the Self-Made Legends trading game in th
 
 ### Top-level navigation
 1. **Home** — All Shades of Brown. Welcome video, what ASB is, featured services, upcoming community event, newsletter signup.
-2. **About ASB** — story, founder, values, team, "why brown."
+2. **About ASB** — Rose's story, values, team, "why brown."
 3. **Services** — one tab/page per service (see §4). Navigation can be a top bar with a dropdown on desktop and a side drawer on mobile.
 4. **Book** — calendar booking with deposit (see §5).
 5. **Shop** — press-on nails store (separate from booking).
@@ -132,7 +136,7 @@ Each "All Shades of ___" page has:
 - Logo and a brown-tone palette; name consistency ("All Shades of Brown" vs "ASB").
 - Welcome video: under 90 seconds, captioned, hosted on YouTube (unlisted) or Vimeo, no autoplay with sound.
 - Photos per service (real work, not stock where possible).
-- Founder story for About.
+- Rose's story for About.
 - Written policies: deposit, cancellation, weather, damage, refunds.
 - Spanish translations of all core pages.
 
@@ -145,7 +149,7 @@ Each "All Shades of ___" page has:
 - SEO: one page per service with "[service] in [city]" targeting; Google Business Profile linked.
 - Analytics and conversion tracking on booking and signup.
 - HTTPS, backups, Stripe webhooks for payment confirmation.
-- Suggested stack: a static or Next.js front end, Stripe Checkout, embedded booking tool, email/SMS via a provider (Resend / Twilio or the booking tool's built-ins). The existing Node/Express + Stripe code in this repo can be referenced for webhook handling patterns.
+- Suggested stack: static HTML/CSS/JS front end served by a small Node/Express server, Stripe Checkout for deposits, email/SMS via a provider (Resend / Twilio). Move to its own repository and Rose's own Stripe, domain, and hosting accounts before launch.
 
 ---
 
@@ -166,13 +170,13 @@ Each "All Shades of ___" page has:
 
 ---
 
-## 12. Open questions for the founder
+## 12. Open questions for Rose
 
 - Which 2–3 services launch first?
 - What city / radius is the service area, and is there a travel fee?
 - Deposit amount: flat (e.g., $25) or percentage?
 - Reschedule window and no-show policy?
-- Who does the work initially: founder only, or helpers from day one? W-2 or 1099?
+- Who does the work initially: Rose only, or helpers from day one? W-2 or 1099?
 - Will the raffle become a sweepstakes, or is there a nonprofit partner?
 - Which social platforms exist today?
 - How is the balance collected after a service?

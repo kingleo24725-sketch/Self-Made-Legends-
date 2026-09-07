@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>About ASB | All Shades of Brown</title>
+  <meta name="description" content="The story behind All Shades of Brown, founded by Rose Brown: one family of services built on excellence, honesty, and community.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/asb.css">
+</head>
+<body data-page="about" data-root=".">
+  <div id="site-header"></div>
+  <section class="page-hero">
+    <div class="container">
+      <div class="eyebrow" style="color:var(--gold)">About ASB</div>
+      <h1>Every shade of who we are</h1>
+      <p class="lead">All Shades of Brown was founded by Rose Brown with one idea: a business can serve people well in many ways and still feel like family every time.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container grid cols-2" style="align-items:center">
+      <div class="prose">
+        <div class="eyebrow">Our story</div>
+        <h2>Built by hand, with heart</h2>
+        <p>Rose has always been the person people call: to organize the closet, fix the shelf, tutor the kid, plan the party, and make it all look easy. All Shades of Brown turns that trust into a company, so the same care reaches more homes and more families.</p>
+        <p>The name says it plainly. We are proud of every shade of who we are and every shade of what we do. One brand, many services, one standard.</p>
+        <p><em>This section will hold Rose's own words and photos.</em></p>
+      </div>
+      <div class="card" style="background:linear-gradient(160deg,var(--cocoa),var(--caramel));color:var(--ivory);min-height:320px;display:flex;align-items:flex-end">
+        <div><div class="eyebrow" style="color:var(--gold)">Founder</div><h3 style="color:var(--ivory);margin:0">Rose Brown</h3><p class="muted" style="color:var(--sand);margin:0">Founder &amp; lead of every shade</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt">
+    <div class="container">
+      <div class="center" style="max-width:40rem;margin:0 auto 2rem"><div class="eyebrow">What we stand for</div><h2>Our values</h2></div>
+      <div class="grid cols-4">
+        <div class="card"><h3>Excellence</h3><p class="muted">We do it right or we do it again. No shortcuts, no excuses.</p></div>
+        <div class="card"><h3>Honesty</h3><p class="muted">Clear prices, clear terms, and a straight answer every time.</p></div>
+        <div class="card"><h3>Community</h3><p class="muted">We give back every month because this is home.</p></div>
+        <div class="card"><h3>Pride</h3><p class="muted">Every shade of us shows up in every job we finish.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="center" style="max-width:40rem;margin:0 auto 2rem"><div class="eyebrow">The ASB family</div><h2>All Shades of…</h2><p class="muted">Every service is its own shade of the same brand.</p></div>
+      <div class="pill-list center" id="family" style="justify-content:center"></div>
+      <p class="center" style="margin-top:2rem"><a class="btn primary" href="book.html">Book a service</a> <a class="btn outline" href="careers.html">Work with us</a></p>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="js/site.js"></script>
+  <script>document.addEventListener('asb:ready', e => { document.getElementById('family').innerHTML = e.detail.services.map(s => `<span>${s.icon} ${ASB.esc(s.name)}</span>`).join(''); });</script>
+</body>
+</html>
