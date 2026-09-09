@@ -216,6 +216,7 @@ describe('chat with the crew', () => {
     expect(b.plan.tasks[0].status).toBe('done');
     expect(b.plan.tasks.slice(1).every(t => t.status === 'pending' && t.startsMin >= 11 * 60)).toBe(true);
     expect(b.plan.progress.tasksDone).toBe(1);
+    expect(b.plan.headline).toMatch(new RegExp(`^${b.plan.tasks.length} plays, .*rebuilt mid-day`));
     expect(b.plan.headline).toMatch(new RegExp(`^${b.plan.tasks.length} plays.*rebuilt mid-day`));
     expect(engine.chatHistory('u_a', plan.date).map(m => m.role)).toEqual(['user', 'crew', 'user', 'crew']);
     engine.defaultTier = 'free';
