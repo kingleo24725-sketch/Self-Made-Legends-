@@ -1,6 +1,6 @@
 // Offline shell so the app opens instantly from the home screen, plus push
 // notifications from the crew. API calls always go to the network.
-const CACHE = 'bossday-shell-v2';
+const CACHE = 'risengrind-shell-v2';
 const SHELL = ['/', '/index.html', '/manifest.json', '/icon.svg', '/terms.html', '/privacy.html'];
 
 self.addEventListener('install', (e) => {
@@ -23,9 +23,9 @@ self.addEventListener('fetch', (e) => {
 
 self.addEventListener('push', (e) => {
   let data = {};
-  try { data = e.data ? e.data.json() : {}; } catch (_) { data = { title: 'BossDay', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(data.title || 'BossDay', {
-    body: data.body || '', icon: '/icon.svg', badge: '/icon.svg', tag: data.kind || 'bossday', data: { url: data.url || '/', taskId: data.taskId || null }, renotify: data.kind === 'checkin',
+  try { data = e.data ? e.data.json() : {}; } catch (_) { data = { title: 'Rise N Grind', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(data.title || 'Rise N Grind', {
+    body: data.body || '', icon: '/icon.svg', badge: '/icon.svg', tag: data.kind || 'risengrind', data: { url: data.url || '/', taskId: data.taskId || null }, renotify: data.kind === 'checkin',
   }));
 });
 

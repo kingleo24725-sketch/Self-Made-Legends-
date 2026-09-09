@@ -237,7 +237,7 @@ if (require.main === module) {
   setInterval(tick, 5 * 60 * 1000);
   setTimeout(tick, 3000);
   app.listen(PORT, () => {
-    console.log(`BossDay listening on http://localhost:${PORT}`);
+    console.log(`Rise N Grind listening on http://localhost:${PORT}`);
     console.log(crew.online ? 'Crew online: Claude + live web research' : 'Crew offline: playbook mode (set ANTHROPIC_API_KEY to enable the agents)');
     console.log(push.enabled ? 'Push notifications on' : 'Push off (set VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)');
     console.log(`Default tier for new players: ${engine.defaultTier}${process.env.STRIPE_SECRET_KEY ? ' (billing on)' : ' (billing off)'}`);

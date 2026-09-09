@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS recaps (
 `;
 
 function open(file) {
-  const target = file || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'bossday.db');
+  const target = file || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'risengrind.db');
   if (target !== ':memory:') fs.mkdirSync(path.dirname(target), { recursive: true });
   const db = new Database(target);
   db.pragma('journal_mode = WAL');

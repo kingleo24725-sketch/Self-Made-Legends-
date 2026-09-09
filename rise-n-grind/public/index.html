@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<title>BossDay</title>
+<title>Rise N Grind · by SML</title>
 <style>
   :root {
     --bg: #0b0d12; --card: #141824; --card-2: #1b2030; --line: #262c3d;
@@ -175,7 +175,7 @@
 <body>
 <div class="app">
   <header class="top">
-    <h1>Boss<span>Day</span></h1>
+    <h1>Rise <span>N</span> Grind</h1>
     <span class="crew-pill" id="crewPill"><i class="dot"></i><span id="crewText">crew</span></span>
   </header>
 
@@ -239,7 +239,7 @@
     <!-- ── Today ────────────────────────────────────────────────────── -->
     <section class="screen" id="screen-today">
       <div id="installBar" class="card install-bar hidden">
-        <div class="row between"><div><b>Put BossDay on your home screen</b><div class="small muted">Opens like an app. Your plan is there when you wake up.</div></div><button class="btn small" onclick="installApp()">Install</button></div>
+        <div class="row between"><div><b>Put Rise N Grind on your home screen</b><div class="small muted">Opens like an app. Your plan is there when you wake up.</div></div><button class="btn small" onclick="installApp()">Install</button></div>
       </div>
       <div id="checkinBar" class="card checkin-bar hidden"></div>
       <div id="todayLoading" class="card" style="text-align:center"><div class="spinner"></div><div class="muted">Your crew is finishing today's plan…</div></div>
@@ -285,7 +285,7 @@
       <div class="card">
         <button class="btn ghost" onclick="editProfile()">Update what the crew knows</button>
         <button class="btn ghost" style="margin-top:8px" onclick="logout()">Sign out</button>
-        <p class="legal"><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+        <p class="legal">Rise N Grind is made by SML (Self-Made Legends LLC). <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
       </div>
     </section>
   </main>
@@ -302,7 +302,7 @@
 // ── State ──────────────────────────────────────────────────────────────────
 const S = { token: null, user: null, profile: null, config: null, today: null, me: null, mode: 'signin', deferredInstall: null, es: null, invite: null,
   lb: { scope: 'world', league: '', mode: 'all' }, checkins: [] };
-try { S.token = localStorage.getItem('bossday.token'); } catch (_) {}
+try { S.token = localStorage.getItem('risengrind.token'); } catch (_) {}
 try { const q = new URLSearchParams(location.search); S.invite = q.get('invite'); if (q.get('billing') === 'success') setTimeout(() => toast('Payment received. Your crew just got stronger.'), 800); } catch (_) {}
 
 const $ = (id) => document.getElementById(id);
@@ -321,7 +321,7 @@ async function api(path, opts = {}) {
   if (!r.ok) throw Object.assign(new Error(data.error || 'Request failed'), { status: r.status });
   return data;
 }
-function setToken(t) { S.token = t; try { t ? localStorage.setItem('bossday.token', t) : localStorage.removeItem('bossday.token'); } catch (_) {} }
+function setToken(t) { S.token = t; try { t ? localStorage.setItem('risengrind.token', t) : localStorage.removeItem('risengrind.token'); } catch (_) {} }
 
 // ── Navigation ─────────────────────────────────────────────────────────────
 function show(name) {
@@ -647,7 +647,7 @@ async function checkout(tier) { try { const r = await api('/api/billing/checkout
 function renderPush(me) {
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   if (!me.pushEnabled) { $('pushBody').innerHTML = 'Push is not switched on for this server yet. You still get every message in your inbox here.'; return; }
-  if (!supported) { $('pushBody').innerHTML = 'Your browser cannot do push here. On iPhone, add BossDay to your home screen first, then come back.'; return; }
+  if (!supported) { $('pushBody').innerHTML = 'Your browser cannot do push here. On iPhone, add Rise N Grind to your home screen first, then come back.'; return; }
   $('pushBody').innerHTML = `${me.pushDevices ? `On for ${me.pushDevices} device${me.pushDevices === 1 ? '' : 's'}. ` : 'Get your plan the moment it lands, and a nudge after each time block. '}<button class="btn small ${me.pushDevices ? 'ghost' : ''}" style="margin-top:8px" onclick="${me.pushDevices ? 'disablePush()' : 'enablePush()'}">${me.pushDevices ? 'Turn off on this device' : 'Turn on notifications'}</button>`;
 }
 async function enablePush() {
@@ -665,8 +665,8 @@ async function disablePush() {
 }
 function urlB64(s) { const pad = '='.repeat((4 - s.length % 4) % 4); const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); }
 async function shareInvite() {
-  const url = $('inviteUrl').value; const text = `I finished #${S.today && S.today.rank ? S.today.rank.rank : '?'} in the world on BossDay today. Think you can beat me? ${url}`;
-  try { if (navigator.share) await navigator.share({ title: 'BossDay', text, url }); else { await navigator.clipboard.writeText(text); toast('Copied'); } } catch (_) {}
+  const url = $('inviteUrl').value; const text = `I finished #${S.today && S.today.rank ? S.today.rank.rank : '?'} in the world on Rise N Grind today. Think you can beat me? ${url}`;
+  try { if (navigator.share) await navigator.share({ title: 'Rise N Grind', text, url }); else { await navigator.clipboard.writeText(text); toast('Copied'); } } catch (_) {}
 }
 
 // ── Live updates ───────────────────────────────────────────────────────────
