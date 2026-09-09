@@ -324,6 +324,11 @@ class Engine {
       const keep = plan.tasks.filter(t => t.status !== 'pending');
       const json = JSON.parse(this.db.prepare('SELECT plan_json FROM plans WHERE id = ?').get(plan.id).plan_json);
       json.tasks = [...keep.map(t => ({ ...t, taskId: undefined, status: undefined, earningsCents: undefined, verifiedCents: undefined, note: undefined, completedAt: undefined })), ...laid].map((t, i) => ({ ...t, order: i + 1 }));
+      const low = json.tasks.reduce((s, t) => s + ((t.estimatedEarnings || {}).low || 0), 0);
+      const high = json.tasks.reduce((s, t) => s + ((t.estimatedEarnings || {}).high || 0), 0);
+      const hours = json.tasks.reduce((s, t) => s + (t.hours || 0), 0);
+      json.estimatedEarnings = { low, high };
+      json.headline = `${json.tasks.length} plays, ${hours.toFixed(1)} hours, $${low}-$${high} realistic range (rebuilt mid-day)`;
       const tx = this.db.transaction(() => {
         this.db.prepare("DELETE FROM tasks WHERE plan_id = ? AND status = 'pending'").run(plan.id);
         this.db.prepare('UPDATE plans SET plan_json = ? WHERE id = ?').run(JSON.stringify(json), plan.id);
