@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Your own crew of agents studies the real world every night and hands you a personal, legal, full-day money plan every morning. Everyone with the app competes on one world leaderboard.">
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icon.svg">
+<title>BossDay</title>
+<style>
+  :root {
+    --bg: #0b0d12; --card: #141824; --card-2: #1b2030; --line: #262c3d;
+    --text: #eef0f5; --muted: #8d95a8; --gold: #f5b942; --green: #3ddc84; --red: #ff6b6b; --blue: #5aa9ff;
+    --radius: 16px; --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif; font-size: 16px; line-height: 1.45; -webkit-font-smoothing: antialiased; }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  a { color: var(--blue); }
+  .hidden { display: none !important; }
+
+  .app { max-width: 560px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
+  header.top { position: sticky; top: 0; z-index: 10; background: rgba(11,13,18,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 18px calc(10px); display: flex; align-items: center; justify-content: space-between; }
+  header.top h1 { font-size: 1.15em; letter-spacing: 0.02em; }
+  header.top h1 span { color: var(--gold); }
+  .crew-pill { font-size: 0.72em; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; display: inline-flex; gap: 6px; align-items: center; }
+  .crew-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .crew-pill.on .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+  main { flex: 1; padding: 18px 18px calc(84px + var(--safe-b)); }
+  .screen { display: none; animation: fade .18s ease; }
+  .screen.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; background: rgba(11,13,18,0.96); border-top: 1px solid var(--line); padding: 8px 6px calc(8px + var(--safe-b)); display: flex; justify-content: space-around; }
+  nav.tabs button { background: none; border: 0; color: var(--muted); font-size: 0.72em; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 10px; border-radius: 10px; min-width: 64px; }
+  nav.tabs button .ic { font-size: 1.45em; }
+  nav.tabs button.active { color: var(--gold); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 1.05em; margin-bottom: 8px; }
+  .card h3 { font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 8px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 0.85em; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .row.between { justify-content: space-between; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 12px; padding: 14px 18px; font-weight: 700; background: var(--gold); color: #1a1200; cursor: pointer; transition: transform .08s; }
+  .btn:active { transform: scale(.98); }
+  .btn.ghost { background: var(--card-2); color: var(--text); border: 1px solid var(--line); }
+  .btn.small { width: auto; padding: 9px 14px; font-size: 0.85em; border-radius: 10px; }
+  .btn.danger { background: rgba(255,107,107,0.15); color: var(--red); border: 1px solid rgba(255,107,107,0.35); }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  label.field { display: block; margin-bottom: 12px; }
+  label.field span { display: block; font-size: 0.8em; color: var(--muted); margin-bottom: 5px; }
+  input[type=text], input[type=email], input[type=password], input[type=number], textarea, select { width: 100%; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; outline: none; }
+  input:focus, textarea:focus, select:focus { border-color: var(--gold); }
+  textarea { min-height: 72px; resize: vertical; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1px solid var(--line); background: var(--card-2); border-radius: 999px; padding: 8px 13px; font-size: 0.88em; cursor: pointer; user-select: none; }
+  .chip.on { border-color: var(--gold); background: rgba(245,185,66,0.14); color: var(--gold); }
+  .error { color: var(--red); font-size: 0.88em; margin: 6px 0; min-height: 1.2em; }
+
+  .hero { background: linear-gradient(160deg, #1b1a12 0%, #141824 60%); border: 1px solid rgba(245,185,66,0.35); }
+  .hero .date { color: var(--gold); font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.12em; }
+  .hero .headline { font-size: 1.25em; font-weight: 800; margin: 6px 0 4px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+  .stat { background: rgba(0,0,0,0.25); border-radius: 12px; padding: 10px; text-align: center; }
+  .stat b { display: block; font-size: 1.25em; }
+  .stat span { font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; margin-top: 12px; }
+  .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--green)); width: 0; transition: width .4s; }
+
+  .brief li { margin: 6px 0 6px 18px; font-size: 0.92em; }
+
+  .task { border: 1px solid var(--line); border-radius: 14px; background: var(--card); margin-bottom: 10px; overflow: hidden; }
+  .task .head { display: flex; gap: 12px; padding: 14px; align-items: flex-start; cursor: pointer; }
+  .task .time { min-width: 66px; font-size: 0.75em; color: var(--muted); line-height: 1.3; padding-top: 2px; }
+  .task .title { font-weight: 700; }
+  .task .est { font-size: 0.8em; color: var(--green); margin-top: 2px; }
+  .task .icon { font-size: 1.4em; }
+  .task.done { border-color: rgba(61,220,132,0.4); }
+  .task.done .title { text-decoration: line-through; color: var(--muted); }
+  .task.skipped { opacity: .55; }
+  .task .body { display: none; padding: 0 14px 14px; border-top: 1px dashed var(--line); }
+  .task.open .body { display: block; }
+  .task .steps { margin: 10px 0 10px 18px; font-size: 0.92em; }
+  .task .steps li { margin: 5px 0; }
+  .task .why { font-size: 0.85em; color: var(--muted); font-style: italic; margin-bottom: 10px; }
+  .task .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .task .earn { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+  .task .earn input { flex: 1; }
+  .task .sources a { font-size: 0.78em; display: block; word-break: break-all; }
+  .badge { display: inline-block; font-size: 0.7em; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--muted); margin-left: 6px; vertical-align: middle; }
+  .badge.done { background: rgba(61,220,132,0.15); color: var(--green); }
+
+  table.lb { width: 100%; border-collapse: collapse; }
+  table.lb td { padding: 10px 6px; border-bottom: 1px solid var(--line); font-size: 0.92em; vertical-align: middle; }
+  table.lb tr.me td { background: rgba(245,185,66,0.08); }
+  table.lb .rk { width: 34px; color: var(--muted); font-weight: 700; }
+  table.lb .rk.top { color: var(--gold); }
+  table.lb .nm { font-weight: 600; }
+  table.lb .nm small { display: block; color: var(--muted); font-weight: 400; font-size: 0.8em; }
+  table.lb .sc { text-align: right; font-weight: 800; color: var(--gold); white-space: nowrap; }
+  table.lb .sc small { display: block; color: var(--muted); font-weight: 400; font-size: 0.78em; }
+  .podium { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .podium div { background: var(--card-2); border-radius: 12px; padding: 12px 8px; text-align: center; }
+  .podium div b { display: block; font-size: 1.3em; }
+  .podium div span { font-size: 0.8em; display: block; }
+  .podium .p1 { border: 1px solid var(--gold); }
+  .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+
+  .hist { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.92em; }
+  .hist .d { color: var(--muted); }
+  .hist .s { color: var(--gold); font-weight: 700; }
+  .inbox-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .inbox-item b { display: block; }
+  .inbox-item span { color: var(--muted); font-size: 0.88em; }
+
+  .toast { position: fixed; left: 50%; bottom: calc(92px + var(--safe-b)); transform: translateX(-50%); background: #22283a; border: 1px solid var(--line); color: var(--text); padding: 10px 16px; border-radius: 12px; font-size: 0.9em; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
+  .toast.show { opacity: 1; }
+  .install-bar { background: rgba(90,169,255,0.1); border: 1px solid rgba(90,169,255,0.35); }
+  .spinner { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--gold); border-radius: 50%; animation: spin .9s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .legal { font-size: 0.75em; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>Boss<span>Day</span></h1>
+    <span class="crew-pill" id="crewPill"><i class="dot"></i><span id="crewText">crew</span></span>
+  </header>
+
+  <main>
+    <!-- ── Sign in / create account ─────────────────────────────────── -->
+    <section class="screen" id="screen-auth">
+      <div class="card hero">
+        <div class="date">Your crew. Your plan. Your day.</div>
+        <div class="headline">Wake up to a money plan built for you.</div>
+        <p class="muted small">Every night a crew of AI agents studies the news, the gig market and what is hiring near you, then writes your to-do list for a full working day. You are the boss. Everyone with the app competes on one world leaderboard.</p>
+      </div>
+      <div class="card">
+        <div class="chips" style="margin-bottom:14px">
+          <span class="chip on" id="tabSignin" onclick="authMode('signin')">Sign in</span>
+          <span class="chip" id="tabSignup" onclick="authMode('signup')">Create account</span>
+        </div>
+        <form id="authForm" onsubmit="return submitAuth(event)">
+          <label class="field hidden" id="nameField"><span>Name on the leaderboard</span><input type="text" id="displayName" maxlength="40" autocomplete="nickname"></label>
+          <label class="field"><span>Email</span><input type="email" id="email" required autocomplete="email"></label>
+          <label class="field"><span>Password</span><input type="password" id="password" required minlength="8" autocomplete="current-password"></label>
+          <div class="error" id="authError"></div>
+          <button class="btn" type="submit" id="authBtn">Sign in</button>
+        </form>
+        <p class="legal">By continuing you agree that plans are suggestions, earnings are estimates not guarantees, and you alone decide what work to take. 18+.</p>
+      </div>
+    </section>
+
+    <!-- ── Profile / onboarding ─────────────────────────────────────── -->
+    <section class="screen" id="screen-profile">
+      <div class="card">
+        <h2 id="profileTitle">Tell your crew about you</h2>
+        <p class="muted small" style="margin-bottom:14px">The crew only plans around what you actually have. The more honest this is, the better the plan.</p>
+        <label class="field"><span>Where are you? (city, state)</span><input type="text" id="pLocation" placeholder="Atlanta, GA" maxlength="120"></label>
+        <label class="field"><span>What do you have?</span></label>
+        <div class="chips" id="pResources" style="margin-bottom:14px"></div>
+        <label class="field"><span>Skills (comma separated)</span><input type="text" id="pSkills" placeholder="writing, cooking, Excel, fixing things"></label>
+        <label class="field"><span>Your goal</span><textarea id="pGoals" placeholder="Make $150 a day so I can quit my night shift"></textarea></label>
+        <div class="grid2">
+          <label class="field"><span>Hours per day</span><input type="number" id="pHours" min="2" max="12" value="8"></label>
+          <label class="field"><span>I start around</span><select id="pStart"></select></label>
+        </div>
+        <label class="field"><span>How do you feel about talking to strangers or physical work?</span><input type="text" id="pComfort" placeholder="Fine with both / prefer online / no heavy lifting" maxlength="200"></label>
+        <div class="error" id="profileError"></div>
+        <button class="btn" onclick="saveProfile()">Build my plan</button>
+        <button class="btn ghost hidden" id="profileCancel" style="margin-top:8px" onclick="show('today')">Cancel</button>
+      </div>
+    </section>
+
+    <!-- ── Today ────────────────────────────────────────────────────── -->
+    <section class="screen" id="screen-today">
+      <div id="installBar" class="card install-bar hidden">
+        <div class="row between"><div><b>Put BossDay on your home screen</b><div class="small muted">Opens like an app. Your plan is there when you wake up.</div></div><button class="btn small" onclick="installApp()">Install</button></div>
+      </div>
+      <div id="todayLoading" class="card" style="text-align:center"><div class="spinner"></div><div class="muted">Your crew is finishing today's plan…</div></div>
+      <div id="todayContent" class="hidden"></div>
+    </section>
+
+    <!-- ── World ────────────────────────────────────────────────────── -->
+    <section class="screen" id="screen-world">
+      <div class="card">
+        <div class="row between"><h2>World leaderboard</h2><span class="small muted" id="lbDate"></span></div>
+        <p class="small muted">Resets at each player's local midnight. Score = plays done + hours worked + logged earnings (capped) + full-day and streak bonuses. Earnings are self-reported.</p>
+      </div>
+      <div class="card" id="podiumCard"><h3>Yesterday's podium</h3><div id="podium" class="empty">No champions yet.</div></div>
+      <div class="card"><h3>Today, live</h3><div id="lbToday"></div></div>
+      <div class="card"><h3>All time</h3><div id="lbAll"></div></div>
+    </section>
+
+    <!-- ── Me ───────────────────────────────────────────────────────── -->
+    <section class="screen" id="screen-me">
+      <div class="card hero" id="meHero"></div>
+      <div class="card"><h3>What your crew has learned</h3><div id="meNotes" class="small"></div></div>
+      <div class="card"><h3>Inbox</h3><div id="inbox"></div></div>
+      <div class="card"><h3>Past days</h3><div id="history"></div></div>
+      <div class="card">
+        <button class="btn ghost" onclick="editProfile()">Update what the crew knows</button>
+        <button class="btn ghost" style="margin-top:8px" onclick="logout()">Sign out</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabs" id="tabs">
+    <button data-s="today" onclick="show('today')"><span class="ic">🌅</span>Today</button>
+    <button data-s="world" onclick="show('world')"><span class="ic">🌍</span>World</button>
+    <button data-s="me" onclick="show('me')"><span class="ic">👤</span>Me</button>
+  </nav>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const S = { token: null, user: null, profile: null, config: null, today: null, mode: 'signin', deferredInstall: null, es: null };
+try { S.token = localStorage.getItem('bossday.token'); } catch (_) {}
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const money = (cents) => { const c = Number(cents || 0); const whole = c % 100 === 0; return '$' + (c / 100).toLocaleString(undefined, { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 }); };
+const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600); };
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (S.token) headers.Authorization = 'Bearer ' + S.token;
+  const r = await fetch(path, { ...opts, headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const data = await r.json().catch(() => ({}));
+  if (r.status === 401 && S.token) { setToken(null); show('auth'); }
+  if (!r.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+function setToken(t) { S.token = t; try { t ? localStorage.setItem('bossday.token', t) : localStorage.removeItem('bossday.token'); } catch (_) {} }
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function show(name) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.toggle('active', s.id === 'screen-' + name));
+  document.querySelectorAll('nav.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.s === name));
+  $('tabs').classList.toggle('hidden', name === 'auth' || (name === 'profile' && !S.profile));
+  window.scrollTo(0, 0);
+  if (name === 'today') loadToday();
+  if (name === 'world') loadWorld();
+  if (name === 'me') loadMe();
+}
+
+// ── Auth ───────────────────────────────────────────────────────────────────
+function authMode(m) {
+  S.mode = m;
+  $('tabSignin').classList.toggle('on', m === 'signin');
+  $('tabSignup').classList.toggle('on', m === 'signup');
+  $('nameField').classList.toggle('hidden', m !== 'signin' ? false : true);
+  $('authBtn').textContent = m === 'signin' ? 'Sign in' : 'Create account';
+  $('password').autocomplete = m === 'signin' ? 'current-password' : 'new-password';
+}
+async function submitAuth(e) {
+  e.preventDefault();
+  $('authError').textContent = '';
+  $('authBtn').disabled = true;
+  try {
+    const body = { email: $('email').value, password: $('password').value, displayName: $('displayName').value };
+    const r = await api('/api/auth/' + (S.mode === 'signin' ? 'login' : 'register'), { method: 'POST', body });
+    setToken(r.token); S.user = r.user;
+    await boot();
+  } catch (err) { $('authError').textContent = err.message; }
+  $('authBtn').disabled = false;
+  return false;
+}
+async function logout() { try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) {} setToken(null); S.user = S.profile = S.today = null; if (S.es) S.es.close(); show('auth'); }
+
+// ── Profile ────────────────────────────────────────────────────────────────
+function renderProfileForm() {
+  const p = S.profile || {};
+  $('pLocation').value = p.location || '';
+  $('pSkills').value = (p.skills || []).join(', ');
+  $('pGoals').value = p.goals || '';
+  $('pHours').value = p.targetHours || 8;
+  $('pComfort').value = p.comfort || '';
+  const start = $('pStart'); start.innerHTML = '';
+  for (let h = 4; h <= 14; h++) { const o = document.createElement('option'); o.value = h; o.textContent = (h % 12 || 12) + (h < 12 ? 'am' : 'pm'); start.appendChild(o); }
+  start.value = p.startHour ?? 8;
+  const have = new Set(p.resources || ['phone']);
+  $('pResources').innerHTML = S.config.resources.map((r) => `<span class="chip ${have.has(r.key) ? 'on' : ''}" data-k="${r.key}" onclick="this.classList.toggle('on')">${r.icon} ${esc(r.label)}</span>`).join('');
+  $('profileTitle').textContent = S.profile ? 'Update what your crew knows' : 'Tell your crew about you';
+  $('profileCancel').classList.toggle('hidden', !S.profile);
+}
+function editProfile() { renderProfileForm(); show('profile'); }
+async function saveProfile() {
+  $('profileError').textContent = '';
+  const body = {
+    location: $('pLocation').value,
+    resources: [...document.querySelectorAll('#pResources .chip.on')].map((c) => c.dataset.k),
+    skills: $('pSkills').value.split(',').map((s) => s.trim()).filter(Boolean),
+    goals: $('pGoals').value, comfort: $('pComfort').value,
+    targetHours: Number($('pHours').value), startHour: Number($('pStart').value),
+    tzOffset: -new Date().getTimezoneOffset(),
+  };
+  try { const r = await api('/api/profile', { method: 'POST', body }); S.profile = r.profile; toast('Saved. Your crew is on it.'); show('today'); }
+  catch (err) { $('profileError').textContent = err.message; }
+}
+
+// ── Today ──────────────────────────────────────────────────────────────────
+async function loadToday() {
+  $('todayLoading').classList.remove('hidden'); $('todayContent').classList.add('hidden');
+  try {
+    const t = await api('/api/today');
+    if (t.needsProfile) { renderProfileForm(); show('profile'); return; }
+    S.today = t; renderToday();
+  } catch (err) { toast(err.message); }
+}
+function renderToday() {
+  const t = S.today, p = t.plan, pr = p.progress;
+  const pct = pr.tasksTotal ? Math.round((pr.tasksDone / pr.tasksTotal) * 100) : 0;
+  const closed = p.status === 'closed';
+  const html = `
+    <div class="card hero">
+      <div class="row between"><div class="date">${esc(fmtDate(t.date))}</div><span class="small muted">${p.generatedBy === 'crew' ? '🧠 crew + live research' : '📘 playbook'}</span></div>
+      <div class="headline">${esc(p.headline)}</div>
+      <div class="small">Focus: <b>${esc(p.focus)}</b></div>
+      <div class="stats">
+        <div class="stat"><b>${pr.tasksDone}/${pr.tasksTotal}</b><span>plays</span></div>
+        <div class="stat"><b>${money(pr.earningsCents)}</b><span>logged</span></div>
+        <div class="stat"><b>#${t.rank ? t.rank.rank : '–'}</b><span>of ${t.rank ? t.rank.of : 0} world</span></div>
+      </div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="row between small muted" style="margin-top:6px"><span>${pr.hoursDone}h of ${pr.hoursTotal}h</span><span>score <b style="color:var(--gold)">${pr.score}</b></span></div>
+      ${closed ? '<p class="small" style="margin-top:10px;color:var(--green)">Day closed. Tomorrow\'s plan lands by 4am.</p>' : ''}
+    </div>
+    ${t.memory.lastSummary ? `<div class="card"><h3>Coach, last night</h3><div class="small">${esc(t.memory.lastSummary)}</div></div>` : ''}
+    <div class="card"><h3>Morning brief</h3><ul class="brief">${p.brief.map((b) => `<li>${linkify(b)}</li>`).join('')}</ul>
+      <div class="small muted" style="margin-top:8px">Realistic range today: <b style="color:var(--green)">$${p.estimatedEarnings.low}–$${p.estimatedEarnings.high}</b></div></div>
+    <h3 class="muted small" style="margin:4px 0 10px;text-transform:uppercase;letter-spacing:.08em">Your day</h3>
+    ${p.tasks.map(renderTask).join('')}
+    <div class="card">
+      ${!closed && t.canRegenerate ? '<button class="btn ghost" onclick="regenerate()">Not feeling it? Rebuild the plan (once per day)</button>' : ''}
+      ${!closed ? '<button class="btn danger" style="margin-top:8px" onclick="closeDay()">Close my day now</button>' : ''}
+      <p class="legal">${esc(p.disclaimer)}</p>
+    </div>`;
+  $('todayContent').innerHTML = html;
+  $('todayLoading').classList.add('hidden'); $('todayContent').classList.remove('hidden');
+}
+function renderTask(task) {
+  const st = task.status;
+  const closed = S.today.plan.status === 'closed';
+  return `
+    <div class="task ${st} ${task._open ? 'open' : ''}" id="task-${task.taskId}">
+      <div class="head" onclick="toggleTask(${task.taskId})">
+        <div class="time">${esc(task.startsAt)}<br>${esc(task.endsAt)}</div>
+        <div style="flex:1">
+          <div class="title">${esc(task.icon)} ${esc(task.title)} ${st === 'done' ? '<span class="badge done">done</span>' : st === 'skipped' ? '<span class="badge">skipped</span>' : ''}</div>
+          <div class="est">${task.estimatedEarnings.high > 0 ? `$${task.estimatedEarnings.low}–$${task.estimatedEarnings.high}` : 'builds tomorrow'} · ${task.hours}h${task.earningsCents ? ` · logged ${money(task.earningsCents)}` : ''}</div>
+        </div>
+      </div>
+      <div class="body">
+        <ol class="steps">${task.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>
+        <div class="why">${esc(task.why)}</div>
+        ${task.sources.length ? `<div class="sources">${task.sources.map((u) => `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>`).join('')}</div>` : ''}
+        ${closed ? '' : `
+        <div class="earn"><span class="small muted">Earned</span><input type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" value="${task.earningsCents ? (task.earningsCents / 100) : ''}" id="earn-${task.taskId}"><button class="btn small ghost" onclick="logEarnings(${task.taskId})">Log</button></div>
+        <div class="actions">
+          <button class="btn small ${st === 'done' ? 'ghost' : ''}" onclick="setStatus(${task.taskId}, '${st === 'done' ? 'pending' : 'done'}')">${st === 'done' ? 'Undo' : '✓ Done'}</button>
+          <button class="btn small ghost" onclick="setStatus(${task.taskId}, '${st === 'skipped' ? 'pending' : 'skipped'}')">${st === 'skipped' ? 'Un-skip' : 'Skip'}</button>
+        </div>`}
+      </div>
+    </div>`;
+}
+function toggleTask(id) { const t = S.today.plan.tasks.find((x) => x.taskId === id); t._open = !t._open; $('task-' + id).classList.toggle('open', t._open); }
+async function setStatus(id, status) {
+  try {
+    const earn = $('earn-' + id); const earningsDollars = earn && earn.value !== '' ? Number(earn.value) : undefined;
+    const r = await api('/api/tasks/' + id, { method: 'POST', body: { status, earningsDollars } });
+    mergePlan(r.plan); if (status === 'done') toast('Logged. Keep going.');
+  } catch (err) { toast(err.message); }
+}
+async function logEarnings(id) {
+  try { const r = await api('/api/tasks/' + id, { method: 'POST', body: { earningsDollars: Number($('earn-' + id).value || 0) } }); mergePlan(r.plan); toast('Earnings logged'); }
+  catch (err) { toast(err.message); }
+}
+function mergePlan(plan) {
+  const open = new Set(S.today.plan.tasks.filter((t) => t._open).map((t) => t.taskId));
+  plan.tasks.forEach((t) => { t._open = open.has(t.taskId); });
+  S.today.plan = plan; S.today.canRegenerate = plan.status === 'open' && plan.progress.tasksDone === 0 && (plan.regenerations || 0) < 1;
+  api('/api/today').then((t) => { S.today.rank = t.rank; renderToday(); }).catch(() => renderToday());
+}
+async function regenerate() {
+  $('todayLoading').classList.remove('hidden'); $('todayContent').classList.add('hidden');
+  try { await api('/api/today/regenerate', { method: 'POST' }); await loadToday(); toast('New plan, same day.'); }
+  catch (err) { toast(err.message); renderToday(); }
+}
+async function closeDay() {
+  if (!confirm('Close today? You will not be able to log anything else for this day.')) return;
+  try { const r = await api('/api/today/close', { method: 'POST' }); toast(r.debrief.summary); await loadToday(); }
+  catch (err) { toast(err.message); }
+}
+
+// ── World ──────────────────────────────────────────────────────────────────
+async function loadWorld() {
+  try {
+    const w = await api('/api/leaderboard');
+    $('lbDate').textContent = fmtDate(w.date);
+    $('podium').innerHTML = w.yesterdayPodium.length
+      ? `<div class="podium">${[1, 0, 2].map((i) => w.yesterdayPodium[i]).filter(Boolean).map((p) => `<div class="p${p.rank}"><b>${['🥇', '🥈', '🥉'][p.rank - 1]}</b><span>${esc(p.displayName)}</span><span class="muted">${p.score}</span></div>`).join('')}</div>`
+      : '<div class="empty">No champions yet. Be the first.</div>';
+    $('lbToday').innerHTML = w.leaderboard.length ? `<table class="lb">${w.leaderboard.map((r) => `
+      <tr class="${S.user && r.userId === S.user.id ? 'me' : ''}"><td class="rk ${r.rank <= 3 ? 'top' : ''}">${r.rank}</td>
+      <td class="nm">${esc(r.displayName)}${r.streak ? ' 🔥' + r.streak : ''}<small>${esc(r.location || '')}${r.location ? ' · ' : ''}${r.tasksDone}/${r.tasksTotal} plays · ${r.hoursDone}h</small></td>
+      <td class="sc">${r.score}<small>${money(r.earningsCents)} logged</small></td></tr>`).join('')}</table>` : '<div class="empty">Nobody has scored yet today.</div>';
+    $('lbAll').innerHTML = w.allTime.length ? `<table class="lb">${w.allTime.map((r) => `
+      <tr class="${S.user && r.userId === S.user.id ? 'me' : ''}"><td class="rk ${r.rank <= 3 ? 'top' : ''}">${r.rank}</td>
+      <td class="nm">${esc(r.displayName)}<small>${r.days} day${r.days === 1 ? '' : 's'} · ${r.wins} win${r.wins === 1 ? '' : 's'} · best streak ${r.bestStreak}</small></td>
+      <td class="sc">${r.totalScore}<small>${money(r.totalEarningsCents)} logged</small></td></tr>`).join('')}</table>` : '<div class="empty">Nothing yet.</div>';
+  } catch (err) { toast(err.message); }
+}
+
+// ── Me ─────────────────────────────────────────────────────────────────────
+async function loadMe() {
+  try {
+    const [me, h, ib] = await Promise.all([api('/api/me'), api('/api/history'), api('/api/inbox')]);
+    S.profile = me.profile;
+    $('meHero').innerHTML = `<div class="date">${esc(me.user.displayName)}</div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
+      <div class="stats"><div class="stat"><b>${me.stats.days}</b><span>days</span></div><div class="stat"><b>${money(me.stats.earnedCents)}</b><span>logged</span></div><div class="stat"><b>${me.stats.wins}</b><span>world wins</span></div></div>
+      <div class="small muted" style="margin-top:8px">Best streak ${me.stats.bestStreak} · total score ${me.stats.totalScore}</div>`;
+    const m = (me.profile && me.profile.memory) || {};
+    $('meNotes').innerHTML = (m.notes && m.notes.length) ? `<ul style="margin-left:18px">${m.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : '<span class="muted">Still getting to know you. Log real results and this fills in.</span>';
+    if (m.tomorrowHint) $('meNotes').innerHTML += `<div class="small" style="margin-top:8px">Tomorrow: <b>${esc(m.tomorrowHint)}</b></div>`;
+    $('inbox').innerHTML = ib.inbox.length ? ib.inbox.slice(0, 8).map((i) => `<div class="inbox-item"><b>${esc(i.title)}</b><span>${esc(i.body)}</span></div>`).join('') : '<span class="muted">Quiet for now.</span>';
+    $('history').innerHTML = h.history.length ? h.history.map((d) => `<div class="hist"><span class="d">${esc(fmtDate(d.date, true))}${d.rank ? ` · world #${d.rank}` : ''}</span><span>${d.tasksDone}/${d.tasksTotal} · ${money(d.earningsCents)}</span><span class="s">${d.score}</span></div>`).join('') : '<span class="muted">Your first day is today.</span>';
+  } catch (err) { toast(err.message); }
+}
+
+// ── Live updates ───────────────────────────────────────────────────────────
+function connectEvents() {
+  if (S.es) S.es.close();
+  if (!('EventSource' in window)) return;
+  S.es = new EventSource('/api/events?token=' + encodeURIComponent(S.token || ''));
+  S.es.addEventListener('plan_ready', () => { if ($('screen-today').classList.contains('active')) loadToday(); toast('Your crew finished a plan'); });
+  S.es.addEventListener('leaderboard', () => { if ($('screen-world').classList.contains('active')) loadWorld(); });
+  S.es.addEventListener('champion', () => { if ($('screen-world').classList.contains('active')) loadWorld(); });
+  S.es.addEventListener('inbox', (e) => { try { const d = JSON.parse(e.data); toast(d.title); } catch (_) {} });
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function fmtDate(key, short) { const d = new Date(key + 'T12:00:00'); return d.toLocaleDateString(undefined, short ? { month: 'short', day: 'numeric' } : { weekday: 'long', month: 'long', day: 'numeric' }); }
+function linkify(s) { return esc(s).replace(/(https?:\/\/[^\s)]+)/g, '<a href="$1" target="_blank" rel="noopener">source</a>'); }
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.deferredInstall = e; $('installBar').classList.remove('hidden'); });
+async function installApp() { if (!S.deferredInstall) return; S.deferredInstall.prompt(); await S.deferredInstall.userChoice; S.deferredInstall = null; $('installBar').classList.add('hidden'); }
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+async function boot() {
+  S.config = await api('/api/config');
+  $('crewPill').classList.toggle('on', S.config.crewOnline);
+  $('crewText').textContent = S.config.crewOnline ? 'crew online' : 'playbook mode';
+  if (!S.token) { authMode('signin'); show('auth'); return; }
+  try {
+    const me = await api('/api/me');
+    S.user = me.user; S.profile = me.profile;
+    connectEvents();
+    show('today');
+  } catch (_) { show('auth'); }
+}
+boot();
+</script>
+</body>
+</html>

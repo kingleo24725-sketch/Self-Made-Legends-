@@ -1,0 +1,214 @@
+'use strict';
+
+// The offline playbook.
+//
+// Every "play" is a legal, realistic way a regular person can earn money in a
+// single day with what they already have. The agent crew (agents.js) uses
+// Claude plus live web research to build a bespoke plan; this file is the
+// deterministic fallback that guarantees every player still wakes up to a full
+// working-day plan when the API is unavailable, and it is what the tests
+// exercise.
+//
+// Earnings are honest ranges, not promises. Nothing here involves gambling,
+// MLM/recruiting schemes, speculation, or anything that could get the player in
+// legal trouble. That is enforced by review of this list and by the crew's
+// system prompt.
+
+const PLAYS = [
+  // ── Gig / on-demand (needs a vehicle or bike) ────────────────────────────
+  { id: 'food_delivery_lunch', title: 'Lunch-rush food delivery', category: 'gig', hours: 2, icon: '🛵',
+    needs: ['vehicle'], earn: [30, 70],
+    steps: ['Log in to DoorDash, Uber Eats or Grubhub 15 minutes before 11:30am', 'Position yourself near a cluster of restaurants, not at home', 'Accept orders paying at least $1.50 per mile', 'Log off at 1:30pm when demand drops'],
+    why: 'Lunch and dinner peaks pay 2-3x the mid-afternoon rate. You already own the car, so this is pure margin on your time.' },
+  { id: 'food_delivery_dinner', title: 'Dinner-rush food delivery', category: 'gig', hours: 2.5, icon: '🍕',
+    needs: ['vehicle'], earn: [40, 90],
+    steps: ['Go online at 5:00pm near the busiest restaurant strip', 'Stack orders from the same restaurant when offered', 'Track mileage in a notes app for tax deductions', 'Cash out with instant pay if the app offers it'],
+    why: 'Dinner is the single highest-paying window of the day for delivery.' },
+  { id: 'rideshare_morning', title: 'Morning commute rideshare', category: 'gig', hours: 2.5, icon: '🚗',
+    needs: ['vehicle', 'rideshare_approved'], earn: [45, 100],
+    steps: ['Go online at 6:30am near residential areas', 'Stay within 10 miles of the airport or downtown', 'Decline trips longer than 30 minutes unless surge is on', 'Go offline by 9:30am'],
+    why: 'Commute hours are surge hours. Short trips back-to-back beat one long one.' },
+  { id: 'grocery_shopping_gig', title: 'Grocery shopping batches', category: 'gig', hours: 2, icon: '🛒',
+    needs: ['vehicle'], earn: [30, 65],
+    steps: ['Open Instacart or Shipt and look for batches over $20', 'Take double batches at the same store', 'Message the customer once when you start and once when you finish', 'Deliver within the promised window to protect your rating'],
+    why: 'Higher tips than food delivery and no restaurant wait time.' },
+  { id: 'bike_courier', title: 'Bike or scooter delivery', category: 'gig', hours: 2, icon: '🚲',
+    needs: ['bike'], earn: [25, 55],
+    steps: ['Set your delivery app to bike mode', 'Work a dense downtown or campus area', 'Take short-distance orders only', 'Carry an insulated bag for better ratings'],
+    why: 'No fuel cost means every dollar is profit.' },
+
+  // ── Local services (phone + willingness to work) ─────────────────────────
+  { id: 'taskrabbit_moving', title: 'Moving help and furniture assembly', category: 'local', hours: 3, icon: '📦',
+    needs: [], earn: [60, 150],
+    steps: ['Check TaskRabbit, Craigslist gigs, and Facebook local groups for same-day moving help', 'Reply within 5 minutes with a clear rate and your availability', 'Bring gloves and a basic tool kit', 'Ask for a review at the end'],
+    why: 'Same-day physical help is chronically short on supply, so hourly rates are high.' },
+  { id: 'yard_work', title: 'Yard cleanup for neighbors', category: 'local', hours: 3, icon: '🌿',
+    needs: [], earn: [50, 140],
+    steps: ['Post in Nextdoor and 2 local Facebook groups: "Yard cleanup today, $X flat, before/after photos"', 'Knock on 5 doors with visibly overgrown yards', 'Do the job well and photograph it', 'Offer a weekly rate before you leave'],
+    why: 'One good photo turns a one-off into a recurring client.' },
+  { id: 'car_detailing', title: 'Mobile car cleaning', category: 'local', hours: 3, icon: '🧽',
+    needs: [], earn: [60, 160],
+    steps: ['Offer interior + exterior for a flat price to coworkers, family and neighbors', 'Bring your own bucket, microfiber towels and vacuum', 'Do 2-3 cars back-to-back in one parking lot', 'Take before/after photos for tomorrow\'s posts'],
+    why: 'Low supplies cost and people will pay for convenience at their own driveway.' },
+  { id: 'dog_walking', title: 'Dog walking and pet check-ins', category: 'local', hours: 2, icon: '🐕',
+    needs: [], earn: [30, 80],
+    steps: ['Create or update a Rover profile and set same-day availability', 'Post in local groups offering midday walks', 'Take 2-3 dogs from the same neighborhood', 'Send the owner a photo each walk'],
+    why: 'Working owners need midday walks every single day. Reliability wins repeat business.' },
+  { id: 'handyman_small', title: 'Small repair jobs', category: 'local', hours: 3, icon: '🔧',
+    needs: ['handy'], earn: [80, 200],
+    steps: ['List 5 things you can fix (faucets, shelves, doors, TV mounts)', 'Post the list with a flat rate per job in local groups', 'Bring your tools and quote before starting', 'Leave a card or your number for referrals'],
+    why: 'Homeowners pay a premium for someone who shows up today.' },
+
+  // ── Online / laptop ──────────────────────────────────────────────────────
+  { id: 'freelance_pitch_block', title: 'Freelance pitch block', category: 'online', hours: 2, icon: '💼',
+    needs: ['laptop'], earn: [0, 300],
+    steps: ['Pick one skill you can deliver this week (writing, design, spreadsheets, editing, coding)', 'Send 10 short, specific proposals on Upwork or Fiverr Pro requests', 'Message 5 small local businesses whose websites or social pages need the skill', 'Track every pitch in a sheet and follow up tomorrow'],
+    why: 'Pitching is a numbers game. Ten a day compounds into steady clients.' },
+  { id: 'resell_flip', title: 'Flip items for profit', category: 'online', hours: 2.5, icon: '🏷️',
+    needs: [], earn: [40, 200],
+    steps: ['Find 3-5 underpriced items on Facebook Marketplace, OfferUp or thrift stores', 'Check sold listings on eBay before buying anything', 'Photograph in good light on a plain background', 'List the same day with the keyword-rich title buyers search for'],
+    why: 'Buy low locally, sell at the market price. Sold listings tell you the real value before you spend a dollar.' },
+  { id: 'declutter_sell', title: 'Sell what you already own', category: 'online', hours: 1.5, icon: '📱',
+    needs: [], earn: [30, 250],
+    steps: ['Walk through your home and pull 10 things you have not used in a year', 'Photograph and list each on Facebook Marketplace and eBay', 'Price 10% under comparable listings to sell today', 'Arrange same-day pickup at a public place'],
+    why: 'Zero cost basis. Every dollar is profit and it clears space.' },
+  { id: 'user_testing', title: 'Paid user tests and surveys', category: 'online', hours: 1, icon: '🖥️',
+    needs: ['laptop'], earn: [10, 60],
+    steps: ['Sign up for UserTesting, Userlytics and Prolific', 'Complete the qualification tests', 'Take every test that pays $10 or more', 'Speak your thoughts out loud clearly to keep your rating high'],
+    why: 'Real payouts for real feedback, and it fills the gaps between bigger tasks.' },
+  { id: 'tutoring', title: 'Online tutoring session', category: 'online', hours: 2, icon: '📚',
+    needs: ['laptop', 'academic'], earn: [30, 100],
+    steps: ['List your subject on Wyzant, Preply or Tutor.com', 'Offer a first-session discount for same-week bookings', 'Post in parent groups for after-school help', 'Prepare one worksheet so the session feels professional'],
+    why: 'Parents pay well for reliable, patient help. Evenings are peak.' },
+  { id: 'content_micro', title: 'Create one piece of sellable content', category: 'online', hours: 2, icon: '🎬',
+    needs: ['phone'], earn: [0, 100],
+    steps: ['Record one 60-second video teaching something you know', 'Post it to TikTok, Reels and Shorts with a clear call to action', 'Add a link to a $5-$15 digital product, service, or affiliate offer', 'Reply to every comment within the first hour'],
+    why: 'Distribution compounds. One post a day builds an audience that buys.' },
+
+  // ── Career moves that pay soon ───────────────────────────────────────────
+  { id: 'apply_shift_jobs', title: 'Apply for paid shifts this week', category: 'career', hours: 1, icon: '📝',
+    needs: [], earn: [0, 0],
+    steps: ['Open Indeed, Instawork and Wonolo and filter for shifts in the next 3 days', 'Apply to 5 that match your availability', 'Fill your profile completely so you clear background checks faster', 'Set alerts for same-day shifts'],
+    why: 'Shift apps pay within days. Applying today fills next week\'s calendar.' },
+  { id: 'skill_sprint', title: 'One-hour skill sprint', category: 'career', hours: 1, icon: '🧠',
+    needs: [], earn: [0, 0],
+    steps: ['Pick the skill your highest-paying play depends on', 'Do one focused hour of practice or a free course module', 'Write down one thing you can now offer that you could not yesterday', 'Add it to tomorrow\'s pitch list'],
+    why: 'Your rate is set by your skills. One hour a day raises it.' },
+  { id: 'admin_money', title: 'Money admin: cash out and track', category: 'career', hours: 0.5, icon: '🧾',
+    needs: [], earn: [0, 0],
+    steps: ['Cash out every app balance you can', 'Log every dollar earned today in the earnings log', 'Set aside 20% for taxes if you are self-employed', 'Note what worked and what did not'],
+    why: 'What gets measured gets improved. The crew learns from this log.' },
+];
+
+const RESOURCES = [
+  { key: 'vehicle', label: 'a car', icon: '🚗' },
+  { key: 'bike', label: 'a bike or scooter', icon: '🚲' },
+  { key: 'laptop', label: 'a laptop', icon: '💻' },
+  { key: 'phone', label: 'a smartphone', icon: '📱' },
+  { key: 'handy', label: 'basic handyman skills', icon: '🔧' },
+  { key: 'academic', label: 'a subject I can teach', icon: '📚' },
+  { key: 'rideshare_approved', label: 'an approved rideshare account', icon: '🚕' },
+];
+const RESOURCE_LABELS = Object.fromEntries(RESOURCES.map(r => [r.key, r.label]));
+
+function hash(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h;
+}
+
+function hasResources(play, profile) {
+  const have = new Set(profile.resources || []);
+  return play.needs.every(n => have.has(n));
+}
+
+function clock(mins) {
+  const h = Math.floor(mins / 60) % 24;
+  const m = mins % 60;
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const hh = ((h + 11) % 12) + 1;
+  return `${hh}:${String(m).padStart(2, '0')}${ampm}`;
+}
+
+/**
+ * Build a deterministic working-day plan for a profile.
+ * @param {object} profile  { userId, resources: string[], targetHours, startHour, memory: { avoid: [], favorites: [] } }
+ * @param {string} dateKey  YYYY-MM-DD (the player's local date)
+ * @param {object} [opts]   { recentPlayIds: string[] } plays used in the last few days (rotated out)
+ */
+function buildOfflinePlan(profile, dateKey, opts = {}) {
+  const targetHours = Math.min(12, Math.max(2, Number(profile.targetHours) || 8));
+  const recent = new Set(opts.recentPlayIds || []);
+  const memory = profile.memory || {};
+  const favorites = new Set(memory.favorites || []);
+  const avoid = new Set(memory.avoid || []);
+  const seed = hash(`${profile.userId}|${dateKey}`);
+
+  const scored = PLAYS
+    .filter(p => hasResources(p, profile) && !avoid.has(p.id))
+    .map((p, i) => {
+      let score = ((seed >>> (i % 24)) & 0xff) / 255; // stable per person + day
+      if (favorites.has(p.id)) score += 0.6;
+      if (recent.has(p.id)) score -= 0.5;
+      if (p.earn[1] >= 100) score += 0.25;
+      if (p.category === 'career') score -= 0.1; // fillers, never the headline
+      return { play: p, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const chosen = [];
+  let hours = 0;
+  const perCategory = new Map();
+  for (const { play } of scored) {
+    if (play.id === 'admin_money') continue;
+    if (hours + play.hours > targetHours - 0.5) continue; // leave room for money admin
+    const n = perCategory.get(play.category) || 0;
+    if (n >= 2) continue; // variety beats grinding one thing
+    chosen.push(play);
+    perCategory.set(play.category, n + 1);
+    hours += play.hours;
+    if (hours >= targetHours - 0.5) break;
+  }
+  chosen.push(PLAYS.find(p => p.id === 'admin_money')); // always end the day by logging it
+
+  const startHour = Number.isFinite(Number(profile.startHour)) ? Number(profile.startHour) : 8;
+  let cursor = startHour * 60;
+  const tasks = chosen.map((p, idx) => {
+    const start = cursor;
+    cursor += Math.round(p.hours * 60);
+    return {
+      order: idx + 1,
+      playId: p.id,
+      title: p.title,
+      icon: p.icon,
+      category: p.category,
+      hours: p.hours,
+      startsAt: clock(start),
+      endsAt: clock(cursor),
+      estimatedEarnings: { low: p.earn[0], high: p.earn[1] },
+      steps: p.steps,
+      why: p.why,
+      sources: [],
+    };
+  });
+
+  const low = tasks.reduce((s, t) => s + t.estimatedEarnings.low, 0);
+  const high = tasks.reduce((s, t) => s + t.estimatedEarnings.high, 0);
+  const totalHours = tasks.reduce((s, t) => s + t.hours, 0);
+  return {
+    date: dateKey,
+    generatedBy: 'playbook',
+    headline: `${tasks.length} plays, ${totalHours.toFixed(1)} hours, $${low}-$${high} realistic range`,
+    brief: [
+      'The crew could not reach live news today, so this plan is built from the proven playbook.',
+      'Every play is legal, needs only what you told us you have, and pays the same day or within the week.',
+      'Log your real earnings as you go. Tomorrow\'s plan gets sharper with every entry.',
+    ],
+    focus: tasks[0] ? tasks[0].title : 'Get moving',
+    tasks,
+    estimatedEarnings: { low, high },
+    disclaimer: 'Earnings ranges are estimates from public gig and marketplace data, not guarantees. You are your own boss: only take work you are legally allowed to do where you live.',
+  };
+}
+
+module.exports = { PLAYS, RESOURCES, RESOURCE_LABELS, buildOfflinePlan };
