@@ -14,7 +14,7 @@
 <style>
   :root {
     --bg: #0b0d12; --card: #141824; --card-2: #1b2030; --line: #262c3d;
-    --text: #eef0f5; --muted: #8d95a8; --gold: #f5b942; --green: #3ddc84; --red: #ff6b6b; --blue: #5aa9ff;
+    --text: #eef0f5; --muted: #8d95a8; --gold: #f5b942; --green: #3ddc84; --red: #ff6b6b; --blue: #5aa9ff; --purple: #b58cff;
     --radius: 16px; --safe-b: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -25,7 +25,7 @@
   .hidden { display: none !important; }
 
   .app { max-width: 560px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
-  header.top { position: sticky; top: 0; z-index: 10; background: rgba(11,13,18,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 18px calc(10px); display: flex; align-items: center; justify-content: space-between; }
+  header.top { position: sticky; top: 0; z-index: 10; background: rgba(11,13,18,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; }
   header.top h1 { font-size: 1.15em; letter-spacing: 0.02em; }
   header.top h1 span { color: var(--gold); }
   .crew-pill { font-size: 0.72em; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; display: inline-flex; gap: 6px; align-items: center; }
@@ -38,9 +38,10 @@
   @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
   nav.tabs { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; background: rgba(11,13,18,0.96); border-top: 1px solid var(--line); padding: 8px 6px calc(8px + var(--safe-b)); display: flex; justify-content: space-around; }
-  nav.tabs button { background: none; border: 0; color: var(--muted); font-size: 0.72em; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 10px; border-radius: 10px; min-width: 64px; }
+  nav.tabs button { background: none; border: 0; color: var(--muted); font-size: 0.72em; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px 10px; border-radius: 10px; min-width: 64px; position: relative; }
   nav.tabs button .ic { font-size: 1.45em; }
   nav.tabs button.active { color: var(--gold); }
+  nav.tabs button .pip { position: absolute; top: 2px; right: 14px; width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
 
   .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
   .card h2 { font-size: 1.05em; margin-bottom: 8px; }
@@ -50,22 +51,27 @@
   .row { display: flex; align-items: center; gap: 10px; }
   .row.between { justify-content: space-between; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 0; border-radius: 12px; padding: 14px 18px; font-weight: 700; background: var(--gold); color: #1a1200; cursor: pointer; transition: transform .08s; }
   .btn:active { transform: scale(.98); }
   .btn.ghost { background: var(--card-2); color: var(--text); border: 1px solid var(--line); }
   .btn.small { width: auto; padding: 9px 14px; font-size: 0.85em; border-radius: 10px; }
   .btn.danger { background: rgba(255,107,107,0.15); color: var(--red); border: 1px solid rgba(255,107,107,0.35); }
+  .btn.purple { background: rgba(181,140,255,0.15); color: var(--purple); border: 1px solid rgba(181,140,255,0.4); }
   .btn:disabled { opacity: .5; cursor: default; }
 
   label.field { display: block; margin-bottom: 12px; }
   label.field span { display: block; font-size: 0.8em; color: var(--muted); margin-bottom: 5px; }
-  input[type=text], input[type=email], input[type=password], input[type=number], textarea, select { width: 100%; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; outline: none; }
+  input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], textarea, select { width: 100%; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; outline: none; }
   input:focus, textarea:focus, select:focus { border-color: var(--gold); }
   textarea { min-height: 72px; resize: vertical; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 0.88em; color: var(--muted); margin: 10px 0; }
+  .check input { margin-top: 4px; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip { border: 1px solid var(--line); background: var(--card-2); border-radius: 999px; padding: 8px 13px; font-size: 0.88em; cursor: pointer; user-select: none; }
+  .chip { border: 1px solid var(--line); background: var(--card-2); border-radius: 999px; padding: 8px 13px; font-size: 0.88em; cursor: pointer; user-select: none; white-space: nowrap; }
   .chip.on { border-color: var(--gold); background: rgba(245,185,66,0.14); color: var(--gold); }
+  .chip.sm { padding: 6px 11px; font-size: 0.8em; }
   .error { color: var(--red); font-size: 0.88em; margin: 6px 0; min-height: 1.2em; }
 
   .hero { background: linear-gradient(160deg, #1b1a12 0%, #141824 60%); border: 1px solid rgba(245,185,66,0.35); }
@@ -77,18 +83,27 @@
   .stat span { font-size: 0.7em; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; margin-top: 12px; }
   .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--green)); width: 0; transition: width .4s; }
+  .bar.goal i { background: linear-gradient(90deg, var(--purple), var(--blue)); }
+  .league { display: inline-block; font-size: 0.7em; padding: 2px 8px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .league.bronze { background: rgba(205,127,50,.18); color: #e3a06a; } .league.silver { background: rgba(192,192,192,.18); color: #d8dce6; }
+  .league.gold { background: rgba(245,185,66,.18); color: var(--gold); } .league.boss { background: rgba(181,140,255,.18); color: var(--purple); }
 
   .brief li { margin: 6px 0 6px 18px; font-size: 0.92em; }
+  .log { font-size: 0.85em; }
+  .log div { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .log div:last-child { border: 0; }
+  .log b { min-width: 74px; color: var(--gold); font-weight: 600; }
+  .log time { color: var(--muted); font-size: 0.85em; margin-left: auto; white-space: nowrap; }
 
   .task { border: 1px solid var(--line); border-radius: 14px; background: var(--card); margin-bottom: 10px; overflow: hidden; }
   .task .head { display: flex; gap: 12px; padding: 14px; align-items: flex-start; cursor: pointer; }
   .task .time { min-width: 66px; font-size: 0.75em; color: var(--muted); line-height: 1.3; padding-top: 2px; }
   .task .title { font-weight: 700; }
   .task .est { font-size: 0.8em; color: var(--green); margin-top: 2px; }
-  .task .icon { font-size: 1.4em; }
   .task.done { border-color: rgba(61,220,132,0.4); }
   .task.done .title { text-decoration: line-through; color: var(--muted); }
   .task.skipped { opacity: .55; }
+  .task.attention { border-color: rgba(245,185,66,0.7); box-shadow: 0 0 0 2px rgba(245,185,66,0.15); }
   .task .body { display: none; padding: 0 14px 14px; border-top: 1px dashed var(--line); }
   .task.open .body { display: block; }
   .task .steps { margin: 10px 0 10px 18px; font-size: 0.92em; }
@@ -100,6 +115,14 @@
   .task .sources a { font-size: 0.78em; display: block; word-break: break-all; }
   .badge { display: inline-block; font-size: 0.7em; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--muted); margin-left: 6px; vertical-align: middle; }
   .badge.done { background: rgba(61,220,132,0.15); color: var(--green); }
+  .badge.verified { background: rgba(90,169,255,0.15); color: var(--blue); }
+
+  .chat { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; margin-bottom: 10px; }
+  .msg { max-width: 88%; padding: 10px 12px; border-radius: 14px; font-size: 0.92em; }
+  .msg.user { align-self: flex-end; background: rgba(245,185,66,0.16); border: 1px solid rgba(245,185,66,0.3); }
+  .msg.crew { align-self: flex-start; background: var(--card-2); border: 1px solid var(--line); }
+  .chat-input { display: flex; gap: 8px; }
+  .chat-input input { flex: 1; }
 
   table.lb { width: 100%; border-collapse: collapse; }
   table.lb td { padding: 10px 6px; border-bottom: 1px solid var(--line); font-size: 0.92em; vertical-align: middle; }
@@ -115,7 +138,12 @@
   .podium div b { display: block; font-size: 1.3em; }
   .podium div span { font-size: 0.8em; display: block; }
   .podium .p1 { border: 1px solid var(--gold); }
-  .empty { text-align: center; color: var(--muted); padding: 30px 10px; }
+  .empty { text-align: center; color: var(--muted); padding: 24px 10px; }
+  .champ-task { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 0.88em; }
+  .champ-task:last-child { border: 0; }
+  .duel { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.9em; }
+  .duel .who { font-weight: 600; } .duel .who small { display: block; color: var(--muted); font-weight: 400; font-size: .85em; }
+  .duel .won { color: var(--green); font-weight: 700; } .duel .lost { color: var(--red); font-weight: 700; }
 
   .hist { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.92em; }
   .hist .d { color: var(--muted); }
@@ -123,13 +151,25 @@
   .inbox-item { padding: 10px 0; border-bottom: 1px solid var(--line); }
   .inbox-item b { display: block; }
   .inbox-item span { color: var(--muted); font-size: 0.88em; }
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+  .bdg { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; font-size: 0.82em; display: flex; gap: 6px; align-items: center; }
+  .recap { border-left: 3px solid var(--purple); padding: 4px 0 4px 12px; margin-bottom: 12px; font-size: 0.9em; }
+  .recap b { display: block; margin-bottom: 4px; }
+  .tier-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .tier { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; font-size: 0.8em; text-align: center; }
+  .tier.on { border-color: var(--gold); }
+  .tier b { display: block; font-size: 1.05em; margin-bottom: 4px; }
+  .block { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; align-items: center; margin-bottom: 6px; }
 
-  .toast { position: fixed; left: 50%; bottom: calc(92px + var(--safe-b)); transform: translateX(-50%); background: #22283a; border: 1px solid var(--line); color: var(--text); padding: 10px 16px; border-radius: 12px; font-size: 0.9em; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
+  .toast { position: fixed; left: 50%; bottom: calc(92px + var(--safe-b)); transform: translateX(-50%); background: #22283a; border: 1px solid var(--line); color: var(--text); padding: 10px 16px; border-radius: 12px; font-size: 0.9em; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; text-align: center; }
   .toast.show { opacity: 1; }
   .install-bar { background: rgba(90,169,255,0.1); border: 1px solid rgba(90,169,255,0.35); }
+  .checkin-bar { background: rgba(245,185,66,0.1); border: 1px solid rgba(245,185,66,0.45); }
   .spinner { width: 34px; height: 34px; border: 3px solid var(--line); border-top-color: var(--gold); border-radius: 50%; animation: spin .9s linear infinite; margin: 0 auto 12px; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .legal { font-size: 0.75em; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+  details summary { cursor: pointer; list-style: none; }
+  details summary::-webkit-details-marker { display: none; }
 </style>
 </head>
 <body>
@@ -147,6 +187,7 @@
         <div class="headline">Wake up to a money plan built for you.</div>
         <p class="muted small">Every night a crew of AI agents studies the news, the gig market and what is hiring near you, then writes your to-do list for a full working day. You are the boss. Everyone with the app competes on one world leaderboard.</p>
       </div>
+      <div class="card" id="inviteCard" hidden><b>You were invited.</b><div class="small muted">Create your account and your first day is a head-to-head against the person who sent you.</div></div>
       <div class="card">
         <div class="chips" style="margin-bottom:14px">
           <span class="chip on" id="tabSignin" onclick="authMode('signin')">Sign in</span>
@@ -156,10 +197,10 @@
           <label class="field hidden" id="nameField"><span>Name on the leaderboard</span><input type="text" id="displayName" maxlength="40" autocomplete="nickname"></label>
           <label class="field"><span>Email</span><input type="email" id="email" required autocomplete="email"></label>
           <label class="field"><span>Password</span><input type="password" id="password" required minlength="8" autocomplete="current-password"></label>
+          <label class="check hidden" id="termsField"><input type="checkbox" id="acceptTerms"><span>I am 18 or older and I accept the <a href="/terms" target="_blank">Terms</a> and <a href="/privacy" target="_blank">Privacy Policy</a>. Plans are suggestions, earnings are estimates, and I decide what work to take.</span></label>
           <div class="error" id="authError"></div>
           <button class="btn" type="submit" id="authBtn">Sign in</button>
         </form>
-        <p class="legal">By continuing you agree that plans are suggestions, earnings are estimates not guarantees, and you alone decide what work to take. 18+.</p>
       </div>
     </section>
 
@@ -168,14 +209,25 @@
       <div class="card">
         <h2 id="profileTitle">Tell your crew about you</h2>
         <p class="muted small" style="margin-bottom:14px">The crew only plans around what you actually have. The more honest this is, the better the plan.</p>
-        <label class="field"><span>Where are you? (city, state)</span><input type="text" id="pLocation" placeholder="Atlanta, GA" maxlength="120"></label>
+        <div class="grid2">
+          <label class="field"><span>City, State</span><input type="text" id="pLocation" placeholder="Atlanta, GA" maxlength="120"></label>
+          <label class="field"><span>Country</span><input type="text" id="pCountry" placeholder="US" maxlength="2" value="US"></label>
+        </div>
         <label class="field"><span>What do you have?</span></label>
         <div class="chips" id="pResources" style="margin-bottom:14px"></div>
         <label class="field"><span>Skills (comma separated)</span><input type="text" id="pSkills" placeholder="writing, cooking, Excel, fixing things"></label>
-        <label class="field"><span>Your goal</span><textarea id="pGoals" placeholder="Make $150 a day so I can quit my night shift"></textarea></label>
+        <label class="field"><span>Why you are doing this</span><textarea id="pGoals" placeholder="Make $150 a day so I can quit my night shift"></textarea></label>
         <div class="grid2">
           <label class="field"><span>Hours per day</span><input type="number" id="pHours" min="2" max="12" value="8"></label>
           <label class="field"><span>I start around</span><select id="pStart"></select></label>
+        </div>
+        <label class="field"><span>Hours the crew must leave free (school run, a shift, church)</span></label>
+        <div id="pBlocks"></div>
+        <button class="btn ghost small" type="button" onclick="addBlock()">+ Add a blocked window</button>
+        <label class="field" style="margin-top:14px"><span>30-day goal (optional)</span><input type="text" id="pGoalTitle" placeholder="Save for a used car" maxlength="120"></label>
+        <div class="grid2">
+          <label class="field"><span>Target $</span><input type="number" id="pGoalTarget" min="1" step="1" placeholder="1500"></label>
+          <label class="field"><span>By</span><input type="date" id="pGoalDate"></label>
         </div>
         <label class="field"><span>How do you feel about talking to strangers or physical work?</span><input type="text" id="pComfort" placeholder="Fine with both / prefer online / no heavy lifting" maxlength="200"></label>
         <div class="error" id="profileError"></div>
@@ -189,6 +241,7 @@
       <div id="installBar" class="card install-bar hidden">
         <div class="row between"><div><b>Put BossDay on your home screen</b><div class="small muted">Opens like an app. Your plan is there when you wake up.</div></div><button class="btn small" onclick="installApp()">Install</button></div>
       </div>
+      <div id="checkinBar" class="card checkin-bar hidden"></div>
       <div id="todayLoading" class="card" style="text-align:center"><div class="spinner"></div><div class="muted">Your crew is finishing today's plan…</div></div>
       <div id="todayContent" class="hidden"></div>
     </section>
@@ -196,23 +249,43 @@
     <!-- ── World ────────────────────────────────────────────────────── -->
     <section class="screen" id="screen-world">
       <div class="card">
-        <div class="row between"><h2>World leaderboard</h2><span class="small muted" id="lbDate"></span></div>
-        <p class="small muted">Resets at each player's local midnight. Score = plays done + hours worked + logged earnings (capped) + full-day and streak bonuses. Earnings are self-reported.</p>
+        <div class="row between"><h2>Leaderboard</h2><span class="small muted" id="lbDate"></span></div>
+        <div class="chips" id="scopeChips" style="margin:8px 0"></div>
+        <div class="chips" id="leagueChips" style="margin-bottom:8px"></div>
+        <div class="chips" id="modeChips"></div>
+        <p class="small muted" style="margin-top:10px">Resets at each player's local midnight. Score = plays done + hours + logged earnings (verified count full, self-reported count half, capped) + full-day and streak bonuses.</p>
       </div>
+      <div class="card" id="champCard" hidden></div>
       <div class="card" id="podiumCard"><h3>Yesterday's podium</h3><div id="podium" class="empty">No champions yet.</div></div>
-      <div class="card"><h3>Today, live</h3><div id="lbToday"></div></div>
+      <div class="card"><h3 id="lbTitle">Today, live</h3><div id="lbToday"></div></div>
+      <div class="card">
+        <h3>Head-to-head</h3>
+        <div class="row" style="margin-bottom:10px"><input type="text" id="duelName" placeholder="Their name or email" style="flex:1"><button class="btn small purple" onclick="sendDuel()">Challenge</button></div>
+        <div id="duels" class="small muted">Pick a rival. Same day, higher score wins, badge for the winner.</div>
+      </div>
       <div class="card"><h3>All time</h3><div id="lbAll"></div></div>
     </section>
 
     <!-- ── Me ───────────────────────────────────────────────────────── -->
     <section class="screen" id="screen-me">
       <div class="card hero" id="meHero"></div>
+      <div class="card" id="goalCard" hidden></div>
+      <div class="card"><h3>Badges</h3><div id="meBadges" class="badges"></div></div>
       <div class="card"><h3>What your crew has learned</h3><div id="meNotes" class="small"></div></div>
+      <div class="card" id="recapCard" hidden><h3>Weekly recaps from the Coach</h3><div id="recaps"></div></div>
+      <div class="card">
+        <h3>Invite a rival</h3>
+        <p class="small muted">Send this link. Their first day is a head-to-head against you.</p>
+        <div class="row" style="margin-top:8px"><input type="text" id="inviteUrl" readonly style="flex:1;font-size:.85em"><button class="btn small" onclick="shareInvite()">Share</button></div>
+      </div>
+      <div class="card" id="pushCard"><h3>Notifications</h3><div id="pushBody" class="small muted"></div></div>
+      <div class="card" id="tierCard"><h3>Your plan</h3><div id="tierBody"></div></div>
       <div class="card"><h3>Inbox</h3><div id="inbox"></div></div>
       <div class="card"><h3>Past days</h3><div id="history"></div></div>
       <div class="card">
         <button class="btn ghost" onclick="editProfile()">Update what the crew knows</button>
         <button class="btn ghost" style="margin-top:8px" onclick="logout()">Sign out</button>
+        <p class="legal"><a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
       </div>
     </section>
   </main>
@@ -220,28 +293,32 @@
   <nav class="tabs" id="tabs">
     <button data-s="today" onclick="show('today')"><span class="ic">🌅</span>Today</button>
     <button data-s="world" onclick="show('world')"><span class="ic">🌍</span>World</button>
-    <button data-s="me" onclick="show('me')"><span class="ic">👤</span>Me</button>
+    <button data-s="me" onclick="show('me')"><span class="ic">👤</span>Me<span class="pip hidden" id="mePip"></span></button>
   </nav>
 </div>
 <div class="toast" id="toast"></div>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
-const S = { token: null, user: null, profile: null, config: null, today: null, mode: 'signin', deferredInstall: null, es: null };
+const S = { token: null, user: null, profile: null, config: null, today: null, me: null, mode: 'signin', deferredInstall: null, es: null, invite: null,
+  lb: { scope: 'world', league: '', mode: 'all' }, checkins: [] };
 try { S.token = localStorage.getItem('bossday.token'); } catch (_) {}
+try { const q = new URLSearchParams(location.search); S.invite = q.get('invite'); if (q.get('billing') === 'success') setTimeout(() => toast('Payment received. Your crew just got stronger.'), 800); } catch (_) {}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = (cents) => { const c = Number(cents || 0); const whole = c % 100 === 0; return '$' + (c / 100).toLocaleString(undefined, { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 }); };
-const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 2600); };
+const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000); };
+const leagueTag = (l) => `<span class="league ${esc(l || 'bronze')}">${esc(l || 'bronze')}</span>`;
+const BADGE_LABELS = { world_champion: ['👑', 'World champion'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'] };
 
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (S.token) headers.Authorization = 'Bearer ' + S.token;
   const r = await fetch(path, { ...opts, headers, body: opts.body ? JSON.stringify(opts.body) : undefined });
   const data = await r.json().catch(() => ({}));
-  if (r.status === 401 && S.token) { setToken(null); show('auth'); }
-  if (!r.ok) throw new Error(data.error || 'Request failed');
+  if (r.status === 401 && S.token && !path.startsWith('/api/leaderboard')) { setToken(null); show('auth'); }
+  if (!r.ok) throw Object.assign(new Error(data.error || 'Request failed'), { status: r.status });
   return data;
 }
 function setToken(t) { S.token = t; try { t ? localStorage.setItem('bossday.token', t) : localStorage.removeItem('bossday.token'); } catch (_) {} }
@@ -262,7 +339,8 @@ function authMode(m) {
   S.mode = m;
   $('tabSignin').classList.toggle('on', m === 'signin');
   $('tabSignup').classList.toggle('on', m === 'signup');
-  $('nameField').classList.toggle('hidden', m !== 'signin' ? false : true);
+  $('nameField').classList.toggle('hidden', m === 'signin');
+  $('termsField').classList.toggle('hidden', m === 'signin');
   $('authBtn').textContent = m === 'signin' ? 'Sign in' : 'Create account';
   $('password').autocomplete = m === 'signin' ? 'current-password' : 'new-password';
 }
@@ -271,42 +349,57 @@ async function submitAuth(e) {
   $('authError').textContent = '';
   $('authBtn').disabled = true;
   try {
-    const body = { email: $('email').value, password: $('password').value, displayName: $('displayName').value };
+    const body = { email: $('email').value, password: $('password').value, displayName: $('displayName').value, acceptTerms: $('acceptTerms').checked, referralCode: S.invite || undefined };
     const r = await api('/api/auth/' + (S.mode === 'signin' ? 'login' : 'register'), { method: 'POST', body });
     setToken(r.token); S.user = r.user;
+    if (S.invite) { S.invite = null; history.replaceState(null, '', '/'); }
     await boot();
   } catch (err) { $('authError').textContent = err.message; }
   $('authBtn').disabled = false;
   return false;
 }
-async function logout() { try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) {} setToken(null); S.user = S.profile = S.today = null; if (S.es) S.es.close(); show('auth'); }
+async function logout() { try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) {} setToken(null); S.user = S.profile = S.today = S.me = null; if (S.es) S.es.close(); show('auth'); }
 
 // ── Profile ────────────────────────────────────────────────────────────────
 function renderProfileForm() {
   const p = S.profile || {};
   $('pLocation').value = p.location || '';
+  $('pCountry').value = p.country || 'US';
   $('pSkills').value = (p.skills || []).join(', ');
   $('pGoals').value = p.goals || '';
   $('pHours').value = p.targetHours || 8;
   $('pComfort').value = p.comfort || '';
+  $('pGoalTitle').value = p.goal ? p.goal.title : '';
+  $('pGoalTarget').value = p.goal ? Math.round(p.goal.targetCents / 100) : '';
+  $('pGoalDate').value = p.goal ? p.goal.byDate : '';
   const start = $('pStart'); start.innerHTML = '';
   for (let h = 4; h <= 14; h++) { const o = document.createElement('option'); o.value = h; o.textContent = (h % 12 || 12) + (h < 12 ? 'am' : 'pm'); start.appendChild(o); }
   start.value = p.startHour ?? 8;
   const have = new Set(p.resources || ['phone']);
   $('pResources').innerHTML = S.config.resources.map((r) => `<span class="chip ${have.has(r.key) ? 'on' : ''}" data-k="${r.key}" onclick="this.classList.toggle('on')">${r.icon} ${esc(r.label)}</span>`).join('');
+  $('pBlocks').innerHTML = '';
+  (p.blockedHours || []).forEach((b) => addBlock(b.start, b.end));
   $('profileTitle').textContent = S.profile ? 'Update what your crew knows' : 'Tell your crew about you';
   $('profileCancel').classList.toggle('hidden', !S.profile);
+}
+function hourOptions(sel) { let h = ''; for (let i = 0; i <= 24; i++) h += `<option value="${i}" ${i === sel ? 'selected' : ''}>${i === 24 ? 'midnight' : (i % 12 || 12) + (i < 12 ? 'am' : 'pm')}</option>`; return h; }
+function addBlock(start = 12, end = 13) {
+  const div = document.createElement('div'); div.className = 'block';
+  div.innerHTML = `<select class="bStart">${hourOptions(start)}</select><select class="bEnd">${hourOptions(end)}</select><button type="button" class="btn ghost small" onclick="this.parentNode.remove()">✕</button>`;
+  $('pBlocks').appendChild(div);
 }
 function editProfile() { renderProfileForm(); show('profile'); }
 async function saveProfile() {
   $('profileError').textContent = '';
   const body = {
-    location: $('pLocation').value,
+    location: $('pLocation').value, country: $('pCountry').value,
     resources: [...document.querySelectorAll('#pResources .chip.on')].map((c) => c.dataset.k),
     skills: $('pSkills').value.split(',').map((s) => s.trim()).filter(Boolean),
     goals: $('pGoals').value, comfort: $('pComfort').value,
     targetHours: Number($('pHours').value), startHour: Number($('pStart').value),
     tzOffset: -new Date().getTimezoneOffset(),
+    blockedHours: [...document.querySelectorAll('#pBlocks .block')].map((b) => ({ start: Number(b.querySelector('.bStart').value), end: Number(b.querySelector('.bEnd').value) })),
+    goal: $('pGoalTitle').value.trim() ? { title: $('pGoalTitle').value, targetDollars: Number($('pGoalTarget').value || 0) || 100, byDate: $('pGoalDate').value || undefined } : null,
   };
   try { const r = await api('/api/profile', { method: 'POST', body }); S.profile = r.profile; toast('Saved. Your crew is on it.'); show('today'); }
   catch (err) { $('profileError').textContent = err.message; }
@@ -325,25 +418,34 @@ function renderToday() {
   const t = S.today, p = t.plan, pr = p.progress;
   const pct = pr.tasksTotal ? Math.round((pr.tasksDone / pr.tasksTotal) * 100) : 0;
   const closed = p.status === 'closed';
+  const goal = t.goal;
+  const goalPct = goal ? Math.min(100, Math.round((goal.progressCents / goal.targetCents) * 100)) : 0;
   const html = `
     <div class="card hero">
-      <div class="row between"><div class="date">${esc(fmtDate(t.date))}</div><span class="small muted">${p.generatedBy === 'crew' ? '🧠 crew + live research' : '📘 playbook'}</span></div>
+      <div class="row between"><div class="date">${esc(fmtDate(t.date))}</div><span class="small muted">${p.generatedBy === 'crew' ? '🧠 crew + live research' : '📘 playbook'} ${leagueTag(p.league)}</span></div>
       <div class="headline">${esc(p.headline)}</div>
       <div class="small">Focus: <b>${esc(p.focus)}</b></div>
       <div class="stats">
         <div class="stat"><b>${pr.tasksDone}/${pr.tasksTotal}</b><span>plays</span></div>
-        <div class="stat"><b>${money(pr.earningsCents)}</b><span>logged</span></div>
+        <div class="stat"><b>${money(pr.earningsCents)}</b><span>${pr.verifiedCents ? money(pr.verifiedCents) + ' verified' : 'logged'}</span></div>
         <div class="stat"><b>#${t.rank ? t.rank.rank : '–'}</b><span>of ${t.rank ? t.rank.of : 0} world</span></div>
       </div>
       <div class="bar"><i style="width:${pct}%"></i></div>
-      <div class="row between small muted" style="margin-top:6px"><span>${pr.hoursDone}h of ${pr.hoursTotal}h</span><span>score <b style="color:var(--gold)">${pr.score}</b></span></div>
+      <div class="row between small muted" style="margin-top:6px"><span>${pr.hoursDone}h of ${pr.hoursTotal}h${t.rank && t.rank.leagueOf ? ` · #${t.rank.leagueRank} in ${t.rank.league}` : ''}</span><span>score <b style="color:var(--gold)">${pr.score}</b></span></div>
+      ${goal ? `<div class="small" style="margin-top:12px">🎯 ${esc(goal.title)}: <b>${money(goal.progressCents)}</b> of ${money(goal.targetCents)} by ${esc(fmtDate(goal.byDate, true))}</div><div class="bar goal"><i style="width:${goalPct}%"></i></div>` : ''}
       ${closed ? '<p class="small" style="margin-top:10px;color:var(--green)">Day closed. Tomorrow\'s plan lands by 4am.</p>' : ''}
     </div>
     ${t.memory.lastSummary ? `<div class="card"><h3>Coach, last night</h3><div class="small">${esc(t.memory.lastSummary)}</div></div>` : ''}
     <div class="card"><h3>Morning brief</h3><ul class="brief">${p.brief.map((b) => `<li>${linkify(b)}</li>`).join('')}</ul>
       <div class="small muted" style="margin-top:8px">Realistic range today: <b style="color:var(--green)">$${p.estimatedEarnings.low}–$${p.estimatedEarnings.high}</b></div></div>
+    ${t.crewLog.length ? `<div class="card"><details><summary><h3 style="margin:0">Crew activity ▾</h3></summary><div class="log" style="margin-top:8px">${t.crewLog.map((l) => `<div><b>${esc(l.agent)}</b><span>${esc(l.message)}</span><time>${fmtTime(l.at)}</time></div>`).join('')}</div></details></div>` : ''}
+    ${!closed ? `<div class="card"><h3>Anything the crew should know today?</h3><div class="row"><input type="text" id="conditions" placeholder="Car is in the shop, raining, free after 3pm…" value="${esc(t.conditions || '')}" maxlength="300" style="flex:1"><button class="btn small ghost" onclick="saveConditions()">Save</button></div></div>` : ''}
     <h3 class="muted small" style="margin:4px 0 10px;text-transform:uppercase;letter-spacing:.08em">Your day</h3>
     ${p.tasks.map(renderTask).join('')}
+    ${t.canChat ? `<div class="card"><h3>Talk to your crew</h3><div class="chat" id="chat">${t.chat.map((m) => `<div class="msg ${m.role}">${esc(m.content)}</div>`).join('') || '<div class="msg crew">Something fell through? Tell me and I will rebuild the rest of your day.</div>'}</div>
+      <div class="chat-input"><input type="text" id="chatMsg" placeholder="The yard job cancelled, what now?" maxlength="600" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn small" onclick="sendChat()">Send</button></div></div>`
+      : (!closed && t.tier !== 'boss' ? `<div class="card"><h3>Talk to your crew</h3><div class="small muted">Mid-day replans and receipt verification come with Boss. <a href="#" onclick="show('me');return false">See plans</a></div></div>` : '')}
+    ${t.champion ? renderChampion(t.champion) : ''}
     <div class="card">
       ${!closed && t.canRegenerate ? '<button class="btn ghost" onclick="regenerate()">Not feeling it? Rebuild the plan (once per day)</button>' : ''}
       ${!closed ? '<button class="btn danger" style="margin-top:8px" onclick="closeDay()">Close my day now</button>' : ''}
@@ -351,16 +453,19 @@ function renderToday() {
     </div>`;
   $('todayContent').innerHTML = html;
   $('todayLoading').classList.add('hidden'); $('todayContent').classList.remove('hidden');
+  renderCheckins();
+  const c = $('chat'); if (c) c.scrollTop = c.scrollHeight;
 }
 function renderTask(task) {
   const st = task.status;
   const closed = S.today.plan.status === 'closed';
+  const attention = S.checkins.includes(task.taskId) && st === 'pending';
   return `
-    <div class="task ${st} ${task._open ? 'open' : ''}" id="task-${task.taskId}">
+    <div class="task ${st} ${task._open || attention ? 'open' : ''} ${attention ? 'attention' : ''}" id="task-${task.taskId}">
       <div class="head" onclick="toggleTask(${task.taskId})">
         <div class="time">${esc(task.startsAt)}<br>${esc(task.endsAt)}</div>
         <div style="flex:1">
-          <div class="title">${esc(task.icon)} ${esc(task.title)} ${st === 'done' ? '<span class="badge done">done</span>' : st === 'skipped' ? '<span class="badge">skipped</span>' : ''}</div>
+          <div class="title">${esc(task.icon)} ${esc(task.title)} ${st === 'done' ? '<span class="badge done">done</span>' : st === 'skipped' ? '<span class="badge">skipped</span>' : ''}${task.verifiedCents ? '<span class="badge verified">✓ verified</span>' : ''}</div>
           <div class="est">${task.estimatedEarnings.high > 0 ? `$${task.estimatedEarnings.low}–$${task.estimatedEarnings.high}` : 'builds tomorrow'} · ${task.hours}h${task.earningsCents ? ` · logged ${money(task.earningsCents)}` : ''}</div>
         </div>
       </div>
@@ -373,15 +478,23 @@ function renderTask(task) {
         <div class="actions">
           <button class="btn small ${st === 'done' ? 'ghost' : ''}" onclick="setStatus(${task.taskId}, '${st === 'done' ? 'pending' : 'done'}')">${st === 'done' ? 'Undo' : '✓ Done'}</button>
           <button class="btn small ghost" onclick="setStatus(${task.taskId}, '${st === 'skipped' ? 'pending' : 'skipped'}')">${st === 'skipped' ? 'Un-skip' : 'Skip'}</button>
-        </div>`}
+        </div>
+        ${S.today.canVerify ? `<label class="btn small ghost" style="margin-top:8px;width:100%">📸 Verify with a payout screenshot<input type="file" accept="image/*" hidden onchange="uploadReceipt(${task.taskId}, this)"></label>` : ''}`}
       </div>
     </div>`;
 }
-function toggleTask(id) { const t = S.today.plan.tasks.find((x) => x.taskId === id); t._open = !t._open; $('task-' + id).classList.toggle('open', t._open); }
+function renderChampion(c) {
+  return `<div class="card"><h3>Yesterday's world champion</h3>
+    <div class="row between"><div><b>👑 ${esc(c.displayName)}</b><div class="small muted">${esc(c.location || '')}${c.location ? ' · ' : ''}score ${c.score} · ${money(c.earningsCents)}${c.verifiedCents ? ' (' + money(c.verifiedCents) + ' verified)' : ''}</div></div></div>
+    <div style="margin-top:8px">${c.tasks.map((t) => `<div class="champ-task"><span>${esc(t.icon)} ${esc(t.title)} <span class="muted">· ${t.hours}h</span></span><span class="${t.status === 'done' ? '' : 'muted'}">${t.status === 'done' ? money(t.earningsCents) + (t.verified ? ' ✓' : '') : t.status}</span></div>`).join('')}</div>
+    <p class="small muted" style="margin-top:8px">This is what a winning day looked like. Yours will look different.</p></div>`;
+}
+function toggleTask(id) { const t = S.today.plan.tasks.find((x) => x.taskId === id); t._open = !t._open; $('task-' + id).classList.toggle('open', t._open || S.checkins.includes(id)); }
 async function setStatus(id, status) {
   try {
     const earn = $('earn-' + id); const earningsDollars = earn && earn.value !== '' ? Number(earn.value) : undefined;
     const r = await api('/api/tasks/' + id, { method: 'POST', body: { status, earningsDollars } });
+    S.checkins = S.checkins.filter((x) => x !== id);
     mergePlan(r.plan); if (status === 'done') toast('Logged. Keep going.');
   } catch (err) { toast(err.message); }
 }
@@ -389,11 +502,48 @@ async function logEarnings(id) {
   try { const r = await api('/api/tasks/' + id, { method: 'POST', body: { earningsDollars: Number($('earn-' + id).value || 0) } }); mergePlan(r.plan); toast('Earnings logged'); }
   catch (err) { toast(err.message); }
 }
+async function uploadReceipt(id, input) {
+  const file = input.files && input.files[0]; if (!file) return;
+  toast('Reading your screenshot…');
+  try {
+    const { dataUrl, type } = await shrinkImage(file);
+    const r = await api('/api/tasks/' + id + '/receipt', { method: 'POST', body: { image: dataUrl, mediaType: type } });
+    mergePlan(r.plan);
+    toast(r.verified ? `Verified ${money(r.amountCents)}${r.source ? ' from ' + r.source : ''}` : (r.reason || 'Could not verify that one'));
+  } catch (err) { toast(err.message); }
+  input.value = '';
+}
+function shrinkImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const max = 1400; const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve({ dataUrl: c.toDataURL('image/jpeg', 0.85), type: 'image/jpeg' });
+    };
+    img.onerror = () => reject(new Error('Could not read that image'));
+    img.src = URL.createObjectURL(file);
+  });
+}
 function mergePlan(plan) {
   const open = new Set(S.today.plan.tasks.filter((t) => t._open).map((t) => t.taskId));
   plan.tasks.forEach((t) => { t._open = open.has(t.taskId); });
   S.today.plan = plan; S.today.canRegenerate = plan.status === 'open' && plan.progress.tasksDone === 0 && (plan.regenerations || 0) < 1;
-  api('/api/today').then((t) => { S.today.rank = t.rank; renderToday(); }).catch(() => renderToday());
+  api('/api/today').then((t) => { S.today = { ...t, plan: { ...t.plan, tasks: t.plan.tasks.map((x) => ({ ...x, _open: open.has(x.taskId) })) } }; renderToday(); }).catch(() => renderToday());
+}
+async function saveConditions() {
+  try { await api('/api/today/conditions', { method: 'POST', body: { conditions: $('conditions').value } }); toast('The crew knows. Tell them in chat if the plan needs to change.'); }
+  catch (err) { toast(err.message); }
+}
+async function sendChat() {
+  const input = $('chatMsg'); const message = input.value.trim(); if (!message) return;
+  const box = $('chat'); box.insertAdjacentHTML('beforeend', `<div class="msg user">${esc(message)}</div><div class="msg crew" id="chatPending">…</div>`); box.scrollTop = box.scrollHeight; input.value = '';
+  try {
+    const r = await api('/api/today/chat', { method: 'POST', body: { message } });
+    $('chatPending').textContent = r.reply;
+    if (r.replaced) { toast(`Rest of the day rebuilt: ${r.replaced} new play${r.replaced === 1 ? '' : 's'}`); S.today.chat.push({ role: 'user', content: message }, { role: 'crew', content: r.reply }); mergePlan(r.plan); }
+  } catch (err) { $('chatPending').textContent = err.message; }
 }
 async function regenerate() {
   $('todayLoading').classList.remove('hidden'); $('todayContent').classList.add('hidden');
@@ -405,40 +555,118 @@ async function closeDay() {
   try { const r = await api('/api/today/close', { method: 'POST' }); toast(r.debrief.summary); await loadToday(); }
   catch (err) { toast(err.message); }
 }
+function renderCheckins() {
+  const bar = $('checkinBar');
+  const pending = S.today ? S.today.plan.tasks.filter((t) => S.checkins.includes(t.taskId) && t.status === 'pending') : [];
+  if (!pending.length) { bar.classList.add('hidden'); return; }
+  bar.innerHTML = `<b>How did "${esc(pending[0].title)}" go?</b><div class="small muted">Mark it done and log what you earned, or skip it so the crew can adjust.</div>`;
+  bar.classList.remove('hidden');
+}
 
 // ── World ──────────────────────────────────────────────────────────────────
+function chip(label, on, fn, extra = '') { return `<span class="chip sm ${on ? 'on' : ''}" onclick="${fn}">${extra}${esc(label)}</span>`; }
 async function loadWorld() {
+  const f = (S.me && S.me.features) || {};
+  const scopes = [['world', '🌍 World']].concat(f.localBoards ? [['country', 'Country'], ['region', 'State'], ['city', 'City']] : []);
+  $('scopeChips').innerHTML = scopes.map(([k, l]) => chip(l, S.lb.scope === k, `setLb('scope','${k}')`)).join('') + (!f.localBoards ? `<span class="chip sm" onclick="show('me')">🔒 Local boards</span>` : '');
+  $('leagueChips').innerHTML = [['', 'All leagues'], ['bronze', 'Bronze'], ['silver', 'Silver'], ['gold', 'Gold'], ['boss', 'Boss']].map(([k, l]) => chip(l, S.lb.league === k, `setLb('league','${k}')`)).join('');
+  $('modeChips').innerHTML = [['all', 'Everyone'], ['verified', '✓ Verified only']].map(([k, l]) => chip(l, S.lb.mode === k, `setLb('mode','${k}')`)).join('');
   try {
-    const w = await api('/api/leaderboard');
+    const q = new URLSearchParams({ scope: S.lb.scope, mode: S.lb.mode }); if (S.lb.league) q.set('league', S.lb.league);
+    const w = await api('/api/leaderboard?' + q);
     $('lbDate').textContent = fmtDate(w.date);
+    $('lbTitle').textContent = `${S.lb.scope === 'world' ? 'Today, live' : 'Near you, live'}${S.lb.league ? ' · ' + S.lb.league : ''}${S.lb.mode === 'verified' ? ' · verified' : ''}`;
     $('podium').innerHTML = w.yesterdayPodium.length
       ? `<div class="podium">${[1, 0, 2].map((i) => w.yesterdayPodium[i]).filter(Boolean).map((p) => `<div class="p${p.rank}"><b>${['🥇', '🥈', '🥉'][p.rank - 1]}</b><span>${esc(p.displayName)}</span><span class="muted">${p.score}</span></div>`).join('')}</div>`
       : '<div class="empty">No champions yet. Be the first.</div>';
+    if (w.champion) { $('champCard').innerHTML = renderChampion(w.champion).replace(/^<div class="card">|<\/div>$/g, ''); $('champCard').hidden = false; } else $('champCard').hidden = true;
     $('lbToday').innerHTML = w.leaderboard.length ? `<table class="lb">${w.leaderboard.map((r) => `
       <tr class="${S.user && r.userId === S.user.id ? 'me' : ''}"><td class="rk ${r.rank <= 3 ? 'top' : ''}">${r.rank}</td>
-      <td class="nm">${esc(r.displayName)}${r.streak ? ' 🔥' + r.streak : ''}<small>${esc(r.location || '')}${r.location ? ' · ' : ''}${r.tasksDone}/${r.tasksTotal} plays · ${r.hoursDone}h</small></td>
-      <td class="sc">${r.score}<small>${money(r.earningsCents)} logged</small></td></tr>`).join('')}</table>` : '<div class="empty">Nobody has scored yet today.</div>';
+      <td class="nm">${esc(r.displayName)} ${leagueTag(r.league)}${r.streak ? ' 🔥' + r.streak : ''}<small>${esc(r.location || '')}${r.location ? ' · ' : ''}${r.tasksDone}/${r.tasksTotal} plays · ${r.hoursDone}h</small></td>
+      <td class="sc">${r.score}<small>${money(r.earningsCents)}${r.verifiedCents ? ' ✓' : ''}</small></td></tr>`).join('')}</table>` : '<div class="empty">Nobody has scored here yet today.</div>';
     $('lbAll').innerHTML = w.allTime.length ? `<table class="lb">${w.allTime.map((r) => `
       <tr class="${S.user && r.userId === S.user.id ? 'me' : ''}"><td class="rk ${r.rank <= 3 ? 'top' : ''}">${r.rank}</td>
       <td class="nm">${esc(r.displayName)}<small>${r.days} day${r.days === 1 ? '' : 's'} · ${r.wins} win${r.wins === 1 ? '' : 's'} · best streak ${r.bestStreak}</small></td>
       <td class="sc">${r.totalScore}<small>${money(r.totalEarningsCents)} logged</small></td></tr>`).join('')}</table>` : '<div class="empty">Nothing yet.</div>';
-  } catch (err) { toast(err.message); }
+  } catch (err) { toast(err.message); if (err.status === 402 || err.status === 401) { S.lb.scope = 'world'; } }
+  loadDuels();
 }
+function setLb(k, v) { S.lb[k] = v; loadWorld(); }
+async function loadDuels() {
+  if (!S.token) return;
+  try {
+    const { challenges } = await api('/api/challenges');
+    if (!challenges.length) return;
+    $('duels').innerHTML = challenges.slice(0, 8).map((c) => {
+      const mine = S.user && c.challengerId === S.user.id; const them = mine ? c.opponentName : c.challengerName;
+      let right = '';
+      if (c.status === 'pending' && !mine) right = `<span><button class="btn small" onclick="answerDuel(${c.id},true)">Accept</button> <button class="btn small ghost" onclick="answerDuel(${c.id},false)">No</button></span>`;
+      else if (c.status === 'pending') right = '<span class="muted">waiting</span>';
+      else if (c.status === 'accepted') right = '<span style="color:var(--purple)">on</span>';
+      else if (c.status === 'settled') right = c.winnerId ? `<span class="${S.user && c.winnerId === S.user.id ? 'won' : 'lost'}">${S.user && c.winnerId === S.user.id ? 'won' : 'lost'} ${mine ? c.challengerScore : c.opponentScore}–${mine ? c.opponentScore : c.challengerScore}</span>` : '<span class="muted">tied</span>';
+      else right = `<span class="muted">${esc(c.status)}</span>`;
+      return `<div class="duel"><div class="who">⚔️ ${esc(them)}<small>${esc(fmtDate(c.date, true))}</small></div>${right}</div>`;
+    }).join('');
+  } catch (_) {}
+}
+async function sendDuel() {
+  const opponent = $('duelName').value.trim(); if (!opponent) return;
+  try { await api('/api/challenges', { method: 'POST', body: { opponent } }); $('duelName').value = ''; toast('Challenge sent'); loadDuels(); }
+  catch (err) { toast(err.message); }
+}
+async function answerDuel(id, accept) { try { await api(`/api/challenges/${id}/respond`, { method: 'POST', body: { accept } }); loadDuels(); } catch (err) { toast(err.message); } }
 
 // ── Me ─────────────────────────────────────────────────────────────────────
 async function loadMe() {
   try {
-    const [me, h, ib] = await Promise.all([api('/api/me'), api('/api/history'), api('/api/inbox')]);
-    S.profile = me.profile;
-    $('meHero').innerHTML = `<div class="date">${esc(me.user.displayName)}</div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
-      <div class="stats"><div class="stat"><b>${me.stats.days}</b><span>days</span></div><div class="stat"><b>${money(me.stats.earnedCents)}</b><span>logged</span></div><div class="stat"><b>${me.stats.wins}</b><span>world wins</span></div></div>
-      <div class="small muted" style="margin-top:8px">Best streak ${me.stats.bestStreak} · total score ${me.stats.totalScore}</div>`;
+    const [me, h, ib, bill] = await Promise.all([api('/api/me'), api('/api/history'), api('/api/inbox'), api('/api/billing')]);
+    S.me = me; S.profile = me.profile; $('mePip').classList.add('hidden');
+    $('meHero').innerHTML = `<div class="row between"><div class="date">${esc(me.user.displayName)}</div>${leagueTag((h.history[0] || {}).league)}</div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
+      <div class="stats"><div class="stat"><b>${me.stats.days}</b><span>days</span></div><div class="stat"><b>${money(me.stats.earnedCents)}</b><span>${me.stats.verifiedCents ? money(me.stats.verifiedCents) + ' verified' : 'logged'}</span></div><div class="stat"><b>${me.stats.wins}</b><span>world wins</span></div></div>
+      <div class="small muted" style="margin-top:8px">Best streak ${me.stats.bestStreak} · duels ${me.stats.duelsWon}/${me.stats.duelsPlayed} · total score ${me.stats.totalScore}</div>`;
+    const g = me.profile && me.profile.goal;
+    if (g) { const pct = Math.min(100, Math.round(g.progressCents / g.targetCents * 100)); $('goalCard').innerHTML = `<h3>30-day goal</h3><b>🎯 ${esc(g.title)}</b><div class="small muted">${money(g.progressCents)} of ${money(g.targetCents)} by ${esc(fmtDate(g.byDate, true))} · ${pct}%</div><div class="bar goal"><i style="width:${pct}%"></i></div>`; $('goalCard').hidden = false; } else $('goalCard').hidden = true;
+    $('meBadges').innerHTML = me.badges.length ? me.badges.slice(0, 12).map((b) => { const [ic, lb] = BADGE_LABELS[b.badge] || ['🏷️', b.badge]; return `<span class="bdg">${ic} ${esc(lb)}<span class="muted">${esc(fmtDate(b.date, true))}</span></span>`; }).join('') : '<span class="small muted">Finish a full day for your first badge.</span>';
     const m = (me.profile && me.profile.memory) || {};
     $('meNotes').innerHTML = (m.notes && m.notes.length) ? `<ul style="margin-left:18px">${m.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : '<span class="muted">Still getting to know you. Log real results and this fills in.</span>';
     if (m.tomorrowHint) $('meNotes').innerHTML += `<div class="small" style="margin-top:8px">Tomorrow: <b>${esc(m.tomorrowHint)}</b></div>`;
+    if (h.recaps && h.recaps.length) { $('recaps').innerHTML = h.recaps.slice(0, 4).map((r) => `<div class="recap"><b>Week of ${esc(fmtDate(r.weekEnd, true))}: ${esc(r.headline)}</b>${(r.wins || []).map((w) => `<div>✔ ${esc(w)}</div>`).join('')}<div style="margin-top:4px">Change: ${esc(r.change)}</div><div class="muted">Next: ${esc(r.nextWeekFocus)}</div></div>`).join(''); $('recapCard').hidden = false; } else $('recapCard').hidden = true;
+    $('inviteUrl').value = me.inviteUrl;
+    renderPush(me);
+    renderTier(me, bill);
     $('inbox').innerHTML = ib.inbox.length ? ib.inbox.slice(0, 8).map((i) => `<div class="inbox-item"><b>${esc(i.title)}</b><span>${esc(i.body)}</span></div>`).join('') : '<span class="muted">Quiet for now.</span>';
-    $('history').innerHTML = h.history.length ? h.history.map((d) => `<div class="hist"><span class="d">${esc(fmtDate(d.date, true))}${d.rank ? ` · world #${d.rank}` : ''}</span><span>${d.tasksDone}/${d.tasksTotal} · ${money(d.earningsCents)}</span><span class="s">${d.score}</span></div>`).join('') : '<span class="muted">Your first day is today.</span>';
+    $('history').innerHTML = h.history.length ? h.history.map((d) => `<div class="hist"><span class="d">${esc(fmtDate(d.date, true))}${d.rank ? ` · world #${d.rank}` : ''}</span><span>${d.tasksDone}/${d.tasksTotal} · ${money(d.earningsCents)}${d.verifiedCents ? ' ✓' : ''}</span><span class="s">${d.score}</span></div>`).join('') : '<span class="muted">Your first day is today.</span>';
   } catch (err) { toast(err.message); }
+}
+function renderTier(me, bill) {
+  const names = { free: ['Free', 'Playbook plans, world board, challenges'], pro: ['Pro', 'Live crew with real research every night'], boss: ['Boss', 'Chat with your crew, receipt verification, local boards'] };
+  $('tierBody').innerHTML = `<div class="tier-row">${['free', 'pro', 'boss'].map((t) => `<div class="tier ${me.tier === t ? 'on' : ''}"><b>${names[t][0]}</b>${names[t][1]}${bill.enabled && me.tier !== t && t !== 'free' ? `<button class="btn small" style="margin-top:8px" onclick="checkout('${t}')">Upgrade</button>` : ''}</div>`).join('')}</div>
+    <p class="small muted" style="margin-top:8px">${bill.enabled ? 'Cancel anytime.' : `Billing is not switched on yet, so every player currently gets <b>${esc(bill.defaultTier)}</b>. The world leaderboard stays free forever.`}</p>`;
+}
+async function checkout(tier) { try { const r = await api('/api/billing/checkout', { method: 'POST', body: { tier } }); location.href = r.url; } catch (err) { toast(err.message); } }
+function renderPush(me) {
+  const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  if (!me.pushEnabled) { $('pushBody').innerHTML = 'Push is not switched on for this server yet. You still get every message in your inbox here.'; return; }
+  if (!supported) { $('pushBody').innerHTML = 'Your browser cannot do push here. On iPhone, add BossDay to your home screen first, then come back.'; return; }
+  $('pushBody').innerHTML = `${me.pushDevices ? `On for ${me.pushDevices} device${me.pushDevices === 1 ? '' : 's'}. ` : 'Get your plan the moment it lands, and a nudge after each time block. '}<button class="btn small ${me.pushDevices ? 'ghost' : ''}" style="margin-top:8px" onclick="${me.pushDevices ? 'disablePush()' : 'enablePush()'}">${me.pushDevices ? 'Turn off on this device' : 'Turn on notifications'}</button>`;
+}
+async function enablePush() {
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const perm = await Notification.requestPermission(); if (perm !== 'granted') return toast('Notifications were not allowed');
+    const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(S.config.pushPublicKey) });
+    await api('/api/push/subscribe', { method: 'POST', body: { subscription: sub.toJSON() } });
+    toast('Notifications on'); loadMe();
+  } catch (err) { toast(err.message); }
+}
+async function disablePush() {
+  try { const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription(); if (sub) { await api('/api/push/unsubscribe', { method: 'POST', body: { endpoint: sub.endpoint } }); await sub.unsubscribe(); } toast('Notifications off'); loadMe(); }
+  catch (err) { toast(err.message); }
+}
+function urlB64(s) { const pad = '='.repeat((4 - s.length % 4) % 4); const raw = atob((s + pad).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from([...raw].map((c) => c.charCodeAt(0))); }
+async function shareInvite() {
+  const url = $('inviteUrl').value; const text = `I finished #${S.today && S.today.rank ? S.today.rank.rank : '?'} in the world on BossDay today. Think you can beat me? ${url}`;
+  try { if (navigator.share) await navigator.share({ title: 'BossDay', text, url }); else { await navigator.clipboard.writeText(text); toast('Copied'); } } catch (_) {}
 }
 
 // ── Live updates ───────────────────────────────────────────────────────────
@@ -449,11 +677,14 @@ function connectEvents() {
   S.es.addEventListener('plan_ready', () => { if ($('screen-today').classList.contains('active')) loadToday(); toast('Your crew finished a plan'); });
   S.es.addEventListener('leaderboard', () => { if ($('screen-world').classList.contains('active')) loadWorld(); });
   S.es.addEventListener('champion', () => { if ($('screen-world').classList.contains('active')) loadWorld(); });
-  S.es.addEventListener('inbox', (e) => { try { const d = JSON.parse(e.data); toast(d.title); } catch (_) {} });
+  S.es.addEventListener('checkin', (e) => { try { const d = JSON.parse(e.data); if (!S.checkins.includes(d.taskId)) S.checkins.push(d.taskId); toast(`How did "${d.title}" go?`); if (S.today) renderToday(); } catch (_) {} });
+  S.es.addEventListener('badge', (e) => { try { const d = JSON.parse(e.data); const [ic, lb] = BADGE_LABELS[d.badge] || ['🏷️', d.badge]; toast(`${ic} New badge: ${lb}`); } catch (_) {} });
+  S.es.addEventListener('inbox', (e) => { try { const d = JSON.parse(e.data); toast(d.title); $('mePip').classList.remove('hidden'); } catch (_) {} });
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmtDate(key, short) { const d = new Date(key + 'T12:00:00'); return d.toLocaleDateString(undefined, short ? { month: 'short', day: 'numeric' } : { weekday: 'long', month: 'long', day: 'numeric' }); }
+function fmtTime(ms) { return new Date(ms).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
 function linkify(s) { return esc(s).replace(/(https?:\/\/[^\s)]+)/g, '<a href="$1" target="_blank" rel="noopener">source</a>'); }
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); S.deferredInstall = e; $('installBar').classList.remove('hidden'); });
 async function installApp() { if (!S.deferredInstall) return; S.deferredInstall.prompt(); await S.deferredInstall.userChoice; S.deferredInstall = null; $('installBar').classList.add('hidden'); }
@@ -464,10 +695,11 @@ async function boot() {
   S.config = await api('/api/config');
   $('crewPill').classList.toggle('on', S.config.crewOnline);
   $('crewText').textContent = S.config.crewOnline ? 'crew online' : 'playbook mode';
-  if (!S.token) { authMode('signin'); show('auth'); return; }
+  if (S.invite) { $('inviteCard').hidden = false; }
+  if (!S.token) { authMode(S.invite ? 'signup' : 'signin'); show('auth'); return; }
   try {
     const me = await api('/api/me');
-    S.user = me.user; S.profile = me.profile;
+    S.user = me.user; S.profile = me.profile; S.me = me;
     connectEvents();
     show('today');
   } catch (_) { show('auth'); }

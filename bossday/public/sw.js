@@ -1,7 +1,7 @@
-// Offline shell so the app opens instantly from the home screen. API calls
-// always go to the network; only the static shell is cached.
-const CACHE = 'bossday-shell-v1';
-const SHELL = ['/', '/index.html', '/manifest.json', '/icon.svg'];
+// Offline shell so the app opens instantly from the home screen, plus push
+// notifications from the crew. API calls always go to the network.
+const CACHE = 'bossday-shell-v2';
+const SHELL = ['/', '/index.html', '/manifest.json', '/icon.svg', '/terms.html', '/privacy.html'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -19,4 +19,21 @@ self.addEventListener('fetch', (e) => {
       return res;
     }).catch(() => caches.match(e.request).then((m) => m || caches.match('/')))
   );
+});
+
+self.addEventListener('push', (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) { data = { title: 'BossDay', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(data.title || 'BossDay', {
+    body: data.body || '', icon: '/icon.svg', badge: '/icon.svg', tag: data.kind || 'bossday', data: { url: data.url || '/', taskId: data.taskId || null }, renotify: data.kind === 'checkin',
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || '/';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+    for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus(); } }
+    return self.clients.openWindow(url);
+  }));
 });

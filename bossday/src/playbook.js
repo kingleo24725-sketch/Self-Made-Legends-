@@ -16,15 +16,15 @@
 
 const PLAYS = [
   // ── Gig / on-demand (needs a vehicle or bike) ────────────────────────────
-  { id: 'food_delivery_lunch', title: 'Lunch-rush food delivery', category: 'gig', hours: 2, icon: '🛵',
+  { id: 'food_delivery_lunch', title: 'Lunch-rush food delivery', category: 'gig', hours: 2, icon: '🛵', window: [11, 14],
     needs: ['vehicle'], earn: [30, 70],
     steps: ['Log in to DoorDash, Uber Eats or Grubhub 15 minutes before 11:30am', 'Position yourself near a cluster of restaurants, not at home', 'Accept orders paying at least $1.50 per mile', 'Log off at 1:30pm when demand drops'],
     why: 'Lunch and dinner peaks pay 2-3x the mid-afternoon rate. You already own the car, so this is pure margin on your time.' },
-  { id: 'food_delivery_dinner', title: 'Dinner-rush food delivery', category: 'gig', hours: 2.5, icon: '🍕',
+  { id: 'food_delivery_dinner', title: 'Dinner-rush food delivery', category: 'gig', hours: 2.5, icon: '🍕', window: [17, 21],
     needs: ['vehicle'], earn: [40, 90],
     steps: ['Go online at 5:00pm near the busiest restaurant strip', 'Stack orders from the same restaurant when offered', 'Track mileage in a notes app for tax deductions', 'Cash out with instant pay if the app offers it'],
     why: 'Dinner is the single highest-paying window of the day for delivery.' },
-  { id: 'rideshare_morning', title: 'Morning commute rideshare', category: 'gig', hours: 2.5, icon: '🚗',
+  { id: 'rideshare_morning', title: 'Morning commute rideshare', category: 'gig', hours: 2.5, icon: '🚗', window: [6, 10],
     needs: ['vehicle', 'rideshare_approved'], earn: [45, 100],
     steps: ['Go online at 6:30am near residential areas', 'Stay within 10 miles of the airport or downtown', 'Decline trips longer than 30 minutes unless surge is on', 'Go offline by 9:30am'],
     why: 'Commute hours are surge hours. Short trips back-to-back beat one long one.' },
@@ -50,7 +50,7 @@ const PLAYS = [
     needs: [], earn: [60, 160],
     steps: ['Offer interior + exterior for a flat price to coworkers, family and neighbors', 'Bring your own bucket, microfiber towels and vacuum', 'Do 2-3 cars back-to-back in one parking lot', 'Take before/after photos for tomorrow\'s posts'],
     why: 'Low supplies cost and people will pay for convenience at their own driveway.' },
-  { id: 'dog_walking', title: 'Dog walking and pet check-ins', category: 'local', hours: 2, icon: '🐕',
+  { id: 'dog_walking', title: 'Dog walking and pet check-ins', category: 'local', hours: 2, icon: '🐕', window: [11, 15],
     needs: [], earn: [30, 80],
     steps: ['Create or update a Rover profile and set same-day availability', 'Post in local groups offering midday walks', 'Take 2-3 dogs from the same neighborhood', 'Send the owner a photo each walk'],
     why: 'Working owners need midday walks every single day. Reliability wins repeat business.' },
@@ -76,7 +76,7 @@ const PLAYS = [
     needs: ['laptop'], earn: [10, 60],
     steps: ['Sign up for UserTesting, Userlytics and Prolific', 'Complete the qualification tests', 'Take every test that pays $10 or more', 'Speak your thoughts out loud clearly to keep your rating high'],
     why: 'Real payouts for real feedback, and it fills the gaps between bigger tasks.' },
-  { id: 'tutoring', title: 'Online tutoring session', category: 'online', hours: 2, icon: '📚',
+  { id: 'tutoring', title: 'Online tutoring session', category: 'online', hours: 2, icon: '📚', window: [16, 21],
     needs: ['laptop', 'academic'], earn: [30, 100],
     steps: ['List your subject on Wyzant, Preply or Tutor.com', 'Offer a first-session discount for same-week bookings', 'Post in parent groups for after-school help', 'Prepare one worksheet so the session feels professional'],
     why: 'Parents pay well for reliable, patient help. Evenings are peak.' },
@@ -122,6 +122,37 @@ function hasResources(play, profile) {
   return play.needs.every(n => have.has(n));
 }
 
+/** "10:30am" -> 630. Returns null when unparseable. */
+function parseClock(str) {
+  const m = /^\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*$/i.exec(String(str || ''));
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const min = parseInt(m[2] || '0', 10);
+  const ap = (m[3] || '').toLowerCase();
+  if (ap === 'pm' && h < 12) h += 12;
+  if (ap === 'am' && h === 12) h = 0;
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+/** Lay tasks out on the clock, jumping over blocked windows ({start,end} in hours). */
+function layoutOnClock(tasks, startHour, blockedHours = []) {
+  const blocks = (blockedHours || [])
+    .map(b => ({ start: Number(b.start) * 60, end: Number(b.end) * 60 }))
+    .filter(b => Number.isFinite(b.start) && Number.isFinite(b.end) && b.end > b.start)
+    .sort((a, b) => a.start - b.start);
+  let cursor = Math.round(startHour * 60);
+  const skipBlocks = (t) => { for (const b of blocks) if (t >= b.start && t < b.end) t = b.end; return t; };
+  return tasks.map((task) => {
+    cursor = skipBlocks(cursor);
+    const len = Math.round(task.hours * 60);
+    for (const b of blocks) if (cursor < b.start && cursor + len > b.start) cursor = b.end; // would overlap: move past it
+    const start = cursor;
+    cursor += len;
+    return { ...task, startsAt: clock(start), endsAt: clock(cursor), startsMin: start, endsMin: cursor };
+  });
+}
+
 function clock(mins) {
   const h = Math.floor(mins / 60) % 24;
   const m = mins % 60;
@@ -143,6 +174,7 @@ function buildOfflinePlan(profile, dateKey, opts = {}) {
   const favorites = new Set(memory.favorites || []);
   const avoid = new Set(memory.avoid || []);
   const seed = hash(`${profile.userId}|${dateKey}`);
+  const stats = opts.playStats || {};
 
   const scored = PLAYS
     .filter(p => hasResources(p, profile) && !avoid.has(p.id))
@@ -150,6 +182,12 @@ function buildOfflinePlan(profile, dateKey, opts = {}) {
       let score = ((seed >>> (i % 24)) & 0xff) / 255; // stable per person + day
       if (favorites.has(p.id)) score += 0.6;
       if (recent.has(p.id)) score -= 0.5;
+      const st = stats[p.id];
+      if (st && st.attempts >= 2) {
+        // Real learning: what this person actually finishes and earns from beats any estimate.
+        score += (st.doneRate - 0.5) * 0.8;
+        if (st.earnRatio != null) score += Math.max(-0.4, Math.min(0.6, (st.earnRatio - 1) * 0.5));
+      }
       if (p.earn[1] >= 100) score += 0.25;
       if (p.category === 'career') score -= 0.1; // fillers, never the headline
       return { play: p, score };
@@ -169,28 +207,23 @@ function buildOfflinePlan(profile, dateKey, opts = {}) {
     hours += play.hours;
     if (hours >= targetHours - 0.5) break;
   }
+  // Time-sensitive plays (lunch rush, dinner rush, commute) go where the demand is.
+  chosen.sort((a, b) => (a.window ? a.window[0] : 99) - (b.window ? b.window[0] : 99));
   chosen.push(PLAYS.find(p => p.id === 'admin_money')); // always end the day by logging it
 
   const startHour = Number.isFinite(Number(profile.startHour)) ? Number(profile.startHour) : 8;
-  let cursor = startHour * 60;
-  const tasks = chosen.map((p, idx) => {
-    const start = cursor;
-    cursor += Math.round(p.hours * 60);
-    return {
-      order: idx + 1,
-      playId: p.id,
-      title: p.title,
-      icon: p.icon,
-      category: p.category,
-      hours: p.hours,
-      startsAt: clock(start),
-      endsAt: clock(cursor),
-      estimatedEarnings: { low: p.earn[0], high: p.earn[1] },
-      steps: p.steps,
-      why: p.why,
-      sources: [],
-    };
-  });
+  const tasks = layoutOnClock(chosen.map((p, idx) => ({
+    order: idx + 1,
+    playId: p.id,
+    title: p.title,
+    icon: p.icon,
+    category: p.category,
+    hours: p.hours,
+    estimatedEarnings: { low: p.earn[0], high: p.earn[1] },
+    steps: p.steps,
+    why: p.why,
+    sources: [],
+  })), startHour, profile.blockedHours);
 
   const low = tasks.reduce((s, t) => s + t.estimatedEarnings.low, 0);
   const high = tasks.reduce((s, t) => s + t.estimatedEarnings.high, 0);
@@ -211,4 +244,26 @@ function buildOfflinePlan(profile, dateKey, opts = {}) {
   };
 }
 
-module.exports = { PLAYS, RESOURCES, RESOURCE_LABELS, buildOfflinePlan };
+/**
+ * Offline mid-day replan: swap the remaining pending plays for fresh ones that
+ * fit the hours left, avoiding anything already on today's plan.
+ */
+function replanRemaining(profile, remainingHours, usedPlayIds = []) {
+  const used = new Set(usedPlayIds);
+  const avoid = new Set((profile.memory || {}).avoid || []);
+  const pool = PLAYS.filter(p => hasResources(p, profile) && !used.has(p.id) && !avoid.has(p.id) && p.id !== 'admin_money')
+    .sort((a, b) => b.earn[1] - a.earn[1]);
+  const chosen = [];
+  let hours = 0;
+  for (const p of pool) {
+    if (hours + p.hours > remainingHours) continue;
+    chosen.push(p); hours += p.hours;
+    if (hours >= remainingHours - 0.5) break;
+  }
+  return chosen.map((p, idx) => ({
+    order: idx + 1, playId: p.id, title: p.title, icon: p.icon, category: p.category, hours: p.hours,
+    estimatedEarnings: { low: p.earn[0], high: p.earn[1] }, steps: p.steps, why: p.why, sources: [],
+  }));
+}
+
+module.exports = { PLAYS, RESOURCES, RESOURCE_LABELS, buildOfflinePlan, replanRemaining, layoutOnClock, parseClock, clock };

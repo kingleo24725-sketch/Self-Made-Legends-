@@ -16,17 +16,32 @@ class Auth {
     this.rounds = opts.rounds || 10;
   }
 
-  register({ email, password, displayName }) {
+  register({ email, password, displayName, acceptTerms, referralCode }) {
     email = String(email || '').trim().toLowerCase();
     displayName = String(displayName || '').trim().slice(0, 40);
     if (!EMAIL_RE.test(email)) throw new Error('Enter a valid email');
     if (!displayName) throw new Error('Pick a name for the leaderboard');
     if (String(password || '').length < 8) throw new Error('Password must be at least 8 characters');
+    if (!acceptTerms) throw new Error('You need to accept the terms to continue');
     if (this.db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) throw new Error('That email already has an account');
+    if (this.db.prepare('SELECT 1 FROM users WHERE lower(display_name) = lower(?)').get(displayName)) throw new Error('That name is taken. Pick another for the leaderboard');
+    let referredBy = null;
+    if (referralCode) {
+      const ref = this.db.prepare('SELECT referral_code FROM users WHERE referral_code = ?').get(String(referralCode).trim().toUpperCase());
+      referredBy = ref ? ref.referral_code : null;
+    }
     const id = crypto.randomBytes(12).toString('hex');
-    this.db.prepare('INSERT INTO users (id, email, display_name, password_hash, created_at) VALUES (?, ?, ?, ?, ?)')
-      .run(id, email, displayName, bcrypt.hashSync(password, this.rounds), this.now());
+    this.db.prepare('INSERT INTO users (id, email, display_name, password_hash, referral_code, referred_by, terms_accepted_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(id, email, displayName, bcrypt.hashSync(password, this.rounds), this._newReferralCode(), referredBy, this.now(), this.now());
     return this._issue(id);
+  }
+
+  _newReferralCode() {
+    for (let i = 0; i < 20; i++) {
+      const code = crypto.randomBytes(4).toString('base64url').replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 6).padEnd(6, 'X');
+      if (!this.db.prepare('SELECT 1 FROM users WHERE referral_code = ?').get(code)) return code;
+    }
+    return crypto.randomBytes(6).toString('hex').toUpperCase();
   }
 
   login({ email, password }) {
@@ -54,8 +69,8 @@ class Auth {
   logout(token) { this.db.prepare('DELETE FROM sessions WHERE token = ?').run(token); }
 
   user(id) {
-    const u = this.db.prepare('SELECT id, email, display_name, created_at FROM users WHERE id = ?').get(id);
-    return u ? { id: u.id, email: u.email, displayName: u.display_name, createdAt: u.created_at } : null;
+    const u = this.db.prepare('SELECT id, email, display_name, tier, referral_code, created_at FROM users WHERE id = ?').get(id);
+    return u ? { id: u.id, email: u.email, displayName: u.display_name, tier: u.tier, referralCode: u.referral_code, createdAt: u.created_at } : null;
   }
 
   /** Express middleware: requires a bearer token or x-session-token header. */

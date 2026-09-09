@@ -1,12 +1,16 @@
 'use strict';
 
-// The engine: profiles, daily plans, task tracking, scoring, the world
-// leaderboard, and the overnight scheduler. Everything persists in SQLite so a
-// restart never loses a player's day.
+// The engine: profiles, daily plans, task tracking, verified earnings, scoring,
+// leagues, world/local leaderboards, head-to-head challenges, the nightly close,
+// weekly recaps, and the overnight scheduler. Everything persists in SQLite so
+// a restart never loses a player's day.
 
+const crypto = require('crypto');
 const Crew = require('./agents');
+const { layoutOnClock, clock } = require('./playbook');
 
-const EARNINGS_CAP_CENTS = 100_000;     // $1,000/day counts toward score (self-reported, unverified)
+const EARNINGS_CAP_CENTS = 100_000;     // $1,000/day counts toward score
+const UNVERIFIED_WEIGHT = 0.5;          // self-reported dollars count half; receipt-verified count full
 const POINTS_PER_TASK = 100;
 const POINTS_PER_HOUR = 50;
 const POINTS_PER_DOLLAR = 1;
@@ -15,41 +19,68 @@ const STREAK_BONUS = 25;                // per consecutive day, capped
 const STREAK_CAP = 10;
 const PLAN_READY_HOUR = 4;              // the crew finishes the plan by 4am local time
 const REGENERATIONS_PER_DAY = 1;
+const CHECKIN_GRACE_MIN = 5;            // minutes after a block ends before the crew checks in
+const INSURANCE_DAYS = 7;               // one free streak save per week
+const LEAGUES = ['bronze', 'silver', 'gold', 'boss'];
+const TIERS = ['free', 'pro', 'boss'];
+const FEATURES = { liveCrew: ['pro', 'boss'], chat: ['boss'], receipts: ['boss'], localBoards: ['boss'] };
 
 class Engine {
   /**
    * @param {import('better-sqlite3').Database} db
-   * @param {object} opts { crew?, now?, onEvent?(userId|null, event, data) }
+   * @param {object} opts { crew?, push?, now?, onEvent?(userId|null, event, data), defaultTier? }
    */
   constructor(db, opts = {}) {
     this.db = db;
     this.crew = opts.crew || new Crew();
+    this.offlineCrew = this.crew.online ? new Crew({ apiKey: '' }) : this.crew;
+    this.push = opts.push || null;
     this.now = opts.now || (() => Date.now());
     this.onEvent = opts.onEvent || (() => {});
+    this.defaultTier = TIERS.includes(opts.defaultTier) ? opts.defaultTier : (TIERS.includes(process.env.DEFAULT_TIER) ? process.env.DEFAULT_TIER : 'boss');
     this._generating = new Set();
+    this.briefCache = {
+      get: (key, date) => { const r = this.db.prepare('SELECT brief FROM briefs WHERE city_key = ? AND date = ?').get(key, date); return r ? r.brief : null; },
+      set: (key, date, brief) => this.db.prepare('INSERT OR REPLACE INTO briefs (city_key, date, brief, created_at) VALUES (?, ?, ?, ?)').run(key, date, brief, this.now()),
+    };
   }
 
   // ── Time helpers ─────────────────────────────────────────────────────────
-  // tz_offset is minutes to ADD to UTC to get local time (negative of JS getTimezoneOffset()).
   localNow(profile) { return new Date(this.now() + (profile.tz_offset || 0) * 60_000); }
   localDateKey(profile) { return this.localNow(profile).toISOString().slice(0, 10); }
   localHour(profile) { return this.localNow(profile).getUTCHours(); }
-  static shiftDate(dateKey, days) {
-    const d = new Date(dateKey + 'T00:00:00Z');
-    d.setUTCDate(d.getUTCDate() + days);
-    return d.toISOString().slice(0, 10);
-  }
+  localMinutes(profile) { const d = this.localNow(profile); return d.getUTCHours() * 60 + d.getUTCMinutes(); }
+  static shiftDate(dateKey, days) { const d = new Date(dateKey + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
+  static weekday(dateKey) { return new Date(dateKey + 'T00:00:00Z').getUTCDay(); }
 
-  // ── Inbox ────────────────────────────────────────────────────────────────
-  notify(userId, kind, title, body) {
+  // ── Tiers ────────────────────────────────────────────────────────────────
+  tierOf(userId) {
+    const r = this.db.prepare('SELECT tier FROM users WHERE id = ?').get(userId);
+    const t = r && TIERS.includes(r.tier) && r.tier !== 'free' ? r.tier : null;
+    return t || this.defaultTier;
+  }
+  setTier(userId, tier) { if (!TIERS.includes(tier)) throw new Error('Unknown tier'); this.db.prepare('UPDATE users SET tier = ? WHERE id = ?').run(tier, userId); }
+  allows(userId, feature) { return (FEATURES[feature] || []).includes(this.tierOf(userId)); }
+  crewFor(userId) { return this.allows(userId, 'liveCrew') ? this.crew : this.offlineCrew; }
+
+  // ── Inbox, push, crew log ────────────────────────────────────────────────
+  notify(userId, kind, title, body, { push = true } = {}) {
     this.db.prepare('INSERT INTO inbox (user_id, kind, title, body, created_at) VALUES (?, ?, ?, ?, ?)').run(userId, kind, title, body || '', this.now());
     this.onEvent(userId, 'inbox', { kind, title, body });
+    if (push && this.push) this.push.send(userId, { title, body: body || '', kind, url: '/' }).catch(() => {});
   }
   inbox(userId, limit = 20) {
     return this.db.prepare('SELECT * FROM inbox WHERE user_id = ? ORDER BY created_at DESC LIMIT ?').all(userId, limit)
       .map(r => ({ id: r.id, kind: r.kind, title: r.title, body: r.body, read: !!r.read, createdAt: r.created_at }));
   }
   markInboxRead(userId) { this.db.prepare('UPDATE inbox SET read = 1 WHERE user_id = ?').run(userId); }
+  logCrew(userId, date, agent, message) {
+    this.db.prepare('INSERT INTO crew_log (user_id, date, agent, message, created_at) VALUES (?, ?, ?, ?, ?)').run(userId, date, agent, message, this.now());
+  }
+  crewLog(userId, date) {
+    return this.db.prepare('SELECT agent, message, created_at FROM crew_log WHERE user_id = ? AND date = ? ORDER BY created_at ASC, id ASC').all(userId, date)
+      .map(r => ({ agent: r.agent, message: r.message, at: r.created_at }));
+  }
 
   // ── Profiles ─────────────────────────────────────────────────────────────
   getProfile(userId) {
@@ -59,9 +90,12 @@ class Engine {
 
   _rowToProfile(row) {
     const parse = (s, d) => { try { return s ? JSON.parse(s) : d; } catch (_) { return d; } };
+    const goal = parse(row.goal_json, null);
+    if (goal) goal.progressCents = this._goalProgress(row.user_id, goal);
     return {
       userId: row.user_id,
       location: row.location || '',
+      country: row.country || 'US', region: row.region || '', city: row.city || '',
       resources: parse(row.resources, []),
       skills: parse(row.skills, []),
       goals: row.goals || '',
@@ -69,6 +103,10 @@ class Engine {
       targetHours: row.target_hours || 8,
       startHour: row.start_hour == null ? 8 : row.start_hour,
       tz_offset: row.tz_offset || 0,
+      blockedHours: parse(row.blocked_hours, []),
+      goal,
+      conditions: row.conditions || '',
+      insuranceUsedOn: row.insurance_used_on || null,
       memory: parse(row.memory, { notes: [], favorites: [], avoid: [] }),
       active: !!row.active,
       createdAt: row.created_at,
@@ -76,11 +114,32 @@ class Engine {
     };
   }
 
+  static parseLocation(location) {
+    const parts = String(location || '').split(',').map(s => s.trim()).filter(Boolean);
+    return { city: parts[0] || '', region: parts[1] || '' };
+  }
+
   saveProfile(userId, input = {}) {
     const existing = this.getProfile(userId);
     const clean = (arr) => Array.isArray(arr) ? [...new Set(arr.map(s => String(s).trim().slice(0, 60)).filter(Boolean))].slice(0, 20) : [];
+    const location = String(input.location ?? existing?.location ?? '').slice(0, 120);
+    const loc = Engine.parseLocation(location);
+    const blocked = input.blockedHours !== undefined
+      ? (Array.isArray(input.blockedHours) ? input.blockedHours.map(b => ({ start: Math.min(24, Math.max(0, Number(b.start) || 0)), end: Math.min(24, Math.max(0, Number(b.end) || 0)) })).filter(b => b.end > b.start).slice(0, 6) : [])
+      : (existing?.blockedHours || []);
+    let goal = existing?.goal ? { title: existing.goal.title, targetCents: existing.goal.targetCents, byDate: existing.goal.byDate, setOn: existing.goal.setOn } : null;
+    if (input.goal !== undefined) {
+      const g = input.goal;
+      goal = g && g.title ? {
+        title: String(g.title).slice(0, 120),
+        targetCents: Math.max(100, Math.min(100_000_000, Math.round(Number(g.targetDollars) * 100) || 0)),
+        byDate: /^\d{4}-\d{2}-\d{2}$/.test(g.byDate || '') ? g.byDate : Engine.shiftDate(new Date(this.now()).toISOString().slice(0, 10), 30),
+        setOn: (existing?.goal && existing.goal.title === g.title) ? existing.goal.setOn : new Date(this.now()).toISOString().slice(0, 10),
+      } : null;
+    }
     const p = {
-      location: String(input.location ?? existing?.location ?? '').slice(0, 120),
+      location, city: loc.city, region: loc.region,
+      country: String(input.country ?? existing?.country ?? 'US').toUpperCase().slice(0, 2) || 'US',
       resources: input.resources !== undefined ? clean(input.resources) : (existing?.resources || []),
       skills: input.skills !== undefined ? clean(input.skills) : (existing?.skills || []),
       goals: String(input.goals ?? existing?.goals ?? '').slice(0, 500),
@@ -88,23 +147,66 @@ class Engine {
       targetHours: Math.min(12, Math.max(2, Number(input.targetHours ?? existing?.targetHours ?? 8) || 8)),
       startHour: Math.min(23, Math.max(0, parseInt(input.startHour ?? existing?.startHour ?? 8, 10) || 0)),
       tz_offset: Math.min(840, Math.max(-720, parseInt(input.tzOffset ?? existing?.tz_offset ?? 0, 10) || 0)),
+      blocked, goal,
+      conditions: String(input.conditions ?? existing?.conditions ?? '').slice(0, 300),
       memory: existing?.memory || { notes: [], favorites: [], avoid: [] },
       active: input.active === undefined ? (existing ? existing.active : true) : !!input.active,
     };
     const now = this.now();
     this.db.prepare(
-      `INSERT INTO profiles (user_id, location, resources, skills, goals, comfort, target_hours, start_hour, tz_offset, memory, active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(user_id) DO UPDATE SET location=excluded.location, resources=excluded.resources, skills=excluded.skills,
-         goals=excluded.goals, comfort=excluded.comfort, target_hours=excluded.target_hours, start_hour=excluded.start_hour,
-         tz_offset=excluded.tz_offset, active=excluded.active, updated_at=excluded.updated_at`
-    ).run(userId, p.location, JSON.stringify(p.resources), JSON.stringify(p.skills), p.goals, p.comfort, p.targetHours, p.startHour,
-      p.tz_offset, JSON.stringify(p.memory), p.active ? 1 : 0, existing?.createdAt || now, now);
+      `INSERT INTO profiles (user_id, location, country, region, city, resources, skills, goals, comfort, target_hours, start_hour, tz_offset, blocked_hours, goal_json, conditions, memory, active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET location=excluded.location, country=excluded.country, region=excluded.region, city=excluded.city,
+         resources=excluded.resources, skills=excluded.skills, goals=excluded.goals, comfort=excluded.comfort, target_hours=excluded.target_hours,
+         start_hour=excluded.start_hour, tz_offset=excluded.tz_offset, blocked_hours=excluded.blocked_hours, goal_json=excluded.goal_json,
+         conditions=excluded.conditions, active=excluded.active, updated_at=excluded.updated_at`
+    ).run(userId, p.location, p.country, p.region, p.city, JSON.stringify(p.resources), JSON.stringify(p.skills), p.goals, p.comfort, p.targetHours, p.startHour,
+      p.tz_offset, JSON.stringify(p.blocked), p.goal ? JSON.stringify(p.goal) : null, p.conditions, JSON.stringify(p.memory), p.active ? 1 : 0, existing?.createdAt || now, now);
     return this.getProfile(userId);
   }
 
-  _saveMemory(userId, memory) {
-    this.db.prepare('UPDATE profiles SET memory = ?, updated_at = ? WHERE user_id = ?').run(JSON.stringify(memory), this.now(), userId);
+  _saveMemory(userId, memory) { this.db.prepare('UPDATE profiles SET memory = ?, updated_at = ? WHERE user_id = ?').run(JSON.stringify(memory), this.now(), userId); }
+
+  _goalProgress(userId, goal) {
+    const r = this.db.prepare('SELECT COALESCE(SUM(earnings_cents), 0) AS c FROM daily_scores WHERE user_id = ? AND date >= ? AND date <= ?').get(userId, goal.setOn || '0000', goal.byDate || '9999');
+    return r.c;
+  }
+
+  // ── Learning: what this person actually does and earns, per play ────────
+  playStats(userId) {
+    const rows = this.db.prepare(
+      `SELECT COALESCE(t.play_id, t.title) AS key, t.title, t.status, t.earnings_cents, p.plan_json
+       FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE p.user_id = ? AND p.status = 'closed'`
+    ).all(userId);
+    const stats = {};
+    for (const r of rows) {
+      const s = stats[r.key] || (stats[r.key] = { title: r.title, attempts: 0, done: 0, earnedCents: 0, estCents: 0 });
+      s.attempts++;
+      if (r.status === 'done') {
+        s.done++;
+        s.earnedCents += r.earnings_cents;
+        try {
+          const est = (JSON.parse(r.plan_json).tasks.find(t => (t.playId || t.title) === r.key) || {}).estimatedEarnings;
+          if (est) s.estCents += Math.round(((est.low + est.high) / 2) * 100);
+        } catch (_) {}
+      }
+    }
+    for (const s of Object.values(stats)) {
+      s.doneRate = s.attempts ? s.done / s.attempts : 0;
+      s.earnRatio = s.estCents > 0 ? s.earnedCents / s.estCents : null;
+    }
+    return stats;
+  }
+
+  // ── Leagues ──────────────────────────────────────────────────────────────
+  leagueFor(userId, profile, dateKey) {
+    const have = new Set(profile.resources || []);
+    const big = ['vehicle', 'laptop', 'bike', 'handy', 'academic', 'rideshare_approved'].filter(k => have.has(k)).length;
+    let league = big === 0 ? 'bronze' : big === 1 ? 'silver' : 'gold';
+    const since = Engine.shiftDate(dateKey, -14);
+    const r = this.db.prepare('SELECT SUM(CASE WHEN rank IS NOT NULL AND rank <= 3 THEN 1 ELSE 0 END) AS podiums, MAX(streak) AS best FROM daily_scores WHERE user_id = ? AND date >= ? AND date < ? AND closed = 1').get(userId, since, dateKey);
+    if (r && ((r.podiums || 0) >= 2 || (r.best || 0) >= 7)) league = 'boss';
+    return league;
   }
 
   // ── Plans ────────────────────────────────────────────────────────────────
@@ -116,14 +218,10 @@ class Engine {
   _hydrate(row) {
     const plan = JSON.parse(row.plan_json);
     const tasks = this.db.prepare('SELECT * FROM tasks WHERE plan_id = ? ORDER BY order_num ASC').all(row.id);
-    plan.id = row.id;
-    plan.status = row.status;
-    plan.generatedAt = row.generated_at;
-    plan.closedAt = row.closed_at;
-    plan.regenerations = row.regenerations;
-    plan.tasks = plan.tasks.map((t, i) => {
-      const s = tasks[i] || {};
-      return { ...t, taskId: s.id, status: s.status || 'pending', earningsCents: s.earnings_cents || 0, note: s.note || '', completedAt: s.completed_at || null };
+    plan.id = row.id; plan.status = row.status; plan.generatedAt = row.generated_at; plan.closedAt = row.closed_at; plan.regenerations = row.regenerations;
+    plan.tasks = tasks.map((s, i) => {
+      const t = plan.tasks[i] || { title: s.title, icon: '✅', hours: s.hours, steps: [], why: '', sources: [], estimatedEarnings: { low: 0, high: 0 } };
+      return { ...t, order: s.order_num, taskId: s.id, playId: s.play_id, title: s.title, hours: s.hours, endsMin: s.ends_min, status: s.status, earningsCents: s.earnings_cents, verifiedCents: s.verified_cents || 0, note: s.note || '', completedAt: s.completed_at || null };
     });
     plan.progress = this._progress(plan);
     return plan;
@@ -133,22 +231,21 @@ class Engine {
     const done = plan.tasks.filter(t => t.status === 'done');
     const hoursDone = done.reduce((s, t) => s + (t.hours || 0), 0);
     const earningsCents = plan.tasks.reduce((s, t) => s + (t.earningsCents || 0), 0);
+    const verifiedCents = plan.tasks.reduce((s, t) => s + Math.min(t.verifiedCents || 0, t.earningsCents || 0), 0);
+    const base = { tasksDone: done.length, tasksTotal: plan.tasks.length, hoursDone, streak: plan.streak || 0 };
     return {
-      tasksDone: done.length,
-      tasksTotal: plan.tasks.length,
+      ...base,
       hoursDone: Math.round(hoursDone * 100) / 100,
       hoursTotal: Math.round(plan.tasks.reduce((s, t) => s + (t.hours || 0), 0) * 100) / 100,
-      earningsCents,
-      score: this.scoreFor({ tasksDone: done.length, tasksTotal: plan.tasks.length, hoursDone, earningsCents, streak: plan.streak || 0 }),
+      earningsCents, verifiedCents,
+      score: this.scoreFor({ ...base, earningsCents, verifiedCents }),
+      verifiedScore: this.scoreFor({ ...base, earningsCents: verifiedCents, verifiedCents }),
     };
   }
 
   recentPlayIds(userId, days = 3) {
-    const rows = this.db.prepare(
-      `SELECT DISTINCT t.play_id FROM tasks t JOIN plans p ON p.id = t.plan_id
-       WHERE p.user_id = ? AND p.generated_at >= ? AND t.play_id IS NOT NULL`
-    ).all(userId, this.now() - days * 86_400_000);
-    return rows.map(r => r.play_id);
+    return this.db.prepare(`SELECT DISTINCT t.play_id FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE p.user_id = ? AND p.generated_at >= ? AND t.play_id IS NOT NULL`)
+      .all(userId, this.now() - days * 86_400_000).map(r => r.play_id);
   }
 
   /** Generate (or return) the plan for a player's local date. */
@@ -158,90 +255,171 @@ class Engine {
     dateKey = dateKey || this.localDateKey(profile);
     const existing = this.getPlan(userId, dateKey);
     if (existing && (!force || existing.status === 'closed')) return existing;
-    if (this._generating.has(userId)) return existing; // another request is already building it
+    if (this._generating.has(userId)) return existing;
     this._generating.add(userId);
     try {
-      const plan = await this.crew.buildPlan(profile, dateKey, { recentPlayIds: this.recentPlayIds(userId) });
+      const crew = this.crewFor(userId);
+      const log = (agent, message) => this.logCrew(userId, dateKey, agent, message);
+      if (force) log('Crew', 'Rebuilding the day at your request.');
+      else log('Coach', profile.memory.tomorrowHint ? `Briefed the crew: ${profile.memory.tomorrowHint}` : 'First day. The crew is starting from what you told us.');
+      const plan = await crew.buildPlan(profile, dateKey, { recentPlayIds: this.recentPlayIds(userId), playStats: this.playStats(userId), briefCache: this.briefCache, log });
       plan.streak = this._currentStreak(userId, dateKey);
+      plan.league = this.leagueFor(userId, profile, dateKey);
       const now = this.now();
       const write = this.db.transaction(() => {
         let planId;
         if (existing) {
           this.db.prepare('DELETE FROM tasks WHERE plan_id = ?').run(existing.id);
-          this.db.prepare('UPDATE plans SET plan_json = ?, generated_by = ?, generated_at = ?, regenerations = regenerations + 1 WHERE id = ?')
-            .run(JSON.stringify(plan), plan.generatedBy, now, existing.id);
+          this.db.prepare('UPDATE plans SET plan_json = ?, generated_by = ?, generated_at = ?, regenerations = regenerations + 1 WHERE id = ?').run(JSON.stringify(plan), plan.generatedBy, now, existing.id);
           planId = existing.id;
         } else {
-          planId = this.db.prepare('INSERT INTO plans (user_id, date, status, plan_json, generated_by, generated_at) VALUES (?, ?, ?, ?, ?, ?)')
-            .run(userId, dateKey, 'open', JSON.stringify(plan), plan.generatedBy, now).lastInsertRowid;
+          planId = this.db.prepare('INSERT INTO plans (user_id, date, status, plan_json, generated_by, generated_at) VALUES (?, ?, ?, ?, ?, ?)').run(userId, dateKey, 'open', JSON.stringify(plan), plan.generatedBy, now).lastInsertRowid;
         }
-        const ins = this.db.prepare('INSERT INTO tasks (plan_id, order_num, play_id, title, hours, status, earnings_cents) VALUES (?, ?, ?, ?, ?, ?, 0)');
-        for (const t of plan.tasks) ins.run(planId, t.order, t.playId || null, t.title, t.hours, 'pending');
+        this._insertTasks(planId, plan.tasks);
       });
       write();
       const hydrated = this.getPlan(userId, dateKey);
-      this._upsertScore(userId, dateKey, hydrated);
-      if (!existing) this.notify(userId, 'plan', 'Your crew finished today\'s plan', plan.headline);
+      this._upsertScore(userId, dateKey, hydrated, profile);
+      if (!existing) {
+        this.notify(userId, 'plan', 'Your crew finished today\'s plan', plan.headline);
+        this._linkReferralDuel(userId, dateKey);
+      }
       this.onEvent(userId, 'plan_ready', { date: dateKey, headline: plan.headline });
       return hydrated;
-    } finally {
-      this._generating.delete(userId);
+    } finally { this._generating.delete(userId); }
+  }
+
+  _insertTasks(planId, tasks, startOrder = 1) {
+    const ins = this.db.prepare('INSERT INTO tasks (plan_id, order_num, play_id, title, hours, status, earnings_cents, ends_min) VALUES (?, ?, ?, ?, ?, ?, 0, ?)');
+    tasks.forEach((t, i) => ins.run(planId, startOrder + i, t.playId || null, t.title, t.hours, 'pending', Number.isFinite(t.endsMin) ? t.endsMin : null));
+  }
+
+  // ── Chat with the crew (mid-day replans) ─────────────────────────────────
+  chatHistory(userId, dateKey, limit = 30) {
+    return this.db.prepare('SELECT role, content, created_at FROM crew_messages WHERE user_id = ? AND date = ? ORDER BY created_at ASC, id ASC LIMIT ?').all(userId, dateKey, limit)
+      .map(r => ({ role: r.role, content: r.content, at: r.created_at }));
+  }
+
+  async chat(userId, message) {
+    if (!this.allows(userId, 'chat')) throw Object.assign(new Error('Chat with your crew is a Boss feature'), { status: 402 });
+    const profile = this.getProfile(userId);
+    if (!profile) throw new Error('Set up your profile first');
+    message = String(message || '').trim().slice(0, 600);
+    if (!message) throw new Error('Say something to your crew');
+    const dateKey = this.localDateKey(profile);
+    const plan = await this.ensurePlan(userId, dateKey);
+    if (plan.status === 'closed') throw new Error('Today is closed. The crew is already on tomorrow.');
+    const nowMin = this.localMinutes(profile);
+    const dayEnd = profile.startHour * 60 + profile.targetHours * 60;
+    const pendingHours = plan.tasks.filter(t => t.status === 'pending').reduce((s, t) => s + t.hours, 0);
+    const remainingHours = nowMin < dayEnd ? Math.min(pendingHours || (dayEnd - nowMin) / 60, (dayEnd - nowMin) / 60) : pendingHours;
+    const history = this.chatHistory(userId, dateKey);
+    const ins = this.db.prepare('INSERT INTO crew_messages (user_id, date, role, content, created_at) VALUES (?, ?, ?, ?, ?)');
+    ins.run(userId, dateKey, 'user', message, this.now());
+    const out = await this.crewFor(userId).chat(profile, plan, history, message, Math.max(0, remainingHours));
+    let replaced = 0;
+    if (out.action === 'replace_remaining' && out.newTasks.length) {
+      const startMin = Math.max(nowMin, Math.min(...plan.tasks.filter(t => t.status === 'pending').map(t => t.endsMin || nowMin)));
+      const laid = layoutOnClock(out.newTasks.map(t => ({ ...t, startsAt: undefined, endsAt: undefined })), startMin / 60, profile.blockedHours);
+      const keep = plan.tasks.filter(t => t.status !== 'pending');
+      const json = JSON.parse(this.db.prepare('SELECT plan_json FROM plans WHERE id = ?').get(plan.id).plan_json);
+      json.tasks = [...keep.map(t => ({ ...t, taskId: undefined, status: undefined, earningsCents: undefined, verifiedCents: undefined, note: undefined, completedAt: undefined })), ...laid].map((t, i) => ({ ...t, order: i + 1 }));
+      const tx = this.db.transaction(() => {
+        this.db.prepare("DELETE FROM tasks WHERE plan_id = ? AND status = 'pending'").run(plan.id);
+        this.db.prepare('UPDATE plans SET plan_json = ? WHERE id = ?').run(JSON.stringify(json), plan.id);
+        this.db.prepare('UPDATE tasks SET order_num = order_num WHERE plan_id = ?').run(plan.id);
+        this._insertTasks(plan.id, laid, keep.length + 1);
+      });
+      tx();
+      replaced = laid.length;
+      this.logCrew(userId, dateKey, 'Strategist', `Rebuilt the rest of the day: ${laid.map(t => t.title).join(', ')}.`);
     }
+    ins.run(userId, dateKey, 'crew', out.reply, this.now());
+    const fresh = this.getPlan(userId, dateKey);
+    this._upsertScore(userId, dateKey, fresh, profile);
+    return { reply: out.reply, replaced, plan: fresh };
   }
 
   // ── Task updates ─────────────────────────────────────────────────────────
-  updateTask(userId, taskId, { status, earningsDollars, note } = {}) {
-    const row = this.db.prepare(
-      'SELECT t.*, p.user_id, p.date, p.status AS plan_status FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE t.id = ?'
-    ).get(taskId);
+  _taskRow(userId, taskId) {
+    const row = this.db.prepare('SELECT t.*, p.user_id, p.date, p.status AS plan_status FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE t.id = ?').get(taskId);
     if (!row || row.user_id !== userId) throw new Error('Task not found');
     if (row.plan_status === 'closed') throw new Error('That day is already closed');
+    return row;
+  }
+
+  updateTask(userId, taskId, { status, earningsDollars, note } = {}) {
+    const row = this._taskRow(userId, taskId);
     const next = {
       status: ['pending', 'done', 'skipped'].includes(status) ? status : row.status,
-      earnings_cents: earningsDollars === undefined ? row.earnings_cents
-        : Math.max(0, Math.min(10_000_000, Math.round(Number(earningsDollars) * 100) || 0)),
+      earnings_cents: earningsDollars === undefined ? row.earnings_cents : Math.max(0, Math.min(10_000_000, Math.round(Number(earningsDollars) * 100) || 0)),
       note: note === undefined ? row.note : String(note).slice(0, 280),
     };
     const completedAt = next.status === 'done' ? (row.completed_at || this.now()) : null;
-    this.db.prepare('UPDATE tasks SET status = ?, earnings_cents = ?, note = ?, completed_at = ? WHERE id = ?')
-      .run(next.status, next.earnings_cents, next.note, completedAt, taskId);
-    const plan = this.getPlan(userId, row.date);
-    this._upsertScore(userId, row.date, plan);
-    this.onEvent(null, 'leaderboard', { date: row.date });
+    this.db.prepare('UPDATE tasks SET status = ?, earnings_cents = ?, note = ?, completed_at = ?, checkin_sent = 1 WHERE id = ?').run(next.status, next.earnings_cents, next.note, completedAt, taskId);
+    return this._afterTaskChange(userId, row.date);
+  }
+
+  _afterTaskChange(userId, dateKey) {
+    const plan = this.getPlan(userId, dateKey);
+    this._upsertScore(userId, dateKey, plan, this.getProfile(userId));
+    this.onEvent(null, 'leaderboard', { date: dateKey });
     return plan;
   }
 
+  /** Verify a task's earnings from a payout screenshot. */
+  async verifyReceipt(userId, taskId, imageBase64, mediaType) {
+    if (!this.allows(userId, 'receipts')) throw Object.assign(new Error('Receipt verification is a Boss feature'), { status: 402 });
+    const row = this._taskRow(userId, taskId);
+    if (!/^data:|^[A-Za-z0-9+/=]+$/.test(String(imageBase64 || '').slice(0, 64))) throw new Error('Send the image as base64');
+    if (!['image/png', 'image/jpeg', 'image/webp', 'image/gif'].includes(mediaType)) throw new Error('Use a PNG, JPEG or WebP screenshot');
+    if (imageBase64.length > 7_000_000) throw new Error('Image too large (5MB max)');
+    const sha = crypto.createHash('sha256').update(imageBase64).digest('hex');
+    if (this.db.prepare('SELECT 1 FROM receipts WHERE image_sha = ?').get(sha)) throw new Error('That screenshot was already used');
+    const result = await this.crewFor(userId).readReceipt(imageBase64, mediaType, { title: row.title });
+    if (!result.verified) return { verified: false, reason: result.reason || 'Could not confirm a payout in that image', plan: this.getPlan(userId, row.date) };
+    const cents = Math.round(result.amountDollars * 100);
+    const tx = this.db.transaction(() => {
+      this.db.prepare('INSERT INTO receipts (user_id, task_id, amount_cents, source, confidence, image_sha, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(userId, taskId, cents, result.source, result.confidence, sha, this.now());
+      this.db.prepare('UPDATE tasks SET verified_cents = verified_cents + ?, earnings_cents = MAX(earnings_cents, verified_cents + ?), status = CASE WHEN status = \'pending\' THEN \'done\' ELSE status END, completed_at = COALESCE(completed_at, ?) WHERE id = ?').run(cents, cents, this.now(), taskId);
+    });
+    tx();
+    this.logCrew(userId, row.date, 'Auditor', `Verified $${(cents / 100).toFixed(2)} from ${result.source || 'a receipt'} for ${row.title}.`);
+    return { verified: true, amountCents: cents, source: result.source, plan: this._afterTaskChange(userId, row.date) };
+  }
+
   // ── Scoring ──────────────────────────────────────────────────────────────
-  scoreFor({ tasksDone = 0, tasksTotal = 0, hoursDone = 0, earningsCents = 0, streak = 0 }) {
+  scoreFor({ tasksDone = 0, tasksTotal = 0, hoursDone = 0, earningsCents = 0, verifiedCents = 0, streak = 0 }) {
     let score = tasksDone * POINTS_PER_TASK + Math.round(hoursDone * POINTS_PER_HOUR);
-    score += Math.round(Math.min(earningsCents, EARNINGS_CAP_CENTS) / 100) * POINTS_PER_DOLLAR;
+    const verified = Math.min(verifiedCents, earningsCents, EARNINGS_CAP_CENTS);
+    const unverified = Math.max(0, Math.min(earningsCents, EARNINGS_CAP_CENTS) - verified);
+    score += Math.round(verified / 100 * POINTS_PER_DOLLAR + unverified / 100 * POINTS_PER_DOLLAR * UNVERIFIED_WEIGHT);
     if (tasksTotal > 0 && tasksDone === tasksTotal) score += FULL_DAY_BONUS;
     score += Math.min(streak, STREAK_CAP) * STREAK_BONUS;
     return score;
   }
 
   _currentStreak(userId, dateKey) {
-    // Consecutive closed days before dateKey where the player finished at least one play.
     let streak = 0;
     let cursor = Engine.shiftDate(dateKey, -1);
-    const q = this.db.prepare('SELECT tasks_done FROM daily_scores WHERE user_id = ? AND date = ? AND closed = 1');
-    for (let i = 0; i < 365; i++) {
-      const row = q.get(userId, cursor);
-      if (!row || !row.tasks_done) break;
-      streak++;
-      cursor = Engine.shiftDate(cursor, -1);
-    }
+    const q = this.db.prepare('SELECT streak FROM daily_scores WHERE user_id = ? AND date = ? AND closed = 1');
+    const row = q.get(userId, cursor);
+    // The closed row already carries the streak as of that day (insurance included).
+    if (row) streak = row.streak || 0;
     return streak;
   }
 
-  _upsertScore(userId, dateKey, plan) {
+  _upsertScore(userId, dateKey, plan, profile) {
     const p = plan.progress;
+    profile = profile || this.getProfile(userId) || {};
     this.db.prepare(
-      `INSERT INTO daily_scores (user_id, date, score, earnings_cents, tasks_done, tasks_total, hours_done, streak, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(user_id, date) DO UPDATE SET score=excluded.score, earnings_cents=excluded.earnings_cents, tasks_done=excluded.tasks_done,
-         tasks_total=excluded.tasks_total, hours_done=excluded.hours_done, streak=excluded.streak, updated_at=excluded.updated_at`
-    ).run(userId, dateKey, p.score, p.earningsCents, p.tasksDone, p.tasksTotal, p.hoursDone, plan.streak || 0, this.now());
+      `INSERT INTO daily_scores (user_id, date, score, verified_score, earnings_cents, verified_cents, league, country, region, city, tasks_done, tasks_total, hours_done, streak, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(user_id, date) DO UPDATE SET score=excluded.score, verified_score=excluded.verified_score, earnings_cents=excluded.earnings_cents, verified_cents=excluded.verified_cents,
+         league=excluded.league, country=excluded.country, region=excluded.region, city=excluded.city, tasks_done=excluded.tasks_done, tasks_total=excluded.tasks_total,
+         hours_done=excluded.hours_done, streak=excluded.streak, updated_at=excluded.updated_at`
+    ).run(userId, dateKey, p.score, p.verifiedScore, p.earningsCents, p.verifiedCents, plan.league || 'bronze', profile.country || 'US', profile.region || '', profile.city || '',
+      p.tasksDone, p.tasksTotal, p.hoursDone, plan.streak || 0, this.now());
   }
 
   // ── Day close ────────────────────────────────────────────────────────────
@@ -252,69 +430,216 @@ class Engine {
     const plan = this._hydrate(row);
     const p = plan.progress;
     const finished = p.tasksTotal > 0 && p.tasksDone === p.tasksTotal;
-    const streak = p.tasksDone > 0 ? (plan.streak || 0) + 1 : 0;
 
-    this.db.prepare('UPDATE plans SET status = ?, closed_at = ? WHERE id = ?').run('closed', this.now(), row.id);
-    this.db.prepare('UPDATE daily_scores SET streak = ?, closed = 1 WHERE user_id = ? AND date = ?').run(streak, userId, dateKey);
+    // Streak, with one free save per week so a sick day does not erase the work.
+    let streak = plan.streak || 0;
+    let insured = false;
+    if (p.tasksDone > 0) streak += 1;
+    else if (streak > 0 && (!profile.insuranceUsedOn || Engine.shiftDate(profile.insuranceUsedOn, INSURANCE_DAYS) <= dateKey)) {
+      insured = true;
+      this.db.prepare('UPDATE profiles SET insurance_used_on = ? WHERE user_id = ?').run(dateKey, userId);
+    } else streak = 0;
 
-    // The Coach learns from the day.
-    const debrief = await this.crew.debrief(profile, plan, { tasks: plan.tasks, earningsCents: p.earningsCents, hoursWorked: p.hoursDone });
+    const tx = this.db.transaction(() => {
+      this.db.prepare('UPDATE plans SET status = ?, closed_at = ? WHERE id = ?').run('closed', this.now(), row.id);
+      this.db.prepare('UPDATE daily_scores SET streak = ?, closed = 1 WHERE user_id = ? AND date = ?').run(streak, userId, dateKey);
+      this.db.prepare("UPDATE profiles SET conditions = '' WHERE user_id = ?").run(userId);
+    });
+    tx();
+
+    const debrief = await this.crewFor(userId).debrief(profile, plan, { tasks: plan.tasks, earningsCents: p.earningsCents, hoursWorked: p.hoursDone });
     const memory = profile.memory || { notes: [], favorites: [], avoid: [] };
     const merge = (a, b, cap) => [...new Set([...(b || []), ...(a || [])])].slice(0, cap);
-    const updated = {
+    this._saveMemory(userId, {
       notes: merge(memory.notes, debrief.notes, 12),
       favorites: merge(memory.favorites, debrief.favorites, 8),
-      avoid: (debrief.avoid || []).slice(0, 6),   // short-lived so plays rotate back in
+      avoid: (debrief.avoid || []).slice(0, 6),
       tomorrowHint: debrief.tomorrowHint || '',
       lastSummary: debrief.summary || '',
-    };
-    this._saveMemory(userId, updated);
-    this.db.prepare('INSERT INTO debriefs (user_id, date, summary, data, created_at) VALUES (?, ?, ?, ?, ?)')
-      .run(userId, dateKey, debrief.summary || '', JSON.stringify(debrief), this.now());
+    });
+    this.db.prepare('INSERT INTO debriefs (user_id, date, summary, data, created_at) VALUES (?, ?, ?, ?, ?)').run(userId, dateKey, debrief.summary || '', JSON.stringify(debrief), this.now());
+    this.logCrew(userId, dateKey, 'Coach', debrief.summary || 'Day closed.');
+
+    if (finished) this.awardBadge(userId, 'full_day', dateKey, 'Every play done');
+    if (streak === 7) this.awardBadge(userId, 'streak_7', dateKey, 'Seven days straight');
+    if (insured) this.notify(userId, 'insurance', 'Streak insurance used', `Nothing logged on ${dateKey}, so your ${streak}-day streak was saved. One save per week.`);
     this.notify(userId, 'close', finished ? 'Full day. Every play done.' : 'Day closed', debrief.summary || `Score ${p.score}. Tomorrow's plan is on the way.`);
-    return { plan, debrief, streak, finished };
+
+    let recap = null;
+    if (Engine.weekday(dateKey) === 0) recap = await this.writeRecap(userId, dateKey);
+    return { plan, debrief, streak, finished, insured, recap };
   }
+
+  // ── Weekly recap ─────────────────────────────────────────────────────────
+  weekSummary(userId, weekEnd) {
+    const start = Engine.shiftDate(weekEnd, -6);
+    const days = this.db.prepare('SELECT * FROM daily_scores WHERE user_id = ? AND date >= ? AND date <= ? ORDER BY date').all(userId, start, weekEnd);
+    const tasks = this.db.prepare(`SELECT t.title, t.status, t.earnings_cents FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE p.user_id = ? AND p.date >= ? AND p.date <= ?`).all(userId, start, weekEnd);
+    const skips = {};
+    for (const t of tasks) if (t.status === 'skipped') skips[t.title] = (skips[t.title] || 0) + 1;
+    const skippedMost = Object.entries(skips).sort((a, b) => b[1] - a[1])[0];
+    const best = tasks.filter(t => t.status === 'done').sort((a, b) => b.earnings_cents - a.earnings_cents)[0];
+    const ranked = days.filter(d => d.rank);
+    const half = Math.floor(ranked.length / 2);
+    const avg = (arr) => arr.length ? (arr.reduce((s, d) => s + d.rank, 0) / arr.length).toFixed(1) : null;
+    return {
+      weekEnd, start,
+      daysActive: days.filter(d => d.tasks_done > 0).length,
+      playsDone: days.reduce((s, d) => s + d.tasks_done, 0),
+      playsTotal: days.reduce((s, d) => s + d.tasks_total, 0),
+      hours: Math.round(days.reduce((s, d) => s + d.hours_done, 0) * 10) / 10,
+      earnedCents: days.reduce((s, d) => s + d.earnings_cents, 0),
+      verifiedCents: days.reduce((s, d) => s + (d.verified_cents || 0), 0),
+      bestRank: ranked.length ? Math.min(...ranked.map(d => d.rank)) : null,
+      rankTrend: half ? `${avg(ranked.slice(0, half))} -> ${avg(ranked.slice(half))}` : null,
+      bestPlay: best ? { title: best.title, earningsCents: best.earnings_cents } : null,
+      skippedMost: skippedMost ? skippedMost[0] : null,
+      skippedMostCount: skippedMost ? skippedMost[1] : 0,
+      days: days.map(d => ({ date: d.date, tasksDone: d.tasks_done, tasksTotal: d.tasks_total, earningsCents: d.earnings_cents, rank: d.rank })),
+    };
+  }
+
+  async writeRecap(userId, weekEnd) {
+    const week = this.weekSummary(userId, weekEnd);
+    if (!week.days.length) return null;
+    const recap = { ...(await this.crewFor(userId).recap(this.getProfile(userId), week)), week };
+    this.db.prepare('INSERT OR REPLACE INTO recaps (user_id, week_end, data, created_at) VALUES (?, ?, ?, ?)').run(userId, weekEnd, JSON.stringify(recap), this.now());
+    this.notify(userId, 'recap', 'Your week, from the Coach', recap.headline);
+    return recap;
+  }
+
+  recaps(userId, limit = 8) {
+    return this.db.prepare('SELECT week_end, data FROM recaps WHERE user_id = ? ORDER BY week_end DESC LIMIT ?').all(userId, limit).map(r => ({ weekEnd: r.week_end, ...JSON.parse(r.data) }));
+  }
+
+  // ── Badges ───────────────────────────────────────────────────────────────
+  awardBadge(userId, badge, dateKey, detail) {
+    const r = this.db.prepare('INSERT OR IGNORE INTO badges (user_id, badge, date, detail, created_at) VALUES (?, ?, ?, ?, ?)').run(userId, badge, dateKey, detail || '', this.now());
+    if (r.changes) this.onEvent(userId, 'badge', { badge, date: dateKey });
+    return !!r.changes;
+  }
+  badges(userId) { return this.db.prepare('SELECT badge, date, detail FROM badges WHERE user_id = ? ORDER BY created_at DESC').all(userId); }
 
   /** Crown the podium for a date once every player on that date has closed. Idempotent. */
   crownDay(dateKey) {
-    if (this.db.prepare('SELECT 1 FROM champions WHERE date = ?').get(dateKey)) return null;
     if (this.db.prepare('SELECT 1 FROM plans WHERE date = ? AND status = ?').get(dateKey, 'open')) return null;
-    const top = this.db.prepare('SELECT user_id, score FROM daily_scores WHERE date = ? AND score > 0 ORDER BY score DESC, earnings_cents DESC, hours_done DESC LIMIT 3').all(dateKey);
-    if (!top.length) return null;
+    this.settleChallenges(dateKey);
+    if (this.db.prepare('SELECT 1 FROM champions WHERE date = ?').get(dateKey)) return null;
+    const all = this.db.prepare('SELECT user_id, score FROM daily_scores WHERE date = ? AND score > 0 ORDER BY score DESC, verified_cents DESC, earnings_cents DESC, hours_done DESC').all(dateKey);
+    if (!all.length) return null;
     const tx = this.db.transaction(() => {
-      top.forEach((t, i) => {
-        this.db.prepare('INSERT OR IGNORE INTO champions (date, rank, user_id, score, created_at) VALUES (?, ?, ?, ?, ?)').run(dateKey, i + 1, t.user_id, t.score, this.now());
+      all.forEach((t, i) => {
         this.db.prepare('UPDATE daily_scores SET rank = ? WHERE user_id = ? AND date = ?').run(i + 1, t.user_id, dateKey);
+        if (i < 3) this.db.prepare('INSERT OR IGNORE INTO champions (date, rank, user_id, score, created_at) VALUES (?, ?, ?, ?, ?)').run(dateKey, i + 1, t.user_id, t.score, this.now());
       });
     });
     tx();
-    top.forEach((t, i) => this.notify(t.user_id, 'podium', i === 0 ? 'World champion of the day' : `World #${i + 1} today`, `You placed #${i + 1} in the world on ${dateKey}.`));
-    this.onEvent(null, 'champion', { date: dateKey, podium: top.map((t, i) => ({ userId: t.user_id, rank: i + 1, score: t.score })) });
-    return top;
+    all.slice(0, 3).forEach((t, i) => {
+      this.awardBadge(t.user_id, i === 0 ? 'world_champion' : 'podium', dateKey, `World #${i + 1}`);
+      this.notify(t.user_id, 'podium', i === 0 ? 'World champion of the day' : `World #${i + 1} today`, `You placed #${i + 1} in the world on ${dateKey}.`);
+    });
+    this.onEvent(null, 'champion', { date: dateKey, podium: all.slice(0, 3).map((t, i) => ({ userId: t.user_id, rank: i + 1, score: t.score })) });
+    return all.slice(0, 3);
+  }
+
+  // ── Head-to-head challenges ──────────────────────────────────────────────
+  findUser(nameOrEmail) {
+    const q = String(nameOrEmail || '').trim();
+    if (!q) return null;
+    return this.db.prepare('SELECT id, display_name, email FROM users WHERE lower(email) = lower(?) OR lower(display_name) = lower(?) LIMIT 1').get(q, q) || null;
+  }
+
+  createChallenge(challengerId, opponentQuery, dateKey, { autoAccept = false } = {}) {
+    const opp = this.findUser(opponentQuery);
+    if (!opp) throw new Error('No player by that name or email');
+    if (opp.id === challengerId) throw new Error('You cannot challenge yourself');
+    const dup = this.db.prepare("SELECT id FROM challenges WHERE date = ? AND status IN ('pending','accepted') AND ((challenger_id = ? AND opponent_id = ?) OR (challenger_id = ? AND opponent_id = ?))").get(dateKey, challengerId, opp.id, opp.id, challengerId);
+    if (dup) throw new Error('You already have a challenge with them that day');
+    const r = this.db.prepare('INSERT INTO challenges (challenger_id, opponent_id, date, status, created_at) VALUES (?, ?, ?, ?, ?)').run(challengerId, opp.id, dateKey, autoAccept ? 'accepted' : 'pending', this.now());
+    const me = this.db.prepare('SELECT display_name FROM users WHERE id = ?').get(challengerId);
+    this.notify(opp.id, 'challenge', autoAccept ? `${me.display_name} is your rival today` : `${me.display_name} challenged you`, autoAccept ? `Head-to-head on ${dateKey}. Higher score wins.` : `Head-to-head on ${dateKey}. Accept in the World tab.`);
+    return this.challenge(r.lastInsertRowid);
+  }
+
+  respondChallenge(userId, id, accept) {
+    const c = this.db.prepare('SELECT * FROM challenges WHERE id = ?').get(id);
+    if (!c || c.opponent_id !== userId) throw new Error('Challenge not found');
+    if (c.status !== 'pending') throw new Error('Already answered');
+    this.db.prepare('UPDATE challenges SET status = ? WHERE id = ?').run(accept ? 'accepted' : 'declined', id);
+    if (accept) this.notify(c.challenger_id, 'challenge', 'Challenge accepted', `It is on for ${c.date}.`);
+    return this.challenge(id);
+  }
+
+  challenge(id) {
+    const c = this.db.prepare(`SELECT c.*, a.display_name AS challenger_name, b.display_name AS opponent_name FROM challenges c
+      LEFT JOIN users a ON a.id = c.challenger_id LEFT JOIN users b ON b.id = c.opponent_id WHERE c.id = ?`).get(id);
+    return c && { id: c.id, date: c.date, status: c.status, challengerId: c.challenger_id, challengerName: c.challenger_name, opponentId: c.opponent_id, opponentName: c.opponent_name, winnerId: c.winner_id, challengerScore: c.challenger_score, opponentScore: c.opponent_score };
+  }
+
+  challenges(userId, limit = 20) {
+    return this.db.prepare('SELECT id FROM challenges WHERE challenger_id = ? OR opponent_id = ? ORDER BY date DESC, id DESC LIMIT ?').all(userId, userId, limit).map(r => this.challenge(r.id));
+  }
+
+  settleChallenges(dateKey) {
+    const rows = this.db.prepare("SELECT * FROM challenges WHERE date = ? AND status = 'accepted'").all(dateKey);
+    for (const c of rows) {
+      const open = this.db.prepare("SELECT 1 FROM plans WHERE date = ? AND status = 'open' AND user_id IN (?, ?)").get(dateKey, c.challenger_id, c.opponent_id);
+      if (open) continue;
+      const sc = (uid) => (this.db.prepare('SELECT score FROM daily_scores WHERE user_id = ? AND date = ?').get(uid, dateKey) || {}).score || 0;
+      const a = sc(c.challenger_id), b = sc(c.opponent_id);
+      const winner = a === b ? null : (a > b ? c.challenger_id : c.opponent_id);
+      this.db.prepare('UPDATE challenges SET status = ?, winner_id = ?, challenger_score = ?, opponent_score = ?, settled_at = ? WHERE id = ?').run('settled', winner, a, b, this.now(), c.id);
+      for (const uid of [c.challenger_id, c.opponent_id]) {
+        const won = winner === uid;
+        if (won) this.awardBadge(uid, 'duel_win', dateKey, 'Won a head-to-head');
+        this.notify(uid, 'challenge', winner ? (won ? 'You won the head-to-head' : 'You lost the head-to-head') : 'Head-to-head tied', `${a} vs ${b} on ${dateKey}.`);
+      }
+    }
+    // Anything still pending after the day is gone expires.
+    this.db.prepare("UPDATE challenges SET status = 'expired' WHERE date = ? AND status = 'pending'").run(dateKey);
+  }
+
+  _linkReferralDuel(userId, dateKey) {
+    const u = this.db.prepare('SELECT referred_by FROM users WHERE id = ?').get(userId);
+    if (!u || !u.referred_by) return;
+    const referrer = this.db.prepare('SELECT id, display_name FROM users WHERE referral_code = ?').get(u.referred_by);
+    if (!referrer || referrer.id === userId) return;
+    try { this.createChallenge(referrer.id, referrer.id && this.db.prepare('SELECT email FROM users WHERE id = ?').get(userId).email, dateKey, { autoAccept: true }); } catch (_) {}
+    this.db.prepare('UPDATE users SET referred_by = NULL WHERE id = ?').run(userId); // one duel per invite
+    this.awardBadge(referrer.id, 'recruiter', dateKey, 'Brought a rival in');
   }
 
   // ── Leaderboards ─────────────────────────────────────────────────────────
-  leaderboard(dateKey, limit = 100) {
+  /**
+   * opts: { scope: 'world'|'country'|'region'|'city', league?, mode: 'all'|'verified', viewer?: profile }
+   */
+  leaderboard(dateKey, { scope = 'world', league = null, mode = 'all', viewer = null, limit = 100 } = {}) {
+    const where = ['s.date = ?'];
+    const args = [dateKey];
+    if (scope !== 'world' && viewer) {
+      if (scope === 'country') { where.push('s.country = ?'); args.push(viewer.country); }
+      if (scope === 'region') { where.push('s.country = ? AND s.region = ?'); args.push(viewer.country, viewer.region); }
+      if (scope === 'city') { where.push('s.country = ? AND s.region = ? AND s.city = ?'); args.push(viewer.country, viewer.region, viewer.city); }
+    }
+    if (league && LEAGUES.includes(league)) { where.push('s.league = ?'); args.push(league); }
+    const scoreCol = mode === 'verified' ? 's.verified_score' : 's.score';
     return this.db.prepare(
-      `SELECT s.*, u.display_name, p.location FROM daily_scores s
-       LEFT JOIN users u ON u.id = s.user_id LEFT JOIN profiles p ON p.user_id = s.user_id
-       WHERE s.date = ? ORDER BY s.score DESC, s.earnings_cents DESC, s.hours_done DESC LIMIT ?`
-    ).all(dateKey, limit).map((r, i) => ({
-      rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend', location: r.location || '',
-      score: r.score, earningsCents: r.earnings_cents, earningsVerified: false,
+      `SELECT s.*, u.display_name, p.location FROM daily_scores s LEFT JOIN users u ON u.id = s.user_id LEFT JOIN profiles p ON p.user_id = s.user_id
+       WHERE ${where.join(' AND ')} ORDER BY ${scoreCol} DESC, s.verified_cents DESC, s.earnings_cents DESC, s.hours_done DESC LIMIT ?`
+    ).all(...args, limit).map((r, i) => ({
+      rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend', location: r.location || '', league: r.league,
+      score: mode === 'verified' ? r.verified_score : r.score, verifiedScore: r.verified_score,
+      earningsCents: r.earnings_cents, verifiedCents: r.verified_cents, earningsVerified: r.verified_cents > 0 && r.verified_cents >= r.earnings_cents,
       tasksDone: r.tasks_done, tasksTotal: r.tasks_total, hoursDone: r.hours_done, streak: r.streak, closed: !!r.closed,
     }));
   }
 
   allTimeLeaderboard(limit = 50) {
     return this.db.prepare(
-      `SELECT s.user_id, SUM(s.score) AS total_score, SUM(s.earnings_cents) AS total_earnings, COUNT(*) AS days,
+      `SELECT s.user_id, SUM(s.score) AS total_score, SUM(s.earnings_cents) AS total_earnings, SUM(s.verified_cents) AS total_verified, COUNT(*) AS days,
               MAX(s.streak) AS best_streak, SUM(CASE WHEN s.rank = 1 THEN 1 ELSE 0 END) AS wins, u.display_name
        FROM daily_scores s LEFT JOIN users u ON u.id = s.user_id GROUP BY s.user_id ORDER BY total_score DESC LIMIT ?`
-    ).all(limit).map((r, i) => ({
-      rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend',
-      totalScore: r.total_score, totalEarningsCents: r.total_earnings, days: r.days, bestStreak: r.best_streak, wins: r.wins,
-    }));
+    ).all(limit).map((r, i) => ({ rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend', totalScore: r.total_score, totalEarningsCents: r.total_earnings, totalVerifiedCents: r.total_verified, days: r.days, bestStreak: r.best_streak, wins: r.wins }));
   }
 
   podium(dateKey) {
@@ -322,27 +647,56 @@ class Engine {
       .map(p => ({ rank: p.rank, userId: p.user_id, score: p.score, displayName: p.display_name || 'Legend' }));
   }
 
+  /** Yesterday's world champion and what they actually did. Public, by design: it is the best onboarding there is. */
+  championPlan(dateKey) {
+    const c = this.db.prepare('SELECT c.user_id, c.score, u.display_name, p.location FROM champions c LEFT JOIN users u ON u.id = c.user_id LEFT JOIN profiles p ON p.user_id = c.user_id WHERE c.date = ? AND c.rank = 1').get(dateKey);
+    if (!c) return null;
+    const plan = this.getPlan(c.user_id, dateKey);
+    if (!plan) return null;
+    return {
+      date: dateKey, displayName: c.display_name || 'Legend', location: c.location || '', score: c.score, headline: plan.headline,
+      earningsCents: plan.progress.earningsCents, verifiedCents: plan.progress.verifiedCents,
+      tasks: plan.tasks.map(t => ({ icon: t.icon, title: t.title, hours: t.hours, status: t.status, earningsCents: t.earningsCents, verified: t.verifiedCents > 0 })),
+    };
+  }
+
   myRank(userId, dateKey) {
-    const me = this.db.prepare('SELECT score FROM daily_scores WHERE user_id = ? AND date = ?').get(userId, dateKey);
+    const me = this.db.prepare('SELECT score, league FROM daily_scores WHERE user_id = ? AND date = ?').get(userId, dateKey);
     if (!me) return null;
     const ahead = this.db.prepare('SELECT COUNT(*) AS c FROM daily_scores WHERE date = ? AND score > ?').get(dateKey, me.score).c;
     const total = this.db.prepare('SELECT COUNT(*) AS c FROM daily_scores WHERE date = ?').get(dateKey).c;
-    return { rank: ahead + 1, of: total, score: me.score };
+    const leagueAhead = this.db.prepare('SELECT COUNT(*) AS c FROM daily_scores WHERE date = ? AND league = ? AND score > ?').get(dateKey, me.league, me.score).c;
+    const leagueTotal = this.db.prepare('SELECT COUNT(*) AS c FROM daily_scores WHERE date = ? AND league = ?').get(dateKey, me.league).c;
+    return { rank: ahead + 1, of: total, score: me.score, league: me.league, leagueRank: leagueAhead + 1, leagueOf: leagueTotal };
   }
 
   history(userId, limit = 30) {
     const rows = this.db.prepare('SELECT * FROM daily_scores WHERE user_id = ? ORDER BY date DESC LIMIT ?').all(userId, limit);
     const byDate = new Map(this.db.prepare('SELECT date, summary FROM debriefs WHERE user_id = ?').all(userId).map(d => [d.date, d.summary]));
-    return rows.map(r => ({ date: r.date, score: r.score, earningsCents: r.earnings_cents, tasksDone: r.tasks_done, tasksTotal: r.tasks_total, hoursDone: r.hours_done, streak: r.streak, rank: r.rank, closed: !!r.closed, summary: byDate.get(r.date) || '' }));
+    return rows.map(r => ({ date: r.date, score: r.score, verifiedScore: r.verified_score, earningsCents: r.earnings_cents, verifiedCents: r.verified_cents, tasksDone: r.tasks_done, tasksTotal: r.tasks_total, hoursDone: r.hours_done, streak: r.streak, rank: r.rank, league: r.league, closed: !!r.closed, summary: byDate.get(r.date) || '' }));
   }
 
   stats(userId) {
-    const r = this.db.prepare('SELECT COUNT(*) AS days, COALESCE(SUM(earnings_cents),0) AS earned, COALESCE(SUM(score),0) AS score, COALESCE(MAX(streak),0) AS best_streak, SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) AS wins FROM daily_scores WHERE user_id = ? AND closed = 1').get(userId);
-    return { days: r.days, earnedCents: r.earned, totalScore: r.score, bestStreak: r.best_streak, wins: r.wins || 0 };
+    const r = this.db.prepare('SELECT COUNT(*) AS days, COALESCE(SUM(earnings_cents),0) AS earned, COALESCE(SUM(verified_cents),0) AS verified, COALESCE(SUM(score),0) AS score, COALESCE(MAX(streak),0) AS best_streak, SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) AS wins FROM daily_scores WHERE user_id = ? AND closed = 1').get(userId);
+    const duels = this.db.prepare("SELECT SUM(CASE WHEN winner_id = ? THEN 1 ELSE 0 END) AS won, COUNT(*) AS played FROM challenges WHERE status = 'settled' AND (challenger_id = ? OR opponent_id = ?)").get(userId, userId, userId);
+    return { days: r.days, earnedCents: r.earned, verifiedCents: r.verified, totalScore: r.score, bestStreak: r.best_streak, wins: r.wins || 0, duelsWon: duels.won || 0, duelsPlayed: duels.played || 0, tier: this.tierOf(userId) };
+  }
+
+  // ── Check-ins after each time block ──────────────────────────────────────
+  sendCheckins(profile, today) {
+    const plan = this.db.prepare("SELECT id FROM plans WHERE user_id = ? AND date = ? AND status = 'open'").get(profile.userId, today);
+    if (!plan) return 0;
+    const nowMin = this.localMinutes(profile);
+    const due = this.db.prepare("SELECT id, title, ends_min FROM tasks WHERE plan_id = ? AND status = 'pending' AND checkin_sent = 0 AND ends_min IS NOT NULL AND ends_min + ? <= ?").all(plan.id, CHECKIN_GRACE_MIN, nowMin);
+    for (const t of due) {
+      this.db.prepare('UPDATE tasks SET checkin_sent = 1 WHERE id = ?').run(t.id);
+      this.onEvent(profile.userId, 'checkin', { taskId: t.id, title: t.title });
+      if (this.push) this.push.send(profile.userId, { title: `How did "${t.title}" go?`, body: 'Tap to mark it done and log what you earned.', kind: 'checkin', url: '/', taskId: t.id }).catch(() => {});
+    }
+    return due.length;
   }
 
   // ── Scheduler ────────────────────────────────────────────────────────────
-  /** Runs every few minutes: closes finished days, then makes sure today's plan is waiting by wake-up. */
   async tick() {
     const rows = this.db.prepare('SELECT * FROM profiles WHERE active = 1').all();
     const touched = new Set();
@@ -353,6 +707,7 @@ class Engine {
         const stale = this.db.prepare('SELECT date FROM plans WHERE user_id = ? AND status = ? AND date < ?').all(profile.userId, 'open', today);
         for (const s of stale) { await this.closeDay(profile.userId, s.date); touched.add(s.date); }
         if (this.localHour(profile) >= PLAN_READY_HOUR && !this.getPlan(profile.userId, today)) await this.ensurePlan(profile.userId, today);
+        this.sendCheckins(profile, today);
       } catch (e) { console.error('[tick]', profile.userId, e.message); }
     }
     for (const d of touched) { try { this.crownDay(d); } catch (e) { console.error('[crown]', d, e.message); } }
@@ -361,8 +716,13 @@ class Engine {
        WHERE c.date IS NULL AND s.date < ? AND NOT EXISTS (SELECT 1 FROM plans p WHERE p.date = s.date AND p.status = 'open')`
     ).all(new Date(this.now()).toISOString().slice(0, 10));
     for (const p of pending) { try { this.crownDay(p.date); } catch (e) { console.error('[crown]', p.date, e.message); } }
+    // Challenges older than two days settle with whatever scores exist.
+    const twoDaysAgo = Engine.shiftDate(new Date(this.now()).toISOString().slice(0, 10), -2);
+    for (const c of this.db.prepare("SELECT DISTINCT date FROM challenges WHERE status IN ('accepted','pending') AND date <= ?").all(twoDaysAgo)) {
+      try { this.settleChallenges(c.date); } catch (e) { console.error('[duel]', c.date, e.message); }
+    }
   }
 }
 
 module.exports = Engine;
-module.exports.constants = { EARNINGS_CAP_CENTS, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY };
+module.exports.constants = { EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };
