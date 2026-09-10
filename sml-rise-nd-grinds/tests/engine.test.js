@@ -10,6 +10,8 @@ const { buildOfflinePlan, PLAYS, layoutOnClock, parseClock } = require('../src/p
 
 const C = Engine.constants;
 let clock, db, engine, events, pushes;
+// Mark a play done AND get the player's own bot to approve it; points only exist after approval.
+const finish = async (uid, taskId, opts = {}) => { engine.updateTask(uid, taskId, { status: 'done', ...opts }); return (await engine.requestApproval(uid, taskId, { note: opts.note || 'Did it start to finish, met the client at their place, finished on time. Logged what it paid; if nothing is logged it paid nothing today.' })).plan; };
 
 function addUser(id, name, extra = {}) {
   db.prepare("INSERT INTO users (id, email, display_name, password_hash, tier, referral_code, referred_by, created_at) VALUES (?, ?, ?, 'x', ?, ?, ?, 0)")
@@ -140,7 +142,14 @@ describe('tasks, scoring and the world leaderboard', () => {
     const t = plan.tasks[0];
     expect(t.points).toBe(engine.taskPoints(t.difficulty, t.hours));
     expect(engine.taskPoints(10, 4)).toBe(10_000);
-    const updated = engine.updateTask('u_a', t.taskId, { status: 'done', earningsDollars: 45.5, note: 'two moves' });
+    const pendingPlan = engine.updateTask('u_a', t.taskId, { status: 'done', earningsDollars: 45.5, note: 'two moves' });
+    expect(pendingPlan.progress).toMatchObject({ tasksDone: 0, awaitingApproval: 1, score: 0, pendingPoints: t.points, loggedCents: 4550 });
+    expect(pendingPlan.tasks[0]).toMatchObject({ approval: 'pending', points: 0 });
+    const rejected = await engine.requestApproval('u_a', t.taskId, { note: 'did it' });
+    expect(rejected.approved).toBe(false);
+    expect(rejected.plan.tasks[0].approval).toBe('rejected');
+    const updated = await finish('u_a', t.taskId, { earningsDollars: 45.5 });
+    expect(updated.tasks[0]).toMatchObject({ approval: 'approved', graded: true });
     expect(updated.progress.earningsCents).toBe(4550);
     expect(updated.progress.taskPoints).toBe(t.points);
     expect(updated.progress.score).toBe(t.points + Math.round(45.5 * C.UNVERIFIED_POINTS_PER_DOLLAR));
@@ -196,9 +205,9 @@ describe('tasks, scoring and the world leaderboard', () => {
     engine.saveProfile('u_a', { location: 'Atlanta, GA', resources: ['vehicle'], tzOffset: -240 });
     engine.saveProfile('u_b', { location: 'Austin, TX', resources: [], tzOffset: -240 });
     const planA = await engine.ensurePlan('u_a');
-    engine.updateTask('u_a', planA.tasks[0].taskId, { status: 'done', earningsDollars: 20 });
+    await finish('u_a', planA.tasks[0].taskId, {earningsDollars: 20 });
     const planB = await engine.ensurePlan('u_b');
-    for (const t of planB.tasks) engine.updateTask('u_b', t.taskId, { status: 'done', earningsDollars: 10 });
+    for (const t of planB.tasks) await finish('u_b', t.taskId, {earningsDollars: 10 });
     const day = engine.localDateKey(engine.getProfile('u_a'));
     const lb = engine.leaderboard(day);
     expect(lb.map(r => r.userId)).toEqual(['u_b', 'u_a']);
@@ -215,7 +224,7 @@ describe('chat with the crew', () => {
     engine.saveProfile('u_a', { resources: ['laptop', 'vehicle'], tzOffset: 0, startHour: 8, targetHours: 8 });
     clock = Date.parse('2026-09-09T11:00:00Z');
     const plan = await engine.ensurePlan('u_a');
-    engine.updateTask('u_a', plan.tasks[0].taskId, { status: 'done', earningsDollars: 30 });
+    await finish('u_a', plan.tasks[0].taskId, {earningsDollars: 30 });
     const a = await engine.chat('u_a', 'what is next?');
     expect(a.replaced).toBe(0);
     expect(a.reply).toMatch(/Next up/);
@@ -245,7 +254,7 @@ describe('challenges and invites', () => {
     engine.respondChallenge('u_b', c.id, true);
     const pa = await engine.ensurePlan('u_a'); const pb = await engine.ensurePlan('u_b');
     engine.updateTask('u_a', pa.tasks[0].taskId, { status: 'done' });
-    engine.updateTask('u_b', pb.tasks[0].taskId, { status: 'done', earningsDollars: 50 });
+    await finish('u_b', pb.tasks[0].taskId, {earningsDollars: 50 });
     clock += 86_400_000;
     await engine.tick();
     const settled = engine.challenges('u_a')[0];
@@ -271,9 +280,9 @@ describe('closing the day', () => {
     engine.saveProfile('u_a', { resources: ['vehicle'], tzOffset: -240 });
     engine.saveProfile('u_b', { resources: ['bike'], tzOffset: -240 });
     const planA = await engine.ensurePlan('u_a');
-    engine.updateTask('u_a', planA.tasks[0].taskId, { status: 'done', earningsDollars: 20 });
+    await finish('u_a', planA.tasks[0].taskId, {earningsDollars: 20 });
     const planB = await engine.ensurePlan('u_b');
-    for (const t of planB.tasks) engine.updateTask('u_b', t.taskId, { status: 'done', earningsDollars: 10 });
+    for (const t of planB.tasks) await finish('u_b', t.taskId, {earningsDollars: 10 });
     return engine.localDateKey(engine.getProfile('u_a'));
   }
 
@@ -351,12 +360,11 @@ describe('closing the day', () => {
     const t = engine.addTask('u_a', plan.date, { title: 'Indeed: warehouse shift', icon: '🎯', category: 'gig', hours: 4, difficulty: 8, steps: ['go'], why: 'found', sources: ['https://indeed.com/x'], gigUrl: 'https://indeed.com/x', estimatedEarnings: { low: 60, high: 90 } });
     expect(t).toMatchObject({ difficulty: 8, points: 8000, gigUrl: 'https://indeed.com/x', status: 'pending' });
     expect(t.startsMin).toBeGreaterThanOrEqual(plan.tasks[plan.tasks.length - 1].endsMin);
-    engine.crew.gradeTask = async () => ({ difficulty: 10, reason: 'Twelve-hour double shift.' });
+    engine.crew.approveTask = async () => ({ approved: true, difficulty: 10, reason: 'Twelve-hour double shift, verified.' });
     Object.defineProperty(engine.crew, 'online', { get: () => true });
-    engine.updateTask('u_a', t.taskId, { status: 'done', earningsDollars: 150, note: 'brutal' });
-    await new Promise(r => setTimeout(r, 20));
+    await finish('u_a', t.taskId, { earningsDollars: 150, note: 'brutal' });
     const fresh = engine.getPlan('u_a', plan.date).tasks.find(x => x.taskId === t.taskId);
-    expect(fresh).toMatchObject({ graded: true, difficulty: 10, points: 10_000 });
+    expect(fresh).toMatchObject({ graded: true, difficulty: 10, points: 10_000, approval: 'approved' });
     expect(engine.crewLog('u_a', plan.date).some(l => l.agent === 'Auditor' && /10\/10/.test(l.message))).toBe(true);
     expect(() => engine.addTask('u_a', '2020-01-01', { title: 'x', hours: 1 })).toThrow(/No plan/);
   });
@@ -365,7 +373,7 @@ describe('closing the day', () => {
     clock = Date.parse('2026-09-13T12:00:00Z'); // Sunday
     engine.saveProfile('u_a', { resources: [], tzOffset: 0 });
     const plan = await engine.ensurePlan('u_a');
-    engine.updateTask('u_a', plan.tasks[0].taskId, { status: 'done', earningsDollars: 40 });
+    await finish('u_a', plan.tasks[0].taskId, {earningsDollars: 40 });
     engine.updateTask('u_a', plan.tasks[1].taskId, { status: 'skipped' });
     const r = await engine.closeDay('u_a', '2026-09-13');
     expect(r.recap.headline).toMatch(/1 active day/);

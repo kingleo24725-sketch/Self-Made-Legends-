@@ -209,6 +209,10 @@ function createApp(opts = {}) {
     const { status, earningsDollars, note } = req.body || {};
     try { res.json({ plan: engine.updateTask(req.user.id, parseInt(req.params.taskId, 10), { status, earningsDollars, note }) }); } catch (e) { fail(res, e); }
   });
+  app.post('/api/tasks/:taskId/approve', requireUser, express.json({ limit: '8mb' }), wrap(async (req, res) => {
+    const { note, image, mediaType } = req.body || {};
+    try { res.json(await engine.requestApproval(req.user.id, parseInt(req.params.taskId, 10), { note, imageBase64: image ? String(image).replace(/^data:[^;]+;base64,/, '') : null, mediaType: mediaType || 'image/jpeg' })); } catch (e) { fail(res, e); }
+  }));
   app.post('/api/tasks/:taskId/receipt', requireUser, express.json({ limit: '8mb' }), wrap(async (req, res) => {
     const { image, mediaType } = req.body || {};
     try { res.json(await engine.verifyReceipt(req.user.id, parseInt(req.params.taskId, 10), String(image || '').replace(/^data:[^;]+;base64,/, ''), mediaType)); } catch (e) { fail(res, e); }

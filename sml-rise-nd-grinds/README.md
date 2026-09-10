@@ -55,6 +55,8 @@ The **owner console** at `/admin.html` (needs `ADMIN_KEY`) shows revenue, sets f
 
 ## Scoring
 
+**Nobody gets points until their own bot approves the work.** Marking a play done puts it in front of your Self-Made Legends bot at zero points. A receipt screenshot approves it on the spot. Otherwise you tell the bot what you did, add a photo of the work if you have one, and the Auditor decides: approve and grade, or send it back with exactly what is missing. Approved points count for the leaderboard, the streak, and the Legend Fee. Work that is done but not yet approved still counts as showing up, so it never earns the idle penalty.
+
 Your Self-Made Legends bot grades every play 1 to 10 on how hard it really was: skill, effort, risk, and how competitive the gig is. Easy work earns little. Hard work earns a lot. When the crew is online the Auditor regrades a play after you finish it, using your notes and what you earned.
 
 | Source | Points |

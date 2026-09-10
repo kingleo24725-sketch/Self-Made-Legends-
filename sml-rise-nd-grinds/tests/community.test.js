@@ -11,13 +11,14 @@ const Community = require('../src/community');
 const University = require('../src/university');
 
 let clock, db, engine, money, community, events;
+const finish = async (uid, taskId, opts = {}) => { engine.updateTask(uid, taskId, { status: 'done', ...opts }); return (await engine.requestApproval(uid, taskId, { note: opts.note || 'Did it start to finish, met the client at their place, finished on time. Logged what it paid; if nothing is logged it paid nothing today.' })).plan; };
 function addUser(id, name, extra = {}) {
   db.prepare("INSERT INTO users (id, email, display_name, password_hash, tier, referral_code, created_at) VALUES (?, ?, ?, 'x', 'allstar', ?, 0)").run(id, `${id}@x.com`, name, id.toUpperCase());
   if (extra.profile) engine.saveProfile(id, extra.profile);
 }
 async function fullDay(id, dollars = 20) {
   const plan = await engine.ensurePlan(id);
-  for (const t of plan.tasks) engine.updateTask(id, t.taskId, { status: 'done', earningsDollars: dollars });
+  for (const t of plan.tasks) await finish(id, t.taskId, {earningsDollars: dollars });
   return engine.getPlan(id, plan.date);
 }
 
@@ -69,7 +70,7 @@ describe('money', () => {
   test('the Legend Fee is computed on verified earnings only and recorded at month close', async () => {
     engine.crew.readReceipt = async () => ({ verified: true, amountDollars: 200, source: 'DoorDash', confidence: 0.9 });
     const plan = await engine.ensurePlan('u_a');
-    engine.updateTask('u_a', plan.tasks[1].taskId, { status: 'done', earningsDollars: 500 }); // self-reported: not billable
+    await finish('u_a', plan.tasks[1].taskId, {earningsDollars: 500 }); // self-reported: not billable
     await engine.verifyReceipt('u_a', plan.tasks[0].taskId, 'aGVsbG8=', 'image/png');
     await engine.closeDay('u_a', plan.date);
     const f = money.successFeeFor('u_a', '2026-09');
@@ -106,7 +107,7 @@ describe('money', () => {
 describe('feed, cards and stories', () => {
   test('finishing and verifying plays posts to the Grind Feed with first name and city', async () => {
     const plan = await engine.ensurePlan('u_a');
-    engine.updateTask('u_a', plan.tasks[0].taskId, { status: 'done', earningsDollars: 40 });
+    await finish('u_a', plan.tasks[0].taskId, {earningsDollars: 40 });
     engine.crew.readReceipt = async () => ({ verified: true, amountDollars: 60, source: 'Cash App', confidence: 0.9 });
     await engine.verifyReceipt('u_a', plan.tasks[1].taskId, 'aGVsbG8=', 'image/png');
     const feed = community.feed();
@@ -133,7 +134,7 @@ describe('feed, cards and stories', () => {
   test('a 7-day streak writes a shareable story and a badge', async () => {
     for (let i = 0; i < 7; i++) {
       const plan = await engine.ensurePlan('u_a');
-      engine.updateTask('u_a', plan.tasks[0].taskId, { status: 'done', earningsDollars: 30 });
+      await finish('u_a', plan.tasks[0].taskId, {earningsDollars: 30 });
       await engine.closeDay('u_a', plan.date);
       clock += 86_400_000;
     }
@@ -157,7 +158,7 @@ describe('the day', () => {
   test('Final Call goes out once after 8pm local with rank and gap', async () => {
     await engine.ensurePlan('u_a'); await engine.ensurePlan('u_b');
     const pa = engine.getPlan('u_a', '2026-09-09');
-    engine.updateTask('u_b', engine.getPlan('u_b', '2026-09-09').tasks[0].taskId, { status: 'done', earningsDollars: 100 });
+    await finish('u_b', engine.getPlan('u_b', '2026-09-09').tasks[0].taskId, { earningsDollars: 100 });
     expect(community.finalCall(engine.getProfile('u_a'), '2026-09-09')).toBe(false);
     clock = Date.parse('2026-09-09T20:05:00Z');
     expect(community.finalCall(engine.getProfile('u_a'), '2026-09-09')).toBe(true);
@@ -245,14 +246,14 @@ describe('brackets, challenge days, prizes, show, ideas', () => {
     expect(b.entries.find(e => e.userId === 'u_d').seed).toBe(1);
     expect(b.matches.filter(m => m.round === 1).length).toBe(2);
     // Round 1 scores: everyone plays Monday.
-    for (const u of ['u_a', 'u_b', 'u_c', 'u_d']) { const p = await engine.ensurePlan(u, '2026-09-14'); engine.updateTask(u, p.tasks[0].taskId, { status: 'done', earningsDollars: u === 'u_a' ? 1000 : 10 }); }
+    for (const u of ['u_a', 'u_b', 'u_c', 'u_d']) { const p = await engine.ensurePlan(u, '2026-09-14'); await finish(u, p.tasks[0].taskId, {earningsDollars: u === 'u_a' ? 1000 : 10 }); }
     clock = Date.parse('2026-09-15T05:00:00Z');
     await engine.tick(); // closes Monday for everyone, then advances the bracket
     b = community.ensureBracket(ws);
     expect(b.round).toBe(2);
     expect(b.entries.filter(e => e.alive).length).toBe(2);
     expect(b.entries.find(e => e.userId === 'u_a').alive).toBe(true);
-    for (const e of b.entries.filter(e => e.alive)) { const p = await engine.ensurePlan(e.userId, '2026-09-15'); engine.updateTask(e.userId, p.tasks[0].taskId, { status: 'done', earningsDollars: e.userId === 'u_a' ? 1000 : 5 }); }
+    for (const e of b.entries.filter(e => e.alive)) { const p = await engine.ensurePlan(e.userId, '2026-09-15'); await finish(e.userId, p.tasks[0].taskId, {earningsDollars: e.userId === 'u_a' ? 1000 : 5 }); }
     clock = Date.parse('2026-09-16T05:00:00Z');
     await engine.tick();
     b = community.ensureBracket(ws);
@@ -313,8 +314,8 @@ describe('brackets, challenge days, prizes, show, ideas', () => {
 
   test('women\'s board and category boards', async () => {
     const pa = await engine.ensurePlan('u_a'); const pb = await engine.ensurePlan('u_b');
-    engine.updateTask('u_a', pa.tasks[0].taskId, { status: 'done' });
-    engine.updateTask('u_b', pb.tasks[0].taskId, { status: 'done' });
+    await finish('u_a', pa.tasks[0].taskId, {});
+    await finish('u_b', pb.tasks[0].taskId, {});
     expect(engine.leaderboard('2026-09-09', { scope: 'women' }).map(r => r.userId)).toEqual(['u_a']);
     expect(engine.leaderboard('2026-09-09', { category: pa.progress.category }).some(r => r.userId === 'u_a')).toBe(true);
     clock += 86_400_000; await engine.tick();

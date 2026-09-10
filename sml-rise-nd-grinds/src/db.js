@@ -528,6 +528,9 @@ const MIGRATIONS = [
   "ALTER TABLE profiles ADD COLUMN avatar_style TEXT NOT NULL DEFAULT 'initials'",
   'ALTER TABLE profiles ADD COLUMN bio TEXT',
   'ALTER TABLE users ADD COLUMN last_seen INTEGER',
+  "ALTER TABLE tasks ADD COLUMN approval TEXT NOT NULL DEFAULT 'none'",
+  'ALTER TABLE tasks ADD COLUMN approval_reason TEXT',
+  'ALTER TABLE tasks ADD COLUMN proof_sha TEXT',
 ];
 function migrate(db) {
   for (const sql of MIGRATIONS) { try { db.exec(sql); } catch (_) { /* already applied */ } }

@@ -145,6 +145,9 @@
   .badge { display: inline-block; font-size: 0.7em; padding: 2px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--muted); margin-left: 6px; vertical-align: middle; }
   .badge.done { background: rgba(61,220,132,0.15); color: var(--green); }
   .badge.verified { background: rgba(90,169,255,0.15); color: var(--blue); }
+  .badge.pending { background: rgba(245,185,66,0.15); color: var(--gold); } .badge.rejected { background: rgba(255,107,107,0.15); color: var(--red); }
+  .approve { background: rgba(245,185,66,0.07); border: 1px dashed rgba(245,185,66,0.5); border-radius: 12px; padding: 10px 12px; margin-top: 10px; font-size: 0.9em; }
+  .approve textarea { min-height: 56px; margin: 6px 0; }
 
   .chat { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; margin-bottom: 10px; }
   .msg { max-width: 88%; padding: 10px 12px; border-radius: 14px; font-size: 0.92em; }
@@ -512,7 +515,7 @@ function renderToday() {
       <div class="headline">${esc(p.headline)}</div>
       <div class="small">Focus: <b>${esc(p.focus)}</b></div>
       <div class="stats">
-        <div class="stat"><b class="pts">${pr.score.toLocaleString()}</b><span>points of 100k</span></div>
+        <div class="stat"><b class="pts">${pr.score.toLocaleString()}</b><span>approved points${pr.pendingPoints ? ` · ${pr.pendingPoints.toLocaleString()} waiting` : ''}</span></div>
         <div class="stat"><b>${money(pr.earningsCents)}</b><span>${pr.verifiedCents ? money(pr.verifiedCents) + ' verified' : 'logged'}</span></div>
         <div class="stat"><b>#${t.rank ? t.rank.rank : '–'}</b><span>of ${t.rank ? t.rank.of : 0} world</span></div>
       </div>
@@ -559,8 +562,8 @@ function renderTask(task) {
       <div class="head" onclick="toggleTask(${task.taskId})">
         <div class="time">${esc(task.startsAt)}<br>${esc(task.endsAt)}</div>
         <div style="flex:1">
-          <div class="title">${esc(task.icon)} ${esc(task.title)} <span class="diff ${task.difficulty >= 7 ? 'hard' : task.difficulty >= 4 ? 'mid' : ''}">grade ${task.difficulty}/10${task.graded ? ' ✓' : ''}</span>${st === 'done' ? '<span class="badge done">done</span>' : st === 'skipped' ? '<span class="badge">skipped</span>' : ''}${task.verifiedCents ? '<span class="badge verified">✓ verified</span>' : ''}</div>
-          <div class="est"><span class="pts">${(task.points || 0).toLocaleString()} pts</span> · ${task.estimatedEarnings.high > 0 ? `$${task.estimatedEarnings.low}–$${task.estimatedEarnings.high}` : 'builds tomorrow'} · ${task.hours}h${task.earningsCents ? ` · logged ${money(task.earningsCents)}` : ''}</div>
+          <div class="title">${esc(task.icon)} ${esc(task.title)} <span class="diff ${task.difficulty >= 7 ? 'hard' : task.difficulty >= 4 ? 'mid' : ''}">grade ${task.difficulty}/10${task.graded ? ' ✓' : ''}</span>${st === 'done' ? (task.approval === 'approved' ? '<span class="badge done">approved</span>' : task.approval === 'rejected' ? '<span class="badge rejected">not approved</span>' : '<span class="badge pending">awaiting your bot</span>') : st === 'skipped' ? '<span class="badge">skipped</span>' : ''}${task.verifiedCents ? '<span class="badge verified">✓ verified</span>' : ''}</div>
+          <div class="est"><span class="pts">${st === 'done' && task.approval !== 'approved' ? `0 of ${(task.potentialPoints || 0).toLocaleString()} pts` : (st === 'done' ? task.points : task.potentialPoints || 0).toLocaleString() + ' pts'}</span> · ${task.estimatedEarnings.high > 0 ? `$${task.estimatedEarnings.low}–$${task.estimatedEarnings.high}` : 'builds tomorrow'} · ${task.hours}h${task.earningsCents ? ` · logged ${money(task.earningsCents)}` : ''}</div>
         </div>
       </div>
       <div class="body">
@@ -574,6 +577,7 @@ function renderTask(task) {
           <button class="btn small ${st === 'done' ? 'ghost' : ''}" onclick="setStatus(${task.taskId}, '${st === 'done' ? 'pending' : 'done'}')">${st === 'done' ? 'Undo' : '✓ Done'}</button>
           <button class="btn small ghost" onclick="setStatus(${task.taskId}, '${st === 'skipped' ? 'pending' : 'skipped'}')">${st === 'skipped' ? 'Un-skip' : 'Skip'}</button>
         </div>
+        ${st === 'done' && task.approval !== 'approved' ? `<div class="approve"><b>Your bot has to verify this before you get the ${(task.potentialPoints || 0).toLocaleString()} points.</b>${task.approval === 'rejected' ? `<div style="color:var(--red);margin-top:4px">${esc(task.approvalReason)}</div>` : '<div class="muted">Tell it what you did: where, for whom, what happened. Add a photo of the work if you have one. A payout screenshot approves it on the spot.</div>'}<textarea id="note-${task.taskId}" placeholder="Two full sets at my place this morning, both clients rebooked, paid by Cash App." maxlength="600">${esc(task.note || '')}</textarea><div class="row" style="flex-wrap:wrap"><button class="btn small" onclick="approveTask(${task.taskId})">Send to my bot</button><label class="btn small ghost">📷 Photo of the work<input type="file" accept="image/*" hidden onchange="approveTask(${task.taskId}, this)"></label></div></div>` : ''}
         ${S.today.canVerify ? `<label class="btn small ghost" style="margin-top:8px;width:100%">📸 Verify with a payout screenshot<input type="file" accept="image/*" hidden onchange="uploadReceipt(${task.taskId}, this)"></label>` : ''}
         ${task.inPerson && st === 'pending' && !S.today.safety ? `<button class="btn small ghost" style="margin-top:8px;width:100%" onclick="startSafety(${task.taskId})">🛡️ Heading out: share where I am</button>` : ''}`}
       </div>
@@ -591,7 +595,18 @@ async function setStatus(id, status) {
     const earn = $('earn-' + id); const earningsDollars = earn && earn.value !== '' ? Number(earn.value) : undefined;
     const r = await api('/api/tasks/' + id, { method: 'POST', body: { status, earningsDollars } });
     S.checkins = S.checkins.filter((x) => x !== id);
-    mergePlan(r.plan); if (status === 'done') toast('Logged. Keep going.');
+    mergePlan(r.plan); if (status === 'done') { const t = r.plan.tasks.find((x) => x.taskId === id); if (t) t._open = true; toast('Now tell your bot what you did so it can approve the points.'); }
+  } catch (err) { toast(err.message); }
+}
+async function approveTask(id, input) {
+  const note = ($('note-' + id) || {}).value || '';
+  const body = { note };
+  try {
+    if (input && input.files && input.files[0]) { const { dataUrl, type } = await shrinkImage(input.files[0]); body.image = dataUrl; body.mediaType = type; input.value = ''; }
+    toast('Your bot is checking…');
+    const r = await api('/api/tasks/' + id + '/approve', { method: 'POST', body });
+    mergePlan(r.plan);
+    toast(r.approved ? `Approved. ${r.plan.tasks.find((t) => t.taskId === id).points.toLocaleString()} points are yours.` : r.reason);
   } catch (err) { toast(err.message); }
 }
 async function logEarnings(id) {
@@ -993,6 +1008,7 @@ function connectEvents() {
   S.es.addEventListener('live', (e) => { if ($('screen-people').classList.contains('active')) loadPeople(); try { const d = JSON.parse(e.data); if (d.action === 'start' && S.user && d.room.hostId !== S.user.id) toast(`🔴 ${d.room.hostName} is live`); if (d.action === 'end' && S.people.live && !S.people.live.host && S.people.live.room.id === d.roomId) { toast('The live ended'); leaveLive(); } } catch (_) {} });
   S.es.addEventListener('friend_request', (e) => { try { const d = JSON.parse(e.data); toast(`${d.name} wants to be friends`); $('peoplePip').classList.remove('hidden'); } catch (_) {} });
   S.es.addEventListener('gigs', () => { if ($('screen-today').classList.contains('active')) loadToday(); });
+  S.es.addEventListener('approved', (e) => { try { const d = JSON.parse(e.data); toast(`Your bot approved it: ${d.points.toLocaleString()} points`); } catch (_) {} });
   S.es.addEventListener('graded', (e) => { try { const d = JSON.parse(e.data); toast(`Auditor graded it ${d.difficulty}/10: ${d.points.toLocaleString()} points`); if ($('screen-today').classList.contains('active')) loadToday(); } catch (_) {} });
   S.es.addEventListener('feed', () => { if ($('screen-world').classList.contains('active')) loadFeed('feedWorld'); });
   S.es.addEventListener('inbox', (e) => { try { const d = JSON.parse(e.data); toast(d.title); $('mePip').classList.remove('hidden'); } catch (_) {} });

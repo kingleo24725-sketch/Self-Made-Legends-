@@ -285,6 +285,37 @@ Search Craigslist gigs, Indeed (last 24h), Instawork, Qwick, Wonolo, TaskRabbit,
     return (out.gigs || []).filter(g => /^https?:\/\//.test(g.url));
   }
 
+  // ── Approval: the player's own bot verifies the work before any points ───
+  /**
+   * evidence: { note, earningsCents, verifiedCents, imageBase64?, mediaType? }
+   * Returns { approved, difficulty, reason }. Offline uses a strict, simple rule.
+   */
+  async approveTask(task, evidence = {}) {
+    const note = String(evidence.note || '').trim();
+    const earning = task.category !== 'career';
+    const offline = () => {
+      if (evidence.verifiedCents > 0) return { approved: true, difficulty: task.difficulty || 5, reason: 'Verified by receipt.' };
+      if (note.length < 25) return { approved: false, difficulty: task.difficulty || 5, reason: 'Tell your bot what you actually did: where, for whom, what happened. A sentence or two.' };
+      if (earning && !(evidence.earningsCents > 0) && !/no pay|unpaid|paid nothing|didn.t get paid|not paid|free|zero|\$0/i.test(note)) return { approved: false, difficulty: task.difficulty || 5, reason: 'Log what you earned, or say plainly that it paid nothing and why.' };
+      return { approved: true, difficulty: task.difficulty || 5, reason: evidence.imageBase64 ? 'Approved from your account and photo.' : 'Approved from your account of the work.' };
+    };
+    if (!this.client) return offline();
+    const content = [];
+    if (evidence.imageBase64) content.push({ type: 'image', source: { type: 'base64', media_type: evidence.mediaType || 'image/jpeg', data: evidence.imageBase64 } });
+    content.push({ type: 'text', text: `Decide whether this finished play should be approved for points. Approve only if the account is specific and believable for this kind of work; reject vague, copied, or implausible claims, and say exactly what is missing. Then grade difficulty 1-10 (skill, effort, risk, competition).\nPlay: ${task.title} (${task.hours}h, planned grade ${task.difficulty || 5}, category ${task.category || 'other'})\nTheir account: ${note || 'none'}\nLogged: $${((evidence.earningsCents || 0) / 100).toFixed(2)}${evidence.verifiedCents ? ` (verified $${(evidence.verifiedCents / 100).toFixed(2)})` : ''}${evidence.imageBase64 ? '\nA photo is attached as proof.' : ''}` });
+    try {
+      const res = await this.client.beta.messages.create({
+        model: MODEL, max_tokens: 1500, betas: [FALLBACK_BETA], fallbacks: 'default',
+        system: [{ type: 'text', text: CREW_RULES + '\n\nYou are the Auditor. You are this person\'s own bot: fair, strict, never fooled, never cruel.', cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content }],
+        output_config: { format: { type: 'json_schema', schema: { type: 'object', additionalProperties: false, required: ['approved', 'difficulty', 'reason'], properties: { approved: { type: 'boolean' }, difficulty: { type: 'integer', minimum: 1, maximum: 10 }, reason: { type: 'string' } } } } },
+      });
+      if (res.stop_reason === 'refusal') return offline();
+      const out = JSON.parse(res.content.filter(b => b.type === 'text').map(b => b.text).join(''));
+      return { approved: !!out.approved, difficulty: Math.max(1, Math.min(10, out.difficulty)), reason: String(out.reason || '') };
+    } catch (e) { this.log('approval failed, offline rule:', e.message); return offline(); }
+  }
+
   // ── Grading: how hard was it, really ─────────────────────────────────────
   /** Returns { difficulty 1-10, reason }. Offline keeps the planned grade. */
   async gradeTask(task, { note = '', earningsCents = 0, verifiedCents = 0 } = {}) {

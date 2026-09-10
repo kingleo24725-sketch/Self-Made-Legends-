@@ -85,7 +85,14 @@ describe('a full day through the API', () => {
     const t = today.plan.tasks[0];
     let r = await request(app).post(`/api/tasks/${t.taskId}`).set(auth(token)).send({ status: 'done', earningsDollars: 62.5, note: '3 moves' });
     expect(r.status).toBe(200);
+    expect(r.body.plan.progress).toMatchObject({ tasksDone: 0, awaitingApproval: 1, score: 0, loggedCents: 6250 });
+    r = await request(app).post(`/api/tasks/${t.taskId}/approve`).set(auth(token)).send({ note: 'short' });
+    expect(r.body.approved).toBe(false);
+    expect(r.body.reason).toMatch(/Tell your bot/);
+    r = await request(app).post(`/api/tasks/${t.taskId}/approve`).set(auth(token)).send({ note: 'Three moves across town for a family on Peach St, done by 2pm, paid cash.' });
+    expect(r.body.approved).toBe(true);
     expect(r.body.plan.progress).toMatchObject({ tasksDone: 1, earningsCents: 6250, verifiedCents: 0 });
+    expect(r.body.plan.tasks[0]).toMatchObject({ approval: 'approved', graded: true });
     expect((await request(app).post('/api/tasks/999999').set(auth(token)).send({ status: 'done' })).status).toBe(400);
     expect((await request(app).post('/api/today/regenerate').set(auth(token))).status).toBe(400);
     r = await request(app).post(`/api/tasks/${t.taskId}/receipt`).set(auth(token)).send({ image: 'data:image/png;base64,aGVsbG8=', mediaType: 'image/png' });
@@ -174,6 +181,7 @@ describe('the public side and the money side', () => {
     await request(app).post('/api/profile').set(auth(ava.token)).send({ location: 'Atlanta, GA', resources: ['beauty'], tzOffset: 0, gender: 'woman', safetyContact: 'Mom 555' });
     const today = (await request(app).get('/api/today').set(auth(ava.token))).body;
     await request(app).post(`/api/tasks/${today.plan.tasks[0].taskId}`).set(auth(ava.token)).send({ status: 'done', earningsDollars: 80 });
+    await request(app).post(`/api/tasks/${today.plan.tasks[0].taskId}/approve`).set(auth(ava.token)).send({ note: 'Two full sets at my place this morning, both clients rebooked, paid by Cash App.' });
   });
 
   test('the Grind Feed, Legend page, card, and tip all work without a session', async () => {

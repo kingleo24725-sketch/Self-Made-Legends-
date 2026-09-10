@@ -280,8 +280,10 @@ class Engine {
     plan.tasks = tasks.map((s, i) => {
       const t = plan.tasks[i] || { title: s.title, icon: '✅', hours: s.hours, steps: [], why: '', sources: [], estimatedEarnings: { low: 0, high: 0 } };
       const difficulty = s.difficulty || t.difficulty || 5;
+      const potential = s.points && s.graded ? s.points : this.taskPoints(difficulty, s.hours);
       return { ...t, order: s.order_num, taskId: s.id, playId: s.play_id, title: s.title, hours: s.hours, endsMin: s.ends_min, category: s.category || t.category || 'other', status: s.status, earningsCents: s.earnings_cents, verifiedCents: s.verified_cents || 0, note: s.note || '', completedAt: s.completed_at || null,
-        difficulty, graded: !!s.graded, gigUrl: s.gig_url || null, points: s.status === 'done' ? (s.points || this.taskPoints(difficulty, s.hours)) : this.taskPoints(difficulty, s.hours) };
+        difficulty, graded: !!s.graded, gigUrl: s.gig_url || null, approval: s.approval || 'none', approvalReason: s.approval_reason || '',
+        points: s.status !== 'done' ? potential : (s.approval === 'approved' ? (s.points || potential) : 0), potentialPoints: potential };
     });
     const ds = this.db.prepare('SELECT lesson_points, penalty, idle_streak FROM daily_scores WHERE user_id = ? AND date = ?').get(row.user_id, row.date);
     plan.lessonPoints = ds ? ds.lesson_points || 0 : 0;
@@ -292,11 +294,14 @@ class Engine {
   }
 
   _progress(plan) {
-    const done = plan.tasks.filter(t => t.status === 'done');
+    // Only what the player's own bot has approved counts. Everything else waits.
+    const done = plan.tasks.filter(t => t.status === 'done' && t.approval === 'approved');
+    const awaiting = plan.tasks.filter(t => t.status === 'done' && t.approval !== 'approved');
     const hoursDone = done.reduce((s, t) => s + (t.hours || 0), 0);
-    const earningsCents = plan.tasks.reduce((s, t) => s + (t.earningsCents || 0), 0);
-    const verifiedCents = plan.tasks.reduce((s, t) => s + Math.min(t.verifiedCents || 0, t.earningsCents || 0), 0);
+    const earningsCents = done.reduce((s, t) => s + (t.earningsCents || 0), 0);
+    const verifiedCents = done.reduce((s, t) => s + Math.min(t.verifiedCents || 0, t.earningsCents || 0), 0);
     const taskPoints = done.reduce((s, t) => s + (t.points || 0), 0);
+    const pendingPoints = awaiting.reduce((s, t) => s + (t.potentialPoints || 0), 0);
     const base = { tasksDone: done.length, tasksTotal: plan.tasks.length, hoursDone, streak: plan.streak || 0, taskPoints, lessonPoints: plan.lessonPoints || 0, penalty: plan.penalty || 0 };
     const lessonPoints = plan.lessonPoints || 0;
     const cats = {};
@@ -307,6 +312,7 @@ class Engine {
       hoursDone: Math.round(hoursDone * 100) / 100,
       hoursTotal: Math.round(plan.tasks.reduce((s, t) => s + (t.hours || 0), 0) * 100) / 100,
       earningsCents, verifiedCents, lessonPoints, taskPoints, penalty: plan.penalty || 0,
+      awaitingApproval: awaiting.length, pendingPoints, loggedCents: plan.tasks.reduce((s, t) => s + (t.earningsCents || 0), 0),
       category: category ? category[0] : 'other',
       score: this.scoreFor({ ...base, earningsCents, verifiedCents }),
       verifiedScore: this.scoreFor({ ...base, earningsCents: verifiedCents, verifiedCents }),
@@ -455,24 +461,56 @@ class Engine {
     };
     const completedAt = next.status === 'done' ? (row.completed_at || this.now()) : null;
     const points = next.status === 'done' ? (row.graded ? row.points : this.taskPoints(row.difficulty, row.hours)) : 0;
-    this.db.prepare('UPDATE tasks SET status = ?, earnings_cents = ?, note = ?, completed_at = ?, checkin_sent = 1, points = ? WHERE id = ?').run(next.status, next.earnings_cents, next.note, completedAt, points, taskId);
+    const approval = next.status !== 'done' ? 'none' : (row.approval === 'approved' ? 'approved' : 'pending');
+    this.db.prepare('UPDATE tasks SET status = ?, earnings_cents = ?, note = ?, completed_at = ?, checkin_sent = 1, points = ?, approval = ?, approval_reason = CASE WHEN ? = \'none\' THEN NULL ELSE approval_reason END WHERE id = ?').run(next.status, next.earnings_cents, next.note, completedAt, points, approval, approval, taskId);
     if (next.status !== row.status && (next.status === 'done' || next.status === 'skipped')) {
       const profile = this.getProfile(userId);
       let earnRatio = null;
       try { const est = (JSON.parse(this.db.prepare('SELECT plan_json FROM plans WHERE id = ?').get(row.plan_id).plan_json).tasks.find(t => (t.playId || t.title) === (row.play_id || row.title)) || {}).estimatedEarnings; if (est && est.high > 0 && next.status === 'done') earnRatio = next.earnings_cents / Math.round((est.low + est.high) / 2 * 100); } catch (_) {}
       this.learning.observe(userId, profile, row.play_id || row.title, { done: next.status === 'done', earnRatio });
     }
-    if (next.status === 'done' && row.status !== 'done') {
-      if (this.community) this.community.onTaskDone(userId, { title: row.title, earningsCents: next.earnings_cents, points });
-      if (this.crewFor(userId).online && !row.graded) this._grade(userId, taskId).catch(e => console.error('[grade]', e.message));
-    }
+    if (next.status === 'done' && row.status !== 'done' && approval === 'pending') this.notify(userId, 'approval', 'Your bot needs to verify that', `Tell it what you did on "${row.title}" or add a receipt. No points until it approves.`, { push: false });
     return this._afterTaskChange(userId, row.date);
+  }
+
+  /** The player asks their own bot to verify a finished play. Points only exist after approval. */
+  async requestApproval(userId, taskId, { note, imageBase64 = null, mediaType = 'image/jpeg' } = {}) {
+    const row = this._taskRow(userId, taskId);
+    if (row.status !== 'done') throw new Error('Mark it done first');
+    if (row.approval === 'approved') return { approved: true, reason: row.approval_reason || 'Already approved', plan: this.getPlan(userId, row.date) };
+    if (note !== undefined) this.db.prepare('UPDATE tasks SET note = ? WHERE id = ?').run(String(note).slice(0, 600), taskId);
+    const fresh = this._taskRow(userId, taskId); // carries the plan date the Auditor logs against
+    let sha = null;
+    if (imageBase64) {
+      if (!['image/png', 'image/jpeg', 'image/webp'].includes(mediaType)) throw new Error('Use a PNG, JPEG or WebP photo');
+      if (imageBase64.length > 7_000_000) throw new Error('Photo too large');
+      sha = crypto.createHash('sha256').update(imageBase64).digest('hex');
+      if (this.db.prepare('SELECT 1 FROM tasks WHERE proof_sha = ? AND id != ?').get(sha, taskId)) throw new Error('That photo was already used for another play');
+    }
+    const verdict = await this.crewFor(userId).approveTask({ title: fresh.title, hours: fresh.hours, difficulty: fresh.difficulty, category: fresh.category }, { note: fresh.note, earningsCents: fresh.earnings_cents, verifiedCents: fresh.verified_cents, imageBase64, mediaType });
+    return this._applyApproval(userId, fresh, verdict, sha);
+  }
+
+  _applyApproval(userId, row, verdict, sha = null, { quiet = false } = {}) {
+    if (verdict.approved) {
+      const d = Math.max(1, Math.min(10, verdict.difficulty || row.difficulty || 5));
+      const points = this.taskPoints(d, row.hours);
+      this.db.prepare("UPDATE tasks SET approval = 'approved', approval_reason = ?, difficulty = ?, points = ?, graded = 1, proof_sha = COALESCE(?, proof_sha) WHERE id = ?").run(verdict.reason || 'Approved', d, points, sha, row.id);
+      this.logCrew(userId, row.date, 'Auditor', `Approved "${row.title}" (${d}/10, ${points.toLocaleString()} points): ${verdict.reason}`);
+      if (this.community && !quiet) this.community.onTaskDone(userId, { title: row.title, earningsCents: row.earnings_cents, points });
+      this.onEvent(userId, 'approved', { taskId: row.id, points, difficulty: d });
+    } else {
+      this.db.prepare("UPDATE tasks SET approval = 'rejected', approval_reason = ? WHERE id = ?").run(verdict.reason || 'Not approved', row.id);
+      this.logCrew(userId, row.date, 'Auditor', `Not yet approved "${row.title}": ${verdict.reason}`);
+    }
+    const plan = this._afterTaskChange(userId, row.date);
+    return { approved: !!verdict.approved, reason: verdict.reason, difficulty: verdict.difficulty, plan };
   }
 
   /** The Auditor grades a finished play on how hard it really was; points follow the grade. */
   async _grade(userId, taskId) {
     const row = this.db.prepare('SELECT t.*, p.date FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE t.id = ?').get(taskId);
-    if (!row || row.status !== 'done' || row.graded) return null;
+    if (!row || row.status !== 'done' || row.graded || row.approval !== 'approved') return null;
     const g = await this.crewFor(userId).gradeTask({ title: row.title, hours: row.hours, difficulty: row.difficulty }, { note: row.note, earningsCents: row.earnings_cents, verifiedCents: row.verified_cents });
     const points = this.taskPoints(g.difficulty, row.hours);
     this.db.prepare('UPDATE tasks SET difficulty = ?, points = ?, graded = 1 WHERE id = ?').run(g.difficulty, points, taskId);
@@ -503,12 +541,15 @@ class Engine {
     const cents = Math.round(result.amountDollars * 100);
     const tx = this.db.transaction(() => {
       this.db.prepare('INSERT INTO receipts (user_id, task_id, amount_cents, source, confidence, image_sha, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(userId, taskId, cents, result.source, result.confidence, sha, this.now());
-      this.db.prepare('UPDATE tasks SET verified_cents = verified_cents + ?, earnings_cents = MAX(earnings_cents, verified_cents + ?), status = CASE WHEN status = \'pending\' THEN \'done\' ELSE status END, completed_at = COALESCE(completed_at, ?) WHERE id = ?').run(cents, cents, this.now(), taskId);
+      this.db.prepare('UPDATE tasks SET verified_cents = verified_cents + ?, earnings_cents = MAX(earnings_cents, verified_cents + ?), status = CASE WHEN status = \'pending\' THEN \'done\' ELSE status END, completed_at = COALESCE(completed_at, ?), points = CASE WHEN points = 0 THEN ? ELSE points END WHERE id = ?').run(cents, cents, this.now(), this.taskPoints(row.difficulty, row.hours), taskId);
     });
     tx();
     this.logCrew(userId, row.date, 'Auditor', `Verified $${(cents / 100).toFixed(2)} from ${result.source || 'a receipt'} for ${row.title}.`);
     if (this.community) this.community.onVerified(userId, { title: row.title }, cents, result.source);
-    return { verified: true, amountCents: cents, source: result.source, plan: this._afterTaskChange(userId, row.date) };
+    // A receipt is the strongest proof there is: the bot approves on the spot.
+    const fresh = { ...this.db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId), date: row.date };
+    if (fresh.approval !== 'approved') this._applyApproval(userId, fresh, { approved: true, difficulty: fresh.difficulty, reason: `Verified by receipt from ${result.source || 'a payout'}.` }, sha, { quiet: true });
+    return { verified: true, amountCents: cents, source: result.source, plan: this.getPlan(userId, row.date) };
   }
 
   // ── Scoring ──────────────────────────────────────────────────────────────
@@ -559,6 +600,7 @@ class Engine {
     let streak = plan.streak || 0;
     let insured = false;
     if (p.tasksDone > 0) streak += 1;
+    else if (streak > 0 && p.awaitingApproval > 0) { /* worked, unverified: streak holds, no bonus, no penalty */ }
     else if (streak > 0 && this._insuranceLeft(userId, profile, dateKey) > 0) {
       insured = true;
       this.db.prepare('UPDATE profiles SET insurance_used_on = ? WHERE user_id = ?').run(dateKey, userId);
@@ -567,7 +609,8 @@ class Engine {
 
     // Nothing done and no insurance: the day costs points, more for every idle day in a row.
     const prevIdle = (this.db.prepare('SELECT idle_streak FROM daily_scores WHERE user_id = ? AND date = ? AND closed = 1').get(userId, Engine.shiftDate(dateKey, -1)) || {}).idle_streak || 0;
-    const idleStreak = p.tasksDone > 0 || insured ? 0 : prevIdle + 1;
+    const worked = p.tasksDone > 0 || p.awaitingApproval > 0;
+    const idleStreak = worked || insured ? 0 : prevIdle + 1;
     const penalty = idleStreak ? Math.min(IDLE_PENALTY_CAP, IDLE_PENALTY * idleStreak) : 0;
     const tx = this.db.transaction(() => {
       this.db.prepare('UPDATE plans SET status = ?, closed_at = ? WHERE id = ?').run('closed', this.now(), row.id);
