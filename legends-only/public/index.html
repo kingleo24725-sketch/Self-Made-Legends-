@@ -445,7 +445,7 @@ const S = { token: null, user: null, profile: null, config: null, today: null, m
 try { S.token = localStorage.getItem('sml.token'); } catch (_) {}
 // One account per phone: a random id that lives in this browser for good.
 try { S.deviceId = localStorage.getItem('sml.device'); if (!S.deviceId) { S.deviceId = 'd_' + Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, '0')).join(''); localStorage.setItem('sml.device', S.deviceId); } } catch (_) { S.deviceId = null; }
-try { const q = new URLSearchParams(location.search); S.invite = q.get('invite'); S.ask = q.get('ask'); if (q.get('billing') === 'success') setTimeout(() => toast('Payment received. Your crew just got stronger.'), 800); if (q.get('payouts') === 'done') setTimeout(() => toast('Payout account connected. Tips go straight to you now.'), 800); } catch (_) {}
+try { const q = new URLSearchParams(location.search); S.invite = q.get('invite'); S.ask = q.get('ask'); S.buy = q.get('buy') ? { kind: q.get('buy'), pack: q.get('pack'), tier: q.get('tier') } : null; if (q.get('votes') === 'done') setTimeout(() => toast('Votes are in your pocket.'), 800); if (q.get('billing') === 'success') setTimeout(() => toast('Payment received. Your crew just got stronger.'), 800); if (q.get('payouts') === 'done') setTimeout(() => toast('Payout account connected. Tips go straight to you now.'), 800); } catch (_) {}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -484,6 +484,11 @@ function show(name) {
 
 // ── Auth ───────────────────────────────────────────────────────────────────
 S.door = 'player';
+// Apple takes 30% of digital goods bought inside an iOS app, so inside the iOS wrapper every purchase
+// (vote packs, Fan Club, memberships) opens in Safari and the web app finishes it. Web and Android stay in-app.
+function isIosApp() { try { return !!(window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'ios'); } catch (_) { return false; } }
+function openOutside(path) { const url = location.origin + path; try { if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) { window.Capacitor.Plugins.Browser.open({ url }); return; } } catch (_) {} window.open(url, '_blank'); }
+function handoff(kind, extra = '') { toast('Opening in your browser to finish. Come back here when you are done.'); openOutside(`/?buy=${kind}${extra}`); }
 function setDoor(d) { S.door = d; $('doorGrind').classList.toggle('on', d === 'player'); $('doorFan').classList.toggle('on', d === 'fan'); $('fanCity').hidden = d !== 'fan'; }
 function renderPresented(id, pb) { const el = $(id); if (!el) return; if (!pb || !pb.legend) { el.innerHTML = ''; return; } el.innerHTML = `<div class="presented"><img src="/api/avatar/${esc(pb.legend.userId)}" alt=""><div><b>Presented by ${esc(pb.legend.name)}</b>, Legend of the Month · jacket #${String(pb.legend.jacketNumber || 0).padStart(3, '0')}${pb.fans ? ` · People's Champion <b>${esc(pb.fans.name)}</b>` : ''}${pb.crew ? ` · Squad Belt: <b>${esc(pb.crew.squadName)}</b>` : ''}</div></div>`; }
 function authMode(m) {
@@ -596,7 +601,7 @@ async function followUser(id) { try { await api('/api/fans/follow', { method: 'P
 async function followSquad(id) { try { await api('/api/fans/follow', { method: 'POST', body: { type: 'squad', id } }); toast('Following the squad.'); } catch (err) { toast(err.message); } }
 async function unfollow(type, id) { await api('/api/fans/follow/' + type + '/' + id, { method: 'DELETE' }); loadToday(); }
 async function fanCallout() { try { const r = await api('/api/fans/callout', { method: 'POST', body: { legendId: $('fcLegend').value, targetId: $('fcTarget').value } }); toast(r.callout.line); sound('tick'); loadToday(); } catch (err) { toast(err.message); } }
-async function joinClub() { try { const r = await api('/api/fans/club', { method: 'POST' }); if (r.url) location.href = r.url; else { toast('Welcome to the Fan Club.'); sound('quest'); loadToday(); } } catch (err) { toast(err.message); } }
+async function joinClub() { if (isIosApp()) return handoff('club'); try { const r = await api('/api/fans/club', { method: 'POST' }); if (r.url) location.href = r.url; else { toast('Welcome to the Fan Club.'); sound('quest'); loadToday(); } } catch (err) { toast(err.message); } }
 async function becomePlayer() { if (!confirm('Flip to player? You get a bot and a plan tomorrow morning, and you start at Rookie.')) return; await api('/api/fans/become-player', { method: 'POST' }); S.fanHome = null; loadToday(); }
 // ── Season card: races, ballot, prizes ─────────────────────────────────────
 function renderSeasonCard(sz, fanView = false) {
@@ -613,7 +618,7 @@ function renderSeasonCard(sz, fanView = false) {
     <div class="small muted" style="margin-top:10px">${esc(sz.rules)} <a href="/hall-of-fame" target="_blank">The wall</a></div></div>`;
 }
 async function castVote(userId, name) { const n = prompt(`How many votes for ${name}? (you have ${S.season ? S.season.ballot.credits : '?'})`, '1'); if (!n) return; try { const r = await api('/api/season/vote', { method: 'POST', body: { userId, n: Number(n) } }); toast(`${r.n} vote${r.n === 1 ? '' : 's'} for ${name}. They have ${r.total.toLocaleString()}.`); sound('tick'); loadSeason(); if (S.fanHome) loadToday(); } catch (err) { toast(err.message); } }
-async function buyVotes(pack) { try { const r = await api('/api/season/votes/buy', { method: 'POST', body: { pack } }); if (r.url) location.href = r.url; else { toast(`${r.credited} votes added. You have ${r.credits}.`); sound('quest'); loadSeason(); if (S.fanHome) loadToday(); } } catch (err) { toast(err.message); } }
+async function buyVotes(pack) { if (isIosApp()) return handoff('votes', '&pack=' + encodeURIComponent(pack)); try { const r = await api('/api/season/votes/buy', { method: 'POST', body: { pack } }); if (r.url) location.href = r.url; else { toast(`${r.credited} votes added. You have ${r.credits}.`); sound('quest'); loadSeason(); if (S.fanHome) loadToday(); } } catch (err) { toast(err.message); } }
 async function loadSeason() { try { S.season = await api('/api/season'); const el = $('seasonCard'); if (el) el.innerHTML = renderSeasonCard(S.season).replace(/^<div class="card">|<\/div>$/g, ''); renderPresented('presentedWorld', S.season.presentedBy); } catch (_) {} }
 function renderToday() {
   const t = S.today, p = t.plan, pr = p.progress;
@@ -1237,7 +1242,7 @@ function renderTier(me, bill) {
     <h3 style="margin-top:16px">Memberships</h3><div class="small muted" style="margin-bottom:8px">Everything the crew does is free. Only two things cost money. You are <b style="color:var(--gold)">${esc(bill.tierInfo.name)}</b>.</div><div class="tier-row">${bill.tiers.map((t) => `<div class="tier ${me.tier === t ? 'on' : ''}"><b>Self-Made Legends ${short[t]}</b><div class="pts" style="font-size:1.05em">${t === 'free' ? 'Free' : money(bill.tierPrices[t]) + '/mo'}</div><div style="text-align:left;margin-top:6px">${bill.tierPerks[t].map((x) => `<div>· ${esc(x)}</div>`).join('')}</div>${bill.enabled && me.tier !== t && t !== 'free' ? `<button class="btn small" style="margin-top:8px" onclick="checkout('${t}')">Get it</button>` : ''}</div>`).join('')}</div>
     <p class="small muted" style="margin-top:8px">${bill.enabled ? 'Cancel anytime.' : 'Billing is not switched on yet. The world leaderboard stays free forever.'} <a href="/hall-of-fame" target="_blank">See the Hall of Fame</a></p>`;
 }
-async function checkout(tier) { try { const r = await api('/api/billing/checkout', { method: 'POST', body: { tier } }); location.href = r.url; } catch (err) { toast(err.message); } }
+async function checkout(tier) { if (isIosApp()) return handoff('tier', '&tier=' + encodeURIComponent(tier)); try { const r = await api('/api/billing/checkout', { method: 'POST', body: { tier } }); location.href = r.url; } catch (err) { toast(err.message); } }
 function renderPush(me) {
   const supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
   if (!me.pushEnabled) { $('pushBody').innerHTML = 'Push is not switched on for this server yet. You still get every message in your inbox here.'; return; }
@@ -1320,6 +1325,7 @@ async function boot() {
     S.user = me.user; S.profile = me.profile; S.me = me;
     connectEvents();
     show('today');
+    if (S.buy) { const b = S.buy; S.buy = null; history.replaceState(null, '', '/'); setTimeout(() => { if (b.kind === 'votes' && b.pack) buyVotes(b.pack); else if (b.kind === 'club') joinClub(); else if (b.kind === 'tier' && b.tier) checkout(b.tier); }, 600); }
   } catch (_) { show('auth'); }
 }
 boot();

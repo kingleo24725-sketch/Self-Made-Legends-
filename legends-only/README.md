@@ -63,7 +63,7 @@ Points add up all month. Money never decides merit, so the crowns are kept apart
 | **Crew of the Month** | Squad with the most combined points | The Squad Belt: the squad's name under the leaderboard for the next month, badge for every member. |
 | **Fan of the Month** | Most fan points | On the show, the Legends Only fan jacket, the badge. |
 
-**Votes.** 50¢ each, sold in packs (5 for $2.50, 20 for $10, 100 for $50) through Stripe Checkout. Every cent is platform revenue, in the ledger. You cannot vote for yourself. The ballot opens to everyone on the 2nd; Fan Club members vote from the 1st. Inside an iOS wrapper Apple treats votes as a digital good, so sell them on the web and Android.
+**Votes.** 50¢ each, sold in packs (5 for $2.50, 20 for $10, 100 for $50) through Stripe Checkout. Every cent is platform revenue, in the ledger. You cannot vote for yourself. The ballot opens to everyone on the 2nd; Fan Club members vote from the 1st. On web and Android, votes, Fan Club, and memberships are bought in the app. Inside the iOS wrapper the same buttons open Safari and the web app finishes the purchase, so Apple's 30% never applies (see `native/README.md`).
 
 **Settling.** The scheduler settles a month once every day of it has closed. Prizes for a month are set before it starts and shown on the season card; nothing changes mid-month. The owner console has the prize editor, the vote revenue, and a settle button. `/hall-of-fame` carries the wall: every Legend of the Month with jacket number, People's Champions, Squad Belts, Fans of the Month.
 
