@@ -1,10 +1,10 @@
 'use strict';
 
-// Everything that makes Rise N Grind a public thing rather than a private
+// Everything that makes Self-Made Legends a public thing rather than a private
 // planner: the live Grind Feed, shareable receipt cards, streak stories, the
 // 8pm Final Call, the Monday Money Bracket, City vs City, Challenge Days,
 // sponsored prize pools, the weekly Legend of the Week show, mentors,
-// Rise N Grind University, safety check-ins, and the crew's weekly ideas
+// Self-Made Legends University, safety check-ins, and the crew's weekly ideas
 // report to the owner.
 
 const crypto = require('crypto');
@@ -85,7 +85,7 @@ ${line(560, 580, 'HOURS', String(card.hoursDone))}
 ${line(80, 740, 'LOGGED', money(card.earningsCents), '#3ddc84')}
 ${line(560, 740, 'VERIFIED', money(card.verifiedCents), '#5aa9ff')}
 <text x="80" y="920" font-size="30" fill="#eef0f5" font-family="Helvetica,Arial,sans-serif">${card.tasksDone === card.tasksTotal && card.tasksTotal ? 'Every play done. Full day.' : 'Another day on the grind.'}</text>
-<text x="80" y="980" font-size="24" fill="#8d95a8" font-family="Helvetica,Arial,sans-serif">Think you can beat this? Rise N Grind by SML · earnings self-reported unless marked verified</text>
+<text x="80" y="980" font-size="24" fill="#8d95a8" font-family="Helvetica,Arial,sans-serif">Think you can beat this? Self-Made Legends by SML · earnings self-reported unless marked verified</text>
 </svg>`;
   }
 
@@ -144,7 +144,7 @@ ${line(560, 740, 'VERIFIED', money(card.verifiedCents), '#5aa9ff')}
     return true;
   }
 
-  // ── Rise N Grind University ──────────────────────────────────────────────
+  // ── Self-Made Legends University ──────────────────────────────────────────────
   lessonFor(userId, dateKey) {
     const passed = this.db.prepare('SELECT lesson_id FROM lesson_progress WHERE user_id = ? AND correct = 1').all(userId).map(r => r.lesson_id);
     const l = University.lessonFor(userId, dateKey, passed);
@@ -161,7 +161,7 @@ ${line(560, 740, 'VERIFIED', money(card.verifiedCents), '#5aa9ff')}
       const plan = this.engine.getPlan(userId, dateKey);
       if (plan) this.engine._upsertScore(userId, dateKey, plan);
       const passed = this.db.prepare('SELECT COUNT(*) AS c FROM lesson_progress WHERE user_id = ? AND correct = 1').get(userId).c;
-      if (passed === University.LESSONS.length) this.engine.awardBadge(userId, 'graduate', dateKey, 'Finished Rise N Grind University');
+      if (passed === University.LESSONS.length) this.engine.awardBadge(userId, 'graduate', dateKey, 'Finished Self-Made Legends University');
     }
     return { ...res, points: res.correct ? University.POINTS_PER_CORRECT : 0 };
   }

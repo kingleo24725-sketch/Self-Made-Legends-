@@ -12,7 +12,7 @@ const University = require('../src/university');
 
 let clock, db, engine, money, community, events;
 function addUser(id, name, extra = {}) {
-  db.prepare("INSERT INTO users (id, email, display_name, password_hash, tier, referral_code, created_at) VALUES (?, ?, ?, 'x', 'boss', ?, 0)").run(id, `${id}@x.com`, name, id.toUpperCase());
+  db.prepare("INSERT INTO users (id, email, display_name, password_hash, tier, referral_code, created_at) VALUES (?, ?, ?, 'x', 'allstar', ?, 0)").run(id, `${id}@x.com`, name, id.toUpperCase());
   if (extra.profile) engine.saveProfile(id, extra.profile);
 }
 async function fullDay(id, dollars = 20) {
@@ -27,7 +27,7 @@ beforeEach(() => {
   db = open(':memory:');
   const crew = new Crew({ apiKey: '' });
   const onEvent = (u, e, d) => events.push({ u, e, d });
-  engine = new Engine(db, { crew, now: () => clock, defaultTier: 'boss', onEvent });
+  engine = new Engine(db, { crew, now: () => clock, defaultTier: 'allstar', onEvent });
   money = new Money(db, { now: () => clock, env: {} });
   community = new Community(db, { engine, money, crew, now: () => clock, onEvent });
   engine.community = community;

@@ -364,10 +364,116 @@ CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS play_weights (
+  scope      TEXT NOT NULL,
+  play_key   TEXT NOT NULL,
+  done_ema   REAL NOT NULL DEFAULT 0.5,
+  earn_ema   REAL NOT NULL DEFAULT 1.0,
+  n          INTEGER NOT NULL DEFAULT 0,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (scope, play_key)
+);
+CREATE TABLE IF NOT EXISTS learning_events (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    TEXT,
+  kind       TEXT NOT NULL,
+  play_key   TEXT,
+  value      REAL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_learning_user ON learning_events (user_id);
+CREATE TABLE IF NOT EXISTS gigs (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    TEXT NOT NULL,
+  date       TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  platform   TEXT,
+  url        TEXT NOT NULL,
+  pay        TEXT,
+  location   TEXT,
+  kind       TEXT,
+  difficulty INTEGER NOT NULL DEFAULT 5,
+  hours      REAL NOT NULL DEFAULT 2,
+  why        TEXT,
+  source     TEXT NOT NULL DEFAULT 'links',
+  status     TEXT NOT NULL DEFAULT 'found',
+  task_id    INTEGER,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_gigs_user_date ON gigs (user_id, date);
+CREATE TABLE IF NOT EXISTS gig_cache (
+  cache_key  TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS avatars (
+  user_id    TEXT PRIMARY KEY,
+  mime       TEXT NOT NULL,
+  data       TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS friends (
+  a_id         TEXT NOT NULL,
+  b_id         TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'pending',
+  requested_by TEXT NOT NULL,
+  created_at   INTEGER NOT NULL,
+  PRIMARY KEY (a_id, b_id)
+);
+CREATE TABLE IF NOT EXISTS blocks (
+  user_id    TEXT NOT NULL,
+  blocked_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, blocked_id)
+);
+CREATE TABLE IF NOT EXISTS messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id    TEXT NOT NULL,
+  to_id      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  read       INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_messages_to ON messages (to_id, read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_pair ON messages (from_id, to_id, created_at DESC);
+CREATE TABLE IF NOT EXISTS calls (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id    TEXT NOT NULL,
+  to_id      TEXT NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'ringing',
+  started_at INTEGER NOT NULL,
+  ended_at   INTEGER
+);
+CREATE TABLE IF NOT EXISTS live_rooms (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  host_id    TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'live',
+  viewers    INTEGER NOT NULL DEFAULT 0,
+  peak       INTEGER NOT NULL DEFAULT 0,
+  started_at INTEGER NOT NULL,
+  ended_at   INTEGER
+);
+CREATE TABLE IF NOT EXISTS live_messages (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  room_id    INTEGER NOT NULL,
+  user_id    TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_live_messages ON live_messages (room_id, created_at);
+CREATE TABLE IF NOT EXISTS bot_ratings (
+  room_id    INTEGER NOT NULL,
+  rater_id   TEXT NOT NULL,
+  host_id    TEXT NOT NULL,
+  rating     INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (room_id, rater_id)
+);
 `;
 
 function open(file) {
-  const target = file || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'risengrind.db');
+  const target = file || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'sml-rise-nd-grinds.db');
   if (target !== ':memory:') fs.mkdirSync(path.dirname(target), { recursive: true });
   const db = new Database(target);
   db.pragma('journal_mode = WAL');
@@ -412,6 +518,16 @@ const MIGRATIONS = [
   'ALTER TABLE tasks ADD COLUMN category TEXT',
   'ALTER TABLE daily_scores ADD COLUMN category TEXT',
   'ALTER TABLE daily_scores ADD COLUMN lesson_points INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE tasks ADD COLUMN difficulty INTEGER NOT NULL DEFAULT 5',
+  'ALTER TABLE tasks ADD COLUMN points INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE tasks ADD COLUMN graded INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE tasks ADD COLUMN gig_url TEXT',
+  'ALTER TABLE daily_scores ADD COLUMN idle_streak INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE daily_scores ADD COLUMN penalty INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE daily_scores ADD COLUMN task_points INTEGER NOT NULL DEFAULT 0',
+  "ALTER TABLE profiles ADD COLUMN avatar_style TEXT NOT NULL DEFAULT 'initials'",
+  'ALTER TABLE profiles ADD COLUMN bio TEXT',
+  'ALTER TABLE users ADD COLUMN last_seen INTEGER',
 ];
 function migrate(db) {
   for (const sql of MIGRATIONS) { try { db.exec(sql); } catch (_) { /* already applied */ } }

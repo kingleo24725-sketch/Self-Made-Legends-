@@ -21,7 +21,7 @@ beforeEach(() => {
   events = []; pushes = [];
   db = open(':memory:');
   const push = new Push(db, { publicKey: '', privateKey: '', sender: async (sub, payload) => { pushes.push({ sub, payload }); } });
-  engine = new Engine(db, { crew: new Crew({ apiKey: '' }), push, now: () => clock, defaultTier: 'boss', onEvent: (u, e, d) => events.push({ u, e, d }) });
+  engine = new Engine(db, { crew: new Crew({ apiKey: '' }), push, now: () => clock, defaultTier: 'allstar', onEvent: (u, e, d) => events.push({ u, e, d }) });
   addUser('u_a', 'Ava'); addUser('u_b', 'Ben');
 });
 
@@ -134,23 +134,31 @@ describe('profiles and plans', () => {
 });
 
 describe('tasks, scoring and the world leaderboard', () => {
-  test('self-reported earnings count half, verified count full', async () => {
+  test('points come from difficulty and hours; verified dollars count double self-reported', async () => {
     engine.saveProfile('u_a', { resources: ['vehicle'] });
     const plan = await engine.ensurePlan('u_a');
     const t = plan.tasks[0];
+    expect(t.points).toBe(engine.taskPoints(t.difficulty, t.hours));
+    expect(engine.taskPoints(10, 4)).toBe(10_000);
     const updated = engine.updateTask('u_a', t.taskId, { status: 'done', earningsDollars: 45.5, note: 'two moves' });
     expect(updated.progress.earningsCents).toBe(4550);
-    expect(updated.progress.score).toBe(C.POINTS_PER_TASK + Math.round(t.hours * C.POINTS_PER_HOUR) + Math.round(45.5 * C.UNVERIFIED_WEIGHT));
-    expect(updated.progress.verifiedScore).toBe(C.POINTS_PER_TASK + Math.round(t.hours * C.POINTS_PER_HOUR));
+    expect(updated.progress.taskPoints).toBe(t.points);
+    expect(updated.progress.score).toBe(t.points + Math.round(45.5 * C.UNVERIFIED_POINTS_PER_DOLLAR));
+    expect(updated.progress.verifiedScore).toBe(t.points);
     expect(events.some(e => e.e === 'leaderboard')).toBe(true);
-    expect(engine.scoreFor({ tasksDone: 1, hoursDone: 1, earningsCents: 10000, verifiedCents: 10000 })).toBe(100 + 50 + 100);
+    expect(engine.scoreFor({ tasksDone: 1, taskPoints: 1000, earningsCents: 10000, verifiedCents: 10000 })).toBe(1000 + 100 * C.VERIFIED_POINTS_PER_DOLLAR);
+    // The bot learned from that outcome, for this person, this city, and the world.
+    expect(db.prepare('SELECT COUNT(*) AS c FROM play_weights WHERE play_key = ?').get(t.playId).c).toBe(3);
+    expect(engine.learning.botIQ('u_a').outcomesFromYou).toBe(1);
   });
 
-  test('earnings are capped so nobody can buy the board', () => {
-    const honest = engine.scoreFor({ tasksDone: 1, tasksTotal: 3, hoursDone: 1, earningsCents: C.EARNINGS_CAP_CENTS });
-    expect(engine.scoreFor({ tasksDone: 1, tasksTotal: 3, hoursDone: 1, earningsCents: 999_999_999 })).toBe(honest);
-    expect(engine.scoreFor({ tasksDone: 3, tasksTotal: 3 })).toBe(3 * C.POINTS_PER_TASK + C.FULL_DAY_BONUS);
-    expect(engine.scoreFor({ streak: 99 })).toBe(C.STREAK_CAP * C.STREAK_BONUS);
+  test('a day tops out at 100,000 and earnings are capped so nobody can buy the board', () => {
+    const honest = engine.scoreFor({ tasksDone: 1, tasksTotal: 3, taskPoints: 500, earningsCents: C.EARNINGS_CAP_CENTS });
+    expect(engine.scoreFor({ tasksDone: 1, tasksTotal: 3, taskPoints: 500, earningsCents: 999_999_999 })).toBe(honest);
+    expect(engine.scoreFor({ tasksDone: 3, tasksTotal: 3, taskPoints: 0 })).toBe(C.FULL_DAY_BONUS);
+    expect(engine.scoreFor({ tasksDone: 1, streak: 99 })).toBe(C.STREAK_CAP * C.STREAK_BONUS);
+    expect(engine.scoreFor({ tasksDone: 3, tasksTotal: 3, taskPoints: 60_000, earningsCents: 500_000, verifiedCents: 500_000, streak: 10, lessonPoints: 500 })).toBe(C.DAILY_CAP);
+    expect(engine.scoreFor({ penalty: 3000 })).toBe(-3000);
   });
 
   test('cannot touch another player\'s task', async () => {
@@ -318,8 +326,39 @@ describe('closing the day', () => {
     expect(p.insuranceUsedOn).toBe(Engine.shiftDate(engine.localDateKey(p), -1));
     expect(engine.getPlan('u_b', engine.localDateKey(p)).streak).toBe(1);
     expect(engine.inbox('u_b').some(i => i.kind === 'insurance')).toBe(true);
-    clock += 86_400_000; await engine.tick();          // day 3 empty: no insurance left, streak 0
+    clock += 86_400_000; await engine.tick();          // day 3 empty: no insurance left, streak 0, first penalty
     expect(engine.getPlan('u_b', engine.localDateKey(p)).streak).toBe(0);
+    const day3 = Engine.shiftDate(engine.localDateKey(p), -1);
+    expect(db.prepare('SELECT score, penalty, idle_streak FROM daily_scores WHERE user_id = ? AND date = ?').get('u_b', day3)).toMatchObject({ score: -C.IDLE_PENALTY, penalty: C.IDLE_PENALTY, idle_streak: 1 });
+    clock += 86_400_000; await engine.tick();          // day 4 empty: penalty doubles, and now they are on the Bench
+    const day4 = Engine.shiftDate(engine.localDateKey(p), -1);
+    expect(db.prepare('SELECT score, idle_streak FROM daily_scores WHERE user_id = ? AND date = ?').get('u_b', day4)).toMatchObject({ score: -2 * C.IDLE_PENALTY, idle_streak: 2 });
+    expect(engine.stats('u_b').benched).toBe(true);
+    expect(engine.myRank('u_b', engine.localDateKey(p)).benched).toBe(true);
+    expect(engine.bench(Engine.shiftDate(day4, 4)).find(b => b.userId === 'u_b')).toMatchObject({ idleStreak: 2 }); // a window without the big first day
+    expect(engine.inbox('u_b').some(i => i.title === 'You are on the Bench')).toBe(true);
+    // One finished play resets the penalty streak.
+    const plan = engine.getPlan('u_b', engine.localDateKey(p));
+    engine.updateTask('u_b', plan.tasks[0].taskId, { status: 'done' });
+    clock += 86_400_000; await engine.tick();
+    expect(db.prepare('SELECT idle_streak, penalty FROM daily_scores WHERE user_id = ? AND date = ?').get('u_b', Engine.shiftDate(engine.localDateKey(p), -1))).toMatchObject({ idle_streak: 0, penalty: 0 });
+    expect(engine.stats('u_b').benched).toBe(false);
+  });
+
+  test('claimed gigs join the day as graded plays, and the crew can regrade', async () => {
+    engine.saveProfile('u_a', { resources: ['vehicle'], tzOffset: 0 });
+    const plan = await engine.ensurePlan('u_a');
+    const t = engine.addTask('u_a', plan.date, { title: 'Indeed: warehouse shift', icon: '🎯', category: 'gig', hours: 4, difficulty: 8, steps: ['go'], why: 'found', sources: ['https://indeed.com/x'], gigUrl: 'https://indeed.com/x', estimatedEarnings: { low: 60, high: 90 } });
+    expect(t).toMatchObject({ difficulty: 8, points: 8000, gigUrl: 'https://indeed.com/x', status: 'pending' });
+    expect(t.startsMin).toBeGreaterThanOrEqual(plan.tasks[plan.tasks.length - 1].endsMin);
+    engine.crew.gradeTask = async () => ({ difficulty: 10, reason: 'Twelve-hour double shift.' });
+    Object.defineProperty(engine.crew, 'online', { get: () => true });
+    engine.updateTask('u_a', t.taskId, { status: 'done', earningsDollars: 150, note: 'brutal' });
+    await new Promise(r => setTimeout(r, 20));
+    const fresh = engine.getPlan('u_a', plan.date).tasks.find(x => x.taskId === t.taskId);
+    expect(fresh).toMatchObject({ graded: true, difficulty: 10, points: 10_000 });
+    expect(engine.crewLog('u_a', plan.date).some(l => l.agent === 'Auditor' && /10\/10/.test(l.message))).toBe(true);
+    expect(() => engine.addTask('u_a', '2020-01-01', { title: 'x', hours: 1 })).toThrow(/No plan/);
   });
 
   test('a Sunday close writes the weekly recap', async () => {
@@ -362,16 +401,27 @@ describe('closing the day', () => {
   });
 });
 
-describe('tiers', () => {
-  test('free players get the playbook crew, pro and boss get the live crew', () => {
+describe('memberships', () => {
+  test('Free, Pro, All Star, Veteran and Hall of Fame unlock in order', () => {
     engine.defaultTier = 'free';
     expect(engine.tierOf('u_a')).toBe('free');
     expect(engine.allows('u_a', 'liveCrew')).toBe(false);
     engine.setTier('u_a', 'pro');
     expect(engine.allows('u_a', 'liveCrew')).toBe(true);
+    expect(engine.allows('u_a', 'gigFinder')).toBe(true);
     expect(engine.allows('u_a', 'chat')).toBe(false);
-    engine.setTier('u_a', 'boss');
+    engine.setTier('u_a', 'allstar');
     expect(engine.allows('u_a', 'localBoards')).toBe(true);
+    expect(engine.allows('u_a', 'video')).toBe(true);
+    expect(engine.allows('u_a', 'lowerFees')).toBe(false);
+    engine.setTier('u_a', 'veteran');
+    expect(engine.regenerationsAllowed('u_a')).toBe(2);
+    expect(engine.allows('u_a', 'noLegendFee')).toBe(false);
+    engine.setTier('u_a', 'hof');
+    expect(engine.tierInfo('u_a')).toMatchObject({ name: 'Self-Made Legends Hall of Fame', priceCents: 1499, regenerationsPerDay: 3, insurancePerWeek: 2 });
+    expect(engine.badges('u_a').map(b => b.badge)).toContain('hall_of_fame');
+    engine.setTier('u_a', 'boss'); // legacy name maps to All Star
+    expect(engine.tierOf('u_a')).toBe('allstar');
     expect(() => engine.setTier('u_a', 'gold')).toThrow();
   });
 });

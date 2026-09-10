@@ -1,9 +1,9 @@
-# Rise N Grind
+# SML Rise Nd Grinds
 
-*by SML (Self-Made Legends LLC)*
+*Inside the app: Self-Made Legends. Outside: SML Rise Nd Grinds. By Self-Made Legends LLC.*
 **Your own crew of AI agents studies the real world every night and hands you a personal, legal, full-day money plan every morning. Everyone with the app competes on one world leaderboard.**
 
-Rise N Grind is a standalone, phone-first app. It shares nothing with any other project: its own server, its own database, its own accounts.
+SML Rise Nd Grinds is a standalone, phone-first app. It shares nothing with any other project: its own server, its own database, its own accounts.
 
 ## How a day works
 
@@ -33,7 +33,7 @@ You are your own boss. The crew plans, you decide.
 - **Legend of the Week.** A written weekly show about the champion's week, the numbers, and the city of the week.
 - **Women's Grind** board and daily champion, plus category boards (beauty, care, food, gig, local, online).
 - **Head-to-head duels**, invite-a-rival, and badges for all of it.
-- **Rise N Grind University.** One lesson and one quiz question a day inside the plan. Correct answers add points.
+- **Self-Made Legends University.** One lesson and one quiz question a day inside the plan. Correct answers add points.
 - **Mentors.** Players with seven closed days or a world win can take paid questions from newcomers.
 - **Safety mode.** In-person plays get a "share where I am" link with I'm here / I'm done / need help check-ins that a contact can watch live.
 
@@ -55,28 +55,43 @@ The **owner console** at `/admin.html` (needs `ADMIN_KEY`) shows revenue, sets f
 
 ## Scoring
 
+Your Self-Made Legends bot grades every play 1 to 10 on how hard it really was: skill, effort, risk, and how competitive the gig is. Easy work earns little. Hard work earns a lot. When the crew is online the Auditor regrades a play after you finish it, using your notes and what you earned.
+
 | Source | Points |
 |---|---|
-| Each play finished | 100 |
-| Each hour worked | 50 |
-| Each dollar verified from a receipt (capped at $1,000/day) | 1 |
-| Each dollar self-reported (same cap) | 0.5 |
-| Every play finished | +250 |
-| Streak (consecutive days with at least one play done) | +25/day, capped at 10 |
+| Each play finished | difficulty x hours x 250 (a 10/10, 4-hour job is 10,000) |
+| Each dollar verified from a receipt (capped at $5,000/day) | 10 |
+| Each dollar self-reported (same cap) | 5 |
+| Every play finished | +5,000 |
+| Streak (consecutive days with at least one play done) | +1,000/day, capped at 10 |
+| Self-Made Legends University, correct answer | +500 |
+| **Daily cap** | **100,000** |
+| Idle day (nothing finished, no streak save) | -1,000, then -2,000, -3,000... up to -10,000 a day |
 
-The board has an **Everyone** view and a **Verified only** view. **Streak insurance** saves one empty day per week so a sick day does not erase the work.
+Two idle days in a row and you are on **the Bench**, a public board of players whose week added up to less than nothing. One finished play gets you off it.
 
-## Plans
+## The bots
 
-| | Free | Pro | Boss |
-|---|---|---|---|
-| Daily plan | Playbook | Live crew with research | Live crew with research |
-| World leaderboard, leagues, duels, badges | ✓ | ✓ | ✓ |
-| Talk to your crew (mid-day replans) | | | ✓ |
-| Receipt verification | | | ✓ |
-| Local boards | | | ✓ |
+- **Gig Finder.** Every morning, and every hour after that for members, the Scout goes out to Indeed, Craigslist, Instawork, TaskRabbit, Care.com, Rover, Upwork, StyleSeat and the rest looking for real, paying, posted work that fits this person, and grades each one. Claim a gig and it joins your day as a graded play with a link to the real posting. Without a key the finder still gives real, working search links for your city and gear.
+- **They learn every event.** Every play you finish or skip, and every dollar you log against the estimate, updates three layers of memory: yours, your city's, and the world's. Your **Bot IQ** is a number you can watch grow. Nightly, the Coach rewrites what it knows about you. Weekly, the crew reports ideas to the owner.
+- **The crowd grades the bot.** Go live, tell people how hard you worked and whether your bot was amazing or garbage, and viewers rate it 1 to 5.
 
-Until Stripe is configured every player gets the `DEFAULT_TIER` (defaults to `boss`). With Stripe keys set, new players start free and upgrade in the app.
+## Faces, friends, calls, live
+
+- A photo of you or a likeness (initials on a colour that is yours, or the crown) on the feed, your Legend page, and your cards.
+- Message anyone. Add friends. **Video call** a friend face to face. **Go live** to the world with chat and bot ratings. Video is WebRTC, peer to peer; the server only relays signaling. Add a TURN server (`TURN_URL`, `TURN_USER`, `TURN_PASS`) for calls across strict networks.
+
+## Memberships
+
+| | Free | Pro $4.99 | All Star $9.99 | Veteran $12.99 | Hall of Fame $14.99 |
+|---|---|---|---|---|---|
+| Playbook plans, world board, University, messages | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Live crew with real research every night, Gig Finder hourly, push | | ✓ | ✓ | ✓ | ✓ |
+| Talk to your crew, receipt verification, local boards, video calls, Go Live | | | ✓ | ✓ | ✓ |
+| Lower fees (tips 10%, Legend Fee 3%), two streak saves, two rebuilds, Scout every 30 min, Veteran frame | | | | ✓ | ✓ |
+| No Legend Fee, tips fee 5%, Hall of Fame frame and crown, your name on the Hall of Fame page, three rebuilds | | | | | ✓ |
+
+Until Stripe is configured every player gets `DEFAULT_TIER` (defaults to `hof`). With Stripe keys and price IDs (`STRIPE_PRICE_PRO`, `STRIPE_PRICE_ALLSTAR`, `STRIPE_PRICE_VETERAN`, `STRIPE_PRICE_HOF`) set, new players start free and upgrade in the app. The Hall of Fame page is public at `/hall-of-fame`.
 
 ## Guard rails
 
@@ -121,6 +136,9 @@ src/agents.js      The crew: Scout, Strategist, Coach, Auditor (Claude) with pla
 src/engine.js      Plans, tasks, verified earnings, scoring, leagues, boards, duels, recaps, nightly close
 src/playbook.js    Vetted plays, blocked-hour layout, learning weights, offline replans
 src/community.js   Feed, cards, stories, Final Call, University, safety, mentors, cities, brackets, challenge days, prizes, show, ideas
+src/social.js      Faces, friends, messages, call signaling, live rooms, bot ratings
+src/gigs.js        Gig Finder: real gigs and real search links, claims
+src/learning.js    Per-user, per-city, global learning and Bot IQ
 src/money.js       Fees, ledger, tips, payouts, Legend Fee, revenue
 src/university.js  Lessons and quizzes
 src/auth.js        Accounts, sessions, invite codes
@@ -149,7 +167,10 @@ GET  /api/u/:name   POST /api/tips/:name {amountCents, fromName, message}   GET 
 POST /api/lesson/answer   POST /api/safety/start   POST /api/safety/:token {status}
 GET  /api/mentors   POST /api/mentors   DELETE /api/mentors   POST /api/mentors/:userId/ask   POST /api/mentors/questions/:id/answer
 GET  /api/admin/revenue|fees|ideas|players   POST /api/admin/fees|challenge-days|prize-pools|payouts/:userId|close-month|tier/:userId   (x-admin-key)
-Public pages: /u/:name  /card/:userId/:date  /story/:id  /safe/:token  /challenge/:slug  /show/:week  /admin.html
+GET  /api/people?q=   GET/POST/DELETE /api/friends/:id   POST /api/block/:id   GET /api/messages   GET/POST /api/messages/:id   POST /api/calls/:id/signal
+GET/POST/DELETE /api/live   POST /api/live/:id/join|leave|signal|chat|rate   GET /api/live/:id/chat   GET /api/avatar/:userId   POST/DELETE /api/me/avatar
+POST /api/gigs/refresh   POST /api/gigs/:id/claim|dismiss   GET /api/bot   GET /api/hall-of-fame
+Public pages: /u/:name  /card/:userId/:date  /story/:id  /safe/:token  /challenge/:slug  /show/:week  /hall-of-fame  /admin.html
 ```
 
 Authenticated routes take `Authorization: Bearer <token>`.

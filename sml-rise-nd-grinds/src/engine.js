@@ -7,24 +7,55 @@
 
 const crypto = require('crypto');
 const Crew = require('./agents');
+const Learning = require('./learning');
 const money = (c) => '$' + (Number(c || 0) / 100).toLocaleString('en-US', { maximumFractionDigits: 0 });
 const { layoutOnClock, clock, CATEGORIES } = require('./playbook');
 
-const EARNINGS_CAP_CENTS = 100_000;     // $1,000/day counts toward score
-const UNVERIFIED_WEIGHT = 0.5;          // self-reported dollars count half; receipt-verified count full
-const POINTS_PER_TASK = 100;
-const POINTS_PER_HOUR = 50;
-const POINTS_PER_DOLLAR = 1;
-const FULL_DAY_BONUS = 250;
-const STREAK_BONUS = 25;                // per consecutive day, capped
+// Scoring v2: the bot grades every play 1-10 on how hard it was. Points scale
+// with difficulty and hours, verified dollars count double self-reported ones,
+// a full day and a streak pay bonuses, and a day tops out at 100,000. A day
+// with nothing done costs points, and it costs more each day in a row.
+const POINTS_PER_DIFF_HOUR = 250;       // difficulty x hours x this: a 10/10, 4-hour job is 10,000
+const VERIFIED_POINTS_PER_DOLLAR = 10;
+const UNVERIFIED_POINTS_PER_DOLLAR = 5;
+const EARNINGS_CAP_CENTS = 500_000;     // $5,000/day counts toward score
+const FULL_DAY_BONUS = 5_000;
+const STREAK_BONUS = 1_000;             // per consecutive day, capped
 const STREAK_CAP = 10;
+const DAILY_CAP = 100_000;
+const IDLE_PENALTY = 1_000;             // per idle day in a row: -1,000, -2,000, -3,000...
+const IDLE_PENALTY_CAP = 10_000;
+const BENCH_DAYS = 2;                   // idle days in a row before a player is on the Bench
+// Kept for anyone reading old code: the v1 names, mapped onto v2 meanings.
+const UNVERIFIED_WEIGHT = UNVERIFIED_POINTS_PER_DOLLAR / VERIFIED_POINTS_PER_DOLLAR;
+const POINTS_PER_TASK = 0;
+const POINTS_PER_HOUR = 0;
+const POINTS_PER_DOLLAR = VERIFIED_POINTS_PER_DOLLAR;
 const PLAN_READY_HOUR = 4;              // the crew finishes the plan by 4am local time
 const REGENERATIONS_PER_DAY = 1;
 const CHECKIN_GRACE_MIN = 5;            // minutes after a block ends before the crew checks in
 const INSURANCE_DAYS = 7;               // one free streak save per week
 const LEAGUES = ['bronze', 'silver', 'gold', 'legend'];
-const TIERS = ['free', 'pro', 'boss'];
-const FEATURES = { liveCrew: ['pro', 'boss'], chat: ['boss'], receipts: ['boss'], localBoards: ['boss'] };
+// Self-Made Legends memberships, lowest to highest.
+const TIERS = ['free', 'pro', 'allstar', 'veteran', 'hof'];
+const TIER_NAMES = { free: 'Self-Made Legends Free', pro: 'Self-Made Legends Pro', allstar: 'Self-Made Legends All Star', veteran: 'Self-Made Legends Veteran', hof: 'Self-Made Legends Hall of Fame' };
+const TIER_PRICES_CENTS = { free: 0, pro: 499, allstar: 999, veteran: 1299, hof: 1499 };
+const atLeast = (t) => TIERS.slice(TIERS.indexOf(t));
+const FEATURES = {
+  liveCrew: atLeast('pro'), gigFinder: atLeast('pro'), push: atLeast('pro'),
+  chat: atLeast('allstar'), receipts: atLeast('allstar'), localBoards: atLeast('allstar'), video: atLeast('allstar'), live: atLeast('allstar'),
+  lowerFees: atLeast('veteran'), doubleInsurance: atLeast('veteran'), fastScout: atLeast('veteran'), frame: atLeast('veteran'),
+  noLegendFee: ['hof'], hallOfFame: ['hof'], customBot: ['hof'],
+};
+const TIER_PERKS = {
+  free: ['Playbook plans every day', 'World leaderboard, leagues, duels', 'Self-Made Legends University', 'Messages and the Grind Feed'],
+  pro: ['Everything in Free', 'Live crew: real research every night', 'Gig Finder: real gigs found for you, refreshed hourly', 'Push notifications and Final Call'],
+  allstar: ['Everything in Pro', 'Talk to your crew and rebuild the day', 'Receipt verification (double points)', 'Local boards: country, state, city', 'Video calls with friends and Go Live'],
+  veteran: ['Everything in All Star', 'Lower fees: tips 10%, Legend Fee 3%', 'Two streak saves a week, two rebuilds a day', 'Scout refreshes gigs every 30 minutes', 'Veteran frame on your face and card'],
+  hof: ['Everything in Veteran', 'No Legend Fee, tips fee 5%', 'Hall of Fame frame and crown likeness', 'Your name on the Self-Made Legends Hall of Fame page', 'Name your bot; top of the mentor list; three rebuilds a day'],
+};
+const REGENERATIONS_BY_TIER = { free: 1, pro: 1, allstar: 1, veteran: 2, hof: 3 };
+const INSURANCE_BY_TIER = { free: 1, pro: 1, allstar: 1, veteran: 2, hof: 2 };
 
 class Engine {
   /**
@@ -38,9 +69,13 @@ class Engine {
     this.push = opts.push || null;
     this.now = opts.now || (() => Date.now());
     this.onEvent = opts.onEvent || (() => {});
-    this.defaultTier = TIERS.includes(opts.defaultTier) ? opts.defaultTier : (TIERS.includes(process.env.DEFAULT_TIER) ? process.env.DEFAULT_TIER : 'boss');
+    const legacy = { boss: 'allstar' };
+    const dt = legacy[opts.defaultTier] || opts.defaultTier, de = legacy[process.env.DEFAULT_TIER] || process.env.DEFAULT_TIER;
+    this.defaultTier = TIERS.includes(dt) ? dt : (TIERS.includes(de) ? de : 'hof');
     this._generating = new Set();
     this.community = null; // attached by the server once Community exists
+    this.learning = new Learning(db, { now: this.now });
+    this.gigs = null;
     this.briefCache = {
       get: (key, date) => { const r = this.db.prepare('SELECT brief FROM briefs WHERE city_key = ? AND date = ?').get(key, date); return r ? r.brief : null; },
       set: (key, date, brief) => this.db.prepare('INSERT OR REPLACE INTO briefs (city_key, date, brief, created_at) VALUES (?, ?, ?, ?)').run(key, date, brief, this.now()),
@@ -58,10 +93,17 @@ class Engine {
   // ── Tiers ────────────────────────────────────────────────────────────────
   tierOf(userId) {
     const r = this.db.prepare('SELECT tier FROM users WHERE id = ?').get(userId);
-    const t = r && TIERS.includes(r.tier) && r.tier !== 'free' ? r.tier : null;
+    const tier = r ? (r.tier === 'boss' ? 'allstar' : r.tier) : null;
+    const t = tier && TIERS.includes(tier) && tier !== 'free' ? tier : null;
     return t || this.defaultTier;
   }
-  setTier(userId, tier) { if (!TIERS.includes(tier)) throw new Error('Unknown tier'); this.db.prepare('UPDATE users SET tier = ? WHERE id = ?').run(tier, userId); }
+  setTier(userId, tier) {
+    if (tier === 'boss') tier = 'allstar';
+    if (!TIERS.includes(tier)) throw new Error('Unknown tier');
+    this.db.prepare('UPDATE users SET tier = ? WHERE id = ?').run(tier, userId);
+    if (tier === 'hof') this.awardBadge(userId, 'hall_of_fame', new Date(this.now()).toISOString().slice(0, 10), 'Self-Made Legends Hall of Fame');
+  }
+  tierInfo(userId) { const t = this.tierOf(userId); return { tier: t, name: TIER_NAMES[t], perks: TIER_PERKS[t], priceCents: TIER_PRICES_CENTS[t], regenerationsPerDay: REGENERATIONS_BY_TIER[t], insurancePerWeek: INSURANCE_BY_TIER[t] }; }
   allows(userId, feature) { return (FEATURES[feature] || []).includes(this.tierOf(userId)); }
   crewFor(userId) { return this.allows(userId, 'liveCrew') ? this.crew : this.offlineCrew; }
 
@@ -201,8 +243,18 @@ class Engine {
       s.doneRate = s.attempts ? s.done / s.attempts : 0;
       s.earnRatio = s.estCents > 0 ? s.earnedCents / s.estCents : null;
     }
+    // Blend in what the city and the world have learned, so a first-day player
+    // already benefits from every outcome anyone has logged.
+    const learned = this.learning.weights(userId, this.getProfile(userId) || {});
+    for (const [key, w] of Object.entries(learned)) {
+      if (!stats[key]) stats[key] = { title: key, attempts: w.attempts, done: 0, earnedCents: 0, estCents: 0, doneRate: w.doneRate, earnRatio: w.earnRatio, confidence: w.confidence };
+      else stats[key].confidence = 1;
+    }
     return stats;
   }
+
+  // ── Points ───────────────────────────────────────────────────────────────
+  taskPoints(difficulty, hours) { return Math.round(Math.max(1, Math.min(10, Number(difficulty) || 5)) * Math.max(0.25, Number(hours) || 1) * POINTS_PER_DIFF_HOUR); }
 
   // ── Leagues ──────────────────────────────────────────────────────────────
   leagueFor(userId, profile, dateKey) {
@@ -227,10 +279,14 @@ class Engine {
     plan.id = row.id; plan.status = row.status; plan.generatedAt = row.generated_at; plan.closedAt = row.closed_at; plan.regenerations = row.regenerations;
     plan.tasks = tasks.map((s, i) => {
       const t = plan.tasks[i] || { title: s.title, icon: '✅', hours: s.hours, steps: [], why: '', sources: [], estimatedEarnings: { low: 0, high: 0 } };
-      return { ...t, order: s.order_num, taskId: s.id, playId: s.play_id, title: s.title, hours: s.hours, endsMin: s.ends_min, category: s.category || t.category || 'other', status: s.status, earningsCents: s.earnings_cents, verifiedCents: s.verified_cents || 0, note: s.note || '', completedAt: s.completed_at || null };
+      const difficulty = s.difficulty || t.difficulty || 5;
+      return { ...t, order: s.order_num, taskId: s.id, playId: s.play_id, title: s.title, hours: s.hours, endsMin: s.ends_min, category: s.category || t.category || 'other', status: s.status, earningsCents: s.earnings_cents, verifiedCents: s.verified_cents || 0, note: s.note || '', completedAt: s.completed_at || null,
+        difficulty, graded: !!s.graded, gigUrl: s.gig_url || null, points: s.status === 'done' ? (s.points || this.taskPoints(difficulty, s.hours)) : this.taskPoints(difficulty, s.hours) };
     });
-    const lp = this.db.prepare('SELECT lesson_points FROM daily_scores WHERE user_id = ? AND date = ?').get(row.user_id, row.date);
-    plan.lessonPoints = lp ? lp.lesson_points || 0 : 0;
+    const ds = this.db.prepare('SELECT lesson_points, penalty, idle_streak FROM daily_scores WHERE user_id = ? AND date = ?').get(row.user_id, row.date);
+    plan.lessonPoints = ds ? ds.lesson_points || 0 : 0;
+    plan.penalty = ds ? ds.penalty || 0 : 0;
+    plan.idleStreak = ds ? ds.idle_streak || 0 : 0;
     plan.progress = this._progress(plan);
     return plan;
   }
@@ -240,7 +296,8 @@ class Engine {
     const hoursDone = done.reduce((s, t) => s + (t.hours || 0), 0);
     const earningsCents = plan.tasks.reduce((s, t) => s + (t.earningsCents || 0), 0);
     const verifiedCents = plan.tasks.reduce((s, t) => s + Math.min(t.verifiedCents || 0, t.earningsCents || 0), 0);
-    const base = { tasksDone: done.length, tasksTotal: plan.tasks.length, hoursDone, streak: plan.streak || 0 };
+    const taskPoints = done.reduce((s, t) => s + (t.points || 0), 0);
+    const base = { tasksDone: done.length, tasksTotal: plan.tasks.length, hoursDone, streak: plan.streak || 0, taskPoints, lessonPoints: plan.lessonPoints || 0, penalty: plan.penalty || 0 };
     const lessonPoints = plan.lessonPoints || 0;
     const cats = {};
     for (const t of plan.tasks) cats[t.category || 'other'] = (cats[t.category || 'other'] || 0) + (t.hours || 0);
@@ -249,10 +306,10 @@ class Engine {
       ...base,
       hoursDone: Math.round(hoursDone * 100) / 100,
       hoursTotal: Math.round(plan.tasks.reduce((s, t) => s + (t.hours || 0), 0) * 100) / 100,
-      earningsCents, verifiedCents, lessonPoints,
+      earningsCents, verifiedCents, lessonPoints, taskPoints, penalty: plan.penalty || 0,
       category: category ? category[0] : 'other',
-      score: this.scoreFor({ ...base, earningsCents, verifiedCents }) + lessonPoints,
-      verifiedScore: this.scoreFor({ ...base, earningsCents: verifiedCents, verifiedCents }) + lessonPoints,
+      score: this.scoreFor({ ...base, earningsCents, verifiedCents }),
+      verifiedScore: this.scoreFor({ ...base, earningsCents: verifiedCents, verifiedCents }),
     };
   }
 
@@ -303,8 +360,31 @@ class Engine {
   }
 
   _insertTasks(planId, tasks, startOrder = 1) {
-    const ins = this.db.prepare('INSERT INTO tasks (plan_id, order_num, play_id, title, hours, status, earnings_cents, ends_min, category) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)');
-    tasks.forEach((t, i) => ins.run(planId, startOrder + i, t.playId || null, t.title, t.hours, 'pending', Number.isFinite(t.endsMin) ? t.endsMin : null, t.category || 'other'));
+    const ins = this.db.prepare('INSERT INTO tasks (plan_id, order_num, play_id, title, hours, status, earnings_cents, ends_min, category, difficulty, points, gig_url) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)');
+    tasks.forEach((t, i) => { const d = Math.max(1, Math.min(10, Math.round(Number(t.difficulty) || 5))); ins.run(planId, startOrder + i, t.playId || null, t.title, t.hours, 'pending', Number.isFinite(t.endsMin) ? t.endsMin : null, t.category || 'other', d, this.taskPoints(d, t.hours), t.gigUrl || null); });
+  }
+
+  /** Append one play to an open plan (a claimed gig), laid out after the last block or now, whichever is later. */
+  addTask(userId, dateKey, task) {
+    const profile = this.getProfile(userId);
+    const row = this.db.prepare('SELECT * FROM plans WHERE user_id = ? AND date = ?').get(userId, dateKey);
+    if (!row) throw new Error('No plan for that day yet');
+    if (row.status === 'closed') throw new Error('That day is already closed');
+    const plan = this._hydrate(row);
+    const lastEnd = Math.max(0, ...plan.tasks.map(t => t.endsMin || 0));
+    const startMin = Math.max(lastEnd, this.localMinutes(profile));
+    const [laid] = layoutOnClock([{ ...task, hours: Math.max(0.25, Number(task.hours) || 1) }], startMin / 60, profile.blockedHours);
+    const json = JSON.parse(row.plan_json);
+    json.tasks = [...json.tasks, { ...laid, order: json.tasks.length + 1 }];
+    const tx = this.db.transaction(() => {
+      this.db.prepare('UPDATE plans SET plan_json = ? WHERE id = ?').run(JSON.stringify(json), row.id);
+      this._insertTasks(row.id, [laid], plan.tasks.length + 1);
+    });
+    tx();
+    const fresh = this.getPlan(userId, dateKey);
+    this._upsertScore(userId, dateKey, fresh, profile);
+    this.logCrew(userId, dateKey, 'Scout', `Added to your day: ${laid.title} (grade ${laid.difficulty || 5}/10, ${this.taskPoints(laid.difficulty || 5, laid.hours).toLocaleString()} points if you finish it).`);
+    return fresh.tasks[fresh.tasks.length - 1];
   }
 
   // ── Chat with the crew (mid-day replans) ─────────────────────────────────
@@ -374,9 +454,32 @@ class Engine {
       note: note === undefined ? row.note : String(note).slice(0, 280),
     };
     const completedAt = next.status === 'done' ? (row.completed_at || this.now()) : null;
-    this.db.prepare('UPDATE tasks SET status = ?, earnings_cents = ?, note = ?, completed_at = ?, checkin_sent = 1 WHERE id = ?').run(next.status, next.earnings_cents, next.note, completedAt, taskId);
-    if (next.status === 'done' && row.status !== 'done' && this.community) this.community.onTaskDone(userId, { title: row.title, earningsCents: next.earnings_cents });
+    const points = next.status === 'done' ? (row.graded ? row.points : this.taskPoints(row.difficulty, row.hours)) : 0;
+    this.db.prepare('UPDATE tasks SET status = ?, earnings_cents = ?, note = ?, completed_at = ?, checkin_sent = 1, points = ? WHERE id = ?').run(next.status, next.earnings_cents, next.note, completedAt, points, taskId);
+    if (next.status !== row.status && (next.status === 'done' || next.status === 'skipped')) {
+      const profile = this.getProfile(userId);
+      let earnRatio = null;
+      try { const est = (JSON.parse(this.db.prepare('SELECT plan_json FROM plans WHERE id = ?').get(row.plan_id).plan_json).tasks.find(t => (t.playId || t.title) === (row.play_id || row.title)) || {}).estimatedEarnings; if (est && est.high > 0 && next.status === 'done') earnRatio = next.earnings_cents / Math.round((est.low + est.high) / 2 * 100); } catch (_) {}
+      this.learning.observe(userId, profile, row.play_id || row.title, { done: next.status === 'done', earnRatio });
+    }
+    if (next.status === 'done' && row.status !== 'done') {
+      if (this.community) this.community.onTaskDone(userId, { title: row.title, earningsCents: next.earnings_cents, points });
+      if (this.crewFor(userId).online && !row.graded) this._grade(userId, taskId).catch(e => console.error('[grade]', e.message));
+    }
     return this._afterTaskChange(userId, row.date);
+  }
+
+  /** The Auditor grades a finished play on how hard it really was; points follow the grade. */
+  async _grade(userId, taskId) {
+    const row = this.db.prepare('SELECT t.*, p.date FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE t.id = ?').get(taskId);
+    if (!row || row.status !== 'done' || row.graded) return null;
+    const g = await this.crewFor(userId).gradeTask({ title: row.title, hours: row.hours, difficulty: row.difficulty }, { note: row.note, earningsCents: row.earnings_cents, verifiedCents: row.verified_cents });
+    const points = this.taskPoints(g.difficulty, row.hours);
+    this.db.prepare('UPDATE tasks SET difficulty = ?, points = ?, graded = 1 WHERE id = ?').run(g.difficulty, points, taskId);
+    this.logCrew(userId, row.date, 'Auditor', `Graded "${row.title}" ${g.difficulty}/10: ${g.reason} ${points.toLocaleString()} points.`);
+    this._afterTaskChange(userId, row.date);
+    this.onEvent(userId, 'graded', { taskId, difficulty: g.difficulty, points });
+    return g;
   }
 
   _afterTaskChange(userId, dateKey) {
@@ -409,14 +512,15 @@ class Engine {
   }
 
   // ── Scoring ──────────────────────────────────────────────────────────────
-  scoreFor({ tasksDone = 0, tasksTotal = 0, hoursDone = 0, earningsCents = 0, verifiedCents = 0, streak = 0 }) {
-    let score = tasksDone * POINTS_PER_TASK + Math.round(hoursDone * POINTS_PER_HOUR);
+  scoreFor({ tasksDone = 0, tasksTotal = 0, taskPoints = 0, earningsCents = 0, verifiedCents = 0, streak = 0, lessonPoints = 0, penalty = 0 }) {
+    let score = taskPoints;
     const verified = Math.min(verifiedCents, earningsCents, EARNINGS_CAP_CENTS);
     const unverified = Math.max(0, Math.min(earningsCents, EARNINGS_CAP_CENTS) - verified);
-    score += Math.round(verified / 100 * POINTS_PER_DOLLAR + unverified / 100 * POINTS_PER_DOLLAR * UNVERIFIED_WEIGHT);
+    score += Math.round(verified / 100 * VERIFIED_POINTS_PER_DOLLAR + unverified / 100 * UNVERIFIED_POINTS_PER_DOLLAR);
     if (tasksTotal > 0 && tasksDone === tasksTotal) score += FULL_DAY_BONUS;
-    score += Math.min(streak, STREAK_CAP) * STREAK_BONUS;
-    return score;
+    if (tasksDone > 0) score += Math.min(streak, STREAK_CAP) * STREAK_BONUS;
+    score += lessonPoints;
+    return Math.min(DAILY_CAP, score) - penalty;
   }
 
   _currentStreak(userId, dateKey) {
@@ -433,13 +537,13 @@ class Engine {
     const p = plan.progress;
     profile = profile || this.getProfile(userId) || {};
     this.db.prepare(
-      `INSERT INTO daily_scores (user_id, date, score, verified_score, earnings_cents, verified_cents, league, country, region, city, category, tasks_done, tasks_total, hours_done, streak, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO daily_scores (user_id, date, score, verified_score, earnings_cents, verified_cents, league, country, region, city, category, tasks_done, tasks_total, hours_done, streak, task_points, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id, date) DO UPDATE SET score=excluded.score, verified_score=excluded.verified_score, earnings_cents=excluded.earnings_cents, verified_cents=excluded.verified_cents,
          league=excluded.league, country=excluded.country, region=excluded.region, city=excluded.city, category=excluded.category, tasks_done=excluded.tasks_done, tasks_total=excluded.tasks_total,
-         hours_done=excluded.hours_done, streak=excluded.streak, updated_at=excluded.updated_at`
+         hours_done=excluded.hours_done, streak=excluded.streak, task_points=excluded.task_points, updated_at=excluded.updated_at`
     ).run(userId, dateKey, p.score, p.verifiedScore, p.earningsCents, p.verifiedCents, plan.league || 'bronze', profile.country || 'US', profile.region || '', profile.city || '', p.category || 'other',
-      p.tasksDone, p.tasksTotal, p.hoursDone, plan.streak || 0, this.now());
+      p.tasksDone, p.tasksTotal, p.hoursDone, plan.streak || 0, p.taskPoints || 0, this.now());
   }
 
   // ── Day close ────────────────────────────────────────────────────────────
@@ -455,17 +559,23 @@ class Engine {
     let streak = plan.streak || 0;
     let insured = false;
     if (p.tasksDone > 0) streak += 1;
-    else if (streak > 0 && (!profile.insuranceUsedOn || Engine.shiftDate(profile.insuranceUsedOn, INSURANCE_DAYS) <= dateKey)) {
+    else if (streak > 0 && this._insuranceLeft(userId, profile, dateKey) > 0) {
       insured = true;
       this.db.prepare('UPDATE profiles SET insurance_used_on = ? WHERE user_id = ?').run(dateKey, userId);
+      this.db.prepare("INSERT INTO learning_events (user_id, kind, play_key, value, created_at) VALUES (?, 'insurance', ?, 1, ?)").run(userId, dateKey, this.now());
     } else streak = 0;
 
+    // Nothing done and no insurance: the day costs points, more for every idle day in a row.
+    const prevIdle = (this.db.prepare('SELECT idle_streak FROM daily_scores WHERE user_id = ? AND date = ? AND closed = 1').get(userId, Engine.shiftDate(dateKey, -1)) || {}).idle_streak || 0;
+    const idleStreak = p.tasksDone > 0 || insured ? 0 : prevIdle + 1;
+    const penalty = idleStreak ? Math.min(IDLE_PENALTY_CAP, IDLE_PENALTY * idleStreak) : 0;
     const tx = this.db.transaction(() => {
       this.db.prepare('UPDATE plans SET status = ?, closed_at = ? WHERE id = ?').run('closed', this.now(), row.id);
-      this.db.prepare('UPDATE daily_scores SET streak = ?, closed = 1 WHERE user_id = ? AND date = ?').run(streak, userId, dateKey);
+      this.db.prepare('UPDATE daily_scores SET streak = ?, closed = 1, idle_streak = ?, penalty = ? WHERE user_id = ? AND date = ?').run(streak, idleStreak, penalty, userId, dateKey);
       this.db.prepare("UPDATE profiles SET conditions = '' WHERE user_id = ?").run(userId);
     });
     tx();
+    if (penalty) { const re = this._hydrate(row); this._upsertScore(userId, dateKey, re, profile); this.db.prepare('UPDATE daily_scores SET idle_streak = ?, penalty = ?, closed = 1, streak = ? WHERE user_id = ? AND date = ?').run(idleStreak, penalty, streak, userId, dateKey); }
 
     const debrief = await this.crewFor(userId).debrief(profile, plan, { tasks: plan.tasks, earningsCents: p.earningsCents, hoursWorked: p.hoursDone });
     const memory = profile.memory || { notes: [], favorites: [], avoid: [] };
@@ -485,12 +595,21 @@ class Engine {
     if (this.community) { try { await this.community.maybeStory(userId, streak, dateKey); } catch (e) { console.error('[story]', e.message); } }
     if (p.tasksDone > 0) this.notify(userId, 'card', 'Your receipt card is ready', `Score ${p.score}, ${money(p.earningsCents)} logged. Share it from Past days.`, { push: false });
     if (insured) this.notify(userId, 'insurance', 'Streak insurance used', `Nothing logged on ${dateKey}, so your ${streak}-day streak was saved. One save per week.`);
+    if (penalty) this.notify(userId, 'penalty', idleStreak >= BENCH_DAYS ? 'You are on the Bench' : `Idle day: -${penalty.toLocaleString()} points`, idleStreak >= BENCH_DAYS ? `${idleStreak} days with nothing done. -${penalty.toLocaleString()} today and it grows every idle day. One finished play gets you off the Bench.` : 'A day with nothing done costs points. Tomorrow, finish one play and the penalty resets.');
     this.notify(userId, 'close', finished ? 'Full day. Every play done.' : 'Day closed', debrief.summary || `Score ${p.score}. Tomorrow's plan is on the way.`);
 
     let recap = null;
     if (Engine.weekday(dateKey) === 0) recap = await this.writeRecap(userId, dateKey);
     return { plan, debrief, streak, finished, insured, recap };
   }
+
+  _insuranceLeft(userId, profile, dateKey) {
+    const allowed = INSURANCE_BY_TIER[this.tierOf(userId)] || 1;
+    const since = Engine.shiftDate(dateKey, -(INSURANCE_DAYS - 1));
+    const used = this.db.prepare("SELECT COUNT(*) AS c FROM learning_events WHERE user_id = ? AND kind = 'insurance' AND play_key >= ? AND play_key <= ?").get(userId, since, dateKey).c;
+    return Math.max(0, allowed - used);
+  }
+  regenerationsAllowed(userId) { return REGENERATIONS_BY_TIER[this.tierOf(userId)] || 1; }
 
   // ── Weekly recap ─────────────────────────────────────────────────────────
   weekSummary(userId, weekEnd) {
@@ -673,6 +792,13 @@ class Engine {
     ).all(limit).map((r, i) => ({ rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend', totalScore: r.total_score, totalEarningsCents: r.total_earnings, totalVerifiedCents: r.total_verified, days: r.days, bestStreak: r.best_streak, wins: r.wins }));
   }
 
+  /** The Bench: players whose last week added up to less than nothing. Named without cruelty, ranked without mercy. */
+  bench(dateKey, limit = 25) {
+    const since = Engine.shiftDate(dateKey, -6);
+    return this.db.prepare(`SELECT s.user_id, SUM(s.score) AS week, MAX(s.idle_streak) AS idle, u.display_name FROM daily_scores s JOIN users u ON u.id = s.user_id WHERE s.date >= ? AND s.date <= ? GROUP BY s.user_id HAVING week < 0 ORDER BY week ASC LIMIT ?`).all(since, dateKey, limit)
+      .map((r, i) => ({ rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend', weekScore: r.week, idleStreak: r.idle }));
+  }
+
   podium(dateKey) {
     return this.db.prepare('SELECT c.rank, c.user_id, c.score, u.display_name FROM champions c LEFT JOIN users u ON u.id = c.user_id WHERE c.date = ? ORDER BY c.rank').all(dateKey)
       .map(p => ({ rank: p.rank, userId: p.user_id, score: p.score, displayName: p.display_name || 'Legend' }));
@@ -698,7 +824,8 @@ class Engine {
     const total = this.db.prepare('SELECT COUNT(*) AS c FROM daily_scores WHERE date = ?').get(dateKey).c;
     const leagueAhead = this.db.prepare('SELECT COUNT(*) AS c FROM daily_scores WHERE date = ? AND league = ? AND score > ?').get(dateKey, me.league, me.score).c;
     const leagueTotal = this.db.prepare('SELECT COUNT(*) AS c FROM daily_scores WHERE date = ? AND league = ?').get(dateKey, me.league).c;
-    return { rank: ahead + 1, of: total, score: me.score, league: me.league, leagueRank: leagueAhead + 1, leagueOf: leagueTotal };
+    const prev = this.db.prepare('SELECT idle_streak FROM daily_scores WHERE user_id = ? AND date = ? AND closed = 1').get(userId, Engine.shiftDate(dateKey, -1));
+    return { rank: ahead + 1, of: total, score: me.score, league: me.league, leagueRank: leagueAhead + 1, leagueOf: leagueTotal, benched: !!(prev && prev.idle_streak >= BENCH_DAYS), idleStreak: prev ? prev.idle_streak : 0 };
   }
 
   history(userId, limit = 30) {
@@ -712,7 +839,9 @@ class Engine {
     const duels = this.db.prepare("SELECT SUM(CASE WHEN winner_id = ? THEN 1 ELSE 0 END) AS won, COUNT(*) AS played FROM challenges WHERE status = 'settled' AND (challenger_id = ? OR opponent_id = ?)").get(userId, userId, userId);
     const tips = this.db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(net_cents),0) AS net FROM tips WHERE to_user_id = ? AND status = 'paid'").get(userId);
     const bal = this.db.prepare('SELECT payout_balance_cents AS b FROM users WHERE id = ?').get(userId);
-    return { days: r.days, earnedCents: r.earned, verifiedCents: r.verified, totalScore: r.score, bestStreak: r.best_streak, wins: r.wins || 0, duelsWon: duels.won || 0, duelsPlayed: duels.played || 0, tier: this.tierOf(userId), tipsCount: tips.n, tipsCents: tips.net, payoutBalanceCents: bal ? bal.b : 0 };
+    const last = this.db.prepare('SELECT idle_streak FROM daily_scores WHERE user_id = ? AND closed = 1 ORDER BY date DESC LIMIT 1').get(userId);
+    const week = this.db.prepare('SELECT COALESCE(SUM(score),0) AS s FROM daily_scores WHERE user_id = ? AND date >= ?').get(userId, Engine.shiftDate(new Date(this.now()).toISOString().slice(0, 10), -6)).s;
+    return { days: r.days, earnedCents: r.earned, verifiedCents: r.verified, totalScore: r.score, weekScore: week, bestStreak: r.best_streak, wins: r.wins || 0, duelsWon: duels.won || 0, duelsPlayed: duels.played || 0, tier: this.tierOf(userId), tipsCount: tips.n, tipsCents: tips.net, payoutBalanceCents: bal ? bal.b : 0, idleStreak: last ? last.idle_streak : 0, benched: !!(last && last.idle_streak >= BENCH_DAYS), botIQ: this.learning.botIQ(userId) };
   }
 
   // ── Check-ins after each time block ──────────────────────────────────────
@@ -760,4 +889,4 @@ class Engine {
 }
 
 module.exports = Engine;
-module.exports.constants = { CATEGORIES, EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };
+module.exports.constants = { CATEGORIES, TIER_NAMES, TIER_PRICES_CENTS, TIER_PERKS, REGENERATIONS_BY_TIER, INSURANCE_BY_TIER, DAILY_CAP, POINTS_PER_DIFF_HOUR, VERIFIED_POINTS_PER_DOLLAR, UNVERIFIED_POINTS_PER_DOLLAR, IDLE_PENALTY, IDLE_PENALTY_CAP, BENCH_DAYS, EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };

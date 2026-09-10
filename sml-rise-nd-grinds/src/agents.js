@@ -40,7 +40,7 @@ const PLAN_SCHEMA = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['title', 'icon', 'category', 'hours', 'startsAt', 'endsAt', 'estimatedEarnings', 'steps', 'why', 'sources'],
+        required: ['title', 'icon', 'category', 'hours', 'startsAt', 'endsAt', 'estimatedEarnings', 'steps', 'why', 'sources', 'difficulty'],
         properties: {
           title: { type: 'string' },
           icon: { type: 'string', description: 'one emoji' },
@@ -52,6 +52,7 @@ const PLAN_SCHEMA = {
           steps: { type: 'array', minItems: 2, maxItems: 6, items: { type: 'string' } },
           why: { type: 'string', description: 'Why this fits this person today' },
           sources: { type: 'array', items: { type: 'string' }, description: 'URLs from the brief that back this up, may be empty' },
+          difficulty: { type: 'integer', minimum: 1, maximum: 10, description: 'How hard this is for THIS person: skill, physical effort, risk, competition for the gig. 1 trivial, 10 the hardest thing a person could pull off in a day' },
         },
       },
     },
@@ -273,14 +274,37 @@ If they say a play fell through, conditions changed, or they ask for something d
     return { verified: ok, amountDollars: ok ? out.amountDollars : 0, source: out.source || '', confidence: out.confidence, reason: out.reason || '' };
   }
 
+  // ── Gig Finder: real, specific, paying work with links ───────────────────
+  async findGigs(profile, dateKey) {
+    if (!this.client) return [];
+    const prompt = `Today is ${dateKey}. Find REAL, currently posted, paying gigs and shifts for one person in ${profile.location || 'the United States'} who has: ${describeResources(profile)}. Skills: ${(profile.skills || []).join(', ') || 'none listed'}. Available about ${profile.targetHours || 8} hours starting ${profile.startHour != null ? profile.startHour + ':00' : '8:00'}.
+Search Craigslist gigs, Indeed (last 24h), Instawork, Qwick, Wonolo, TaskRabbit, Care.com, Rover, Upwork, local Facebook groups and anything else real for this city. Return 6-12 specific listings with the actual URL to the posting or the platform's search page for this exact city. Grade each 1-10 on how hard it is for this person (skill, effort, risk, competition). No gambling, MLM, adult, or anything illegal. Never invent a listing; if you cannot verify it, give the platform's live search URL for the city instead and say so in why.`;
+    const schema = { type: 'object', additionalProperties: false, required: ['gigs'], properties: { gigs: { type: 'array', maxItems: 12, items: { type: 'object', additionalProperties: false, required: ['title', 'platform', 'url', 'pay', 'location', 'kind', 'difficulty', 'hours', 'why'], properties: { title: { type: 'string' }, platform: { type: 'string' }, url: { type: 'string' }, pay: { type: 'string', description: 'e.g. $18/hr, $120 flat, tips' }, location: { type: 'string' }, kind: { type: 'string', enum: ['shift', 'gig', 'delivery', 'care', 'online', 'beauty', 'resell', 'notary', 'other'] }, difficulty: { type: 'integer', minimum: 1, maximum: 10 }, hours: { type: 'number' }, why: { type: 'string' } } } } } };
+    const text = await this._ask('Scout', prompt, { tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 10 }], schema });
+    const out = JSON.parse(text);
+    return (out.gigs || []).filter(g => /^https?:\/\//.test(g.url));
+  }
+
+  // ── Grading: how hard was it, really ─────────────────────────────────────
+  /** Returns { difficulty 1-10, reason }. Offline keeps the planned grade. */
+  async gradeTask(task, { note = '', earningsCents = 0, verifiedCents = 0 } = {}) {
+    const fallback = { difficulty: task.difficulty || 5, reason: 'Graded from the plan.' };
+    if (!this.client) return fallback;
+    const prompt = `Grade how hard this finished piece of work was for the person, 1 to 10. Consider skill, physical effort, time, risk, and how competitive the gig was. Be fair and consistent: routine delivery or surveys are 1-3, skilled trades, sales from cold, and long physical jobs are 7-10. Money earned is a signal, not the grade.\nTask: ${task.title} (${task.hours}h, planned grade ${task.difficulty || 5})\nTheir note: ${note || 'none'}\nLogged: $${(earningsCents / 100).toFixed(2)}${verifiedCents ? ` (verified $${(verifiedCents / 100).toFixed(2)})` : ''}`;
+    try {
+      const out = JSON.parse(await this._ask('Auditor', prompt, { schema: { type: 'object', additionalProperties: false, required: ['difficulty', 'reason'], properties: { difficulty: { type: 'integer', minimum: 1, maximum: 10 }, reason: { type: 'string' } } }, max_tokens: 1000 }));
+      return { difficulty: Math.max(1, Math.min(10, out.difficulty)), reason: out.reason };
+    } catch (e) { this.log('grade failed:', e.message); return fallback; }
+  }
+
   // ── Streak stories, the weekly show, and the crew's own ideas ────────────
   async story(profile, facts) {
     const fallback = {
       title: `${facts.days} days straight`,
-      body: `${facts.name} in ${facts.location || 'their city'} has finished at least one play every day for ${facts.days} days on Rise N Grind. Over that run they logged $${(facts.earnedCents / 100).toFixed(0)}${facts.verifiedCents ? ` ($${(facts.verifiedCents / 100).toFixed(0)} verified)` : ''}, finished ${facts.playsDone} plays, and their best day was $${(facts.bestDayCents / 100).toFixed(0)}. Favorite play: ${facts.topPlay || 'whatever paid'}. Best world rank: #${facts.bestRank || '-'}. The crew's note: ${facts.note || 'consistency is the whole game.'}`,
+      body: `${facts.name} in ${facts.location || 'their city'} has finished at least one play every day for ${facts.days} days on Self-Made Legends. Over that run they logged $${(facts.earnedCents / 100).toFixed(0)}${facts.verifiedCents ? ` ($${(facts.verifiedCents / 100).toFixed(0)} verified)` : ''}, finished ${facts.playsDone} plays, and their best day was $${(facts.bestDayCents / 100).toFixed(0)}. Favorite play: ${facts.topPlay || 'whatever paid'}. Best world rank: #${facts.bestRank || '-'}. The crew's note: ${facts.note || 'consistency is the whole game.'}`,
     };
     if (!this.client) return fallback;
-    const prompt = `Write a short, true, shareable story about this person's streak for the Rise N Grind Legends page. 120-180 words, third person, no hype, numbers exactly as given. End with one line they would want quoted.\n\n${JSON.stringify(facts, null, 2)}`;
+    const prompt = `Write a short, true, shareable story about this person's streak for the Self-Made Legends page. 120-180 words, third person, no hype, numbers exactly as given. End with one line they would want quoted.\n\n${JSON.stringify(facts, null, 2)}`;
     try {
       const text = await this._ask('Coach', prompt, { schema: { type: 'object', additionalProperties: false, required: ['title', 'body'], properties: { title: { type: 'string' }, body: { type: 'string' } } }, max_tokens: 3000 });
       return JSON.parse(text);
@@ -297,10 +321,10 @@ If they say a play fell through, conditions changed, or they ask for something d
         { heading: 'By the numbers', body: `${week.players} players, ${week.playsDone} plays done, $${(week.earnedCents / 100).toFixed(0)} logged worldwide, $${(week.verifiedCents / 100).toFixed(0)} verified.` },
         { heading: 'City of the week', body: week.topCity ? `${week.topCity.city} led with $${(week.topCity.cents / 100).toFixed(0)} verified.` : 'No city has claimed the week yet.' },
       ] : [],
-      closing: 'Same time next week. Rise N Grind.',
+      closing: 'Same time next week. Self-Made Legends.',
     };
     if (!this.client) return fallback;
-    const prompt = `Write a 10-minute weekly show script for Rise N Grind: "Legend of the Week". Host voice, tight, real numbers only from the data. Sections: cold open, the champion and the plan that won, by the numbers, city of the week, one lesson for everyone, closing. Do not invent quotes.\n\n${JSON.stringify(week, null, 2)}`;
+    const prompt = `Write a 10-minute weekly show script for Self-Made Legends: "Legend of the Week". Host voice, tight, real numbers only from the data. Sections: cold open, the champion and the plan that won, by the numbers, city of the week, one lesson for everyone, closing. Do not invent quotes.\n\n${JSON.stringify(week, null, 2)}`;
     const schema = { type: 'object', additionalProperties: false, required: ['title', 'opening', 'segments', 'closing'], properties: { title: { type: 'string' }, opening: { type: 'string' }, segments: { type: 'array', maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['heading', 'body'], properties: { heading: { type: 'string' }, body: { type: 'string' } } } }, closing: { type: 'string' } } };
     try { return JSON.parse(await this._ask('Coach', prompt, { schema, max_tokens: 6000 })); }
     catch (e) { this.log('show failed:', e.message); return fallback; }
@@ -323,7 +347,7 @@ If they say a play fell through, conditions changed, or they ask for something d
     if (stats.womenShare != null && stats.womenShare < 0.35) fallback.push({ agent: 'Strategist', title: 'Grow the women\'s board', body: `${Math.round(stats.womenShare * 100)}% of active players identify as women. Feature the Women\'s Grind champion on the landing page and recruit two women creators for challenge days.`, evidence: `womenShare=${stats.womenShare}` });
     if (!fallback.length) fallback.push({ agent: 'Crew', title: 'Nothing broken this week', body: 'Numbers look healthy. Spend the week on a celebrity challenge day or a city matchup to grow the top of the funnel.', evidence: '' });
     if (!this.client) return fallback.slice(0, 5);
-    const prompt = `You are the crew reporting to the owner of Rise N Grind, the app you work inside. Here are this week's anonymized numbers. Propose 3-5 specific product or growth changes, each backed by a number from the data. Prioritize what grows players, verified earnings, and platform revenue (subscriptions, tips, Legend Fee) without breaking the rules you live by.\n\n${JSON.stringify(stats, null, 2)}`;
+    const prompt = `You are the crew reporting to the owner of Self-Made Legends, the app you work inside. Here are this week's anonymized numbers. Propose 3-5 specific product or growth changes, each backed by a number from the data. Prioritize what grows players, verified earnings, and platform revenue (subscriptions, tips, Legend Fee) without breaking the rules you live by.\n\n${JSON.stringify(stats, null, 2)}`;
     const schema = { type: 'object', additionalProperties: false, required: ['ideas'], properties: { ideas: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'object', additionalProperties: false, required: ['agent', 'title', 'body', 'evidence'], properties: { agent: { type: 'string', enum: ['Scout', 'Strategist', 'Coach', 'Auditor'] }, title: { type: 'string' }, body: { type: 'string' }, evidence: { type: 'string' } } } } } };
     try { return JSON.parse(await this._ask('Strategist', prompt, { schema, max_tokens: 6000 })).ideas; }
     catch (e) { this.log('ideas failed:', e.message); return fallback.slice(0, 5); }
@@ -419,6 +443,7 @@ function normalizePlan(plan, dateKey, generatedBy) {
     why: String(t.why || ''),
     sources: Array.isArray(t.sources) ? t.sources.filter(s => /^https?:\/\//.test(s)) : [],
     inPerson: ['local', 'beauty', 'care', 'gig'].includes(t.category),
+    difficulty: Math.max(1, Math.min(10, Math.round(Number(t.difficulty) || 5))),
   }));
   const low = tasks.reduce((s, t) => s + t.estimatedEarnings.low, 0);
   const high = tasks.reduce((s, t) => s + t.estimatedEarnings.high, 0);

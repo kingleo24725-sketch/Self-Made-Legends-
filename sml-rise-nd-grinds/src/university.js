@@ -1,6 +1,6 @@
 'use strict';
 
-// Rise N Grind University: one short lesson a day inside the plan, with a
+// Self-Made Legends University: one short lesson a day inside the plan, with a
 // one-question quiz. A correct answer earns points toward the day's score, so
 // learning is part of the grind, not homework.
 
@@ -15,7 +15,7 @@ const LESSONS = [
   { id: 'invoice', title: 'Send an invoice, even for cash jobs', body: 'A one-line invoice with your name, the job, the price and "paid" makes you look established, gives the customer something to forward, and gives you a record for taxes. Free invoice apps take a minute.', q: 'What is one reason to send an invoice for a cash job?', options: ['It is required by the app', 'It gives you a record and looks professional', 'It lets you charge more later'], answer: 1 },
   { id: 'upsell', title: 'One small add-on per job', body: 'Detailing a car? Offer a $15 headlight restore. Cleaning a yard? Offer to haul the bags. Add-ons are pure margin because you are already there.', q: 'Why are add-ons so profitable?', options: ['Customers never say no', 'You are already on site, so there is no extra travel', 'They are tax-free'], answer: 1 },
   { id: 'script', title: 'Have a two-line pitch ready', body: '"I do mobile car cleaning in this neighborhood. Interior and exterior, $80, I can do it today while you are home." Who you are, what you do, the price, the time. Say it the same way every time.', q: 'Which part is missing from a good pitch: "I clean cars, I can come today"?', options: ['Your name', 'The price', 'Your phone number'], answer: 1 },
-  { id: 'safety', title: 'Meet in public, tell someone', body: 'For any in-person job with a stranger: confirm the address, share it with a contact, meet at the door or in public first, and keep your phone charged. Rise N Grind can share your status with a contact from the task screen.', q: 'What should you do before an in-person job with a stranger?', options: ['Bring cash', 'Share where you are with someone you trust', 'Turn off your phone to focus'], answer: 1 },
+  { id: 'safety', title: 'Meet in public, tell someone', body: 'For any in-person job with a stranger: confirm the address, share it with a contact, meet at the door or in public first, and keep your phone charged. Self-Made Legends can share your status with a contact from the task screen.', q: 'What should you do before an in-person job with a stranger?', options: ['Bring cash', 'Share where you are with someone you trust', 'Turn off your phone to focus'], answer: 1 },
   { id: 'stack_apps', title: 'Run two apps at once', body: 'Delivery drivers who run two apps and accept the better offer earn 20 to 40 percent more per hour. Decline low-paying orders fast so your acceptance rate does not trap you.', q: 'Why run two delivery apps at the same time?', options: ['To pick the better-paying order', 'It is required', 'To earn double tips'], answer: 0 },
   { id: 'niche', title: 'Own one small thing', body: 'The person who is "the braider on 5th Street" or "the guy who does headlight restores" gets referrals without asking. Pick one thing you do well and put it in your name everywhere.', q: 'What does a clear niche mostly bring you?', options: ['Higher taxes', 'Referrals without asking', 'More competition'], answer: 1 },
   { id: 'cottage_food', title: 'Know your cottage food rules', body: 'Most states let you sell baked goods and shelf-stable food from home under cottage food laws, usually with a label and a sales cap. Look yours up before you sell your first plate.', q: 'What do cottage food laws usually require?', options: ['A commercial kitchen', 'A label and staying under a sales cap', 'A liquor license'], answer: 1 },
@@ -27,7 +27,7 @@ const LESSONS = [
   { id: 'no_free_work', title: 'Trade only for something real', body: '"Exposure" does not pay rent. If someone wants a discount, ask for a review, a referral, or a repeat booking in return. Free work with nothing coming back trains people to expect it.', q: 'What is a fair trade for a discount?', options: ['Exposure', 'A review or a referral', 'Nothing, discounts are normal'], answer: 1 },
 ];
 
-const POINTS_PER_CORRECT = 50;
+const POINTS_PER_CORRECT = 500;
 
 function hash(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
 

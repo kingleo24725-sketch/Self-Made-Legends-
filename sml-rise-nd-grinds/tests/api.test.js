@@ -9,7 +9,7 @@ const Crew = require('../src/agents');
 let app, clock, engine, handleBillingEvent;
 beforeAll(() => {
   clock = Date.parse('2026-09-09T15:00:00Z');
-  ({ app, engine, handleBillingEvent } = createApp({ db: open(':memory:'), now: () => clock, crew: new Crew({ apiKey: '' }), defaultTier: 'boss' }));
+  ({ app, engine, handleBillingEvent } = createApp({ db: open(':memory:'), now: () => clock, crew: new Crew({ apiKey: '' }), defaultTier: 'hof' }));
 });
 
 const auth = (t) => ({ Authorization: `Bearer ${t}` });
@@ -54,16 +54,20 @@ describe('a full day through the API', () => {
     expect(r.body.plan.tasks.length).toBeGreaterThanOrEqual(3);
     expect(r.body.plan.league).toBe('gold');
     expect(r.body.rank).toMatchObject({ rank: 1, of: 1, score: 0, league: 'gold' });
-    expect(r.body).toMatchObject({ canRegenerate: true, canChat: true, canVerify: true, crewOnline: false, tier: 'boss' });
+    expect(r.body).toMatchObject({ canRegenerate: true, canChat: true, canVerify: true, crewOnline: false, tier: 'hof' });
+    expect(r.body.tierInfo.name).toBe('Self-Made Legends Hall of Fame');
     expect(r.body.crewLog.length).toBe(2);
     expect(r.body.goal).toMatchObject({ title: 'New laptop', targetCents: 90000 });
     const me = (await request(app).get('/api/me').set(auth(token))).body;
-    expect(me.features).toEqual({ liveCrew: true, chat: true, receipts: true, localBoards: true });
+    expect(me.features).toMatchObject({ liveCrew: true, chat: true, receipts: true, localBoards: true, video: true, live: true, hallOfFame: true });
+    expect(r.body.gigs.length).toBeGreaterThan(3);
+    expect(r.body.gigs.every(g => /^https?:\/\//.test(g.url) && g.points > 0)).toBe(true);
+    expect(r.body.bot.iq).toBeGreaterThanOrEqual(100);
     expect(me.inviteUrl).toMatch(/\?invite=[A-Z0-9]{6}$/);
   });
 
-  test('one rebuild per day, then it is locked', async () => {
-    expect((await request(app).post('/api/today/regenerate').set(auth(token))).status).toBe(200);
+  test('Hall of Fame gets three rebuilds a day, then it is locked', async () => {
+    for (let i = 0; i < 3; i++) expect((await request(app).post('/api/today/regenerate').set(auth(token))).status).toBe(200);
     expect((await request(app).post('/api/today/regenerate').set(auth(token))).status).toBe(429);
   });
 
@@ -100,7 +104,8 @@ describe('a full day through the API', () => {
     engine.setTier(ben.user.id, 'pro'); engine.defaultTier = 'free';
     expect((await request(app).get('/api/leaderboard?scope=city').set(auth(token))).status).toBe(402);
     expect((await request(app).post('/api/today/chat').set(auth(token)).send({ message: 'hi' })).status).toBe(402);
-    engine.setTier(ben.user.id, 'boss'); engine.defaultTier = 'boss';
+    expect((await request(app).post('/api/live').set(auth(token)).send({ title: 'x' })).status).toBe(402);
+    engine.setTier(ben.user.id, 'hof'); engine.defaultTier = 'hof';
   });
 
   test('challenges: create by name, accept, list', async () => {
@@ -127,12 +132,15 @@ describe('a full day through the API', () => {
 
   test('billing is off without keys, and webhook events still flip tiers', async () => {
     expect((await request(app).post('/api/billing/checkout').set(auth(token)).send({ tier: 'pro' })).status).toBe(404);
-    expect((await request(app).get('/api/billing').set(auth(token))).body).toMatchObject({ enabled: false, tier: 'boss' });
+    const bill = (await request(app).get('/api/billing').set(auth(token))).body;
+    expect(bill).toMatchObject({ enabled: false, tier: 'hof' });
+    expect(bill.tierPrices.hof).toBe(1499);
+    expect(bill.myFees).toEqual({ tipPct: 5, successPct: 0 });
     handleBillingEvent({ type: 'checkout.session.completed', data: { object: { client_reference_id: ben.user.id, customer: 'cus_1', metadata: { tier: 'pro' } } } });
     expect(engine.tierOf(ben.user.id)).toBe('pro');
     handleBillingEvent({ type: 'customer.subscription.deleted', data: { object: { customer: 'cus_1' } } });
-    expect(engine.tierOf(ben.user.id)).toBe('boss'); // free rows fall back to the default tier while billing is off
-    engine.setTier(ben.user.id, 'boss');
+    expect(engine.tierOf(ben.user.id)).toBe('hof'); // free rows fall back to the default tier while billing is off
+    engine.setTier(ben.user.id, 'hof');
   });
 
   test('closing the day writes the debrief, then edits are refused', async () => {
@@ -155,7 +163,7 @@ describe('a full day through the API', () => {
   test('public endpoints reject malformed dates and serve the shell and legal pages', async () => {
     expect((await request(app).get('/api/leaderboard?date=nope')).body.date).toBe('2026-09-09');
     expect((await request(app).get('/api/champion')).body).toEqual({ champion: null });
-    for (const p of ['/', '/manifest.json', '/terms', '/privacy', '/sw.js']) expect((await request(app).get(p)).status).toBe(200);
+    for (const p of ['/', '/manifest.json', '/terms', '/privacy', '/sw.js', '/logo.svg', '/hall-of-fame', '/api/hall-of-fame']) expect((await request(app).get(p)).status).toBe(200);
   });
 });
 
@@ -181,12 +189,12 @@ describe('the public side and the money side', () => {
     expect(svg.headers['content-type']).toMatch(/svg/);
     expect((await request(app).get(`/card/${ava.user.id}/2026-09-09`)).text).toContain('og:image');
     let r = await request(app).post('/api/tips/Ava%20Stone').send({ amountCents: 500, fromName: 'Fan', message: 'go' });
-    expect(r.body).toMatchObject({ fee: 75, net: 425, billing: false });
+    expect(r.body).toMatchObject({ fee: 25, net: 475, billing: false }); // Hall of Fame keeps 95% of tips
     expect((await request(app).post('/api/tips/Ava%20Stone').send({ amountCents: 10 })).status).toBe(400);
     const me = (await request(app).get('/api/me').set(auth(ava.token))).body;
-    expect(me.payoutBalanceCents).toBe(425);
+    expect(me.payoutBalanceCents).toBe(475);
     expect(me.stats.tipsCount).toBe(1);
-    expect((await request(app).get('/api/payouts').set(auth(ava.token))).body.balanceCents).toBe(425);
+    expect((await request(app).get('/api/payouts').set(auth(ava.token))).body.balanceCents).toBe(475);
     expect((await request(app).post('/api/payouts/request').set(auth(ava.token))).status).toBe(400);
   });
 
@@ -236,14 +244,14 @@ describe('the public side and the money side', () => {
     expect(r.body.question.status).toBe('open');
     r = await request(app).post(`/api/mentors/questions/${r.body.question.id}/answer`).set(auth(ava.token)).send({ answer: 'Start at $45 and raise it when you are booked out a week.' });
     expect(r.body.question.status).toBe('answered');
-    expect((await request(app).get('/api/me').set(auth(ava.token))).body.payoutBalanceCents).toBe(425 + 640);
+    expect((await request(app).get('/api/me').set(auth(ava.token))).body.payoutBalanceCents).toBe(475 + 640);
     await request(app).delete('/api/mentors').set(auth(ava.token));
   });
 
   test('the owner console is locked without the key and works with it', async () => {
     expect((await request(app).get('/api/admin/revenue')).status).toBe(401);
     const { createApp: mk } = require('../server');
-    const adminApp = mk({ db: open(':memory:'), now: () => clock, crew: new Crew({ apiKey: '' }), defaultTier: 'boss', adminKey: 'k1', env: {} }).app;
+    const adminApp = mk({ db: open(':memory:'), now: () => clock, crew: new Crew({ apiKey: '' }), defaultTier: 'allstar', adminKey: 'k1', env: {}, defaultTier: 'hof' }).app;
     const h = { 'x-admin-key': 'k1' };
     expect((await request(adminApp).get('/api/admin/revenue').set(h)).body.players).toBe(0);
     let r = await request(adminApp).post('/api/admin/fees').set(h).send({ TIP_FEE_PCT: 20 });

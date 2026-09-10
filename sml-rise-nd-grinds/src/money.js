@@ -1,6 +1,6 @@
 'use strict';
 
-// Money that moves through Rise N Grind, and the platform's cut of it.
+// Money that moves through Self-Made Legends, and the platform's cut of it.
 //
 // Every dollar that touches the app goes through here and lands in the ledger
 // with the fee split out, so the revenue dashboard is always the truth:
@@ -31,6 +31,7 @@ class Money {
     this.now = opts.now || (() => Date.now());
     this.stripe = opts.stripe || null;
     this.env = opts.env || process.env;
+    this.defaultTier = opts.defaultTier || null;
     this.fees = { ...DEFAULT_FEES };
     for (const k of Object.keys(DEFAULT_FEES)) {
       const v = this.env[k]; if (v !== undefined && v !== '' && Number.isFinite(Number(v))) this.fees[k] = Number(v);
@@ -45,6 +46,15 @@ class Money {
     this.db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('fee.' + key, String(v));
     return this.fees;
   }
+
+  /** Members pay less: Veteran and Hall of Fame keep more of every tip and pay a smaller (or no) Legend Fee. */
+  tierFees(tier) {
+    const f = { tipPct: this.fees.TIP_FEE_PCT, successPct: this.fees.SUCCESS_FEE_PCT };
+    if (tier === 'veteran') { f.tipPct = Math.min(f.tipPct, 10); f.successPct = Math.min(f.successPct, 3); }
+    if (tier === 'hof') { f.tipPct = Math.min(f.tipPct, 5); f.successPct = 0; }
+    return f;
+  }
+  tierOf(userId) { const r = this.db.prepare('SELECT tier FROM users WHERE id = ?').get(userId); const t = r && r.tier; return t === 'boss' ? 'allstar' : (t && t !== 'free' ? t : (this.defaultTier || 'free')); }
 
   split(grossCents, pct) {
     const fee = Math.round(grossCents * pct / 100);
@@ -62,14 +72,14 @@ class Money {
   async createTip(toUser, { amountCents, fromName, message, successUrl, cancelUrl }) {
     amountCents = Math.round(Number(amountCents) || 0);
     if (amountCents < this.fees.TIP_MIN_CENTS || amountCents > this.fees.TIP_MAX_CENTS) throw new Error(`Tips are $${this.fees.TIP_MIN_CENTS / 100} to $${this.fees.TIP_MAX_CENTS / 100}`);
-    const { fee, net } = this.split(amountCents, this.fees.TIP_FEE_PCT);
+    const { fee, net } = this.split(amountCents, this.tierFees(this.tierOf(toUser.id)).tipPct);
     const r = this.db.prepare('INSERT INTO tips (to_user_id, from_name, message, gross_cents, fee_cents, net_cents, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
       .run(toUser.id, String(fromName || 'A fan').slice(0, 40), String(message || '').slice(0, 200), amountCents, fee, net, 'pending', this.now());
     const tipId = r.lastInsertRowid;
     if (!this.stripe) return { tipId, url: null, status: 'pending', fee, net };
     const params = {
       mode: 'payment',
-      line_items: [{ quantity: 1, price_data: { currency: 'usd', unit_amount: amountCents, product_data: { name: `Tip for ${toUser.displayName} on Rise N Grind` } } }],
+      line_items: [{ quantity: 1, price_data: { currency: 'usd', unit_amount: amountCents, product_data: { name: `Tip for ${toUser.displayName} on Self-Made Legends` } } }],
       metadata: { kind: 'tip', tipId: String(tipId), toUserId: toUser.id },
       success_url: successUrl, cancel_url: cancelUrl,
     };
@@ -147,8 +157,9 @@ class Money {
   successFeeFor(userId, month) {
     const u = this.db.prepare('SELECT success_fee_optin, stripe_customer_id, tier FROM users WHERE id = ?').get(userId);
     const r = this.db.prepare("SELECT COALESCE(SUM(verified_cents), 0) AS v FROM daily_scores WHERE user_id = ? AND substr(date, 1, 7) = ? AND closed = 1").get(userId, month);
-    const fee = Math.round(r.v * this.fees.SUCCESS_FEE_PCT / 100);
-    return { month, verifiedCents: r.v, feeCents: fee, pct: this.fees.SUCCESS_FEE_PCT, optedIn: !!(u && u.success_fee_optin), billable: !!(u && u.stripe_customer_id) && fee >= this.fees.SUCCESS_FEE_MIN_CENTS };
+    const pct = this.tierFees(this.tierOf(userId)).successPct;
+    const fee = Math.round(r.v * pct / 100);
+    return { month, verifiedCents: r.v, feeCents: fee, pct, optedIn: !!(u && u.success_fee_optin), billable: !!(u && u.stripe_customer_id) && fee >= this.fees.SUCCESS_FEE_MIN_CENTS };
   }
 
   /** Month-end: record the fee for every player and invoice the ones we can. Idempotent per (user, month). */
@@ -163,7 +174,7 @@ class Money {
       let status = 'recorded';
       if (f.billable && this.stripe) {
         try {
-          await this.stripe.invoiceItems.create({ customer: u.stripe_customer_id, amount: f.feeCents, currency: 'usd', description: `Rise N Grind Legend Fee, ${f.pct}% of $${(f.verifiedCents / 100).toFixed(2)} verified in ${month}` });
+          await this.stripe.invoiceItems.create({ customer: u.stripe_customer_id, amount: f.feeCents, currency: 'usd', description: `Self-Made Legends Legend Fee, ${f.pct}% of $${(f.verifiedCents / 100).toFixed(2)} verified in ${month}` });
           const inv = await this.stripe.invoices.create({ customer: u.stripe_customer_id, auto_advance: true, collection_method: 'charge_automatically' });
           await this.stripe.invoices.finalizeInvoice(inv.id);
           status = 'invoiced';
@@ -192,7 +203,7 @@ class Money {
     const list = Object.values(byMonth).sort((a, b) => b.month.localeCompare(a.month)).slice(0, months);
     const owed = this.db.prepare('SELECT COALESCE(SUM(payout_balance_cents), 0) AS b FROM users').get().b;
     const players = this.db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-    const paying = this.db.prepare("SELECT COUNT(*) AS c FROM users WHERE tier IN ('pro','boss')").get().c;
+    const paying = this.db.prepare("SELECT COUNT(*) AS c FROM users WHERE tier IN ('pro','allstar','veteran','hof','boss')").get().c;
     const verified = this.db.prepare('SELECT COALESCE(SUM(verified_cents), 0) AS v, COALESCE(SUM(earnings_cents), 0) AS e FROM daily_scores').get();
     return { fees: this.fees, months: list, owedToLegendsCents: owed, players, paying, verifiedCents: verified.v, loggedCents: verified.e };
   }
