@@ -35,6 +35,7 @@ const PLAN_READY_HOUR = 4;              // the crew finishes the plan by 4am loc
 const REGENERATIONS_PER_DAY = 1;
 const CHECKIN_GRACE_MIN = 5;            // minutes after a block ends before the crew checks in
 const INSURANCE_DAYS = 7;               // one free streak save per week
+const STRICT_PROOF_CENTS = 15_000;      // low-trust accounts need a receipt or photo for a play claiming more than this
 
 // Ranks are earned by playing and cost nothing: Rookie, Pro, All Star, Superstar.
 const RANKS = ['rookie', 'pro', 'allstar', 'superstar'];
@@ -83,6 +84,9 @@ class Engine {
     this.community = null; // attached by the server once Community exists
     this.learning = new Learning(db, { now: this.now });
     this.gigs = null;
+    this.trust = null;   // fraud defenses (attached by the server)
+    this.squads = null;  // squads and bot vs bot (attached by the server)
+    this.ops = null;     // alarms and reconciliation (attached by the server)
     this.briefCache = {
       get: (key, date) => { const r = this.db.prepare('SELECT brief FROM briefs WHERE city_key = ? AND date = ?').get(key, date); return r ? r.brief : null; },
       set: (key, date, brief) => this.db.prepare('INSERT OR REPLACE INTO briefs (city_key, date, brief, created_at) VALUES (?, ?, ?, ?)').run(key, date, brief, this.now()),
@@ -286,7 +290,7 @@ class Engine {
   _hydrate(row) {
     const plan = JSON.parse(row.plan_json);
     const tasks = this.db.prepare('SELECT * FROM tasks WHERE plan_id = ? ORDER BY order_num ASC').all(row.id);
-    plan.id = row.id; plan.status = row.status; plan.generatedAt = row.generated_at; plan.closedAt = row.closed_at; plan.regenerations = row.regenerations;
+    plan.id = row.id; plan.status = row.status; plan.generatedAt = row.generated_at; plan.closedAt = row.closed_at; plan.regenerations = row.regenerations; plan.firstDay = !!row.first_day;
     plan.tasks = tasks.map((s, i) => {
       const t = plan.tasks[i] || { title: s.title, icon: '✅', hours: s.hours, steps: [], why: '', sources: [], estimatedEarnings: { low: 0, high: 0 } };
       const difficulty = s.difficulty || t.difficulty || 5;
@@ -359,7 +363,8 @@ class Engine {
           this.db.prepare('UPDATE plans SET plan_json = ?, generated_by = ?, generated_at = ?, regenerations = regenerations + 1 WHERE id = ?').run(JSON.stringify(plan), plan.generatedBy, now, existing.id);
           planId = existing.id;
         } else {
-          planId = this.db.prepare('INSERT INTO plans (user_id, date, status, plan_json, generated_by, generated_at) VALUES (?, ?, ?, ?, ?, ?)').run(userId, dateKey, 'open', JSON.stringify(plan), plan.generatedBy, now).lastInsertRowid;
+          const firstDay = this.db.prepare('SELECT COUNT(*) AS c FROM plans WHERE user_id = ?').get(userId).c === 0 ? 1 : 0;
+          planId = this.db.prepare('INSERT INTO plans (user_id, date, status, plan_json, generated_by, generated_at, first_day) VALUES (?, ?, ?, ?, ?, ?, ?)').run(userId, dateKey, 'open', JSON.stringify(plan), plan.generatedBy, now, firstDay).lastInsertRowid;
         }
         this._insertTasks(planId, plan.tasks);
       });
@@ -369,6 +374,10 @@ class Engine {
       if (!existing) {
         this.notify(userId, 'plan', 'Your crew finished today\'s plan', plan.headline);
         this._linkReferralDuel(userId, dateKey);
+        if (hydrated.firstDay) {
+          log('Coach', 'Day one. Three moves: finish one play, tell your bot what you did, get approved. Points only exist after approval. Everything else is a bonus.');
+          this.notify(userId, 'welcome', 'Welcome to Self-Made Legends', 'Day one is simple: finish one play, tell your bot, get approved. That is your first points and the start of your streak.', { push: false });
+        }
       }
       this.onEvent(userId, 'plan_ready', { date: dateKey, headline: plan.headline });
       return hydrated;
@@ -497,8 +506,23 @@ class Engine {
       sha = crypto.createHash('sha256').update(imageBase64).digest('hex');
       if (this.db.prepare('SELECT 1 FROM tasks WHERE proof_sha = ? AND id != ?').get(sha, taskId)) throw new Error('That photo was already used for another play');
     }
-    const verdict = await this.crewFor(userId).approveTask({ title: fresh.title, hours: fresh.hours, difficulty: fresh.difficulty, category: fresh.category }, { note: fresh.note, earningsCents: fresh.earnings_cents, verifiedCents: fresh.verified_cents, imageBase64, mediaType });
-    return this._applyApproval(userId, fresh, verdict, sha);
+    // Trust decides how much proof the Auditor demands: new or shaky accounts need a receipt or a photo for big claims.
+    const proof = this.trust ? this.trust.proofRequired(userId) : null;
+    if (proof && proof.level === 'strict' && !imageBase64 && !fresh.verified_cents && fresh.earnings_cents > STRICT_PROOF_CENTS) {
+      const out = this._applyApproval(userId, fresh, { approved: false, reason: `You logged ${money(fresh.earnings_cents)} on this. Until your trust score is up (verify your phone, keep getting approved), your bot needs ${proof.needs} for anything over ${money(STRICT_PROOF_CENTS)}.` }, null);
+      this.trust.recompute(userId);
+      return out;
+    }
+    if (proof && fresh.note && fresh.note.trim().length < proof.minNote && !imageBase64 && !fresh.verified_cents) {
+      const out = this._applyApproval(userId, fresh, { approved: false, reason: `Tell your bot more. It needs ${proof.needs} (at least ${proof.minNote} characters), or a photo.` }, null);
+      this.trust.recompute(userId);
+      return out;
+    }
+    const verdict = await this.crewFor(userId).approveTask({ title: fresh.title, hours: fresh.hours, difficulty: fresh.difficulty, category: fresh.category }, { note: fresh.note, earningsCents: fresh.earnings_cents, verifiedCents: fresh.verified_cents, imageBase64, mediaType, proof });
+    const out = this._applyApproval(userId, fresh, verdict, sha);
+    if (this.trust) { try { this.trust.recompute(userId); } catch (_) {} }
+    if (out.approved && this.db.prepare("SELECT COUNT(*) AS c FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE p.user_id = ? AND t.approval = 'approved'").get(userId).c === 1) this.awardBadge(userId, 'first_approved', fresh.date, 'First play approved by your bot');
+    return out;
   }
 
   _applyApproval(userId, row, verdict, sha = null, { quiet = false } = {}) {
@@ -937,9 +961,22 @@ class Engine {
     for (const c of this.db.prepare("SELECT DISTINCT date FROM challenges WHERE status IN ('accepted','pending') AND date <= ?").all(twoDaysAgo)) {
       try { this.settleChallenges(c.date); } catch (e) { console.error('[duel]', c.date, e.message); }
     }
+    if (this.squads) {
+      for (const d of this.db.prepare("SELECT DISTINCT date FROM bot_duels WHERE status = 'open' AND date <= ?").all(twoDaysAgo)) { try { this.squads.settle(d.date); } catch (e) { console.error('[bot-duel]', d.date, e.message); } }
+      for (const d of touched) { try { this.squads.settle(d); } catch (e) { console.error('[bot-duel]', d, e.message); } }
+    }
     if (this.community) { try { await this.community.weeklyTick(new Date(this.now()).toISOString().slice(0, 10)); } catch (e) { console.error('[weekly]', e.message); } }
+    if (this.ops) {
+      try { await this.ops.check(); } catch (e) { console.error('[ops]', e.message); }
+      // Reconcile yesterday's money once a day.
+      const yesterday = Engine.shiftDate(new Date(this.now()).toISOString().slice(0, 10), -1);
+      const last = this.db.prepare("SELECT value FROM settings WHERE key = 'ops.lastReconcile'").get();
+      if (!last || last.value < yesterday) {
+        try { await this.ops.reconcile(yesterday); this.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('ops.lastReconcile', ?)").run(yesterday); } catch (e) { console.error('[reconcile]', e.message); }
+      }
+    }
   }
 }
 
 module.exports = Engine;
-module.exports.constants = { CATEGORIES, RANKS, RANK_NAMES, RANK_RULES, TIER_NAMES, TIER_PRICES_CENTS, TIER_PERKS, REGENERATIONS_BY_TIER, INSURANCE_BY_TIER, DAILY_CAP, POINTS_PER_DIFF_HOUR, VERIFIED_POINTS_PER_DOLLAR, UNVERIFIED_POINTS_PER_DOLLAR, IDLE_PENALTY, IDLE_PENALTY_CAP, BENCH_DAYS, EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };
+module.exports.constants = { CATEGORIES, RANKS, RANK_NAMES, RANK_RULES, TIER_NAMES, TIER_PRICES_CENTS, TIER_PERKS, REGENERATIONS_BY_TIER, INSURANCE_BY_TIER, DAILY_CAP, POINTS_PER_DIFF_HOUR, VERIFIED_POINTS_PER_DOLLAR, UNVERIFIED_POINTS_PER_DOLLAR, IDLE_PENALTY, IDLE_PENALTY_CAP, BENCH_DAYS, STRICT_PROOF_CENTS, EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };

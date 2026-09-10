@@ -109,7 +109,8 @@ describe('profiles and plans', () => {
     expect(plan.tasks.every(t => t.taskId && t.status === 'pending' && t.endsMin)).toBe(true);
     expect((await engine.ensurePlan('u_a')).id).toBe(plan.id);
     expect(engine.inbox('u_a').filter(i => i.kind === 'plan').length).toBe(1);
-    expect(engine.crewLog('u_a', day).map(l => l.agent)).toEqual(['Coach', 'Strategist']);
+    expect(engine.crewLog('u_a', day).map(l => l.agent)).toEqual(['Coach', 'Strategist', 'Coach']); // day one gets the Coach's three moves
+    expect(plan.firstDay).toBe(true);
     expect(engine.leaderboard(day)[0]).toMatchObject({ userId: 'u_a', score: 0, displayName: 'Ava', league: 'rookie' });
   });
 
@@ -298,7 +299,7 @@ describe('closing the day', () => {
     expect(db.prepare('SELECT * FROM daily_scores WHERE user_id = ? AND date = ?').get('u_b', yesterday)).toMatchObject({ streak: 1, rank: 1, closed: 1 });
     expect(db.prepare('SELECT rank FROM daily_scores WHERE user_id = ? AND date = ?').get('u_a', yesterday).rank).toBe(2);
     expect(engine.podium(yesterday).map(p => p.userId)).toEqual(['u_b', 'u_a']);
-    expect(engine.badges('u_b').map(b => b.badge).sort()).toEqual(['full_day', 'world_champion']);
+    expect(engine.badges('u_b').map(b => b.badge).sort()).toEqual(['first_approved', 'full_day', 'world_champion']);
     expect(engine.inbox('u_b').find(i => i.kind === 'close').title).toMatch(/Full day/);
     expect(pushes.some(p => p.payload.kind === 'podium')).toBe(false); // no subscriptions registered
     const champ = engine.championPlan(yesterday);

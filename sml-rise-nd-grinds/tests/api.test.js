@@ -56,7 +56,8 @@ describe('a full day through the API', () => {
     expect(r.body.rank).toMatchObject({ rank: 1, of: 1, score: 0, league: 'rookie' });
     expect(r.body).toMatchObject({ canRegenerate: true, canChat: true, canVerify: true, crewOnline: false, tier: 'hof' });
     expect(r.body.tierInfo.name).toBe('Self-Made Legends Hall of Fame');
-    expect(r.body.crewLog.length).toBe(2);
+    expect(r.body.crewLog.length).toBe(3); // Coach brief, Strategist, day-one Coach note
+    expect(r.body.plan.firstDay).toBe(true);
     expect(r.body.goal).toMatchObject({ title: 'New laptop', targetCents: 90000 });
     const me = (await request(app).get('/api/me').set(auth(token))).body;
     expect(me.features).toMatchObject({ liveCrew: true, chat: true, receipts: true, localBoards: true, video: true, live: true, hallOfFame: true });

@@ -470,6 +470,158 @@ CREATE TABLE IF NOT EXISTS bot_ratings (
   created_at INTEGER NOT NULL,
   PRIMARY KEY (room_id, rater_id)
 );
+CREATE TABLE IF NOT EXISTS phone_codes (
+  user_id    TEXT PRIMARY KEY,
+  phone      TEXT NOT NULL,
+  code       TEXT NOT NULL,
+  attempts   INTEGER NOT NULL DEFAULT 0,
+  expires_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS devices (
+  device_id  TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  first_seen INTEGER NOT NULL,
+  last_seen  INTEGER NOT NULL,
+  PRIMARY KEY (device_id, user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_devices_user ON devices (user_id);
+CREATE TABLE IF NOT EXISTS ops_alerts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind       TEXT NOT NULL,
+  severity   TEXT NOT NULL DEFAULT 'warn',
+  message    TEXT NOT NULL,
+  data       TEXT,
+  resolved   INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ops_errors (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  source     TEXT NOT NULL,
+  message    TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS reconciliations (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  day           TEXT NOT NULL,
+  ledger_cents  INTEGER NOT NULL,
+  stripe_cents  INTEGER,
+  diff_cents    INTEGER NOT NULL DEFAULT 0,
+  notes         TEXT,
+  ok            INTEGER NOT NULL DEFAULT 1,
+  created_at    INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS squads (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT NOT NULL UNIQUE,
+  code       TEXT NOT NULL UNIQUE,
+  captain_id TEXT NOT NULL,
+  city       TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS squad_members (
+  squad_id   INTEGER NOT NULL,
+  user_id    TEXT NOT NULL UNIQUE,
+  joined_at  INTEGER NOT NULL,
+  PRIMARY KEY (squad_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS bot_duels (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  a_id         TEXT NOT NULL,
+  b_id         TEXT NOT NULL,
+  date         TEXT NOT NULL,
+  status       TEXT NOT NULL DEFAULT 'open',
+  a_score      INTEGER,
+  b_score      INTEGER,
+  winner_id    TEXT,
+  created_at   INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bot_duel_votes (
+  duel_id    INTEGER NOT NULL,
+  voter_id   TEXT NOT NULL,
+  pick       TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (duel_id, voter_id)
+);
+CREATE TABLE IF NOT EXISTS sponsor_tiles (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  sponsor      TEXT NOT NULL,
+  city_key     TEXT NOT NULL,
+  title        TEXT NOT NULL,
+  body         TEXT,
+  url          TEXT NOT NULL,
+  starts       TEXT NOT NULL,
+  ends         TEXT NOT NULL,
+  amount_cents INTEGER NOT NULL DEFAULT 0,
+  clicks       INTEGER NOT NULL DEFAULT 0,
+  created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sponsor_city ON sponsor_tiles (city_key, starts, ends);
+CREATE TABLE IF NOT EXISTS employers (
+  user_id    TEXT PRIMARY KEY,
+  org        TEXT NOT NULL,
+  contact    TEXT,
+  city_key   TEXT,
+  verified   INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS postings (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  employer_id  TEXT NOT NULL,
+  org          TEXT NOT NULL,
+  title        TEXT NOT NULL,
+  body         TEXT,
+  city_key     TEXT NOT NULL,
+  city         TEXT,
+  date         TEXT NOT NULL,
+  hours        REAL NOT NULL DEFAULT 4,
+  pay_cents    INTEGER NOT NULL,
+  slots        INTEGER NOT NULL DEFAULT 1,
+  filled       INTEGER NOT NULL DEFAULT 0,
+  difficulty   INTEGER NOT NULL DEFAULT 5,
+  kind         TEXT NOT NULL DEFAULT 'shift',
+  fee_cents    INTEGER NOT NULL DEFAULT 0,
+  status       TEXT NOT NULL DEFAULT 'open',
+  created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_postings_city ON postings (city_key, date, status);
+CREATE TABLE IF NOT EXISTS posting_claims (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  posting_id   INTEGER NOT NULL,
+  user_id      TEXT NOT NULL,
+  task_id      INTEGER,
+  status       TEXT NOT NULL DEFAULT 'claimed',
+  paid_cents   INTEGER NOT NULL DEFAULT 0,
+  fee_cents    INTEGER NOT NULL DEFAULT 0,
+  created_at   INTEGER NOT NULL,
+  confirmed_at INTEGER,
+  UNIQUE(posting_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS resume_views (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  employer_id TEXT NOT NULL,
+  user_id     TEXT NOT NULL,
+  fee_cents   INTEGER NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS clips (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    TEXT NOT NULL,
+  room_id    INTEGER,
+  title      TEXT NOT NULL,
+  file       TEXT NOT NULL,
+  mime       TEXT NOT NULL,
+  bytes      INTEGER NOT NULL,
+  seconds    INTEGER NOT NULL DEFAULT 0,
+  date       TEXT NOT NULL,
+  views      INTEGER NOT NULL DEFAULT 0,
+  public     INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS reports (
+  key        TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
 `;
 
 function open(file) {
@@ -531,6 +683,15 @@ const MIGRATIONS = [
   "ALTER TABLE tasks ADD COLUMN approval TEXT NOT NULL DEFAULT 'none'",
   'ALTER TABLE tasks ADD COLUMN approval_reason TEXT',
   'ALTER TABLE tasks ADD COLUMN proof_sha TEXT',
+  'ALTER TABLE users ADD COLUMN phone TEXT',
+  'ALTER TABLE users ADD COLUMN phone_verified_at INTEGER',
+  'ALTER TABLE users ADD COLUMN trust INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE users ADD COLUMN banned_at INTEGER',
+  "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'player'",
+  'ALTER TABLE plans ADD COLUMN first_day INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE tasks ADD COLUMN posting_id INTEGER',
+  'ALTER TABLE live_rooms ADD COLUMN kind TEXT NOT NULL DEFAULT \'live\'',
+  'ALTER TABLE live_rooms ADD COLUMN squad_id INTEGER',
 ];
 function migrate(db) {
   for (const sql of MIGRATIONS) { try { db.exec(sql); } catch (_) { /* already applied */ } }

@@ -13,6 +13,11 @@ const Money = require('./src/money');
 const Community = require('./src/community');
 const Social = require('./src/social');
 const Gigs = require('./src/gigs');
+const Trust = require('./src/trust');
+const Ops = require('./src/ops');
+const Squads = require('./src/squads');
+const Market = require('./src/market');
+const Clips = require('./src/clips');
 const { RESOURCES, CATEGORIES } = require('./src/playbook');
 
 const APP_URL = process.env.APP_URL || 'http://localhost:' + (process.env.PORT || 3000);
@@ -50,9 +55,17 @@ function createApp(opts = {}) {
   const social = new Social(db, { now, onEvent });
   const gigs = new Gigs(db, { crew, engine, learning: engine.learning, now, onEvent });
   engine.gigs = gigs;
+  const trust = new Trust(db, { now, env: opts.env, sms: opts.sms });
+  engine.trust = trust;
+  const ops = new Ops(db, { engine, money: money$, stripe, now, env: opts.env });
+  engine.ops = ops;
+  const squads = new Squads(db, { engine, social, now, onEvent });
+  engine.squads = squads;
+  const market = new Market(db, { engine, money: money$, gigs, now, onEvent });
+  const clips = new Clips(db, { now, onEvent, dir: opts.clipsDir });
   const auth = new Auth(db, { now });
   const requireUserOnly = auth.middleware();
-  const requireUser = (req, res, next) => requireUserOnly(req, res, () => { social.seen(req.user.id); next(); });
+  const requireUser = (req, res, next) => requireUserOnly(req, res, () => { if (trust.banned(req.user.id)) return res.status(403).json({ error: 'This account is closed. Contact support@selfmadelegends.app.' }); social.seen(req.user.id); next(); });
   const adminKey = opts.adminKey !== undefined ? opts.adminKey : process.env.ADMIN_KEY;
   const requireAdmin = (req, res, next) => { if (!adminKey || req.headers['x-admin-key'] !== adminKey) return res.status(401).json({ error: 'Admin key required' }); next(); };
   const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
@@ -100,8 +113,20 @@ function createApp(opts = {}) {
   app.use(express.json({ limit: '64kb' }));
 
   // ── Auth ─────────────────────────────────────────────────────────────────
-  app.post('/api/auth/register', (req, res) => { try { res.json(auth.register(req.body || {})); } catch (e) { fail(res, e); } });
-  app.post('/api/auth/login', (req, res) => { try { res.json(auth.login(req.body || {})); } catch (e) { res.status(401).json({ error: e.message }); } });
+  // One account per phone: the app sends a device id; a device that already carries an account cannot register another.
+  app.post('/api/auth/register', (req, res) => {
+    const b = req.body || {};
+    try {
+      if (b.deviceId) { const others = db.prepare('SELECT COUNT(*) AS c FROM devices WHERE device_id = ?').get(String(b.deviceId).slice(0, 80)).c; if (others >= Trust.constants.MAX_ACCOUNTS_PER_DEVICE) return res.status(409).json({ error: 'This phone already has a Self-Made Legends account. Sign in to it instead.' }); }
+      const r = auth.register(b);
+      trust.registerDevice(r.user.id, b.deviceId, { enforce: false });
+      res.json(r);
+    } catch (e) { fail(res, e); }
+  });
+  app.post('/api/auth/login', (req, res) => { const b = req.body || {}; try { const r = auth.login(b); if (trust.banned(r.user.id)) return res.status(403).json({ error: 'This account is closed.' }); trust.registerDevice(r.user.id, b.deviceId, { enforce: false }); res.json(r); } catch (e) { res.status(401).json({ error: e.message }); } });
+  app.post('/api/phone/send', requireUser, wrap(async (req, res) => { try { res.json(await trust.sendCode(req.user.id, (req.body || {}).phone)); } catch (e) { fail(res, e); } }));
+  app.post('/api/phone/verify', requireUser, (req, res) => { try { res.json(trust.verifyCode(req.user.id, (req.body || {}).code)); } catch (e) { fail(res, e); } });
+  app.get('/api/trust', requireUser, (req, res) => res.json({ trust: trust.score(req.user.id), phoneVerified: trust.phoneVerified(req.user.id), proof: trust.proofRequired(req.user.id), devices: trust.devicesFor(req.user.id).length }));
   app.post('/api/auth/logout', requireUser, (req, res) => { auth.logout(req.token); res.json({ ok: true }); });
   app.get('/api/me', requireUser, (req, res) => {
     const tier = engine.tierOf(req.user.id);
@@ -117,6 +142,8 @@ function createApp(opts = {}) {
       mentor: community.mentors().find(m => m.userId === req.user.id) || null,
       avatarUrl: `/api/avatar/${req.user.id}?v=${(db.prepare('SELECT updated_at FROM avatars WHERE user_id = ?').get(req.user.id) || {}).updated_at || 0}`,
       unreadMessages: social.unreadCount(req.user.id), friends: social.friends(req.user.id), botRating: social.botRating(req.user.id),
+      trust: trust.score(req.user.id), phoneVerified: trust.phoneVerified(req.user.id), proof: trust.proofRequired(req.user.id),
+      squad: squads.mine(req.user.id), employer: market.employer(req.user.id), clips: clips.mine(req.user.id).slice(0, 6), resumeUrl: `${APP_URL}/u/${encodeURIComponent(req.user.displayName)}/resume`,
     });
   });
   app.post('/api/me/avatar', requireUser, express.json({ limit: '2mb' }), (req, res) => { try { res.json(social.setAvatar(req.user.id, (req.body || {}).image)); } catch (e) { fail(res, e); } });
@@ -182,6 +209,8 @@ function createApp(opts = {}) {
       champion: engine.championPlan(Engine.shiftDate(date, -1)),
       lesson: community.lessonFor(userId, date),
       gigs: await gigs.find(userId, profile, date),
+      sponsors: market.tilesFor(profile.location, date), postings: market.postingsFor(profile.location, date),
+      squad: squads.mine(userId),
       bot: { ...engine.learning.botIQ(userId), rating: social.botRating(userId) },
       safety: safe ? community.safety(safe.token) : null,
       challengeDays: community.activeChallenges(date),
@@ -375,6 +404,80 @@ ${c.beaters.length ? `<h2>Beat it</h2><div class="card">${c.beaters.slice(0, 10)
     res.json({ url: session.url });
   }));
 
+  // ── Squads, crew calls, bot vs bot ───────────────────────────────────────
+  app.get('/api/squads', requireUser, (req, res) => res.json({ mine: squads.mine(req.user.id), board: squads.board(todayUTC()), duels: squads.duels(12), myDuels: squads.mineDuels(req.user.id) }));
+  app.get('/api/squads/board', (req, res) => res.json({ board: squads.board(todayUTC()) }));
+  app.post('/api/squads', requireUser, (req, res) => { try { res.json({ squad: squads.create(req.user.id, (req.body || {}).name) }); } catch (e) { fail(res, e); } });
+  app.post('/api/squads/join', requireUser, (req, res) => { try { res.json({ squad: squads.join(req.user.id, (req.body || {}).code) }); } catch (e) { fail(res, e); } });
+  app.delete('/api/squads', requireUser, (req, res) => res.json(squads.leave(req.user.id) || { ok: true }));
+  app.post('/api/squads/room', requireUser, (req, res) => { try { res.json({ ...squads.openRoom(req.user.id), iceServers: ICE_SERVERS }); } catch (e) { fail(res, e); } });
+  app.post('/api/squads/room/:id/leave', requireUser, (req, res) => { squads.leaveRoom(req.user.id, Number(req.params.id)); res.json({ ok: true }); });
+  app.post('/api/squads/room/:id/signal', requireUser, express.json({ limit: '256kb' }), (req, res) => { const b = req.body || {}; try { res.json(squads.signal(Number(req.params.id), req.user.id, b.to, b.type, b.payload)); } catch (e) { fail(res, e); } });
+  app.get('/api/bot-duels', (req, res) => res.json({ duels: squads.duels(20) }));
+  app.post('/api/bot-duels', requireUser, (req, res) => {
+    const profile = engine.getProfile(req.user.id);
+    if (!profile) return res.status(400).json({ error: 'Set up your profile first' });
+    const b = req.body || {};
+    const other = engine.findUser(b.opponent);
+    if (!other) return res.status(404).json({ error: 'No player by that name' });
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(b.date || '') ? b.date : engine.localDateKey(profile);
+    try { res.json({ duel: squads.challenge(req.user.id, other.id, date) }); } catch (e) { fail(res, e); }
+  });
+  app.post('/api/bot-duels/:id/vote', requireUser, (req, res) => { try { res.json({ duel: squads.vote(Number(req.params.id), req.user.id, (req.body || {}).pick) }); } catch (e) { fail(res, e); } });
+
+  // ── Marketplace: sponsors, employers, postings, résumés, city reports ────
+  app.get('/api/sponsor/:id/click', (req, res) => { const url = market.click(Number(req.params.id)); if (!url) return res.status(404).json({ error: 'Not found' }); res.redirect(url); });
+  app.get('/api/postings', requireUser, (req, res) => { const profile = engine.getProfile(req.user.id); res.json({ postings: profile ? market.postingsFor(profile.location, engine.localDateKey(profile), 30) : [] }); });
+  app.get('/api/postings/:id', requireUser, (req, res) => { const p = market.posting(Number(req.params.id)); if (!p) return res.status(404).json({ error: 'Not found' }); res.json({ posting: p }); });
+  app.post('/api/postings/:id/claim', requireUser, (req, res) => { try { res.json(market.claim(req.user.id, Number(req.params.id))); } catch (e) { fail(res, e); } });
+  app.get('/api/employer', requireUser, (req, res) => res.json({ employer: market.employer(req.user.id), postings: market.myPostings(req.user.id), feeCents: Market.constants.POSTING_FEE_CENTS, resumeViewCents: Market.constants.RESUME_VIEW_CENTS, cutPct: money$.fees.POOL_FEE_PCT }));
+  app.post('/api/employer', requireUser, (req, res) => { try { res.json({ employer: market.registerEmployer(req.user.id, req.body || {}) }); } catch (e) { fail(res, e); } });
+  app.post('/api/employer/postings', requireUser, (req, res) => { try { res.json({ posting: market.post(req.user.id, req.body || {}) }); } catch (e) { fail(res, e); } });
+  app.post('/api/employer/claims/:id/confirm', requireUser, (req, res) => { try { res.json({ posting: market.confirm(req.user.id, Number(req.params.id)) }); } catch (e) { fail(res, e); } });
+  app.get('/api/employer/search', requireUser, (req, res) => { if (!market.employer(req.user.id)) return res.status(403).json({ error: 'Register as an employer first' }); res.json({ results: market.search({ city: req.query.city, category: CATEGORIES[req.query.category] ? req.query.category : null, minDays: parseInt(req.query.minDays, 10) || 0 }) }); });
+  app.get('/api/employer/resume/:userId', requireUser, (req, res) => { try { res.json({ resume: market.viewResume(req.user.id, req.params.userId) }); } catch (e) { fail(res, e); } });
+  app.get('/api/u/:name/resume', (req, res) => { const p = community.publicProfile(req.params.name); if (!p) return res.status(404).json({ error: 'No public Legend by that name' }); res.json({ resume: market.resume(p.id) }); });
+  app.get('/u/:name/resume', (req, res) => {
+    const p = community.publicProfile(req.params.name);
+    const r = p && market.resume(p.id);
+    if (!r) return res.status(404).send(page({ title: 'No such Legend', description: '', body: '<h1>No public Legend by that name.</h1>' }));
+    res.send(page({ title: `${r.name} · Verified track record`, description: `${r.days} days on the grind, ${r.approvedPlays} plays approved, ${money(r.verifiedCents)} verified. ${r.rank}.`, url: `${APP_URL}/u/${encodeURIComponent(r.name)}/resume`,
+      body: `<h1>${esc(r.name)}</h1><div class="muted">${esc(r.city)} · ${esc(r.rank)} · member since ${new Date(r.memberSince).toLocaleDateString()}${r.phoneVerified ? ' · phone verified' : ''}</div>
+<h2>Verified track record</h2><div class="card"><div class="row"><span class="muted">Days on the grind</span><b>${r.days}</b></div><div class="row"><span class="muted">Plays approved by the bot</span><b>${r.approvedPlays}</b></div><div class="row"><span class="muted">Receipt-verified earnings</span><b>${money(r.verifiedCents)}</b></div><div class="row"><span class="muted">Employer confirmations</span><b>${r.employerConfirmations}</b></div><div class="row"><span class="muted">Best streak</span><b>${r.bestStreak}</b></div><div class="row"><span class="muted">Trust score</span><b>${r.trust}/100</b></div></div>
+${r.categories.length ? `<h2>Work history by type</h2><div class="card">${r.categories.map(c => `<div class="row"><span>${esc(CATEGORIES[c.category] || c.category)}</span><span>${c.plays} plays · ${c.hours}h${c.verifiedCents ? ' · ' + money(c.verifiedCents) + ' verified' : ''}</span></div>`).join('')}</div>` : ''}
+${r.skills.length ? `<h2>Skills</h2><div class="card">${r.skills.map(esc).join(' · ')}</div>` : ''}
+<p class="muted">Every line here was approved by the player's own Self-Made Legends bot, verified from a receipt, or confirmed by an employer through the app. Employers: open the full record inside the app.</p><a class="btn" href="/u/${encodeURIComponent(r.name)}">Legend page</a> <a class="btn ghost" href="/">Hire through SML Rise Nd Grinds</a>` }));
+  });
+  app.get('/api/reports/city', (req, res) => { const city = String(req.query.city || '').slice(0, 80); const month = /^\d{4}-\d{2}$/.test(req.query.month || '') ? req.query.month : todayUTC().slice(0, 7); if (!city) return res.status(400).json({ error: 'city required' }); res.json({ report: market.cityReport(city, month) }); });
+  app.get('/report/:city', (req, res) => {
+    const month = /^\d{4}-\d{2}$/.test(req.query.month || '') ? req.query.month : todayUTC().slice(0, 7);
+    const r = market.cityReport(String(req.params.city || '').slice(0, 80), month);
+    res.send(page({ title: `${r.city} money report · ${r.month}`, description: `What paid in ${r.city} in ${r.month}: ${r.totals.playsDone} plays, ${money(r.totals.earnedCents)} logged, ${money(r.totals.perHourCents)}/hour.`, url: `${APP_URL}/report/${encodeURIComponent(r.city)}?month=${r.month}`,
+      body: `<h1>Self-Made Legends City Report</h1><div class="muted">${esc(r.city)} · ${esc(r.month)} · ${r.players} player${r.players === 1 ? '' : 's'}</div>
+<div class="card"><div class="row"><span class="muted">Plays done</span><b>${r.totals.playsDone}</b></div><div class="row"><span class="muted">Hours</span><b>${r.totals.hours}</b></div><div class="row"><span class="muted">Logged</span><b>${money(r.totals.earnedCents)}</b></div><div class="row"><span class="muted">Verified</span><b>${money(r.totals.verifiedCents)}</b></div><div class="row"><span class="muted">Per hour</span><b>${money(r.totals.perHourCents)}</b></div></div>
+<h2>What paid, best first</h2><div class="card">${r.plays.length ? r.plays.map(p => `<div class="row"><span>${esc(p.title)}<br><span class="muted" style="font-size:.8em">${esc(p.category)} · done ${p.doneRate}% of ${p.planned} · grade ${p.difficulty}/10</span></span><b>${money(p.perHourCents)}/h</b></div>`).join('') : '<span class="muted">Not enough closed days in this city yet.</span>'}</div><p class="muted" style="font-size:.85em">${esc(r.note)}</p>` }));
+  });
+
+  // ── Clips ────────────────────────────────────────────────────────────────
+  app.get('/api/clips', (req, res) => res.json({ clips: clips.latest(20) }));
+  app.get('/api/clips/mine', requireUser, (req, res) => res.json({ clips: clips.mine(req.user.id) }));
+  app.get('/api/live/:id/best-window', requireUser, (req, res) => res.json({ window: clips.bestWindow(Number(req.params.id)), activity: clips.activity(Number(req.params.id)) }));
+  app.post('/api/clips', requireUser, express.raw({ type: ['video/webm', 'video/mp4'], limit: '26mb' }), (req, res) => {
+    try { res.json({ clip: clips.save(req.user.id, { roomId: req.headers['x-room-id'] ? Number(req.headers['x-room-id']) : null, title: decodeURIComponent(String(req.headers['x-title'] || '')), buffer: req.body, mime: (req.headers['content-type'] || '').split(';')[0], seconds: Number(req.headers['x-seconds'] || 0) }) }); } catch (e) { fail(res, e); }
+  });
+  app.get('/api/clips/:id/video', (req, res) => { const f = clips.filePath(Number(req.params.id)); const c = clips.clip(Number(req.params.id)); if (!f || !c) return res.status(404).json({ error: 'Not found' }); clips.view(c.id); res.type(c.mime).sendFile(f); });
+  app.delete('/api/clips/:id', requireUser, (req, res) => { try { clips.remove(req.user.id, Number(req.params.id)); res.json({ ok: true }); } catch (e) { fail(res, e); } });
+  app.get('/clip/:id', (req, res) => {
+    const c = clips.clip(Number(req.params.id));
+    if (!c || !c.public) return res.status(404).send(page({ title: 'Not found', description: '', body: '<h1>No clip here.</h1>' }));
+    const card = community.card(c.userId, c.date);
+    res.send(page({ title: `${c.name}: ${c.title}`, description: `${c.seconds}s from ${c.name}'s live on Self-Made Legends.`, url: `${APP_URL}${c.url}`, image: card && card.public ? `${APP_URL}/api/cards/${c.userId}/${c.date}.svg` : undefined,
+      body: `<h1>${esc(c.title)}</h1><div class="muted">${esc(c.name)} · ${esc(c.date)} · ${c.views} views</div><video controls playsinline src="${esc(c.fileUrl)}" style="width:100%;border-radius:16px;border:1px solid #262c3d;margin:12px 0;background:#000"></video>${card && card.public ? `<img class="card-img" src="/api/cards/${esc(c.userId)}/${esc(c.date)}.svg" alt="Receipt card">` : ''}<a class="btn" href="/u/${encodeURIComponent(c.name)}">Tip ${esc(c.name.split(' ')[0])}</a> <a class="btn ghost" href="/">Play SML Rise Nd Grinds</a>` }));
+  });
+
+  // ── Health ───────────────────────────────────────────────────────────────
+  app.get('/api/health', (req, res) => { const h = ops.health(); res.status(h.ok ? 200 : 503).json({ ok: h.ok, at: h.at, crewOnline: h.crewOnline }); });
+
   // ── Leaderboards ─────────────────────────────────────────────────────────
   app.get('/api/leaderboard', (req, res) => {
     const q = String(req.query.date || '');
@@ -407,8 +510,17 @@ ${c.beaters.length ? `<h2>Beat it</h2><div class="card">${c.beaters.slice(0, 10)
   app.post('/api/admin/payouts/:userId', requireAdmin, wrap(async (req, res) => { try { res.json(await money$.payout(req.params.userId, { method: (req.body || {}).method || 'manual', ref: (req.body || {}).ref })); } catch (e) { fail(res, e); } }));
   app.post('/api/admin/close-month', requireAdmin, wrap(async (req, res) => res.json({ results: await money$.closeMonth((req.body || {}).month || todayUTC().slice(0, 7)) })));
   app.post('/api/admin/tier/:userId', requireAdmin, (req, res) => { try { engine.setTier(req.params.userId, (req.body || {}).tier); res.json({ ok: true }); } catch (e) { fail(res, e); } });
-  app.get('/api/admin/players', requireAdmin, (req, res) => res.json({ players: db.prepare('SELECT u.id, u.display_name, u.email, u.tier, u.payout_balance_cents, u.stripe_account_id IS NOT NULL AS connected, u.created_at, p.city, p.region FROM users u LEFT JOIN profiles p ON p.user_id = u.id ORDER BY u.created_at DESC LIMIT 500').all() }));
+  app.get('/api/admin/players', requireAdmin, (req, res) => res.json({ players: db.prepare('SELECT u.id, u.display_name, u.email, u.tier, u.payout_balance_cents, u.stripe_account_id IS NOT NULL AS connected, u.created_at, u.trust, u.phone_verified_at IS NOT NULL AS phone_verified, u.banned_at, u.role, p.city, p.region FROM users u LEFT JOIN profiles p ON p.user_id = u.id ORDER BY u.created_at DESC LIMIT 500').all() }));
   app.post('/api/admin/show/run', requireAdmin, wrap(async (req, res) => res.json({ show: await community.writeShow((req.body || {}).weekEnd || Community.shift(Community.weekStart(todayUTC()), -1)) })));
+  app.get('/api/admin/health', requireAdmin, (req, res) => res.json({ health: ops.health(), alerts: ops.alerts(50), errors: db.prepare('SELECT source, message, created_at FROM ops_errors ORDER BY created_at DESC LIMIT 30').all(), reconciliations: ops.reconciliations(30) }));
+  app.post('/api/admin/alerts/:id/resolve', requireAdmin, (req, res) => { ops.resolve(Number(req.params.id)); res.json({ ok: true }); });
+  app.post('/api/admin/reconcile', requireAdmin, wrap(async (req, res) => res.json({ result: await ops.reconcile(/^\d{4}-\d{2}-\d{2}$/.test((req.body || {}).day || '') ? req.body.day : Engine.shiftDate(todayUTC(), -1)) })));
+  app.post('/api/admin/ban/:userId', requireAdmin, (req, res) => { trust.ban(req.params.userId, (req.body || {}).reason); res.json({ ok: true }); });
+  app.get('/api/admin/sponsor-tiles', requireAdmin, (req, res) => res.json({ tiles: market.tiles() }));
+  app.post('/api/admin/sponsor-tiles', requireAdmin, (req, res) => { try { res.json({ tile: market.createTile(req.body || {}) }); } catch (e) { fail(res, e); } });
+  app.get('/api/admin/postings', requireAdmin, (req, res) => res.json({ postings: db.prepare('SELECT id FROM postings ORDER BY created_at DESC LIMIT 100').all().map(r => market.posting(r.id)), employers: db.prepare('SELECT e.*, u.display_name, u.email FROM employers e JOIN users u ON u.id = e.user_id ORDER BY e.created_at DESC').all() }));
+  app.post('/api/admin/employers/:userId/verify', requireAdmin, (req, res) => { db.prepare('UPDATE employers SET verified = ? WHERE user_id = ?').run((req.body || {}).verified === false ? 0 : 1, req.params.userId); res.json({ ok: true }); });
+  app.get('/api/admin/reports', requireAdmin, (req, res) => res.json({ reports: market.reports() }));
 
   // ── Live updates (Server-Sent Events) ────────────────────────────────────
   app.get('/api/events', (req, res) => {
@@ -426,16 +538,17 @@ ${c.beaters.length ? `<h2>Beat it</h2><div class="card">${c.beaters.slice(0, 10)
   app.use((err, req, res, next) => {
     if (err && err.type === 'entity.too.large') return res.status(413).json({ error: 'That upload is too large' });
     console.error('[api]', err && err.stack ? err.stack : err);
+    try { ops.logError(req.path, err); } catch (_) {}
     res.status(err.status || 500).json({ error: err.message || 'Something broke' });
   });
 
-  return { app, db, engine, auth, crew, push, money: money$, community, social, gigs, handleBillingEvent };
+  return { app, db, engine, auth, crew, push, money: money$, community, social, gigs, trust, ops, squads, market, clips, handleBillingEvent };
 }
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   const { app, engine, crew, push } = createApp();
-  const tick = () => engine.tick().catch(e => console.error('[tick]', e.message));
+  const tick = () => engine.tick().catch(e => { console.error('[tick]', e.message); try { engine.ops.logError('tick', e); } catch (_) {} });
   setInterval(tick, 5 * 60 * 1000);
   setTimeout(tick, 3000);
   app.listen(PORT, () => {
