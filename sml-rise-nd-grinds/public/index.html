@@ -114,8 +114,9 @@
   .bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--green)); width: 0; transition: width .4s; }
   .bar.goal i { background: linear-gradient(90deg, var(--purple), var(--blue)); }
   .league { display: inline-block; font-size: 0.7em; padding: 2px 8px; border-radius: 999px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
-  .league.bronze { background: rgba(205,127,50,.18); color: #e3a06a; } .league.silver { background: rgba(192,192,192,.18); color: #d8dce6; }
-  .league.gold { background: rgba(245,185,66,.18); color: var(--gold); } .league.boss { background: rgba(181,140,255,.18); color: var(--purple); }
+  .league.rookie { background: rgba(141,149,168,.18); color: #b9c0d0; } .league.pro { background: rgba(90,169,255,.18); color: var(--blue); }
+  .league.allstar { background: rgba(245,185,66,.18); color: var(--gold); } .league.superstar { background: rgba(181,140,255,.18); color: var(--purple); }
+  .league.veteran { background: rgba(192,192,192,.18); color: #d8dce6; } .league.hof { background: rgba(245,185,66,.28); color: var(--gold); border: 1px solid var(--gold); }
 
   .brief li { margin: 6px 0 6px 18px; font-size: 0.92em; }
   .log { font-size: 0.85em; }
@@ -391,7 +392,8 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = (cents) => { const c = Number(cents || 0); const whole = c % 100 === 0; return '$' + (c / 100).toLocaleString(undefined, { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 }); };
 const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000); };
-const leagueTag = (l) => `<span class="league ${esc(l || 'bronze')}">${esc(l || 'bronze')}</span>`;
+const RANK_SHORT = { rookie: 'Rookie', pro: 'Pro', allstar: 'All Star', superstar: 'Superstar', veteran: 'Veteran', hof: 'Hall of Fame' };
+const leagueTag = (l) => `<span class="league ${esc(l || 'rookie')}">${esc(RANK_SHORT[l] || l || 'Rookie')}</span>`;
 const BADGE_LABELS = { hall_of_fame: ['🏛️', 'Hall of Fame'], world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
 const CAT_LABELS = { gig: 'Gig', local: 'Local', online: 'Online', beauty: 'Beauty', care: 'Care', food: 'Food' };
 const feedIcon = (k) => ({ done: '✅', verified: '💵', champion: '👑', bracket: '🏆', tip: '💛', prize: '💰' }[k] || '•');
@@ -540,7 +542,7 @@ function renderToday() {
     ${p.tasks.map(renderTask).join('')}
     ${t.canChat ? `<div class="card"><h3>Talk to your Self-Made Legends crew</h3><div class="chat" id="chat">${t.chat.map((m) => `<div class="msg ${m.role}">${esc(m.content)}</div>`).join('') || '<div class="msg crew">Something fell through? Tell me and I will rebuild the rest of your day.</div>'}</div>
       <div class="chat-input"><input type="text" id="chatMsg" placeholder="The yard job cancelled, what now?" maxlength="600" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn small" onclick="sendChat()">Send</button></div></div>`
-      : (!closed && t.tier !== 'boss' ? `<div class="card"><h3>Talk to your crew</h3><div class="small muted">Mid-day replans and receipt verification come with Boss. <a href="#" onclick="show('me');return false">See plans</a></div></div>` : '')}
+      : ''}
     ${t.champion ? renderChampion(t.champion) : ''}
     ${closed && pr.tasksDone ? `<div class="card"><h3>Your receipt card</h3><img src="/api/cards/${esc(S.user.id)}/${esc(t.date)}.svg" alt="Receipt card" style="width:100%;border-radius:12px;border:1px solid var(--line)"><button class="btn" style="margin-top:8px" onclick="shareCard('${esc(t.date)}')">Share your day</button></div>` : ''}
     <div class="card">
@@ -823,9 +825,9 @@ async function enterBracket() { try { await api('/api/bracket/enter', { method: 
 function chip(label, on, fn, extra = '') { return `<span class="chip sm ${on ? 'on' : ''}" onclick="${fn}">${extra}${esc(label)}</span>`; }
 async function loadWorld() {
   const f = (S.me && S.me.features) || {};
-  const scopes = [['world', '🌍 World'], ['women', "Women's Grind"]].concat(f.localBoards ? [['country', 'Country'], ['region', 'State'], ['city', 'City']] : []);
-  $('scopeChips').innerHTML = scopes.map(([k, l]) => chip(l, S.lb.scope === k, `setLb('scope','${k}')`)).join('') + (!f.localBoards ? `<span class="chip sm" onclick="show('me')">🔒 Local boards</span>` : '');
-  $('leagueChips').innerHTML = [['', 'All leagues'], ['bronze', 'Bronze'], ['silver', 'Silver'], ['gold', 'Gold'], ['legend', 'Legend']].map(([k, l]) => chip(l, S.lb.league === k, `setLb('league','${k}')`)).join('');
+  const scopes = [['world', '🌍 World'], ['women', "Women's Grind"], ['country', 'Country'], ['region', 'State'], ['city', 'City']];
+  $('scopeChips').innerHTML = scopes.map(([k, l]) => chip(l, S.lb.scope === k, `setLb('scope','${k}')`)).join('');
+  $('leagueChips').innerHTML = [['', 'All ranks'], ['rookie', 'Rookie'], ['pro', 'Pro'], ['allstar', 'All Star'], ['superstar', 'Superstar']].map(([k, l]) => chip(l, S.lb.league === k, `setLb('league','${k}')`)).join('');
   $('modeChips').innerHTML = [['all', 'Everyone'], ['verified', '✓ Verified only']].map(([k, l]) => chip(l, S.lb.mode === k, `setLb('mode','${k}')`)).join('') + [['', 'All work'], ...Object.entries(CAT_LABELS)].map(([k, l]) => chip(l, S.lb.category === k, `setLb('category','${k}')`)).join('');
   try {
     const q = new URLSearchParams({ scope: S.lb.scope, mode: S.lb.mode }); if (S.lb.league) q.set('league', S.lb.league); if (S.lb.category) q.set('category', S.lb.category);
@@ -913,7 +915,7 @@ async function loadMe() {
   try {
     const [me, h, ib, bill] = await Promise.all([api('/api/me'), api('/api/history'), api('/api/inbox'), api('/api/billing')]);
     S.me = me; S.profile = me.profile; $('mePip').classList.add('hidden');
-    $('meHero').innerHTML = `<div class="row between"><div class="date">${esc(me.user.displayName)}</div>${leagueTag((h.history[0] || {}).league)}</div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
+    $('meHero').innerHTML = `<div class="row between"><div class="date">${esc(me.user.displayName)}</div><span>${leagueTag(me.rank.rank)}${me.tier !== 'free' ? ' ' + leagueTag(me.tier) : ''}</span></div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
       <div class="stats"><div class="stat"><b>${me.stats.days}</b><span>days</span></div><div class="stat"><b>${money(me.stats.earnedCents)}</b><span>${me.stats.verifiedCents ? money(me.stats.verifiedCents) + ' verified' : 'logged'}</span></div><div class="stat"><b>${me.stats.wins}</b><span>world wins</span></div></div>
       <div class="small muted" style="margin-top:8px">Best streak ${me.stats.bestStreak} · duels ${me.stats.duelsWon}/${me.stats.duelsPlayed} · total score ${me.stats.totalScore}</div>`;
     const g = me.profile && me.profile.goal;
@@ -960,9 +962,12 @@ async function answerQ(id) { const a = prompt('Your answer:'); if (!a) return; t
 async function shareProfile() { const url = $('profileUrl').value; try { if (navigator.share) await navigator.share({ title: 'Self-Made Legends', text: `Watch my grind and tip it: ${url}`, url }); else { await navigator.clipboard.writeText(url); toast('Copied'); } } catch (_) {} }
 async function shareStory(path, title) { const url = location.origin + path; try { if (navigator.share) await navigator.share({ title, text: `${title} on Self-Made Legends ${url}`, url }); else { await navigator.clipboard.writeText(url); toast('Copied'); } } catch (_) {} }
 function renderTier(me, bill) {
-  const short = { free: 'Free', pro: 'Pro', allstar: 'All Star', veteran: 'Veteran', hof: 'Hall of Fame' };
-  $('tierBody').innerHTML = `<div class="small muted" style="margin-bottom:8px">You are <b style="color:var(--gold)">${esc(bill.tierInfo.name)}</b>.</div><div class="tier-row">${bill.tiers.map((t) => `<div class="tier ${me.tier === t ? 'on' : ''}"><b>Self-Made Legends ${short[t]}</b><div class="pts" style="font-size:1.05em">${t === 'free' ? '$0' : money(bill.tierPrices[t]) + '/mo'}</div><div style="text-align:left;margin-top:6px">${bill.tierPerks[t].map((x) => `<div>· ${esc(x)}</div>`).join('')}</div>${bill.enabled && me.tier !== t && t !== 'free' ? `<button class="btn small" style="margin-top:8px" onclick="checkout('${t}')">Get it</button>` : ''}</div>`).join('')}</div>
-    <p class="small muted" style="margin-top:8px">${bill.enabled ? 'Cancel anytime.' : `Billing is not switched on yet, so every player currently gets <b>${esc(bill.tierNames[bill.defaultTier])}</b>. The world leaderboard stays free forever.`} <a href="/hall-of-fame" target="_blank">See the Hall of Fame</a></p>`;
+  const short = { free: 'Member', veteran: 'Veteran', hof: 'Hall of Fame' };
+  const ri = bill.rankInfo;
+  const rankRow = bill.ranks.map((r) => `<div class="tier ${ri.rank === r ? 'on' : ''}"><b>${esc(RANK_SHORT[r])}</b>${r === 'rookie' ? 'Day one' : `${bill.rankRules[r].days} active days, or ${bill.rankRules[r].points.toLocaleString()} points, or ${bill.rankRules[r].wins} world win${bill.rankRules[r].wins === 1 ? '' : 's'}`}</div>`).join('');
+  $('tierBody').innerHTML = `<h3>Your rank: <span style="color:var(--gold)">${esc(ri.name)}</span></h3><div class="small muted" style="margin-bottom:8px">Earned by playing, free for everyone. ${ri.next ? `Next: <b>${esc(RANK_SHORT[ri.next.rank])}</b> at ${ri.next.needs.days} active days, ${ri.next.needs.points.toLocaleString()} points, or ${ri.next.needs.wins} world win${ri.next.needs.wins === 1 ? '' : 's'}. You have ${ri.have.days} days, ${ri.have.points.toLocaleString()} points, ${ri.have.wins} wins.` : 'You are at the top.'}</div><div class="tier-row" style="grid-template-columns:1fr 1fr 1fr 1fr">${rankRow}</div>
+    <h3 style="margin-top:16px">Memberships</h3><div class="small muted" style="margin-bottom:8px">Everything the crew does is free. Only two things cost money. You are <b style="color:var(--gold)">${esc(bill.tierInfo.name)}</b>.</div><div class="tier-row">${bill.tiers.map((t) => `<div class="tier ${me.tier === t ? 'on' : ''}"><b>Self-Made Legends ${short[t]}</b><div class="pts" style="font-size:1.05em">${t === 'free' ? 'Free' : money(bill.tierPrices[t]) + '/mo'}</div><div style="text-align:left;margin-top:6px">${bill.tierPerks[t].map((x) => `<div>· ${esc(x)}</div>`).join('')}</div>${bill.enabled && me.tier !== t && t !== 'free' ? `<button class="btn small" style="margin-top:8px" onclick="checkout('${t}')">Get it</button>` : ''}</div>`).join('')}</div>
+    <p class="small muted" style="margin-top:8px">${bill.enabled ? 'Cancel anytime.' : 'Billing is not switched on yet. The world leaderboard stays free forever.'} <a href="/hall-of-fame" target="_blank">See the Hall of Fame</a></p>`;
 }
 async function checkout(tier) { try { const r = await api('/api/billing/checkout', { method: 'POST', body: { tier } }); location.href = r.url; } catch (err) { toast(err.message); } }
 function renderPush(me) {

@@ -35,27 +35,34 @@ const PLAN_READY_HOUR = 4;              // the crew finishes the plan by 4am loc
 const REGENERATIONS_PER_DAY = 1;
 const CHECKIN_GRACE_MIN = 5;            // minutes after a block ends before the crew checks in
 const INSURANCE_DAYS = 7;               // one free streak save per week
-const LEAGUES = ['bronze', 'silver', 'gold', 'legend'];
-// Self-Made Legends memberships, lowest to highest.
-const TIERS = ['free', 'pro', 'allstar', 'veteran', 'hof'];
-const TIER_NAMES = { free: 'Self-Made Legends Free', pro: 'Self-Made Legends Pro', allstar: 'Self-Made Legends All Star', veteran: 'Self-Made Legends Veteran', hof: 'Self-Made Legends Hall of Fame' };
-const TIER_PRICES_CENTS = { free: 0, pro: 499, allstar: 999, veteran: 1299, hof: 1499 };
+
+// Ranks are earned by playing and cost nothing: Rookie, Pro, All Star, Superstar.
+const RANKS = ['rookie', 'pro', 'allstar', 'superstar'];
+const RANK_NAMES = { rookie: 'Self-Made Legends Rookie', pro: 'Self-Made Legends Pro', allstar: 'Self-Made Legends All Star', superstar: 'Self-Made Legends Superstar' };
+// Reached with approved points, active days, or world wins, whichever comes first.
+const RANK_RULES = {
+  pro: { days: 7, points: 50_000, wins: 1 },
+  allstar: { days: 30, points: 250_000, wins: 3 },
+  superstar: { days: 100, points: 1_000_000, wins: 10 },
+};
+const LEAGUES = RANKS; // the leaderboard filters by rank
+// Memberships: only two cost money. Everything the crew does is free for every rank.
+const TIERS = ['free', 'veteran', 'hof'];
+const TIER_NAMES = { free: 'Self-Made Legends Member', veteran: 'Self-Made Legends Veteran', hof: 'Self-Made Legends Hall of Fame' };
+const TIER_PRICES_CENTS = { free: 0, veteran: 1299, hof: 1499 };
 const atLeast = (t) => TIERS.slice(TIERS.indexOf(t));
 const FEATURES = {
-  liveCrew: atLeast('pro'), gigFinder: atLeast('pro'), push: atLeast('pro'),
-  chat: atLeast('allstar'), receipts: atLeast('allstar'), localBoards: atLeast('allstar'), video: atLeast('allstar'), live: atLeast('allstar'),
+  liveCrew: TIERS, gigFinder: TIERS, push: TIERS, chat: TIERS, receipts: TIERS, localBoards: TIERS, video: TIERS, live: TIERS,
   lowerFees: atLeast('veteran'), doubleInsurance: atLeast('veteran'), fastScout: atLeast('veteran'), frame: atLeast('veteran'),
   noLegendFee: ['hof'], hallOfFame: ['hof'], customBot: ['hof'],
 };
 const TIER_PERKS = {
-  free: ['Playbook plans every day', 'World leaderboard, leagues, duels', 'Self-Made Legends University', 'Messages and the Grind Feed'],
-  pro: ['Everything in Free', 'Live crew: real research every night', 'Gig Finder: real gigs found for you, refreshed hourly', 'Push notifications and Final Call'],
-  allstar: ['Everything in Pro', 'Talk to your crew and rebuild the day', 'Receipt verification (double points)', 'Local boards: country, state, city', 'Video calls with friends and Go Live'],
-  veteran: ['Everything in All Star', 'Lower fees: tips 10%, Legend Fee 3%', 'Two streak saves a week, two rebuilds a day', 'Scout refreshes gigs every 30 minutes', 'Veteran frame on your face and card'],
+  free: ['Your own crew: live research every night, the Gig Finder, chat, receipts, local boards, calls, live', 'Ranks you earn: Rookie, Pro, All Star, Superstar', 'One rebuild a day, one streak save a week', 'Standard fees: tips 15%, Legend Fee 5%'],
+  veteran: ['Everything a member gets', 'Lower fees: tips 10%, Legend Fee 3%', 'Two streak saves a week, two rebuilds a day', 'Scout refreshes gigs every 30 minutes', 'Veteran frame on your face and your cards'],
   hof: ['Everything in Veteran', 'No Legend Fee, tips fee 5%', 'Hall of Fame frame and crown likeness', 'Your name on the Self-Made Legends Hall of Fame page', 'Name your bot; top of the mentor list; three rebuilds a day'],
 };
-const REGENERATIONS_BY_TIER = { free: 1, pro: 1, allstar: 1, veteran: 2, hof: 3 };
-const INSURANCE_BY_TIER = { free: 1, pro: 1, allstar: 1, veteran: 2, hof: 2 };
+const REGENERATIONS_BY_TIER = { free: 1, veteran: 2, hof: 3 };
+const INSURANCE_BY_TIER = { free: 1, veteran: 2, hof: 2 };
 
 class Engine {
   /**
@@ -69,9 +76,9 @@ class Engine {
     this.push = opts.push || null;
     this.now = opts.now || (() => Date.now());
     this.onEvent = opts.onEvent || (() => {});
-    const legacy = { boss: 'allstar' };
+    const legacy = { boss: 'free', pro: 'free', allstar: 'free' };
     const dt = legacy[opts.defaultTier] || opts.defaultTier, de = legacy[process.env.DEFAULT_TIER] || process.env.DEFAULT_TIER;
-    this.defaultTier = TIERS.includes(dt) ? dt : (TIERS.includes(de) ? de : 'hof');
+    this.defaultTier = TIERS.includes(dt) ? dt : (TIERS.includes(de) ? de : 'free');
     this._generating = new Set();
     this.community = null; // attached by the server once Community exists
     this.learning = new Learning(db, { now: this.now });
@@ -93,17 +100,28 @@ class Engine {
   // ── Tiers ────────────────────────────────────────────────────────────────
   tierOf(userId) {
     const r = this.db.prepare('SELECT tier FROM users WHERE id = ?').get(userId);
-    const tier = r ? (r.tier === 'boss' ? 'allstar' : r.tier) : null;
-    const t = tier && TIERS.includes(tier) && tier !== 'free' ? tier : null;
+    const t = r && TIERS.includes(r.tier) && r.tier !== 'free' ? r.tier : null;
     return t || this.defaultTier;
   }
   setTier(userId, tier) {
-    if (tier === 'boss') tier = 'allstar';
+    if (['boss', 'pro', 'allstar'].includes(tier)) tier = 'free'; // old paid names are free ranks now
     if (!TIERS.includes(tier)) throw new Error('Unknown tier');
     this.db.prepare('UPDATE users SET tier = ? WHERE id = ?').run(tier, userId);
     if (tier === 'hof') this.awardBadge(userId, 'hall_of_fame', new Date(this.now()).toISOString().slice(0, 10), 'Self-Made Legends Hall of Fame');
   }
-  tierInfo(userId) { const t = this.tierOf(userId); return { tier: t, name: TIER_NAMES[t], perks: TIER_PERKS[t], priceCents: TIER_PRICES_CENTS[t], regenerationsPerDay: REGENERATIONS_BY_TIER[t], insurancePerWeek: INSURANCE_BY_TIER[t] }; }
+  tierInfo(userId) { const t = this.tierOf(userId); const rank = this.rankInfo(userId); return { tier: t, name: TIER_NAMES[t], perks: TIER_PERKS[t], priceCents: TIER_PRICES_CENTS[t], regenerationsPerDay: REGENERATIONS_BY_TIER[t], insurancePerWeek: INSURANCE_BY_TIER[t], rank: rank.rank, rankName: rank.name, next: rank.next }; }
+
+  /** The rank a player has earned so far, and what the next one takes. */
+  rankInfo(userId, dateKey = null) {
+    const before = dateKey ? ' AND date < ?' : '';
+    const args = dateKey ? [userId, dateKey] : [userId];
+    const r = this.db.prepare(`SELECT COUNT(CASE WHEN tasks_done > 0 THEN 1 END) AS days, COALESCE(SUM(score), 0) AS points, SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) AS wins FROM daily_scores WHERE user_id = ? AND closed = 1${before}`).get(...args);
+    const have = { days: r.days || 0, points: r.points || 0, wins: r.wins || 0 };
+    let rank = 'rookie';
+    for (const k of ['pro', 'allstar', 'superstar']) { const q = RANK_RULES[k]; if (have.days >= q.days || have.points >= q.points || have.wins >= q.wins) rank = k; }
+    const nextKey = RANKS[RANKS.indexOf(rank) + 1] || null;
+    return { rank, name: RANK_NAMES[rank], have, next: nextKey ? { rank: nextKey, name: RANK_NAMES[nextKey], needs: RANK_RULES[nextKey] } : null };
+  }
   allows(userId, feature) { return (FEATURES[feature] || []).includes(this.tierOf(userId)); }
   crewFor(userId) { return this.allows(userId, 'liveCrew') ? this.crew : this.offlineCrew; }
 
@@ -257,15 +275,7 @@ class Engine {
   taskPoints(difficulty, hours) { return Math.round(Math.max(1, Math.min(10, Number(difficulty) || 5)) * Math.max(0.25, Number(hours) || 1) * POINTS_PER_DIFF_HOUR); }
 
   // ── Leagues ──────────────────────────────────────────────────────────────
-  leagueFor(userId, profile, dateKey) {
-    const have = new Set(profile.resources || []);
-    const big = ['vehicle', 'laptop', 'bike', 'handy', 'academic', 'rideshare_approved'].filter(k => have.has(k)).length;
-    let league = big === 0 ? 'bronze' : big === 1 ? 'silver' : 'gold';
-    const since = Engine.shiftDate(dateKey, -14);
-    const r = this.db.prepare('SELECT SUM(CASE WHEN rank IS NOT NULL AND rank <= 3 THEN 1 ELSE 0 END) AS podiums, MAX(streak) AS best FROM daily_scores WHERE user_id = ? AND date >= ? AND date < ? AND closed = 1').get(userId, since, dateKey);
-    if (r && ((r.podiums || 0) >= 2 || (r.best || 0) >= 7)) league = 'legend';
-    return league;
-  }
+  leagueFor(userId, profile, dateKey) { return this.rankInfo(userId, dateKey).rank; }
 
   // ── Plans ────────────────────────────────────────────────────────────────
   getPlan(userId, dateKey) {
@@ -583,7 +593,7 @@ class Engine {
        ON CONFLICT(user_id, date) DO UPDATE SET score=excluded.score, verified_score=excluded.verified_score, earnings_cents=excluded.earnings_cents, verified_cents=excluded.verified_cents,
          league=excluded.league, country=excluded.country, region=excluded.region, city=excluded.city, category=excluded.category, tasks_done=excluded.tasks_done, tasks_total=excluded.tasks_total,
          hours_done=excluded.hours_done, streak=excluded.streak, task_points=excluded.task_points, updated_at=excluded.updated_at`
-    ).run(userId, dateKey, p.score, p.verifiedScore, p.earningsCents, p.verifiedCents, plan.league || 'bronze', profile.country || 'US', profile.region || '', profile.city || '', p.category || 'other',
+    ).run(userId, dateKey, p.score, p.verifiedScore, p.earningsCents, p.verifiedCents, plan.league || 'rookie', profile.country || 'US', profile.region || '', profile.city || '', p.category || 'other',
       p.tasksDone, p.tasksTotal, p.hoursDone, plan.streak || 0, p.taskPoints || 0, this.now());
   }
 
@@ -932,4 +942,4 @@ class Engine {
 }
 
 module.exports = Engine;
-module.exports.constants = { CATEGORIES, TIER_NAMES, TIER_PRICES_CENTS, TIER_PERKS, REGENERATIONS_BY_TIER, INSURANCE_BY_TIER, DAILY_CAP, POINTS_PER_DIFF_HOUR, VERIFIED_POINTS_PER_DOLLAR, UNVERIFIED_POINTS_PER_DOLLAR, IDLE_PENALTY, IDLE_PENALTY_CAP, BENCH_DAYS, EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };
+module.exports.constants = { CATEGORIES, RANKS, RANK_NAMES, RANK_RULES, TIER_NAMES, TIER_PRICES_CENTS, TIER_PERKS, REGENERATIONS_BY_TIER, INSURANCE_BY_TIER, DAILY_CAP, POINTS_PER_DIFF_HOUR, VERIFIED_POINTS_PER_DOLLAR, UNVERIFIED_POINTS_PER_DOLLAR, IDLE_PENALTY, IDLE_PENALTY_CAP, BENCH_DAYS, EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };

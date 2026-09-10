@@ -83,17 +83,24 @@ Two idle days in a row and you are on **the Bench**, a public board of players w
 - A photo of you or a likeness (initials on a colour that is yours, or the crown) on the feed, your Legend page, and your cards.
 - Message anyone. Add friends. **Video call** a friend face to face. **Go live** to the world with chat and bot ratings. Video is WebRTC, peer to peer; the server only relays signaling. Add a TURN server (`TURN_URL`, `TURN_USER`, `TURN_PASS`) for calls across strict networks.
 
-## Memberships
+## Ranks and memberships
 
-| | Free | Pro $4.99 | All Star $9.99 | Veteran $12.99 | Hall of Fame $14.99 |
-|---|---|---|---|---|---|
-| Playbook plans, world board, University, messages | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Live crew with real research every night, Gig Finder hourly, push | | ✓ | ✓ | ✓ | ✓ |
-| Talk to your crew, receipt verification, local boards, video calls, Go Live | | | ✓ | ✓ | ✓ |
-| Lower fees (tips 10%, Legend Fee 3%), two streak saves, two rebuilds, Scout every 30 min, Veteran frame | | | | ✓ | ✓ |
-| No Legend Fee, tips fee 5%, Hall of Fame frame and crown, your name on the Hall of Fame page, three rebuilds | | | | | ✓ |
+**Ranks are free and earned.** Everyone starts as a Self-Made Legends Rookie. Pro at 7 active days, 50,000 approved points, or a world win. All Star at 30 days, 250,000 points, or 3 wins. Superstar at 100 days, 1,000,000 points, or 10 wins. The leaderboard filters by rank.
 
-Until Stripe is configured every player gets `DEFAULT_TIER` (defaults to `hof`). With Stripe keys and price IDs (`STRIPE_PRICE_PRO`, `STRIPE_PRICE_ALLSTAR`, `STRIPE_PRICE_VETERAN`, `STRIPE_PRICE_HOF`) set, new players start free and upgrade in the app. The Hall of Fame page is public at `/hall-of-fame`.
+**Everything the crew does is free for every rank:** live research every night, the Gig Finder, chat and rebuilds, receipt verification, local boards, video calls, going live.
+
+**Only two things cost money.**
+
+| | Member (free) | Veteran $12.99 | Hall of Fame $14.99 |
+|---|---|---|---|
+| The whole crew, all boards, calls, live, University | ✓ | ✓ | ✓ |
+| Fees | tips 15%, Legend Fee 5% | tips 10%, Legend Fee 3% | tips 5%, no Legend Fee |
+| Rebuilds a day / streak saves a week | 1 / 1 | 2 / 2 | 3 / 2 |
+| Scout refresh | hourly | every 30 minutes | every 30 minutes |
+| Frame | | Veteran | Hall of Fame frame and crown |
+| Hall of Fame page, name your bot, top of the mentor list | | | ✓ |
+
+Stripe price IDs: `STRIPE_PRICE_VETERAN`, `STRIPE_PRICE_HOF`. The Hall of Fame page is public at `/hall-of-fame`.
 
 ## Guard rails
 
@@ -124,7 +131,7 @@ Without an API key the app runs in **playbook mode**: every player still gets a 
 | `TIP_FEE_PCT`, `MENTOR_FEE_PCT`, `POOL_FEE_PCT`, `SUCCESS_FEE_PCT` | Starting fee percentages (the console can change them later) |
 | `APP_URL` | Absolute URL for invite links and Stripe redirects |
 | `DB_PATH` | Where the SQLite file lives (mount a volume in production) |
-| `DEFAULT_TIER` | Tier for players who have not paid (`boss` until billing is on) |
+| `DEFAULT_TIER` | Membership for players who have not paid (`free`; set `hof` to unlock everything while testing) |
 
 ## Deploy
 

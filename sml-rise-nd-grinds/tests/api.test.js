@@ -52,8 +52,8 @@ describe('a full day through the API', () => {
     expect(r.status).toBe(200);
     expect(r.body.date).toBe('2026-09-09');
     expect(r.body.plan.tasks.length).toBeGreaterThanOrEqual(3);
-    expect(r.body.plan.league).toBe('gold');
-    expect(r.body.rank).toMatchObject({ rank: 1, of: 1, score: 0, league: 'gold' });
+    expect(r.body.plan.league).toBe('rookie');
+    expect(r.body.rank).toMatchObject({ rank: 1, of: 1, score: 0, league: 'rookie' });
     expect(r.body).toMatchObject({ canRegenerate: true, canChat: true, canVerify: true, crewOnline: false, tier: 'hof' });
     expect(r.body.tierInfo.name).toBe('Self-Made Legends Hall of Fame');
     expect(r.body.crewLog.length).toBe(2);
@@ -99,19 +99,20 @@ describe('a full day through the API', () => {
     expect(r.status).toBe(200);
     expect(r.body.verified).toBe(false);
     const lb = (await request(app).get('/api/leaderboard')).body;
-    expect(lb.leaderboard[0]).toMatchObject({ displayName: 'Ben', location: 'Atlanta, GA', earningsVerified: false, league: 'gold' });
+    expect(lb.leaderboard[0]).toMatchObject({ displayName: 'Ben', location: 'Atlanta, GA', earningsVerified: false, league: 'rookie' });
   });
 
-  test('local boards need a session and the Boss tier', async () => {
+  test('local boards need a session but no membership; chat and live are free', async () => {
     expect((await request(app).get('/api/leaderboard?scope=city')).status).toBe(401);
-    let r = await request(app).get('/api/leaderboard?scope=city&league=gold&mode=verified').set(auth(token));
+    let r = await request(app).get('/api/leaderboard?scope=city&league=rookie&mode=verified').set(auth(token));
     expect(r.status).toBe(200);
-    expect(r.body).toMatchObject({ scope: 'city', league: 'gold', mode: 'verified' });
+    expect(r.body).toMatchObject({ scope: 'city', league: 'rookie', mode: 'verified' });
     expect(r.body.leaderboard[0].displayName).toBe('Ben');
-    engine.setTier(ben.user.id, 'pro'); engine.defaultTier = 'free';
-    expect((await request(app).get('/api/leaderboard?scope=city').set(auth(token))).status).toBe(402);
-    expect((await request(app).post('/api/today/chat').set(auth(token)).send({ message: 'hi' })).status).toBe(402);
-    expect((await request(app).post('/api/live').set(auth(token)).send({ title: 'x' })).status).toBe(402);
+    engine.setTier(ben.user.id, 'free'); engine.defaultTier = 'free';
+    expect((await request(app).get('/api/leaderboard?scope=city').set(auth(token))).status).toBe(200);
+    expect((await request(app).post('/api/today/chat').set(auth(token)).send({ message: 'hi' })).status).toBe(200);
+    expect((await request(app).post('/api/live').set(auth(token)).send({ title: 'x' })).status).toBe(200);
+    await request(app).delete('/api/live').set(auth(token));
     engine.setTier(ben.user.id, 'hof'); engine.defaultTier = 'hof';
   });
 
@@ -143,8 +144,9 @@ describe('a full day through the API', () => {
     expect(bill).toMatchObject({ enabled: false, tier: 'hof' });
     expect(bill.tierPrices.hof).toBe(1499);
     expect(bill.myFees).toEqual({ tipPct: 5, successPct: 0 });
-    handleBillingEvent({ type: 'checkout.session.completed', data: { object: { client_reference_id: ben.user.id, customer: 'cus_1', metadata: { tier: 'pro' } } } });
-    expect(engine.tierOf(ben.user.id)).toBe('pro');
+    handleBillingEvent({ type: 'checkout.session.completed', data: { object: { client_reference_id: ben.user.id, customer: 'cus_1', metadata: { tier: 'veteran' } } } });
+    expect(engine.tierOf(ben.user.id)).toBe('veteran');
+    expect((await request(app).post('/api/billing/checkout').set(auth(token)).send({ tier: 'pro' })).status).toBe(404); // not a thing you can buy
     handleBillingEvent({ type: 'customer.subscription.deleted', data: { object: { customer: 'cus_1' } } });
     expect(engine.tierOf(ben.user.id)).toBe('hof'); // free rows fall back to the default tier while billing is off
     engine.setTier(ben.user.id, 'hof');

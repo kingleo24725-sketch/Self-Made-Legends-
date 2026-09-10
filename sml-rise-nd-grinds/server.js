@@ -16,7 +16,7 @@ const Gigs = require('./src/gigs');
 const { RESOURCES, CATEGORIES } = require('./src/playbook');
 
 const APP_URL = process.env.APP_URL || 'http://localhost:' + (process.env.PORT || 3000);
-const TIER_PRICES = { pro: process.env.STRIPE_PRICE_PRO || '', allstar: process.env.STRIPE_PRICE_ALLSTAR || process.env.STRIPE_PRICE_BOSS || '', veteran: process.env.STRIPE_PRICE_VETERAN || '', hof: process.env.STRIPE_PRICE_HOF || '' };
+const TIER_PRICES = { veteran: process.env.STRIPE_PRICE_VETERAN || '', hof: process.env.STRIPE_PRICE_HOF || '' };
 // WebRTC: public STUN by default; add a TURN server for calls that cross strict networks.
 const ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
   .concat(process.env.TURN_URL ? [{ urls: process.env.TURN_URL, username: process.env.TURN_USER || '', credential: process.env.TURN_PASS || '' }] : []);
@@ -81,8 +81,8 @@ function createApp(opts = {}) {
       return;
     }
     if (event.type === 'checkout.session.completed' && obj.client_reference_id) {
-      const tier = meta.tier === 'boss' ? 'allstar' : (meta.tier || 'pro');
-      engine.setTier(obj.client_reference_id, Engine.constants.TIERS.includes(tier) ? tier : 'pro');
+      const tier = meta.tier;
+      engine.setTier(obj.client_reference_id, Engine.constants.TIERS.includes(tier) ? tier : 'veteran');
       if (obj.customer) db.prepare('UPDATE users SET stripe_customer_id = ? WHERE id = ?').run(String(obj.customer), obj.client_reference_id);
       money$.record('subscription', { userId: obj.client_reference_id, gross: obj.amount_total || 0, fee: obj.amount_total || 0, net: 0, status: 'paid', ref: obj.id, note: tier });
       engine.notify(obj.client_reference_id, 'billing', 'Welcome to ' + (Engine.constants.TIER_NAMES[tier] || tier), tier === 'hof' ? 'Your name is on the Hall of Fame. Your crew just got stronger.' : 'Your crew just got stronger.');
@@ -110,7 +110,7 @@ function createApp(opts = {}) {
       user: { ...req.user, tier, publicProfile: !!u.public_profile, payoutsConnected: !!u.stripe_account_id, successFeeOptIn: !!u.success_fee_optin },
       profile: engine.getProfile(req.user.id), stats: engine.stats(req.user.id), badges: engine.badges(req.user.id),
       crewOnline: crew.online, tier, features: Object.fromEntries(Object.keys(Engine.constants.FEATURES).map(f => [f, engine.allows(req.user.id, f)])),
-      inviteUrl: `${APP_URL}/?invite=${req.user.referralCode}`, profileUrl: `${APP_URL}/u/${encodeURIComponent(req.user.displayName)}`,
+      rank: engine.rankInfo(req.user.id), inviteUrl: `${APP_URL}/?invite=${req.user.referralCode}`, profileUrl: `${APP_URL}/u/${encodeURIComponent(req.user.displayName)}`,
       pushEnabled: push.enabled, pushDevices: push.count(req.user.id),
       tips: money$.tipsFor(req.user.id, 10), payoutBalanceCents: money$.balance(req.user.id), fees: money$.fees,
       stories: community.stories(req.user.id), questions: community.questionsFor(req.user.id),
@@ -143,9 +143,9 @@ function createApp(opts = {}) {
   app.get('/api/messages', requireUser, (req, res) => res.json({ inbox: social.inbox(req.user.id), unread: social.unreadCount(req.user.id) }));
   app.get('/api/messages/:id', requireUser, (req, res) => res.json({ thread: social.thread(req.user.id, req.params.id), with: social.friendView(req.user.id, req.params.id) }));
   app.post('/api/messages/:id', requireUser, (req, res) => { try { res.json({ message: social.send(req.user.id, req.params.id, (req.body || {}).body) }); } catch (e) { fail(res, e); } });
-  app.post('/api/calls/:id/signal', requireUser, express.json({ limit: '256kb' }), (req, res) => { if (!engine.allows(req.user.id, 'video')) return res.status(402).json({ error: 'Video calls come with Self-Made Legends All Star' }); try { res.json(social.signal(req.user.id, req.params.id, (req.body || {}).type, (req.body || {}).payload)); } catch (e) { fail(res, e); } });
+  app.post('/api/calls/:id/signal', requireUser, express.json({ limit: '256kb' }), (req, res) => { try { res.json(social.signal(req.user.id, req.params.id, (req.body || {}).type, (req.body || {}).payload)); } catch (e) { fail(res, e); } });
   app.get('/api/live', (req, res) => res.json({ live: social.liveNow(), iceServers: ICE_SERVERS }));
-  app.post('/api/live', requireUser, (req, res) => { if (!engine.allows(req.user.id, 'live')) return res.status(402).json({ error: 'Going live comes with Self-Made Legends All Star' }); res.json({ room: social.goLive(req.user.id, (req.body || {}).title) }); });
+  app.post('/api/live', requireUser, (req, res) => { res.json({ room: social.goLive(req.user.id, (req.body || {}).title) }); });
   app.delete('/api/live', requireUser, (req, res) => res.json({ ended: social.endLive(req.user.id) }));
   app.post('/api/live/:id/join', requireUser, (req, res) => { try { res.json({ room: social.join(Number(req.params.id), req.user.id), messages: social.liveMessages(Number(req.params.id)) }); } catch (e) { fail(res, e); } });
   app.post('/api/live/:id/leave', requireUser, (req, res) => { social.leave(Number(req.params.id), req.user.id); res.json({ ok: true }); });
@@ -366,7 +366,7 @@ ${c.beaters.length ? `<h2>Beat it</h2><div class="card">${c.beaters.slice(0, 10)
   app.post('/api/challenges/:id/respond', requireUser, (req, res) => { try { res.json({ challenge: engine.respondChallenge(req.user.id, parseInt(req.params.id, 10), !!(req.body || {}).accept) }); } catch (e) { fail(res, e); } });
   app.post('/api/push/subscribe', requireUser, (req, res) => { try { push.subscribe(req.user.id, (req.body || {}).subscription); res.json({ ok: true, devices: push.count(req.user.id) }); } catch (e) { fail(res, e); } });
   app.post('/api/push/unsubscribe', requireUser, (req, res) => { push.unsubscribe(req.user.id, (req.body || {}).endpoint); res.json({ ok: true }); });
-  app.get('/api/billing', requireUser, (req, res) => res.json({ enabled: !!stripe, tier: engine.tierOf(req.user.id), tierInfo: engine.tierInfo(req.user.id), defaultTier: engine.defaultTier, tiers: Engine.constants.TIERS, tierNames: Engine.constants.TIER_NAMES, tierPrices: Engine.constants.TIER_PRICES_CENTS, tierPerks: Engine.constants.TIER_PERKS, features: Engine.constants.FEATURES, fees: money$.fees, myFees: money$.tierFees(engine.tierOf(req.user.id)), successFee: money$.successFeeFor(req.user.id, todayUTC().slice(0, 7)) }));
+  app.get('/api/billing', requireUser, (req, res) => res.json({ enabled: !!stripe, tier: engine.tierOf(req.user.id), tierInfo: engine.tierInfo(req.user.id), defaultTier: engine.defaultTier, tiers: Engine.constants.TIERS, tierNames: Engine.constants.TIER_NAMES, tierPrices: Engine.constants.TIER_PRICES_CENTS, tierPerks: Engine.constants.TIER_PERKS, ranks: Engine.constants.RANKS, rankNames: Engine.constants.RANK_NAMES, rankRules: Engine.constants.RANK_RULES, rankInfo: engine.rankInfo(req.user.id), features: Engine.constants.FEATURES, fees: money$.fees, myFees: money$.tierFees(engine.tierOf(req.user.id)), successFee: money$.successFeeFor(req.user.id, todayUTC().slice(0, 7)) }));
   app.post('/api/billing/checkout', requireUser, wrap(async (req, res) => {
     if (!stripe) return res.status(404).json({ error: 'Billing is not configured yet' });
     const tier = (req.body || {}).tier;
@@ -387,7 +387,6 @@ ${c.beaters.length ? `<h2>Beat it</h2><div class="card">${c.beaters.slice(0, 10)
     if (['country', 'region', 'city'].includes(scope)) {
       const user = auth.verify(tokenOf(req));
       if (!user) return res.status(401).json({ error: 'Sign in for local boards' });
-      if (!engine.allows(user.id, 'localBoards')) return res.status(402).json({ error: 'Local boards are a Boss feature' });
       viewer = engine.getProfile(user.id);
       if (!viewer) return res.status(400).json({ error: 'Set your location first' });
     }

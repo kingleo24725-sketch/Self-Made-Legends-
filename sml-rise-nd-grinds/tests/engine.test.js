@@ -105,12 +105,12 @@ describe('profiles and plans', () => {
     const plan = await engine.ensurePlan('u_a');
     expect(plan.date).toBe(day);
     expect(plan.status).toBe('open');
-    expect(plan.league).toBe('silver');
+    expect(plan.league).toBe('rookie');
     expect(plan.tasks.every(t => t.taskId && t.status === 'pending' && t.endsMin)).toBe(true);
     expect((await engine.ensurePlan('u_a')).id).toBe(plan.id);
     expect(engine.inbox('u_a').filter(i => i.kind === 'plan').length).toBe(1);
     expect(engine.crewLog('u_a', day).map(l => l.agent)).toEqual(['Coach', 'Strategist']);
-    expect(engine.leaderboard(day)[0]).toMatchObject({ userId: 'u_a', score: 0, displayName: 'Ava', league: 'silver' });
+    expect(engine.leaderboard(day)[0]).toMatchObject({ userId: 'u_a', score: 0, displayName: 'Ava', league: 'rookie' });
   });
 
   test('regeneration replaces tasks but keeps the day', async () => {
@@ -125,13 +125,18 @@ describe('profiles and plans', () => {
     await expect(engine.ensurePlan('nobody')).rejects.toThrow(/profile/);
   });
 
-  test('leagues come from what you have, and Legend from results', async () => {
+  test('ranks are earned: Rookie, then Pro, All Star, Superstar by days, points, or wins', () => {
     engine.saveProfile('u_a', { resources: [] });
-    engine.saveProfile('u_b', { resources: ['vehicle', 'laptop'] });
-    expect(engine.leagueFor('u_a', engine.getProfile('u_a'), '2026-09-09')).toBe('bronze');
-    expect(engine.leagueFor('u_b', engine.getProfile('u_b'), '2026-09-09')).toBe('gold');
-    db.prepare("INSERT INTO daily_scores (user_id, date, score, streak, closed, updated_at) VALUES ('u_a','2026-09-01',100,7,1,0)").run();
-    expect(engine.leagueFor('u_a', engine.getProfile('u_a'), '2026-09-09')).toBe('legend');
+    expect(engine.rankInfo('u_a')).toMatchObject({ rank: 'rookie', next: { rank: 'pro' } });
+    for (let i = 0; i < 7; i++) db.prepare("INSERT INTO daily_scores (user_id, date, score, tasks_done, closed, updated_at) VALUES ('u_a', ?, 1000, 1, 1, 0)").run(Engine.shiftDate('2026-08-01', i));
+    expect(engine.rankInfo('u_a').rank).toBe('pro');
+    expect(engine.leagueFor('u_a', engine.getProfile('u_a'), '2026-09-09')).toBe('pro');
+    expect(engine.leagueFor('u_a', engine.getProfile('u_a'), '2026-08-03')).toBe('rookie'); // rank as of a date
+    db.prepare("UPDATE daily_scores SET rank = 1 WHERE user_id = 'u_a' AND date <= '2026-08-03'").run();
+    expect(engine.rankInfo('u_a')).toMatchObject({ rank: 'allstar', have: { wins: 3 } });
+    db.prepare("UPDATE daily_scores SET score = 200000 WHERE user_id = 'u_a'").run();
+    expect(engine.rankInfo('u_a')).toMatchObject({ rank: 'superstar', next: null });
+    expect(engine.tierInfo('u_a')).toMatchObject({ tier: 'free', name: 'Self-Made Legends Member', rankName: 'Self-Made Legends Superstar' });
   });
 });
 
@@ -182,9 +187,6 @@ describe('tasks, scoring and the world leaderboard', () => {
     const r = await engine.verifyReceipt('u_a', plan.tasks[0].taskId, 'aGVsbG8=', 'image/png');
     expect(r.verified).toBe(false);
     await expect(engine.verifyReceipt('u_a', plan.tasks[0].taskId, 'aGVsbG8=', 'text/plain')).rejects.toThrow(/PNG/);
-    engine.setTier('u_a', 'free');
-    engine.defaultTier = 'free';
-    await expect(engine.verifyReceipt('u_a', plan.tasks[0].taskId, 'aGVsbG8=', 'image/png')).rejects.toThrow(/Boss/);
   });
 
   test('a verifying crew marks the task done and the board shows it as verified', async () => {
@@ -212,10 +214,10 @@ describe('tasks, scoring and the world leaderboard', () => {
     const lb = engine.leaderboard(day);
     expect(lb.map(r => r.userId)).toEqual(['u_b', 'u_a']);
     expect(lb[0].earningsVerified).toBe(false);
-    expect(engine.leaderboard(day, { league: 'silver' }).map(r => r.userId)).toEqual(['u_a']);
+    expect(engine.leaderboard(day, { league: 'rookie' }).map(r => r.userId).sort()).toEqual(['u_a', 'u_b']);
     expect(engine.leaderboard(day, { scope: 'region', viewer: engine.getProfile('u_a') }).map(r => r.userId)).toEqual(['u_a']);
     expect(engine.leaderboard(day, { scope: 'country', viewer: engine.getProfile('u_a') }).length).toBe(2);
-    expect(engine.myRank('u_a', day)).toMatchObject({ rank: 2, of: 2, league: 'silver', leagueRank: 1, leagueOf: 1 });
+    expect(engine.myRank('u_a', day)).toMatchObject({ rank: 2, of: 2, league: 'rookie', leagueRank: 2, leagueOf: 2 });
   });
 });
 
@@ -237,7 +239,7 @@ describe('chat with the crew', () => {
     expect(b.plan.headline).toMatch(new RegExp(`^${b.plan.tasks.length} plays.*rebuilt mid-day`));
     expect(engine.chatHistory('u_a', plan.date).map(m => m.role)).toEqual(['user', 'crew', 'user', 'crew']);
     engine.defaultTier = 'free';
-    await expect(engine.chat('u_a', 'hi')).rejects.toThrow(/Boss/);
+    expect((await engine.chat('u_a', 'hi')).reply).toBeTruthy(); // chat is free for every rank
   });
 });
 
@@ -410,26 +412,21 @@ describe('closing the day', () => {
 });
 
 describe('memberships', () => {
-  test('Free, Pro, All Star, Veteran and Hall of Fame unlock in order', () => {
-    engine.defaultTier = 'free';
+  test('only Veteran and Hall of Fame cost money; every crew feature is free', () => {
     expect(engine.tierOf('u_a')).toBe('free');
-    expect(engine.allows('u_a', 'liveCrew')).toBe(false);
-    engine.setTier('u_a', 'pro');
-    expect(engine.allows('u_a', 'liveCrew')).toBe(true);
-    expect(engine.allows('u_a', 'gigFinder')).toBe(true);
-    expect(engine.allows('u_a', 'chat')).toBe(false);
-    engine.setTier('u_a', 'allstar');
-    expect(engine.allows('u_a', 'localBoards')).toBe(true);
-    expect(engine.allows('u_a', 'video')).toBe(true);
+    for (const f of ['liveCrew', 'gigFinder', 'chat', 'receipts', 'localBoards', 'video', 'live']) expect(engine.allows('u_a', f)).toBe(true);
     expect(engine.allows('u_a', 'lowerFees')).toBe(false);
+    expect(engine.regenerationsAllowed('u_a')).toBe(1);
     engine.setTier('u_a', 'veteran');
     expect(engine.regenerationsAllowed('u_a')).toBe(2);
+    expect(engine.allows('u_a', 'lowerFees')).toBe(true);
     expect(engine.allows('u_a', 'noLegendFee')).toBe(false);
     engine.setTier('u_a', 'hof');
     expect(engine.tierInfo('u_a')).toMatchObject({ name: 'Self-Made Legends Hall of Fame', priceCents: 1499, regenerationsPerDay: 3, insurancePerWeek: 2 });
     expect(engine.badges('u_a').map(b => b.badge)).toContain('hall_of_fame');
-    engine.setTier('u_a', 'boss'); // legacy name maps to All Star
-    expect(engine.tierOf('u_a')).toBe('allstar');
+    engine.setTier('u_a', 'allstar'); // old paid name: now a free rank, so membership drops to free
+    expect(engine.tierOf('u_a')).toBe('free');
+    expect(Engine.constants.TIER_PRICES_CENTS).toEqual({ free: 0, veteran: 1299, hof: 1499 });
     expect(() => engine.setTier('u_a', 'gold')).toThrow();
   });
 });

@@ -54,7 +54,7 @@ class Money {
     if (tier === 'hof') { f.tipPct = Math.min(f.tipPct, 5); f.successPct = 0; }
     return f;
   }
-  tierOf(userId) { const r = this.db.prepare('SELECT tier FROM users WHERE id = ?').get(userId); const t = r && r.tier; return t === 'boss' ? 'allstar' : (t && t !== 'free' ? t : (this.defaultTier || 'free')); }
+  tierOf(userId) { const r = this.db.prepare('SELECT tier FROM users WHERE id = ?').get(userId); const t = r && r.tier; return ['veteran', 'hof'].includes(t) ? t : (this.defaultTier || 'free'); }
 
   split(grossCents, pct) {
     const fee = Math.round(grossCents * pct / 100);
@@ -203,7 +203,7 @@ class Money {
     const list = Object.values(byMonth).sort((a, b) => b.month.localeCompare(a.month)).slice(0, months);
     const owed = this.db.prepare('SELECT COALESCE(SUM(payout_balance_cents), 0) AS b FROM users').get().b;
     const players = this.db.prepare('SELECT COUNT(*) AS c FROM users').get().c;
-    const paying = this.db.prepare("SELECT COUNT(*) AS c FROM users WHERE tier IN ('pro','allstar','veteran','hof','boss')").get().c;
+    const paying = this.db.prepare("SELECT COUNT(*) AS c FROM users WHERE tier IN ('veteran','hof')").get().c;
     const verified = this.db.prepare('SELECT COALESCE(SUM(verified_cents), 0) AS v, COALESCE(SUM(earnings_cents), 0) AS e FROM daily_scores').get();
     return { fees: this.fees, months: list, owedToLegendsCents: owed, players, paying, verifiedCents: verified.v, loggedCents: verified.e };
   }
