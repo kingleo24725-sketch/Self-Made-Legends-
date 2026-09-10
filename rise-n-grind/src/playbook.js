@@ -85,6 +85,56 @@ const PLAYS = [
     steps: ['Record one 60-second video teaching something you know', 'Post it to TikTok, Reels and Shorts with a clear call to action', 'Add a link to a $5-$15 digital product, service, or affiliate offer', 'Reply to every comment within the first hour'],
     why: 'Distribution compounds. One post a day builds an audience that buys.' },
 
+  // ── Beauty, care and home (the plays women in the gig market already win at) ─
+  { id: 'braids_styling', title: 'Braids and styling appointments', category: 'beauty', hours: 3, icon: '💇🏽‍♀️', window: [10, 20],
+    needs: ['beauty'], earn: [80, 250],
+    steps: ['Post 3 recent styles with prices on Instagram, TikTok and 2 local groups: "Same-day slots today"', 'Take deposits by Cash App or Zelle to lock the time', 'Set up at home or travel for a fee; bring your own products', 'Ask every client to post a photo and tag you'],
+    why: 'Braiding and styling is one of the highest hourly rates a person can earn from home with skill and a chair.' },
+  { id: 'nails_mobile', title: 'Mobile nails', category: 'beauty', hours: 2.5, icon: '💅🏽', window: [11, 20],
+    needs: ['beauty'], earn: [60, 180],
+    steps: ['Post a set menu: basic, gel, full set, with prices and a booking link', 'Book back-to-back clients in the same neighborhood', 'Bring a lamp, kit, and sanitizer; sanitation photos build trust', 'Offer a rebook discount before you leave'],
+    why: 'Nail clients rebook every 2-3 weeks. Five regulars is a steady income.' },
+  { id: 'makeup_artist', title: 'Makeup for events and photos', category: 'beauty', hours: 3, icon: '💄', window: [8, 20],
+    needs: ['beauty'], earn: [75, 300],
+    steps: ['Message 5 photographers, wedding planners, and event promoters offering on-site makeup', 'Post a before/after reel with a same-week price', 'Charge a deposit for bookings; travel fee outside your area', 'Sell a "glam for a night out" slot Friday and Saturday evenings'],
+    why: 'Event makeup pays by the face, not the hour, and weekends book solid.' },
+  { id: 'babysitting', title: 'Babysitting and date-night care', category: 'care', hours: 4, icon: '🧸', window: [15, 23],
+    needs: ['childcare'], earn: [60, 140],
+    steps: ['Set up or refresh your Care.com, Sittercity, and UrbanSitter profiles with a background check', 'Post in 2 local parent groups: "Available tonight and this weekend"', 'Confirm rate, hours, and bedtime rules by text before you arrive', 'Send one photo update to the parents'],
+    why: 'Evening and weekend childcare is always short on supply and parents pay for someone they trust.' },
+  { id: 'senior_companion', title: 'Senior companion and errands', category: 'care', hours: 3, icon: '🤝', window: [9, 17],
+    needs: [], earn: [45, 120],
+    steps: ['Post in Nextdoor and local church or community groups offering companion visits, errands, and rides to appointments', 'Reply to Care.com senior-care requests within the hour', 'Keep a simple log of each visit for the family', 'Offer a standing weekly slot'],
+    why: 'Families pay well for reliable, kind help with a parent, and it turns into weekly work fast.' },
+  { id: 'home_organizing', title: 'Home organizing and decluttering', category: 'local', hours: 3, icon: '🧺',
+    needs: [], earn: [60, 150],
+    steps: ['Post before/after photos of one closet or pantry with a flat 3-hour price', 'Offer to list unwanted items for the client for a cut of the sales', 'Bring bins, labels, and trash bags', 'Photograph the result for tomorrow\'s post'],
+    why: 'Organizing sells on the photo. One good transformation books the next three.' },
+  { id: 'meal_prep', title: 'Meal prep and baking orders', category: 'food', hours: 3, icon: '🍱',
+    needs: ['cooking'], earn: [50, 200],
+    steps: ['Post a 5-meal weekly menu with a price and a Friday order cutoff', 'Take orders and deposits through Cash App or Square', 'Cook in one batch; deliver or set a pickup window', 'Check your state\'s cottage food rules for what you can sell from home'],
+    why: 'Busy people pay for food that is ready. A menu with a cutoff turns cooking into recurring revenue.' },
+  { id: 'poshmark_flip', title: 'Sell clothes on Poshmark and Depop', category: 'online', hours: 2, icon: '👗',
+    needs: ['phone'], earn: [30, 200],
+    steps: ['Pull 15 pieces you no longer wear; brand names and good condition sell first', 'Photograph flat or on a hanger in daylight, list with brand, size, and measurements', 'Share your closet at 7pm when the apps are busiest', 'Accept reasonable offers the same day'],
+    why: 'Zero cost basis, and the apps handle shipping labels and payment.' },
+  { id: 'virtual_assistant', title: 'Virtual assistant block', category: 'online', hours: 3, icon: '🗂️',
+    needs: ['laptop'], earn: [45, 120],
+    steps: ['List 5 tasks you can do today: inbox cleanup, scheduling, data entry, social posts, invoices', 'Message 10 small businesses and 5 realtors offering a 3-hour trial block', 'Track time with a free timer and send a summary at the end', 'Propose a weekly retainer'],
+    why: 'Small businesses need help before they can afford an employee. Retainers are the goal.' },
+  { id: 'notary_mobile', title: 'Mobile notary and loan signings', category: 'local', hours: 2.5, icon: '📜',
+    needs: ['notary', 'vehicle'], earn: [50, 200],
+    steps: ['Set your profile active on Snapdocs, Notary Cafe, and 123Notary', 'Post in local groups: "Mobile notary, same day, $X plus travel"', 'Bring stamps, journal, and blue pens', 'Ask title companies for repeat signings'],
+    why: 'Loan signings pay $75-$200 each and take about an hour.' },
+  { id: 'event_staff', title: 'Event and brand ambassador shifts', category: 'gig', hours: 4, icon: '🎪', window: [10, 22],
+    needs: [], earn: [60, 160],
+    steps: ['Apply on Instawork, Qwick, and local staffing pages for this week\'s events', 'Keep a black-and-white outfit ready', 'Arrive 15 minutes early; ratings decide who gets the next shift', 'Take the promoter\'s number for direct bookings'],
+    why: 'Events pay same-week and the good workers get called back directly.' },
+  { id: 'pet_sitting', title: 'Pet sitting and overnight stays', category: 'care', hours: 3, icon: '🐈',
+    needs: [], earn: [40, 120],
+    steps: ['Set Rover availability for drop-ins and overnights', 'Post in local groups with a photo of you and a pet', 'Send the owner a photo at each visit', 'Offer a holiday-week rate now'],
+    why: 'Overnight stays pay more than walks and owners rebook every trip.' },
+
   // ── Career moves that pay soon ───────────────────────────────────────────
   { id: 'apply_shift_jobs', title: 'Apply for paid shifts this week', category: 'career', hours: 1, icon: '📝',
     needs: [], earn: [0, 0],
@@ -108,7 +158,14 @@ const RESOURCES = [
   { key: 'handy', label: 'basic handyman skills', icon: '🔧' },
   { key: 'academic', label: 'a subject I can teach', icon: '📚' },
   { key: 'rideshare_approved', label: 'an approved rideshare account', icon: '🚕' },
+  { key: 'beauty', label: 'hair, nails or makeup skills', icon: '💄' },
+  { key: 'cooking', label: 'I can cook or bake', icon: '🍳' },
+  { key: 'childcare', label: 'childcare experience', icon: '🧸' },
+  { key: 'notary', label: 'a notary commission', icon: '📜' },
 ];
+const CATEGORIES = { gig: 'Gig', local: 'Local services', online: 'Online', beauty: 'Beauty', care: 'Care', food: 'Food', career: 'Career', sales: 'Sales', other: 'Other' };
+// In-person plays where the safety flow (share where you are, check in, check out) applies.
+const IN_PERSON = new Set(['taskrabbit_moving', 'yard_work', 'car_detailing', 'dog_walking', 'handyman_small', 'braids_styling', 'nails_mobile', 'makeup_artist', 'babysitting', 'senior_companion', 'home_organizing', 'notary_mobile', 'event_staff', 'pet_sitting', 'resell_flip', 'declutter_sell']);
 const RESOURCE_LABELS = Object.fromEntries(RESOURCES.map(r => [r.key, r.label]));
 
 function hash(str) {
@@ -190,6 +247,11 @@ function buildOfflinePlan(profile, dateKey, opts = {}) {
       }
       if (p.earn[1] >= 100) score += 0.25;
       if (p.category === 'career') score -= 0.1; // fillers, never the headline
+      // Lead with the skills the person told us they have.
+      const have = new Set(profile.resources || []);
+      if (p.category === 'beauty' && have.has('beauty')) score += 0.45;
+      if (p.category === 'care' && have.has('childcare')) score += 0.35;
+      if (p.category === 'food' && have.has('cooking')) score += 0.35;
       return { play: p, score };
     })
     .sort((a, b) => b.score - a.score);
@@ -223,6 +285,7 @@ function buildOfflinePlan(profile, dateKey, opts = {}) {
     steps: p.steps,
     why: p.why,
     sources: [],
+    inPerson: IN_PERSON.has(p.id),
   })), startHour, profile.blockedHours);
 
   const low = tasks.reduce((s, t) => s + t.estimatedEarnings.low, 0);
@@ -262,8 +325,8 @@ function replanRemaining(profile, remainingHours, usedPlayIds = []) {
   }
   return chosen.map((p, idx) => ({
     order: idx + 1, playId: p.id, title: p.title, icon: p.icon, category: p.category, hours: p.hours,
-    estimatedEarnings: { low: p.earn[0], high: p.earn[1] }, steps: p.steps, why: p.why, sources: [],
+    estimatedEarnings: { low: p.earn[0], high: p.earn[1] }, steps: p.steps, why: p.why, sources: [], inPerson: IN_PERSON.has(p.id),
   }));
 }
 
-module.exports = { PLAYS, RESOURCES, RESOURCE_LABELS, buildOfflinePlan, replanRemaining, layoutOnClock, parseClock, clock };
+module.exports = { PLAYS, RESOURCES, RESOURCE_LABELS, CATEGORIES, IN_PERSON, buildOfflinePlan, replanRemaining, layoutOnClock, parseClock, clock };

@@ -7,7 +7,8 @@
 
 const crypto = require('crypto');
 const Crew = require('./agents');
-const { layoutOnClock, clock } = require('./playbook');
+const money = (c) => '$' + (Number(c || 0) / 100).toLocaleString('en-US', { maximumFractionDigits: 0 });
+const { layoutOnClock, clock, CATEGORIES } = require('./playbook');
 
 const EARNINGS_CAP_CENTS = 100_000;     // $1,000/day counts toward score
 const UNVERIFIED_WEIGHT = 0.5;          // self-reported dollars count half; receipt-verified count full
@@ -21,7 +22,7 @@ const PLAN_READY_HOUR = 4;              // the crew finishes the plan by 4am loc
 const REGENERATIONS_PER_DAY = 1;
 const CHECKIN_GRACE_MIN = 5;            // minutes after a block ends before the crew checks in
 const INSURANCE_DAYS = 7;               // one free streak save per week
-const LEAGUES = ['bronze', 'silver', 'gold', 'boss'];
+const LEAGUES = ['bronze', 'silver', 'gold', 'legend'];
 const TIERS = ['free', 'pro', 'boss'];
 const FEATURES = { liveCrew: ['pro', 'boss'], chat: ['boss'], receipts: ['boss'], localBoards: ['boss'] };
 
@@ -39,6 +40,7 @@ class Engine {
     this.onEvent = opts.onEvent || (() => {});
     this.defaultTier = TIERS.includes(opts.defaultTier) ? opts.defaultTier : (TIERS.includes(process.env.DEFAULT_TIER) ? process.env.DEFAULT_TIER : 'boss');
     this._generating = new Set();
+    this.community = null; // attached by the server once Community exists
     this.briefCache = {
       get: (key, date) => { const r = this.db.prepare('SELECT brief FROM briefs WHERE city_key = ? AND date = ?').get(key, date); return r ? r.brief : null; },
       set: (key, date, brief) => this.db.prepare('INSERT OR REPLACE INTO briefs (city_key, date, brief, created_at) VALUES (?, ?, ?, ?)').run(key, date, brief, this.now()),
@@ -106,6 +108,8 @@ class Engine {
       blockedHours: parse(row.blocked_hours, []),
       goal,
       conditions: row.conditions || '',
+      gender: row.gender || '',
+      safetyContact: row.safety_contact || '',
       insuranceUsedOn: row.insurance_used_on || null,
       memory: parse(row.memory, { notes: [], favorites: [], avoid: [] }),
       active: !!row.active,
@@ -149,19 +153,21 @@ class Engine {
       tz_offset: Math.min(840, Math.max(-720, parseInt(input.tzOffset ?? existing?.tz_offset ?? 0, 10) || 0)),
       blocked, goal,
       conditions: String(input.conditions ?? existing?.conditions ?? '').slice(0, 300),
+      gender: ['woman', 'man', 'other', ''].includes(input.gender) ? input.gender : (existing?.gender || ''),
+      safetyContact: String(input.safetyContact ?? existing?.safetyContact ?? '').slice(0, 120),
       memory: existing?.memory || { notes: [], favorites: [], avoid: [] },
       active: input.active === undefined ? (existing ? existing.active : true) : !!input.active,
     };
     const now = this.now();
     this.db.prepare(
-      `INSERT INTO profiles (user_id, location, country, region, city, resources, skills, goals, comfort, target_hours, start_hour, tz_offset, blocked_hours, goal_json, conditions, memory, active, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO profiles (user_id, location, country, region, city, resources, skills, goals, comfort, target_hours, start_hour, tz_offset, blocked_hours, goal_json, conditions, gender, safety_contact, memory, active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id) DO UPDATE SET location=excluded.location, country=excluded.country, region=excluded.region, city=excluded.city,
          resources=excluded.resources, skills=excluded.skills, goals=excluded.goals, comfort=excluded.comfort, target_hours=excluded.target_hours,
          start_hour=excluded.start_hour, tz_offset=excluded.tz_offset, blocked_hours=excluded.blocked_hours, goal_json=excluded.goal_json,
-         conditions=excluded.conditions, active=excluded.active, updated_at=excluded.updated_at`
+         conditions=excluded.conditions, gender=excluded.gender, safety_contact=excluded.safety_contact, active=excluded.active, updated_at=excluded.updated_at`
     ).run(userId, p.location, p.country, p.region, p.city, JSON.stringify(p.resources), JSON.stringify(p.skills), p.goals, p.comfort, p.targetHours, p.startHour,
-      p.tz_offset, JSON.stringify(p.blocked), p.goal ? JSON.stringify(p.goal) : null, p.conditions, JSON.stringify(p.memory), p.active ? 1 : 0, existing?.createdAt || now, now);
+      p.tz_offset, JSON.stringify(p.blocked), p.goal ? JSON.stringify(p.goal) : null, p.conditions, p.gender, p.safetyContact, JSON.stringify(p.memory), p.active ? 1 : 0, existing?.createdAt || now, now);
     return this.getProfile(userId);
   }
 
@@ -205,7 +211,7 @@ class Engine {
     let league = big === 0 ? 'bronze' : big === 1 ? 'silver' : 'gold';
     const since = Engine.shiftDate(dateKey, -14);
     const r = this.db.prepare('SELECT SUM(CASE WHEN rank IS NOT NULL AND rank <= 3 THEN 1 ELSE 0 END) AS podiums, MAX(streak) AS best FROM daily_scores WHERE user_id = ? AND date >= ? AND date < ? AND closed = 1').get(userId, since, dateKey);
-    if (r && ((r.podiums || 0) >= 2 || (r.best || 0) >= 7)) league = 'boss';
+    if (r && ((r.podiums || 0) >= 2 || (r.best || 0) >= 7)) league = 'legend';
     return league;
   }
 
@@ -221,8 +227,10 @@ class Engine {
     plan.id = row.id; plan.status = row.status; plan.generatedAt = row.generated_at; plan.closedAt = row.closed_at; plan.regenerations = row.regenerations;
     plan.tasks = tasks.map((s, i) => {
       const t = plan.tasks[i] || { title: s.title, icon: '✅', hours: s.hours, steps: [], why: '', sources: [], estimatedEarnings: { low: 0, high: 0 } };
-      return { ...t, order: s.order_num, taskId: s.id, playId: s.play_id, title: s.title, hours: s.hours, endsMin: s.ends_min, status: s.status, earningsCents: s.earnings_cents, verifiedCents: s.verified_cents || 0, note: s.note || '', completedAt: s.completed_at || null };
+      return { ...t, order: s.order_num, taskId: s.id, playId: s.play_id, title: s.title, hours: s.hours, endsMin: s.ends_min, category: s.category || t.category || 'other', status: s.status, earningsCents: s.earnings_cents, verifiedCents: s.verified_cents || 0, note: s.note || '', completedAt: s.completed_at || null };
     });
+    const lp = this.db.prepare('SELECT lesson_points FROM daily_scores WHERE user_id = ? AND date = ?').get(row.user_id, row.date);
+    plan.lessonPoints = lp ? lp.lesson_points || 0 : 0;
     plan.progress = this._progress(plan);
     return plan;
   }
@@ -233,13 +241,18 @@ class Engine {
     const earningsCents = plan.tasks.reduce((s, t) => s + (t.earningsCents || 0), 0);
     const verifiedCents = plan.tasks.reduce((s, t) => s + Math.min(t.verifiedCents || 0, t.earningsCents || 0), 0);
     const base = { tasksDone: done.length, tasksTotal: plan.tasks.length, hoursDone, streak: plan.streak || 0 };
+    const lessonPoints = plan.lessonPoints || 0;
+    const cats = {};
+    for (const t of plan.tasks) cats[t.category || 'other'] = (cats[t.category || 'other'] || 0) + (t.hours || 0);
+    const category = Object.entries(cats).filter(([k]) => k !== 'career').sort((a, b) => b[1] - a[1])[0];
     return {
       ...base,
       hoursDone: Math.round(hoursDone * 100) / 100,
       hoursTotal: Math.round(plan.tasks.reduce((s, t) => s + (t.hours || 0), 0) * 100) / 100,
-      earningsCents, verifiedCents,
-      score: this.scoreFor({ ...base, earningsCents, verifiedCents }),
-      verifiedScore: this.scoreFor({ ...base, earningsCents: verifiedCents, verifiedCents }),
+      earningsCents, verifiedCents, lessonPoints,
+      category: category ? category[0] : 'other',
+      score: this.scoreFor({ ...base, earningsCents, verifiedCents }) + lessonPoints,
+      verifiedScore: this.scoreFor({ ...base, earningsCents: verifiedCents, verifiedCents }) + lessonPoints,
     };
   }
 
@@ -290,8 +303,8 @@ class Engine {
   }
 
   _insertTasks(planId, tasks, startOrder = 1) {
-    const ins = this.db.prepare('INSERT INTO tasks (plan_id, order_num, play_id, title, hours, status, earnings_cents, ends_min) VALUES (?, ?, ?, ?, ?, ?, 0, ?)');
-    tasks.forEach((t, i) => ins.run(planId, startOrder + i, t.playId || null, t.title, t.hours, 'pending', Number.isFinite(t.endsMin) ? t.endsMin : null));
+    const ins = this.db.prepare('INSERT INTO tasks (plan_id, order_num, play_id, title, hours, status, earnings_cents, ends_min, category) VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)');
+    tasks.forEach((t, i) => ins.run(planId, startOrder + i, t.playId || null, t.title, t.hours, 'pending', Number.isFinite(t.endsMin) ? t.endsMin : null, t.category || 'other'));
   }
 
   // ── Chat with the crew (mid-day replans) ─────────────────────────────────
@@ -362,6 +375,7 @@ class Engine {
     };
     const completedAt = next.status === 'done' ? (row.completed_at || this.now()) : null;
     this.db.prepare('UPDATE tasks SET status = ?, earnings_cents = ?, note = ?, completed_at = ?, checkin_sent = 1 WHERE id = ?').run(next.status, next.earnings_cents, next.note, completedAt, taskId);
+    if (next.status === 'done' && row.status !== 'done' && this.community) this.community.onTaskDone(userId, { title: row.title, earningsCents: next.earnings_cents });
     return this._afterTaskChange(userId, row.date);
   }
 
@@ -390,6 +404,7 @@ class Engine {
     });
     tx();
     this.logCrew(userId, row.date, 'Auditor', `Verified $${(cents / 100).toFixed(2)} from ${result.source || 'a receipt'} for ${row.title}.`);
+    if (this.community) this.community.onVerified(userId, { title: row.title }, cents, result.source);
     return { verified: true, amountCents: cents, source: result.source, plan: this._afterTaskChange(userId, row.date) };
   }
 
@@ -418,12 +433,12 @@ class Engine {
     const p = plan.progress;
     profile = profile || this.getProfile(userId) || {};
     this.db.prepare(
-      `INSERT INTO daily_scores (user_id, date, score, verified_score, earnings_cents, verified_cents, league, country, region, city, tasks_done, tasks_total, hours_done, streak, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `INSERT INTO daily_scores (user_id, date, score, verified_score, earnings_cents, verified_cents, league, country, region, city, category, tasks_done, tasks_total, hours_done, streak, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id, date) DO UPDATE SET score=excluded.score, verified_score=excluded.verified_score, earnings_cents=excluded.earnings_cents, verified_cents=excluded.verified_cents,
-         league=excluded.league, country=excluded.country, region=excluded.region, city=excluded.city, tasks_done=excluded.tasks_done, tasks_total=excluded.tasks_total,
+         league=excluded.league, country=excluded.country, region=excluded.region, city=excluded.city, category=excluded.category, tasks_done=excluded.tasks_done, tasks_total=excluded.tasks_total,
          hours_done=excluded.hours_done, streak=excluded.streak, updated_at=excluded.updated_at`
-    ).run(userId, dateKey, p.score, p.verifiedScore, p.earningsCents, p.verifiedCents, plan.league || 'bronze', profile.country || 'US', profile.region || '', profile.city || '',
+    ).run(userId, dateKey, p.score, p.verifiedScore, p.earningsCents, p.verifiedCents, plan.league || 'bronze', profile.country || 'US', profile.region || '', profile.city || '', p.category || 'other',
       p.tasksDone, p.tasksTotal, p.hoursDone, plan.streak || 0, this.now());
   }
 
@@ -467,6 +482,8 @@ class Engine {
 
     if (finished) this.awardBadge(userId, 'full_day', dateKey, 'Every play done');
     if (streak === 7) this.awardBadge(userId, 'streak_7', dateKey, 'Seven days straight');
+    if (this.community) { try { await this.community.maybeStory(userId, streak, dateKey); } catch (e) { console.error('[story]', e.message); } }
+    if (p.tasksDone > 0) this.notify(userId, 'card', 'Your receipt card is ready', `Score ${p.score}, ${money(p.earningsCents)} logged. Share it from Past days.`, { push: false });
     if (insured) this.notify(userId, 'insurance', 'Streak insurance used', `Nothing logged on ${dateKey}, so your ${streak}-day streak was saved. One save per week.`);
     this.notify(userId, 'close', finished ? 'Full day. Every play done.' : 'Day closed', debrief.summary || `Score ${p.score}. Tomorrow's plan is on the way.`);
 
@@ -541,8 +558,15 @@ class Engine {
     tx();
     all.slice(0, 3).forEach((t, i) => {
       this.awardBadge(t.user_id, i === 0 ? 'world_champion' : 'podium', dateKey, `World #${i + 1}`);
-      this.notify(t.user_id, 'podium', i === 0 ? 'World champion of the day' : `World #${i + 1} today`, `You placed #${i + 1} in the world on ${dateKey}.`);
+      this.notify(t.user_id, 'podium', i === 0 ? 'Legend of the Day' : `World #${i + 1} today`, `You placed #${i + 1} in the world on ${dateKey}.`);
     });
+    if (this.community) {
+      this.community.onChampion(all[0].user_id, dateKey, all[0].score);
+      try { this.community.awardChallengeBadges(dateKey); } catch (e) { console.error('[challenge-day]', e.message); }
+      // Women's Grind: the top woman of the day, crowned alongside the world podium.
+      const w = this.db.prepare("SELECT s.user_id FROM daily_scores s JOIN profiles p ON p.user_id = s.user_id WHERE s.date = ? AND s.score > 0 AND p.gender = 'woman' ORDER BY s.score DESC LIMIT 1").get(dateKey);
+      if (w) { this.awardBadge(w.user_id, 'womens_grind', dateKey, "Women's Grind Legend of the Day"); this.notify(w.user_id, 'podium', "Women's Grind Legend of the Day", `Top woman in the world on ${dateKey}.`); }
+    }
     this.onEvent(null, 'champion', { date: dateKey, podium: all.slice(0, 3).map((t, i) => ({ userId: t.user_id, rank: i + 1, score: t.score })) });
     return all.slice(0, 3);
   }
@@ -618,9 +642,11 @@ class Engine {
   /**
    * opts: { scope: 'world'|'country'|'region'|'city', league?, mode: 'all'|'verified', viewer?: profile }
    */
-  leaderboard(dateKey, { scope = 'world', league = null, mode = 'all', viewer = null, limit = 100 } = {}) {
+  leaderboard(dateKey, { scope = 'world', league = null, mode = 'all', category = null, viewer = null, limit = 100 } = {}) {
     const where = ['s.date = ?'];
     const args = [dateKey];
+    if (scope === 'women') where.push("p.gender = 'woman'");
+    if (category && CATEGORIES[category]) { where.push('s.category = ?'); args.push(category); }
     if (scope !== 'world' && viewer) {
       if (scope === 'country') { where.push('s.country = ?'); args.push(viewer.country); }
       if (scope === 'region') { where.push('s.country = ? AND s.region = ?'); args.push(viewer.country, viewer.region); }
@@ -632,7 +658,7 @@ class Engine {
       `SELECT s.*, u.display_name, p.location FROM daily_scores s LEFT JOIN users u ON u.id = s.user_id LEFT JOIN profiles p ON p.user_id = s.user_id
        WHERE ${where.join(' AND ')} ORDER BY ${scoreCol} DESC, s.verified_cents DESC, s.earnings_cents DESC, s.hours_done DESC LIMIT ?`
     ).all(...args, limit).map((r, i) => ({
-      rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend', location: r.location || '', league: r.league,
+      rank: i + 1, userId: r.user_id, displayName: r.display_name || 'Legend', location: r.location || '', league: r.league, category: r.category || 'other',
       score: mode === 'verified' ? r.verified_score : r.score, verifiedScore: r.verified_score,
       earningsCents: r.earnings_cents, verifiedCents: r.verified_cents, earningsVerified: r.verified_cents > 0 && r.verified_cents >= r.earnings_cents,
       tasksDone: r.tasks_done, tasksTotal: r.tasks_total, hoursDone: r.hours_done, streak: r.streak, closed: !!r.closed,
@@ -684,7 +710,9 @@ class Engine {
   stats(userId) {
     const r = this.db.prepare('SELECT COUNT(*) AS days, COALESCE(SUM(earnings_cents),0) AS earned, COALESCE(SUM(verified_cents),0) AS verified, COALESCE(SUM(score),0) AS score, COALESCE(MAX(streak),0) AS best_streak, SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) AS wins FROM daily_scores WHERE user_id = ? AND closed = 1').get(userId);
     const duels = this.db.prepare("SELECT SUM(CASE WHEN winner_id = ? THEN 1 ELSE 0 END) AS won, COUNT(*) AS played FROM challenges WHERE status = 'settled' AND (challenger_id = ? OR opponent_id = ?)").get(userId, userId, userId);
-    return { days: r.days, earnedCents: r.earned, verifiedCents: r.verified, totalScore: r.score, bestStreak: r.best_streak, wins: r.wins || 0, duelsWon: duels.won || 0, duelsPlayed: duels.played || 0, tier: this.tierOf(userId) };
+    const tips = this.db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(net_cents),0) AS net FROM tips WHERE to_user_id = ? AND status = 'paid'").get(userId);
+    const bal = this.db.prepare('SELECT payout_balance_cents AS b FROM users WHERE id = ?').get(userId);
+    return { days: r.days, earnedCents: r.earned, verifiedCents: r.verified, totalScore: r.score, bestStreak: r.best_streak, wins: r.wins || 0, duelsWon: duels.won || 0, duelsPlayed: duels.played || 0, tier: this.tierOf(userId), tipsCount: tips.n, tipsCents: tips.net, payoutBalanceCents: bal ? bal.b : 0 };
   }
 
   // ── Check-ins after each time block ──────────────────────────────────────
@@ -713,6 +741,7 @@ class Engine {
         for (const s of stale) { await this.closeDay(profile.userId, s.date); touched.add(s.date); }
         if (this.localHour(profile) >= PLAN_READY_HOUR && !this.getPlan(profile.userId, today)) await this.ensurePlan(profile.userId, today);
         this.sendCheckins(profile, today);
+        if (this.community) this.community.finalCall(profile, today);
       } catch (e) { console.error('[tick]', profile.userId, e.message); }
     }
     for (const d of touched) { try { this.crownDay(d); } catch (e) { console.error('[crown]', d, e.message); } }
@@ -726,8 +755,9 @@ class Engine {
     for (const c of this.db.prepare("SELECT DISTINCT date FROM challenges WHERE status IN ('accepted','pending') AND date <= ?").all(twoDaysAgo)) {
       try { this.settleChallenges(c.date); } catch (e) { console.error('[duel]', c.date, e.message); }
     }
+    if (this.community) { try { await this.community.weeklyTick(new Date(this.now()).toISOString().slice(0, 10)); } catch (e) { console.error('[weekly]', e.message); } }
   }
 }
 
 module.exports = Engine;
-module.exports.constants = { EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };
+module.exports.constants = { CATEGORIES, EARNINGS_CAP_CENTS, UNVERIFIED_WEIGHT, POINTS_PER_TASK, POINTS_PER_HOUR, POINTS_PER_DOLLAR, FULL_DAY_BONUS, STREAK_BONUS, STREAK_CAP, PLAN_READY_HOUR, REGENERATIONS_PER_DAY, CHECKIN_GRACE_MIN, INSURANCE_DAYS, LEAGUES, TIERS, FEATURES };

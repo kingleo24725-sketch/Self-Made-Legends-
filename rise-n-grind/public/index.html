@@ -169,6 +169,24 @@
   @keyframes spin { to { transform: rotate(360deg); } }
   .legal { font-size: 0.75em; color: var(--muted); line-height: 1.5; margin-top: 8px; }
   details summary { cursor: pointer; list-style: none; }
+  .feed { font-size: 0.86em; }
+  .feed div { padding: 7px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 8px; }
+  .feed div:last-child { border: 0; }
+  .feed .k { min-width: 18px; }
+  .feed time { margin-left: auto; color: var(--muted); font-size: 0.85em; white-space: nowrap; }
+  .lesson .opt { display: block; width: 100%; text-align: left; background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 6px 0; cursor: pointer; }
+  .lesson .opt.right { border-color: var(--green); color: var(--green); } .lesson .opt.wrong { border-color: var(--red); color: var(--red); }
+  .countdown { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--gold); }
+  .safety { background: rgba(90,169,255,0.08); border: 1px solid rgba(90,169,255,0.35); border-radius: 12px; padding: 10px 12px; margin-top: 10px; font-size: 0.88em; }
+  .vs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; text-align: center; }
+  .vs b { display: block; font-size: 1.1em; } .vs .pct { height: 10px; background: rgba(255,255,255,.08); border-radius: 999px; overflow: hidden; grid-column: 1 / -1; } .vs .pct i { display: block; height: 100%; background: var(--gold); }
+  .match { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: 0.88em; }
+  .match .w { color: var(--green); font-weight: 700; }
+  .tipbox { display: flex; gap: 6px; flex-wrap: wrap; }
+  .story { border-left: 3px solid var(--gold); padding: 4px 0 4px 12px; margin: 10px 0; font-size: 0.9em; }
+  .mentor { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.9em; }
+  .q { background: var(--card-2); border-radius: 12px; padding: 10px 12px; margin: 8px 0; font-size: 0.9em; }
+  .q .a { color: var(--green); margin-top: 6px; }
   details summary::-webkit-details-marker { display: none; }
 </style>
 </head>
@@ -185,9 +203,10 @@
       <div class="card hero">
         <div class="date">Your crew. Your plan. Your day.</div>
         <div class="headline">Wake up to a money plan built for you.</div>
-        <p class="muted small">Every night a crew of AI agents studies the news, the gig market and what is hiring near you, then writes your to-do list for a full working day. You are the boss. Everyone with the app competes on one world leaderboard.</p>
+        <p class="muted small">Every night your crew of AI agents studies the news, the gig market and what is hiring near you, then writes your working day. You do the work, log what you earn, and compete with the world. The best become Legends.</p>
       </div>
       <div class="card" id="inviteCard" hidden><b>You were invited.</b><div class="small muted">Create your account and your first day is a head-to-head against the person who sent you.</div></div>
+      <div class="card"><h3>Live from the grind</h3><div class="feed" id="feedAuth"><span class="muted small">Quiet right now.</span></div></div>
       <div class="card">
         <div class="chips" style="margin-bottom:14px">
           <span class="chip on" id="tabSignin" onclick="authMode('signin')">Sign in</span>
@@ -230,6 +249,10 @@
           <label class="field"><span>By</span><input type="date" id="pGoalDate"></label>
         </div>
         <label class="field"><span>How do you feel about talking to strangers or physical work?</span><input type="text" id="pComfort" placeholder="Fine with both / prefer online / no heavy lifting" maxlength="200"></label>
+        <div class="grid2">
+          <label class="field"><span>I am (optional, for the Women's Grind board)</span><select id="pGender"><option value="">Prefer not to say</option><option value="woman">A woman</option><option value="man">A man</option><option value="other">Other</option></select></label>
+          <label class="field"><span>Safety contact (name and number)</span><input type="text" id="pSafety" placeholder="Mom, 555-0100" maxlength="120"></label>
+        </div>
         <div class="error" id="profileError"></div>
         <button class="btn" onclick="saveProfile()">Build my plan</button>
         <button class="btn ghost hidden" id="profileCancel" style="margin-top:8px" onclick="show('today')">Cancel</button>
@@ -255,6 +278,11 @@
         <div class="chips" id="modeChips"></div>
         <p class="small muted" style="margin-top:10px">Resets at each player's local midnight. Score = plays done + hours + logged earnings (verified count full, self-reported count half, capped) + full-day and streak bonuses.</p>
       </div>
+      <div class="card" id="cdCard" hidden></div>
+      <div class="card" id="prizeCard" hidden></div>
+      <div class="card"><h3>City vs City, this week</h3><div id="cities" class="small muted">Loading…</div></div>
+      <div class="card"><h3>Monday Money Bracket</h3><div id="bracket" class="small muted">Loading…</div></div>
+      <div class="card"><h3>Live from the grind</h3><div class="feed" id="feedWorld"><span class="muted small">Quiet right now.</span></div></div>
       <div class="card" id="champCard" hidden></div>
       <div class="card" id="podiumCard"><h3>Yesterday's podium</h3><div id="podium" class="empty">No champions yet.</div></div>
       <div class="card"><h3 id="lbTitle">Today, live</h3><div id="lbToday"></div></div>
@@ -264,19 +292,27 @@
         <div id="duels" class="small muted">Pick a rival. Same day, higher score wins, badge for the winner.</div>
       </div>
       <div class="card"><h3>All time</h3><div id="lbAll"></div></div>
+      <div class="card"><h3>Mentors</h3><div id="mentors" class="small muted">Loading…</div></div>
+      <div class="card"><h3>Legend of the Week</h3><div id="shows" class="small muted">The first show airs after the first full week.</div></div>
+      <div class="card"><h3>Legend stories</h3><div id="storiesWorld" class="small muted">The first 7-day streak writes the first story.</div></div>
     </section>
 
     <!-- ── Me ───────────────────────────────────────────────────────── -->
     <section class="screen" id="screen-me">
       <div class="card hero" id="meHero"></div>
       <div class="card" id="goalCard" hidden></div>
+      <div class="card"><h3>Money from fans</h3><div id="fanMoney" class="small"></div></div>
+      <div class="card" id="mentorCard"><h3>Mentoring</h3><div id="mentorBody" class="small"></div></div>
+      <div class="card" id="storiesCard" hidden><h3>Your stories</h3><div id="storiesMe"></div></div>
       <div class="card"><h3>Badges</h3><div id="meBadges" class="badges"></div></div>
       <div class="card"><h3>What your crew has learned</h3><div id="meNotes" class="small"></div></div>
       <div class="card" id="recapCard" hidden><h3>Weekly recaps from the Coach</h3><div id="recaps"></div></div>
       <div class="card">
-        <h3>Invite a rival</h3>
-        <p class="small muted">Send this link. Their first day is a head-to-head against you.</p>
-        <div class="row" style="margin-top:8px"><input type="text" id="inviteUrl" readonly style="flex:1;font-size:.85em"><button class="btn small" onclick="shareInvite()">Share</button></div>
+        <h3>Spread the brand</h3>
+        <p class="small muted">Your public Legend page, where fans tip you. And your invite link: their first day is a head-to-head against you.</p>
+        <div class="row" style="margin-top:8px"><input type="text" id="profileUrl" readonly style="flex:1;font-size:.85em"><button class="btn small ghost" onclick="shareProfile()">Share</button></div>
+        <div class="row" style="margin-top:8px"><input type="text" id="inviteUrl" readonly style="flex:1;font-size:.85em"><button class="btn small" onclick="shareInvite()">Invite</button></div>
+        <label class="check"><input type="checkbox" id="pubProfile" onchange="togglePublic(this.checked)"><span>Show me on the Grind Feed and let fans see my Legend page and tip me</span></label>
       </div>
       <div class="card" id="pushCard"><h3>Notifications</h3><div id="pushBody" class="small muted"></div></div>
       <div class="card" id="tierCard"><h3>Your plan</h3><div id="tierBody"></div></div>
@@ -301,16 +337,20 @@
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
 const S = { token: null, user: null, profile: null, config: null, today: null, me: null, mode: 'signin', deferredInstall: null, es: null, invite: null,
-  lb: { scope: 'world', league: '', mode: 'all' }, checkins: [] };
+  lb: { scope: 'world', league: '', mode: 'all', category: '' }, checkins: [], ask: null };
 try { S.token = localStorage.getItem('risengrind.token'); } catch (_) {}
-try { const q = new URLSearchParams(location.search); S.invite = q.get('invite'); if (q.get('billing') === 'success') setTimeout(() => toast('Payment received. Your crew just got stronger.'), 800); } catch (_) {}
+try { const q = new URLSearchParams(location.search); S.invite = q.get('invite'); S.ask = q.get('ask'); if (q.get('billing') === 'success') setTimeout(() => toast('Payment received. Your crew just got stronger.'), 800); if (q.get('payouts') === 'done') setTimeout(() => toast('Payout account connected. Tips go straight to you now.'), 800); } catch (_) {}
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const money = (cents) => { const c = Number(cents || 0); const whole = c % 100 === 0; return '$' + (c / 100).toLocaleString(undefined, { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: 2 }); };
 const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000); };
 const leagueTag = (l) => `<span class="league ${esc(l || 'bronze')}">${esc(l || 'bronze')}</span>`;
-const BADGE_LABELS = { world_champion: ['👑', 'World champion'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'] };
+const BADGE_LABELS = { world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
+const CAT_LABELS = { gig: 'Gig', local: 'Local', online: 'Online', beauty: 'Beauty', care: 'Care', food: 'Food' };
+const feedIcon = (k) => ({ done: '✅', verified: '💵', champion: '👑', bracket: '🏆', tip: '💛', prize: '💰' }[k] || '•');
+function renderFeed(id, items) { const el = $(id); if (!el) return; el.innerHTML = items.length ? items.slice(0, 25).map((f) => `<div><span class="k">${feedIcon(f.kind)}</span><span>${esc(f.text)}</span><time>${fmtTime(f.at)}</time></div>`).join('') : '<span class="muted small">Quiet right now.</span>'; }
+async function loadFeed(id) { try { renderFeed(id, (await api('/api/feed')).feed); } catch (_) {} }
 
 async function api(path, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
@@ -369,6 +409,8 @@ function renderProfileForm() {
   $('pGoals').value = p.goals || '';
   $('pHours').value = p.targetHours || 8;
   $('pComfort').value = p.comfort || '';
+  $('pGender').value = p.gender || '';
+  $('pSafety').value = p.safetyContact || '';
   $('pGoalTitle').value = p.goal ? p.goal.title : '';
   $('pGoalTarget').value = p.goal ? Math.round(p.goal.targetCents / 100) : '';
   $('pGoalDate').value = p.goal ? p.goal.byDate : '';
@@ -395,7 +437,7 @@ async function saveProfile() {
     location: $('pLocation').value, country: $('pCountry').value,
     resources: [...document.querySelectorAll('#pResources .chip.on')].map((c) => c.dataset.k),
     skills: $('pSkills').value.split(',').map((s) => s.trim()).filter(Boolean),
-    goals: $('pGoals').value, comfort: $('pComfort').value,
+    goals: $('pGoals').value, comfort: $('pComfort').value, gender: $('pGender').value, safetyContact: $('pSafety').value,
     targetHours: Number($('pHours').value), startHour: Number($('pStart').value),
     tzOffset: -new Date().getTimezoneOffset(),
     blockedHours: [...document.querySelectorAll('#pBlocks .block')].map((b) => ({ start: Number(b.querySelector('.bStart').value), end: Number(b.querySelector('.bEnd').value) })),
@@ -435,7 +477,12 @@ function renderToday() {
       ${goal ? `<div class="small" style="margin-top:12px">🎯 ${esc(goal.title)}: <b>${money(goal.progressCents)}</b> of ${money(goal.targetCents)} by ${esc(fmtDate(goal.byDate, true))}</div><div class="bar goal"><i style="width:${goalPct}%"></i></div>` : ''}
       ${closed ? '<p class="small" style="margin-top:10px;color:var(--green)">Day closed. Tomorrow\'s plan lands by 4am.</p>' : ''}
     </div>
+    ${!closed ? `<div class="card"><div class="row between"><div><h3 style="margin:0">${t.localHour >= 20 ? 'Final Call' : 'Day closes at midnight'}</h3><div class="small muted">${t.localHour >= 20 ? 'Last hours. Log everything.' : 'Final Call at 8pm with your rank and the gap to the leader.'}</div></div><div class="countdown" id="countdown">${countdown(t.localMinutes)}</div></div></div>` : ''}
+    ${(t.challengeDays || []).map((c) => `<div class="card" style="border-color:rgba(181,140,255,.5)"><h3>Challenge Day</h3><b>Beat ${esc(c.name)}: ${c.targetScore} points</b><div class="small muted">${esc(c.headline || '')} · ${c.beaters.length} beat it so far · through ${esc(fmtDate(c.ends, true))}</div><a class="small" href="${esc(c.url)}" target="_blank">See the challenge page</a></div>`).join('')}
+    ${t.bracket ? `<div class="card"><div class="row between"><div><h3 style="margin:0">Monday Money Bracket</h3><div class="small muted">${t.bracket.status === 'running' ? (t.bracket.alive ? `Round ${t.bracket.round} of ${Math.log2(t.bracket.size)}. Higher score today wins.` : t.bracket.entered ? 'You are out this week. Next bracket opens Saturday.' : 'Running. Enter next week\'s.') : t.bracket.entered ? `You are in for the week of ${esc(fmtDate(t.bracket.weekStart, true))}.` : `Enter the week of ${esc(fmtDate(t.bracket.weekStart, true))}. Seeded by verified earnings.`}${t.bracket.poolCents ? ` Pool ${money(t.bracket.poolCents)}.` : ''}</div></div>${!t.bracket.entered && t.bracket.status === 'open' ? '<button class="btn small" onclick="enterBracket()">Enter</button>' : ''}</div></div>` : ''}
     ${t.memory.lastSummary ? `<div class="card"><h3>Coach, last night</h3><div class="small">${esc(t.memory.lastSummary)}</div></div>` : ''}
+    ${t.lesson ? renderLesson(t.lesson) : ''}
+    ${t.safety ? renderSafety(t.safety) : ''}
     <div class="card"><h3>Morning brief</h3><ul class="brief">${p.brief.map((b) => `<li>${linkify(b)}</li>`).join('')}</ul>
       <div class="small muted" style="margin-top:8px">Realistic range today: <b style="color:var(--green)">$${p.estimatedEarnings.low}–$${p.estimatedEarnings.high}</b></div></div>
     ${t.crewLog.length ? `<div class="card"><details><summary><h3 style="margin:0">Crew activity ▾</h3></summary><div class="log" style="margin-top:8px">${t.crewLog.map((l) => `<div><b>${esc(l.agent)}</b><span>${esc(l.message)}</span><time>${fmtTime(l.at)}</time></div>`).join('')}</div></details></div>` : ''}
@@ -446,6 +493,7 @@ function renderToday() {
       <div class="chat-input"><input type="text" id="chatMsg" placeholder="The yard job cancelled, what now?" maxlength="600" onkeydown="if(event.key==='Enter')sendChat()"><button class="btn small" onclick="sendChat()">Send</button></div></div>`
       : (!closed && t.tier !== 'boss' ? `<div class="card"><h3>Talk to your crew</h3><div class="small muted">Mid-day replans and receipt verification come with Boss. <a href="#" onclick="show('me');return false">See plans</a></div></div>` : '')}
     ${t.champion ? renderChampion(t.champion) : ''}
+    ${closed && pr.tasksDone ? `<div class="card"><h3>Your receipt card</h3><img src="/api/cards/${esc(S.user.id)}/${esc(t.date)}.svg" alt="Receipt card" style="width:100%;border-radius:12px;border:1px solid var(--line)"><button class="btn" style="margin-top:8px" onclick="shareCard('${esc(t.date)}')">Share your day</button></div>` : ''}
     <div class="card">
       ${!closed && t.canRegenerate ? '<button class="btn ghost" onclick="regenerate()">Not feeling it? Rebuild the plan (once per day)</button>' : ''}
       ${!closed ? '<button class="btn danger" style="margin-top:8px" onclick="closeDay()">Close my day now</button>' : ''}
@@ -479,7 +527,8 @@ function renderTask(task) {
           <button class="btn small ${st === 'done' ? 'ghost' : ''}" onclick="setStatus(${task.taskId}, '${st === 'done' ? 'pending' : 'done'}')">${st === 'done' ? 'Undo' : '✓ Done'}</button>
           <button class="btn small ghost" onclick="setStatus(${task.taskId}, '${st === 'skipped' ? 'pending' : 'skipped'}')">${st === 'skipped' ? 'Un-skip' : 'Skip'}</button>
         </div>
-        ${S.today.canVerify ? `<label class="btn small ghost" style="margin-top:8px;width:100%">📸 Verify with a payout screenshot<input type="file" accept="image/*" hidden onchange="uploadReceipt(${task.taskId}, this)"></label>` : ''}`}
+        ${S.today.canVerify ? `<label class="btn small ghost" style="margin-top:8px;width:100%">📸 Verify with a payout screenshot<input type="file" accept="image/*" hidden onchange="uploadReceipt(${task.taskId}, this)"></label>` : ''}
+        ${task.inPerson && st === 'pending' && !S.today.safety ? `<button class="btn small ghost" style="margin-top:8px;width:100%" onclick="startSafety(${task.taskId})">🛡️ Heading out: share where I am</button>` : ''}`}
       </div>
     </div>`;
 }
@@ -563,19 +612,57 @@ function renderCheckins() {
   bar.classList.remove('hidden');
 }
 
+function countdown(localMinutes) { const left = Math.max(0, 24 * 60 - localMinutes); return `${Math.floor(left / 60)}h ${String(left % 60).padStart(2, '0')}m`; }
+setInterval(() => { const el = $('countdown'); if (el && S.today) { S.today.localMinutes += 1; el.textContent = countdown(S.today.localMinutes); } }, 60000);
+function renderLesson(l) {
+  return `<div class="card lesson"><div class="row between"><h3 style="margin:0">Rise N Grind University</h3><span class="small muted">${l.passedCount}/${l.total} passed</span></div><b>${esc(l.title)}</b><p class="small" style="margin:6px 0 10px">${esc(l.body)}</p><div class="small muted" style="margin-bottom:6px">${esc(l.q)}</div>
+    ${l.answered ? `<div class="small ${l.correct ? '' : 'muted'}" style="color:${l.correct ? 'var(--green)' : ''}">${l.correct ? `Correct. +${l.points} points today.` : 'Answered. Tomorrow brings a new one.'}</div>` : l.options.map((o, i) => `<button class="opt" onclick="answerLesson('${esc(l.id)}', ${i}, this)">${esc(o)}</button>`).join('')}</div>`;
+}
+async function answerLesson(lessonId, i, btn) {
+  try { const r = await api('/api/lesson/answer', { method: 'POST', body: { lessonId, answer: i } }); document.querySelectorAll('.lesson .opt').forEach((b, j) => { b.disabled = true; if (j === r.answer) b.classList.add('right'); else if (j === i) b.classList.add('wrong'); }); toast(r.correct ? `Correct. +${r.points} points.` : 'Not quite. Read the lesson again.'); if (r.correct) mergePlan(S.today.plan); }
+  catch (err) { toast(err.message); }
+}
+function renderSafety(s) {
+  const label = { heading: 'On the way', arrived: 'Arrived, working', help: 'Help requested' }[s.status] || s.status;
+  return `<div class="card"><h3>Safety check-in</h3><div class="safety"><b>${esc(label)}</b>${s.task ? ' · ' + esc(s.task) : ''}${s.place ? ' · ' + esc(s.place) : ''}<div class="small muted" style="margin:6px 0">${s.contact ? `Your contact: ${esc(s.contact)}. ` : ''}Share the link so they can watch your status.</div>
+    <div class="row" style="flex-wrap:wrap"><button class="btn small ghost" onclick="shareSafety('${esc(s.token)}')">Share status link</button>${s.status === 'heading' ? `<button class="btn small" onclick="safety('${esc(s.token)}','arrived')">I'm here</button>` : ''}<button class="btn small" onclick="safety('${esc(s.token)}','done')">I'm done</button><button class="btn small danger" onclick="safety('${esc(s.token)}','help')">Need help</button></div></div></div>`;
+}
+async function startSafety(taskId) {
+  const place = prompt('Where are you going? (address or place)') || '';
+  const eta = prompt('When do you expect to be done? (e.g. 3pm)') || '';
+  try { const r = await api('/api/safety/start', { method: 'POST', body: { taskId, place, eta } }); S.today.safety = r.session; renderToday(); shareSafety(r.session.token); } catch (err) { toast(err.message); }
+}
+async function safety(token, status) { try { const r = await api('/api/safety/' + token, { method: 'POST', body: { status } }); S.today.safety = ['done'].includes(r.session.status) ? null : r.session; renderToday(); toast(status === 'help' ? 'Status set to NEEDS HELP. Call your contact now.' : 'Updated'); } catch (err) { toast(err.message); } }
+async function shareSafety(token) { const url = location.origin + '/safe/' + token; const text = `I'm heading to a job. Watch my status here: ${url}`; try { if (navigator.share) await navigator.share({ title: 'My safety status', text, url }); else { await navigator.clipboard.writeText(text); toast('Link copied. Send it to your contact.'); } } catch (_) {} }
+async function shareCard(date) {
+  const url = location.origin + '/card/' + S.user.id + '/' + date;
+  const text = `My day on Rise N Grind: score ${S.today.plan.progress.score}, ${money(S.today.plan.progress.earningsCents)} logged. Think you can beat it? ${url}`;
+  try {
+    if (navigator.share && navigator.canShare) {
+      const png = await svgToPng('/api/cards/' + S.user.id + '/' + date + '.svg');
+      const file = new File([png], 'rise-n-grind-' + date + '.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Rise N Grind', text }); return; }
+      await navigator.share({ title: 'Rise N Grind', text, url }); return;
+    }
+    await navigator.clipboard.writeText(text); toast('Copied. Paste it anywhere.');
+  } catch (_) {}
+}
+function svgToPng(src) { return new Promise((resolve, reject) => { const img = new Image(); img.onload = () => { const c = document.createElement('canvas'); c.width = 1080; c.height = 1080; c.getContext('2d').drawImage(img, 0, 0, 1080, 1080); c.toBlob((b) => b ? resolve(b) : reject(new Error('no image')), 'image/png'); }; img.onerror = () => reject(new Error('no image')); img.src = src; }); }
+async function enterBracket() { try { await api('/api/bracket/enter', { method: 'POST' }); toast('You are in. Seeds lock Monday morning.'); loadToday(); } catch (err) { toast(err.message); } }
+
 // ── World ──────────────────────────────────────────────────────────────────
 function chip(label, on, fn, extra = '') { return `<span class="chip sm ${on ? 'on' : ''}" onclick="${fn}">${extra}${esc(label)}</span>`; }
 async function loadWorld() {
   const f = (S.me && S.me.features) || {};
-  const scopes = [['world', '🌍 World']].concat(f.localBoards ? [['country', 'Country'], ['region', 'State'], ['city', 'City']] : []);
+  const scopes = [['world', '🌍 World'], ['women', "Women's Grind"]].concat(f.localBoards ? [['country', 'Country'], ['region', 'State'], ['city', 'City']] : []);
   $('scopeChips').innerHTML = scopes.map(([k, l]) => chip(l, S.lb.scope === k, `setLb('scope','${k}')`)).join('') + (!f.localBoards ? `<span class="chip sm" onclick="show('me')">🔒 Local boards</span>` : '');
-  $('leagueChips').innerHTML = [['', 'All leagues'], ['bronze', 'Bronze'], ['silver', 'Silver'], ['gold', 'Gold'], ['boss', 'Boss']].map(([k, l]) => chip(l, S.lb.league === k, `setLb('league','${k}')`)).join('');
-  $('modeChips').innerHTML = [['all', 'Everyone'], ['verified', '✓ Verified only']].map(([k, l]) => chip(l, S.lb.mode === k, `setLb('mode','${k}')`)).join('');
+  $('leagueChips').innerHTML = [['', 'All leagues'], ['bronze', 'Bronze'], ['silver', 'Silver'], ['gold', 'Gold'], ['legend', 'Legend']].map(([k, l]) => chip(l, S.lb.league === k, `setLb('league','${k}')`)).join('');
+  $('modeChips').innerHTML = [['all', 'Everyone'], ['verified', '✓ Verified only']].map(([k, l]) => chip(l, S.lb.mode === k, `setLb('mode','${k}')`)).join('') + [['', 'All work'], ...Object.entries(CAT_LABELS)].map(([k, l]) => chip(l, S.lb.category === k, `setLb('category','${k}')`)).join('');
   try {
-    const q = new URLSearchParams({ scope: S.lb.scope, mode: S.lb.mode }); if (S.lb.league) q.set('league', S.lb.league);
+    const q = new URLSearchParams({ scope: S.lb.scope, mode: S.lb.mode }); if (S.lb.league) q.set('league', S.lb.league); if (S.lb.category) q.set('category', S.lb.category);
     const w = await api('/api/leaderboard?' + q);
     $('lbDate').textContent = fmtDate(w.date);
-    $('lbTitle').textContent = `${S.lb.scope === 'world' ? 'Today, live' : 'Near you, live'}${S.lb.league ? ' · ' + S.lb.league : ''}${S.lb.mode === 'verified' ? ' · verified' : ''}`;
+    $('lbTitle').textContent = `${S.lb.scope === 'world' ? 'Today, live' : S.lb.scope === 'women' ? "Women's Grind, live" : 'Near you, live'}${S.lb.league ? ' · ' + S.lb.league : ''}${S.lb.mode === 'verified' ? ' · verified' : ''}${S.lb.category ? ' · ' + CAT_LABELS[S.lb.category] : ''}`;
     $('podium').innerHTML = w.yesterdayPodium.length
       ? `<div class="podium">${[1, 0, 2].map((i) => w.yesterdayPodium[i]).filter(Boolean).map((p) => `<div class="p${p.rank}"><b>${['🥇', '🥈', '🥉'][p.rank - 1]}</b><span>${esc(p.displayName)}</span><span class="muted">${p.score}</span></div>`).join('')}</div>`
       : '<div class="empty">No champions yet. Be the first.</div>';
@@ -589,7 +676,42 @@ async function loadWorld() {
       <td class="nm">${esc(r.displayName)}<small>${r.days} day${r.days === 1 ? '' : 's'} · ${r.wins} win${r.wins === 1 ? '' : 's'} · best streak ${r.bestStreak}</small></td>
       <td class="sc">${r.totalScore}<small>${money(r.totalEarningsCents)} logged</small></td></tr>`).join('')}</table>` : '<div class="empty">Nothing yet.</div>';
   } catch (err) { toast(err.message); if (err.status === 402 || err.status === 401) { S.lb.scope = 'world'; } }
-  loadDuels();
+  loadDuels(); loadFeed('feedWorld'); loadCities(); loadBracket(); loadCommunity();
+}
+async function loadCities() {
+  try {
+    const c = await api('/api/cities');
+    let html = '';
+    if (c.matchup) html += `<div class="vs"><div><b>${esc(c.matchup.a.city)}</b><span class="small">${money(c.matchup.a.verifiedCents)} verified</span></div><div class="muted">vs</div><div><b>${esc(c.matchup.b.city)}</b><span class="small">${money(c.matchup.b.verifiedCents)} verified</span></div><div class="pct"><i style="width:${c.matchup.aPct}%"></i></div></div>`;
+    html += c.cities.length ? `<table class="lb" style="margin-top:8px">${c.cities.slice(0, 10).map((x) => `<tr><td class="rk ${x.rank <= 3 ? 'top' : ''}">${x.rank}</td><td class="nm">${esc(x.city)}<small>${x.players} player${x.players === 1 ? '' : 's'}</small></td><td class="sc">${money(x.verifiedCents)}<small>verified</small></td></tr>`).join('')}</table>` : '<div class="empty">Cities show up once players verify earnings.</div>';
+    $('cities').innerHTML = html;
+  } catch (_) {}
+}
+async function loadBracket() {
+  try {
+    const b = (await api('/api/bracket')).bracket; if (!b) return;
+    const me = S.user && b.entries.find((e) => e.userId === S.user.id);
+    let html = `<div class="small muted">Week of ${esc(fmtDate(b.weekStart, true))} · ${esc(b.status)}${b.size ? ` · ${b.size} players` : ` · ${b.entries.length} entered`}${b.poolCents ? ` · pool ${money(b.poolCents)}` : ''}${b.winnerName ? ` · 🏆 ${esc(b.winnerName)}` : ''}</div>`;
+    if (b.status === 'open' && !me) html += `<button class="btn small" style="margin-top:8px" onclick="enterBracket()">Enter this bracket</button>`;
+    if (b.matches.length) html += `<div style="margin-top:8px">${b.matches.slice(-8).map((m) => `<div class="match"><span class="${m.winnerId === m.aId ? 'w' : ''}">${esc(m.a)}${m.settled ? ' ' + m.aScore : ''}</span><span class="muted">R${m.round}</span><span class="${m.winnerId === m.bId ? 'w' : ''}">${m.settled ? m.bScore + ' ' : ''}${esc(m.b)}</span></div>`).join('')}</div>`;
+    else if (b.entries.length) html += `<div class="small" style="margin-top:6px">${b.entries.slice(0, 16).map((e) => esc(e.name)).join(' · ')}</div>`;
+    $('bracket').innerHTML = html;
+  } catch (_) {}
+}
+async function loadCommunity() {
+  try {
+    const [cd, pz, ms, sh, st] = await Promise.all([api('/api/challenge-days'), api('/api/prize'), api('/api/mentors'), api('/api/shows'), api('/api/stories/latest')]);
+    if (cd.challenges.length) { const c = cd.challenges[0]; $('cdCard').innerHTML = `<h3>Challenge Day</h3><b>Beat ${esc(c.name)}: ${c.targetScore} points</b><div class="small muted">${esc(c.headline || '')} · ${c.attempts} tried · ${c.beaters.length} beat it</div>${c.beaters.slice(0, 3).map((b) => `<div class="small">${b.rank}. ${esc(b.name)} · ${b.score}</div>`).join('')}<a class="small" href="${esc(c.url)}" target="_blank">Challenge page</a>`; $('cdCard').hidden = false; } else $('cdCard').hidden = true;
+    if (pz.prize) { const p = pz.prize; $('prizeCard').innerHTML = `<h3>${esc(p.sponsor)} prize · ${esc(p.month)}</h3><b>${money(p.amountCents)} to the top verified earner</b><div class="small muted">${esc(p.rules)}</div>${p.standings.slice(0, 5).map((s) => `<div class="small">${s.rank}. ${esc(s.name)} · ${money(s.verifiedCents)} verified</div>`).join('')}`; $('prizeCard').hidden = false; } else $('prizeCard').hidden = true;
+    $('mentors').innerHTML = ms.mentors.length ? ms.mentors.map((m) => `<div class="mentor"><div class="row between"><div><b>${esc(m.name)}</b> <span class="muted">${esc(m.city)}</span><div class="muted">${m.topics.map(esc).join(' · ')} · ${m.stats.days} days · ${money(m.stats.earnedCents)} logged</div><div>${esc(m.bio)}</div></div><button class="btn small purple" onclick="askMentor('${esc(m.userId)}','${esc(m.name)}',${m.priceCents})">Ask · ${money(m.priceCents)}</button></div></div>`).join('') : '<span class="muted">No mentors yet. Seven closed days or a world win unlocks it on your Me tab.</span>';
+    if (sh.shows.length) $('shows').innerHTML = sh.shows.map((s) => `<div class="story"><b>${esc(s.title)}</b><div class="muted">${esc(s.opening).slice(0, 140)}…</div><a href="${esc(s.url)}" target="_blank">Read the show</a></div>`).join('');
+    if (st.stories.length) $('storiesWorld').innerHTML = st.stories.map((s) => `<div class="story"><b>${esc(s.title)}</b> <span class="muted">${esc(s.name)}</span><div class="muted">${esc(s.body).slice(0, 140)}…</div><a href="${esc(s.url)}" target="_blank">Read</a></div>`).join('');
+    if (S.ask) { const m = ms.mentors.find((x) => x.name.toLowerCase() === S.ask.toLowerCase()); S.ask = null; history.replaceState(null, '', '/'); if (m) askMentor(m.userId, m.name, m.priceCents); }
+  } catch (_) {}
+}
+async function askMentor(userId, name, priceCents) {
+  const q = prompt(`Ask ${name} (${money(priceCents)}, ${S.config.fees.MENTOR_FEE_PCT}% goes to the platform):`); if (!q) return;
+  try { await api('/api/mentors/' + userId + '/ask', { method: 'POST', body: { question: q } }); toast('Sent. You will get a notification when they answer.'); } catch (err) { toast(err.message); }
 }
 function setLb(k, v) { S.lb[k] = v; loadWorld(); }
 async function loadDuels() {
@@ -631,15 +753,40 @@ async function loadMe() {
     $('meNotes').innerHTML = (m.notes && m.notes.length) ? `<ul style="margin-left:18px">${m.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : '<span class="muted">Still getting to know you. Log real results and this fills in.</span>';
     if (m.tomorrowHint) $('meNotes').innerHTML += `<div class="small" style="margin-top:8px">Tomorrow: <b>${esc(m.tomorrowHint)}</b></div>`;
     if (h.recaps && h.recaps.length) { $('recaps').innerHTML = h.recaps.slice(0, 4).map((r) => `<div class="recap"><b>Week of ${esc(fmtDate(r.weekEnd, true))}: ${esc(r.headline)}</b>${(r.wins || []).map((w) => `<div>✔ ${esc(w)}</div>`).join('')}<div style="margin-top:4px">Change: ${esc(r.change)}</div><div class="muted">Next: ${esc(r.nextWeekFocus)}</div></div>`).join(''); $('recapCard').hidden = false; } else $('recapCard').hidden = true;
-    $('inviteUrl').value = me.inviteUrl;
+    $('inviteUrl').value = me.inviteUrl; $('profileUrl').value = me.profileUrl; $('pubProfile').checked = !!me.user.publicProfile;
+    renderFanMoney(me, bill);
+    renderMentoring(me);
+    if (me.stories.length) { $('storiesMe').innerHTML = me.stories.map((s) => `<div class="story"><b>${esc(s.title)}</b><div class="muted">${esc(s.body).slice(0, 160)}…</div><a href="#" onclick="shareStory('${esc(s.url)}','${esc(s.title)}');return false">Share</a> · <a href="${esc(s.url)}" target="_blank">Read</a></div>`).join(''); $('storiesCard').hidden = false; } else $('storiesCard').hidden = true;
     renderPush(me);
     renderTier(me, bill);
     $('inbox').innerHTML = ib.inbox.length ? ib.inbox.slice(0, 8).map((i) => `<div class="inbox-item"><b>${esc(i.title)}</b><span>${esc(i.body)}</span></div>`).join('') : '<span class="muted">Quiet for now.</span>';
     $('history').innerHTML = h.history.length ? h.history.map((d) => `<div class="hist"><span class="d">${esc(fmtDate(d.date, true))}${d.rank ? ` · world #${d.rank}` : ''}</span><span>${d.tasksDone}/${d.tasksTotal} · ${money(d.earningsCents)}${d.verifiedCents ? ' ✓' : ''}</span><span class="s">${d.score}</span></div>`).join('') : '<span class="muted">Your first day is today.</span>';
   } catch (err) { toast(err.message); }
 }
+function renderFanMoney(me, bill) {
+  const f = me.fees;
+  $('fanMoney').innerHTML = `<div class="stats" style="margin-top:0"><div class="stat"><b>${money(me.stats.tipsCents)}</b><span>tips (${me.stats.tipsCount})</span></div><div class="stat"><b>${money(me.payoutBalanceCents)}</b><span>owed to you</span></div><div class="stat"><b>${money(bill.successFee.verifiedCents)}</b><span>verified this month</span></div></div>
+    <div class="muted" style="margin-top:8px">Fans tip you on your Legend page. Rise N Grind keeps ${f.TIP_FEE_PCT}% of tips and ${f.MENTOR_FEE_PCT}% of mentor questions. The Legend Fee is ${f.SUCCESS_FEE_PCT}% of receipt-verified earnings each month${bill.successFee.feeCents ? ` (${money(bill.successFee.feeCents)} so far this month)` : ''}, billed only when you have a card on file.</div>
+    <div class="row" style="margin-top:8px;flex-wrap:wrap">${me.payoutBalanceCents > 0 ? (me.user.payoutsConnected ? '<button class="btn small" onclick="requestPayout()">Pay me out</button>' : '<span class="muted">The owner pays balances out by hand until you connect an account.</span>') : ''}${bill.enabled && !me.user.payoutsConnected ? '<button class="btn small ghost" onclick="connectPayouts()">Connect payouts (Stripe)</button>' : ''}</div>
+    ${me.tips.length ? `<div style="margin-top:8px">${me.tips.slice(0, 5).map((t) => `<div class="inbox-item"><b>${esc(t.fromName)} · ${money(t.grossCents)}</b><span>${esc(t.message || '')}</span></div>`).join('')}</div>` : ''}`;
+}
+async function connectPayouts() { try { const r = await api('/api/payouts/connect', { method: 'POST' }); location.href = r.url; } catch (err) { toast(err.message); } }
+async function requestPayout() { try { const r = await api('/api/payouts/request', { method: 'POST' }); toast(`Sent ${money(r.amountCents)}`); loadMe(); } catch (err) { toast(err.message); } }
+async function togglePublic(on) { try { await api('/api/me/settings', { method: 'POST', body: { publicProfile: on } }); toast(on ? 'You are on the feed and your Legend page is live.' : 'You are private now.'); } catch (err) { toast(err.message); } }
+function renderMentoring(me) {
+  const open = me.questions.filter((q) => q.status === 'open' && q.mentorId === me.user.id);
+  const eligible = me.stats.days >= 7 || me.stats.wins > 0;
+  $('mentorBody').innerHTML = (me.mentor ? `<div>You are a mentor: ${me.mentor.topics.map(esc).join(' · ')} at ${money(me.mentor.priceCents)} a question. <a href="#" onclick="stopMentoring();return false">Stop</a></div>` : eligible ? `<div class="muted">You have the track record. Take paid questions from newcomers.</div><button class="btn small purple" style="margin-top:6px" onclick="becomeMentor()">Become a mentor</button>` : `<div class="muted">Seven closed days or a world win unlocks paid mentoring.</div>`)
+    + open.map((q) => `<div class="q"><b>${esc(q.asker)} asks (${money(q.priceCents)}):</b> ${esc(q.question)}<button class="btn small" style="margin-top:6px" onclick="answerQ(${q.id})">Answer</button></div>`).join('')
+    + me.questions.filter((q) => q.status === 'answered').slice(0, 3).map((q) => `<div class="q"><b>${esc(q.askerId === me.user.id ? 'You asked ' + q.mentor : q.asker + ' asked')}:</b> ${esc(q.question)}<div class="a">${esc(q.answer)}</div></div>`).join('');
+}
+async function becomeMentor() { const topics = prompt('Topics you can help with (comma separated):') || ''; const price = prompt('Price per question in dollars:', '5') || '5'; const bio = prompt('One line about you:') || ''; try { await api('/api/mentors', { method: 'POST', body: { topics: topics.split(',').map((s) => s.trim()).filter(Boolean), priceDollars: Number(price), bio } }); toast('You are listed.'); loadMe(); } catch (err) { toast(err.message); } }
+async function stopMentoring() { await api('/api/mentors', { method: 'DELETE' }); loadMe(); }
+async function answerQ(id) { const a = prompt('Your answer:'); if (!a) return; try { await api('/api/mentors/questions/' + id + '/answer', { method: 'POST', body: { answer: a } }); toast('Answered. Your cut is in your balance.'); loadMe(); } catch (err) { toast(err.message); } }
+async function shareProfile() { const url = $('profileUrl').value; try { if (navigator.share) await navigator.share({ title: 'Rise N Grind', text: `Watch my grind and tip it: ${url}`, url }); else { await navigator.clipboard.writeText(url); toast('Copied'); } } catch (_) {} }
+async function shareStory(path, title) { const url = location.origin + path; try { if (navigator.share) await navigator.share({ title, text: `${title} on Rise N Grind ${url}`, url }); else { await navigator.clipboard.writeText(url); toast('Copied'); } } catch (_) {} }
 function renderTier(me, bill) {
-  const names = { free: ['Free', 'Playbook plans, world board, challenges'], pro: ['Pro', 'Live crew with real research every night'], boss: ['Boss', 'Chat with your crew, receipt verification, local boards'] };
+  const names = { free: ['Free', 'Playbook plans, world board, duels, University'], pro: ['Pro', 'Live crew with real research every night'], boss: ['Boss', 'Chat with your crew, receipt verification, local boards'] };
   $('tierBody').innerHTML = `<div class="tier-row">${['free', 'pro', 'boss'].map((t) => `<div class="tier ${me.tier === t ? 'on' : ''}"><b>${names[t][0]}</b>${names[t][1]}${bill.enabled && me.tier !== t && t !== 'free' ? `<button class="btn small" style="margin-top:8px" onclick="checkout('${t}')">Upgrade</button>` : ''}</div>`).join('')}</div>
     <p class="small muted" style="margin-top:8px">${bill.enabled ? 'Cancel anytime.' : `Billing is not switched on yet, so every player currently gets <b>${esc(bill.defaultTier)}</b>. The world leaderboard stays free forever.`}</p>`;
 }
@@ -679,6 +826,7 @@ function connectEvents() {
   S.es.addEventListener('champion', () => { if ($('screen-world').classList.contains('active')) loadWorld(); });
   S.es.addEventListener('checkin', (e) => { try { const d = JSON.parse(e.data); if (!S.checkins.includes(d.taskId)) S.checkins.push(d.taskId); toast(`How did "${d.title}" go?`); if (S.today) renderToday(); } catch (_) {} });
   S.es.addEventListener('badge', (e) => { try { const d = JSON.parse(e.data); const [ic, lb] = BADGE_LABELS[d.badge] || ['🏷️', d.badge]; toast(`${ic} New badge: ${lb}`); } catch (_) {} });
+  S.es.addEventListener('feed', () => { if ($('screen-world').classList.contains('active')) loadFeed('feedWorld'); });
   S.es.addEventListener('inbox', (e) => { try { const d = JSON.parse(e.data); toast(d.title); $('mePip').classList.remove('hidden'); } catch (_) {} });
 }
 
@@ -696,6 +844,7 @@ async function boot() {
   $('crewPill').classList.toggle('on', S.config.crewOnline);
   $('crewText').textContent = S.config.crewOnline ? 'crew online' : 'playbook mode';
   if (S.invite) { $('inviteCard').hidden = false; }
+  loadFeed('feedAuth');
   if (!S.token) { authMode(S.invite ? 'signup' : 'signin'); show('auth'); return; }
   try {
     const me = await api('/api/me');

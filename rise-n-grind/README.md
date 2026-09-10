@@ -18,15 +18,40 @@ Rise N Grind is a standalone, phone-first app. It shares nothing with any other 
 
 You are your own boss. The crew plans, you decide.
 
-## Competition
+## Competition and the spotlight
 
-- **World leaderboard** for the day, yesterday's podium, and an all-time board with wins and best streaks.
-- **Champion's plan.** Every morning you can see what yesterday's world champion actually did and logged.
-- **Leagues.** Bronze (phone only), Silver (one of car / laptop / bike / a skill), Gold (more than one). **Boss** league for two podiums or a 7-day streak in the last two weeks.
-- **Local boards.** World, country, state, city.
-- **Head-to-head.** Challenge anyone by name. Same day, higher score wins, badge for the winner.
-- **Invite a rival.** Your invite link makes the newcomer's first day a duel against you.
-- **Badges** for world wins, podiums, full days, 7-day streaks, duel wins, recruiting.
+- **World leaderboard** for the day, yesterday's podium, and an all-time board with wins and best streaks. The top league is **Legend**.
+- **Live Grind Feed.** First name and city, in real time: "Ava in Atlanta just verified $85 from a car detail." On the landing page and the World tab.
+- **Receipt cards.** Every closed day becomes a shareable 1080x1080 image with score, plays, hours, logged and verified dollars, rank and streak. One tap to TikTok, Instagram, X.
+- **Legend pages.** Every public player has `/u/<name>`: stats, badges, stories, last days, and a **tip button**.
+- **Streak stories.** 7, 30 and 100 days straight get a written story the player can publish.
+- **Final Call.** 8pm local: your rank and the gap to the leader, four hours before the day closes.
+- **Monday Money Bracket.** Up to 64 players, seeded by last week's verified earnings, one round per day. Optional entry fee pools into the prize.
+- **City vs City.** Weekly city board by verified dollars and a featured matchup.
+- **Challenge Days.** A celebrity or brand posts a score to beat for a week; everyone who beats it gets the badge. Public challenge page.
+- **Sponsored prize pools.** A sponsor funds a monthly prize for the top verified earner. Skill contest, published rules.
+- **Legend of the Week.** A written weekly show about the champion's week, the numbers, and the city of the week.
+- **Women's Grind** board and daily champion, plus category boards (beauty, care, food, gig, local, online).
+- **Head-to-head duels**, invite-a-rival, and badges for all of it.
+- **Rise N Grind University.** One lesson and one quiz question a day inside the plan. Correct answers add points.
+- **Mentors.** Players with seven closed days or a world win can take paid questions from newcomers.
+- **Safety mode.** In-person plays get a "share where I am" link with I'm here / I'm done / need help check-ins that a contact can watch live.
+
+## How the platform gets paid
+
+Every dollar that moves through the app goes through one ledger, and the owner console shows it by month.
+
+| Stream | Platform cut (default, adjustable in the console) |
+|---|---|
+| Pro and Boss subscriptions | 100% |
+| Tips from fans to Legends | 15% |
+| Mentor questions | 20% |
+| Bracket entry fees and sponsored prize pools | 10% |
+| **Legend Fee** on receipt-verified earnings | 5% per month, invoiced through Stripe to players with a card on file |
+
+The Legend Fee is the "fee on money made through the app." It is charged only on earnings the app can prove (receipts), and only to players who can be billed, because that is the only version of it that is enforceable and fair. Unverified earnings are never charged.
+
+The **owner console** at `/admin.html` (needs `ADMIN_KEY`) shows revenue, sets fees, publishes Challenge Days and prize pools, marks manual payouts, changes tiers, and reads the **crew's weekly ideas**: every Monday the agents look at anonymized app-wide numbers and propose specific changes with the evidence.
 
 ## Scoring
 
@@ -76,8 +101,10 @@ Without an API key the app runs in **playbook mode**: every player still gets a 
 | Env | Turns on |
 |---|---|
 | `ANTHROPIC_API_KEY` | The live crew (Scout, Strategist, Coach, Auditor) |
+| `ADMIN_KEY` | The owner console at `/admin.html` |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Push notifications (`npx web-push generate-vapid-keys`) |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BOSS` | Paid plans |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BOSS` | Paid plans, tips through Checkout, Connect payouts to Legends, Legend Fee invoices |
+| `TIP_FEE_PCT`, `MENTOR_FEE_PCT`, `POOL_FEE_PCT`, `SUCCESS_FEE_PCT` | Starting fee percentages (the console can change them later) |
 | `APP_URL` | Absolute URL for invite links and Stripe redirects |
 | `DB_PATH` | Where the SQLite file lives (mount a volume in production) |
 | `DEFAULT_TIER` | Tier for players who have not paid (`boss` until billing is on) |
@@ -93,10 +120,13 @@ server.js          Express app, routes, live events, billing webhook, scheduler
 src/agents.js      The crew: Scout, Strategist, Coach, Auditor (Claude) with playbook fallback
 src/engine.js      Plans, tasks, verified earnings, scoring, leagues, boards, duels, recaps, nightly close
 src/playbook.js    Vetted plays, blocked-hour layout, learning weights, offline replans
+src/community.js   Feed, cards, stories, Final Call, University, safety, mentors, cities, brackets, challenge days, prizes, show, ideas
+src/money.js       Fees, ledger, tips, payouts, Legend Fee, revenue
+src/university.js  Lessons and quizzes
 src/auth.js        Accounts, sessions, invite codes
 src/push.js        Web push
 src/db.js          SQLite schema and migrations
-public/            The app (PWA), terms, privacy
+public/            The app (PWA), owner console, terms, privacy
 tests/             Engine and API suites
 ```
 
@@ -114,6 +144,12 @@ POST /api/push/subscribe   POST /api/push/unsubscribe
 GET  /api/billing       POST /api/billing/checkout {tier}        POST /api/billing/webhook (Stripe)
 GET  /api/leaderboard?date=&scope=world|country|region|city&league=&mode=all|verified   (public; local scopes need a Boss session)
 GET  /api/champion?date=   GET /api/events?token=  (server-sent events)
+GET  /api/feed   GET /api/cities   GET /api/bracket   POST /api/bracket/enter   GET /api/challenge-days   GET /api/prize   GET /api/shows   GET /api/stories/latest
+GET  /api/u/:name   POST /api/tips/:name {amountCents, fromName, message}   GET /api/payouts   POST /api/payouts/connect   POST /api/payouts/request
+POST /api/lesson/answer   POST /api/safety/start   POST /api/safety/:token {status}
+GET  /api/mentors   POST /api/mentors   DELETE /api/mentors   POST /api/mentors/:userId/ask   POST /api/mentors/questions/:id/answer
+GET  /api/admin/revenue|fees|ideas|players   POST /api/admin/fees|challenge-days|prize-pools|payouts/:userId|close-month|tier/:userId   (x-admin-key)
+Public pages: /u/:name  /card/:userId/:date  /story/:id  /safe/:token  /challenge/:slug  /show/:week  /admin.html
 ```
 
 Authenticated routes take `Authorization: Bearer <token>`.

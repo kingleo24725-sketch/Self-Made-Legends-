@@ -44,7 +44,7 @@ const PLAN_SCHEMA = {
         properties: {
           title: { type: 'string' },
           icon: { type: 'string', description: 'one emoji' },
-          category: { type: 'string', enum: ['gig', 'local', 'online', 'career', 'sales', 'other'] },
+          category: { type: 'string', enum: ['gig', 'local', 'online', 'beauty', 'care', 'food', 'career', 'sales', 'other'] },
           hours: { type: 'number' },
           startsAt: { type: 'string', description: 'e.g. 8:00am' },
           endsAt: { type: 'string', description: 'e.g. 10:30am' },
@@ -273,6 +273,62 @@ If they say a play fell through, conditions changed, or they ask for something d
     return { verified: ok, amountDollars: ok ? out.amountDollars : 0, source: out.source || '', confidence: out.confidence, reason: out.reason || '' };
   }
 
+  // ── Streak stories, the weekly show, and the crew's own ideas ────────────
+  async story(profile, facts) {
+    const fallback = {
+      title: `${facts.days} days straight`,
+      body: `${facts.name} in ${facts.location || 'their city'} has finished at least one play every day for ${facts.days} days on Rise N Grind. Over that run they logged $${(facts.earnedCents / 100).toFixed(0)}${facts.verifiedCents ? ` ($${(facts.verifiedCents / 100).toFixed(0)} verified)` : ''}, finished ${facts.playsDone} plays, and their best day was $${(facts.bestDayCents / 100).toFixed(0)}. Favorite play: ${facts.topPlay || 'whatever paid'}. Best world rank: #${facts.bestRank || '-'}. The crew's note: ${facts.note || 'consistency is the whole game.'}`,
+    };
+    if (!this.client) return fallback;
+    const prompt = `Write a short, true, shareable story about this person's streak for the Rise N Grind Legends page. 120-180 words, third person, no hype, numbers exactly as given. End with one line they would want quoted.\n\n${JSON.stringify(facts, null, 2)}`;
+    try {
+      const text = await this._ask('Coach', prompt, { schema: { type: 'object', additionalProperties: false, required: ['title', 'body'], properties: { title: { type: 'string' }, body: { type: 'string' } } }, max_tokens: 3000 });
+      return JSON.parse(text);
+    } catch (e) { this.log('story failed:', e.message); return fallback; }
+  }
+
+  async show(week) {
+    const c = week.champion;
+    const fallback = {
+      title: `Legend of the Week: ${c ? c.displayName : 'nobody yet'}`,
+      opening: c ? `${c.displayName} from ${c.location || 'somewhere'} finished the week with ${c.totalScore} points and $${(c.earnedCents / 100).toFixed(0)} logged across ${c.days} days.` : 'No one closed a day this week. Next week starts fresh.',
+      segments: c ? [
+        { heading: 'The plan that won', body: (c.bestDay && c.bestDay.tasks || []).map(t => `${t.title}: ${t.status === 'done' ? '$' + (t.earningsCents / 100).toFixed(0) : t.status}`).join('. ') || 'A full day, every play done.' },
+        { heading: 'By the numbers', body: `${week.players} players, ${week.playsDone} plays done, $${(week.earnedCents / 100).toFixed(0)} logged worldwide, $${(week.verifiedCents / 100).toFixed(0)} verified.` },
+        { heading: 'City of the week', body: week.topCity ? `${week.topCity.city} led with $${(week.topCity.cents / 100).toFixed(0)} verified.` : 'No city has claimed the week yet.' },
+      ] : [],
+      closing: 'Same time next week. Rise N Grind.',
+    };
+    if (!this.client) return fallback;
+    const prompt = `Write a 10-minute weekly show script for Rise N Grind: "Legend of the Week". Host voice, tight, real numbers only from the data. Sections: cold open, the champion and the plan that won, by the numbers, city of the week, one lesson for everyone, closing. Do not invent quotes.\n\n${JSON.stringify(week, null, 2)}`;
+    const schema = { type: 'object', additionalProperties: false, required: ['title', 'opening', 'segments', 'closing'], properties: { title: { type: 'string' }, opening: { type: 'string' }, segments: { type: 'array', maxItems: 6, items: { type: 'object', additionalProperties: false, required: ['heading', 'body'], properties: { heading: { type: 'string' }, body: { type: 'string' } } } }, closing: { type: 'string' } } };
+    try { return JSON.parse(await this._ask('Coach', prompt, { schema, max_tokens: 6000 })); }
+    catch (e) { this.log('show failed:', e.message); return fallback; }
+  }
+
+  /** The crew looks at anonymized app-wide numbers and proposes product changes to the owner. */
+  async ideas(stats) {
+    const fallback = [];
+    if (stats.skipRate && stats.skipRate.length) {
+      const worst = stats.skipRate[0];
+      fallback.push({ agent: 'Strategist', title: `Rework "${worst.title}"`, body: `It is skipped ${Math.round(worst.rate * 100)}% of the time it is planned (${worst.n} plans). Cut it back, lower its weight, or rewrite the steps.`, evidence: JSON.stringify(worst) });
+    }
+    if (stats.earnRatio && stats.earnRatio.length) {
+      const over = stats.earnRatio.find(r => r.ratio > 1.3); const under = [...stats.earnRatio].reverse().find(r => r.ratio < 0.6 && r.n >= 5);
+      if (over) fallback.push({ agent: 'Scout', title: `Raise the range on "${over.title}"`, body: `Players earn ${Math.round(over.ratio * 100)}% of the estimate on average across ${over.n} finished plays. The plan undersells it.`, evidence: JSON.stringify(over) });
+      if (under) fallback.push({ agent: 'Scout', title: `Lower the range on "${under.title}"`, body: `Players earn only ${Math.round(under.ratio * 100)}% of the estimate on ${under.n} finished plays. Honest ranges keep trust.`, evidence: JSON.stringify(under) });
+    }
+    if (stats.verifiedShare != null && stats.verifiedShare < 0.3) fallback.push({ agent: 'Auditor', title: 'Push receipt verification harder', body: `Only ${Math.round(stats.verifiedShare * 100)}% of logged dollars are verified. Verified dollars are the only ones the Legend Fee can bill. Prompt for a screenshot right after a play is marked done.`, evidence: `verifiedShare=${stats.verifiedShare}` });
+    if (stats.retention != null && stats.retention < 0.5) fallback.push({ agent: 'Coach', title: 'Day-two drop-off', body: `Only ${Math.round(stats.retention * 100)}% of players who finished a first day came back for a second. Make day two lighter and send the plan-ready push earlier.`, evidence: `retention=${stats.retention}` });
+    if (stats.womenShare != null && stats.womenShare < 0.35) fallback.push({ agent: 'Strategist', title: 'Grow the women\'s board', body: `${Math.round(stats.womenShare * 100)}% of active players identify as women. Feature the Women\'s Grind champion on the landing page and recruit two women creators for challenge days.`, evidence: `womenShare=${stats.womenShare}` });
+    if (!fallback.length) fallback.push({ agent: 'Crew', title: 'Nothing broken this week', body: 'Numbers look healthy. Spend the week on a celebrity challenge day or a city matchup to grow the top of the funnel.', evidence: '' });
+    if (!this.client) return fallback.slice(0, 5);
+    const prompt = `You are the crew reporting to the owner of Rise N Grind, the app you work inside. Here are this week's anonymized numbers. Propose 3-5 specific product or growth changes, each backed by a number from the data. Prioritize what grows players, verified earnings, and platform revenue (subscriptions, tips, Legend Fee) without breaking the rules you live by.\n\n${JSON.stringify(stats, null, 2)}`;
+    const schema = { type: 'object', additionalProperties: false, required: ['ideas'], properties: { ideas: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'object', additionalProperties: false, required: ['agent', 'title', 'body', 'evidence'], properties: { agent: { type: 'string', enum: ['Scout', 'Strategist', 'Coach', 'Auditor'] }, title: { type: 'string' }, body: { type: 'string' }, evidence: { type: 'string' } } } } } };
+    try { return JSON.parse(await this._ask('Strategist', prompt, { schema, max_tokens: 6000 })).ideas; }
+    catch (e) { this.log('ideas failed:', e.message); return fallback.slice(0, 5); }
+  }
+
   // ── Weekly recap ─────────────────────────────────────────────────────────
   async recap(profile, week) {
     const dollars = (week.earnedCents / 100).toFixed(0);
@@ -362,6 +418,7 @@ function normalizePlan(plan, dateKey, generatedBy) {
     steps: Array.isArray(t.steps) ? t.steps.map(String) : [],
     why: String(t.why || ''),
     sources: Array.isArray(t.sources) ? t.sources.filter(s => /^https?:\/\//.test(s)) : [],
+    inPerson: ['local', 'beauty', 'care', 'gig'].includes(t.category),
   }));
   const low = tasks.reduce((s, t) => s + t.estimatedEarnings.low, 0);
   const high = tasks.reduce((s, t) => s + t.estimatedEarnings.high, 0);

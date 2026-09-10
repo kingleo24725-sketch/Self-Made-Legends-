@@ -195,6 +195,175 @@ CREATE TABLE IF NOT EXISTS recaps (
   created_at INTEGER NOT NULL,
   UNIQUE(user_id, week_end)
 );
+CREATE TABLE IF NOT EXISTS feed (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    TEXT,
+  kind       TEXT NOT NULL,
+  text       TEXT NOT NULL,
+  city       TEXT,
+  amount_cents INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_feed_time ON feed (created_at DESC);
+CREATE TABLE IF NOT EXISTS stories (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    TEXT NOT NULL,
+  kind       TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  data       TEXT,
+  public     INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ledger (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind         TEXT NOT NULL,
+  user_id      TEXT,
+  gross_cents  INTEGER NOT NULL DEFAULT 0,
+  fee_cents    INTEGER NOT NULL DEFAULT 0,
+  net_cents    INTEGER NOT NULL DEFAULT 0,
+  status       TEXT NOT NULL DEFAULT 'recorded',
+  ref          TEXT,
+  note         TEXT,
+  created_at   INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ledger_time ON ledger (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ledger_user ON ledger (user_id, kind);
+CREATE TABLE IF NOT EXISTS tips (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  to_user_id    TEXT NOT NULL,
+  from_name     TEXT,
+  message       TEXT,
+  gross_cents   INTEGER NOT NULL,
+  fee_cents     INTEGER NOT NULL,
+  net_cents     INTEGER NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'pending',
+  stripe_ref    TEXT,
+  created_at    INTEGER NOT NULL,
+  paid_at       INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_tips_user ON tips (to_user_id, status);
+CREATE TABLE IF NOT EXISTS payouts (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    TEXT NOT NULL,
+  amount_cents INTEGER NOT NULL,
+  method     TEXT NOT NULL,
+  ref        TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS lesson_progress (
+  user_id    TEXT NOT NULL,
+  lesson_id  TEXT NOT NULL,
+  date       TEXT NOT NULL,
+  correct    INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (user_id, lesson_id)
+);
+CREATE TABLE IF NOT EXISTS mentors (
+  user_id    TEXT PRIMARY KEY,
+  topics     TEXT NOT NULL DEFAULT '[]',
+  price_cents INTEGER NOT NULL DEFAULT 500,
+  bio        TEXT,
+  active     INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS mentor_questions (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  mentor_id  TEXT NOT NULL,
+  asker_id   TEXT NOT NULL,
+  question   TEXT NOT NULL,
+  answer     TEXT,
+  price_cents INTEGER NOT NULL,
+  fee_cents  INTEGER NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'open',
+  created_at INTEGER NOT NULL,
+  answered_at INTEGER
+);
+CREATE TABLE IF NOT EXISTS brackets (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  week_start TEXT NOT NULL UNIQUE,
+  status     TEXT NOT NULL DEFAULT 'open',
+  size       INTEGER NOT NULL DEFAULT 0,
+  round      INTEGER NOT NULL DEFAULT 0,
+  entry_cents INTEGER NOT NULL DEFAULT 0,
+  pool_cents INTEGER NOT NULL DEFAULT 0,
+  winner_id  TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS bracket_entries (
+  bracket_id INTEGER NOT NULL,
+  user_id    TEXT NOT NULL,
+  seed       INTEGER,
+  alive      INTEGER NOT NULL DEFAULT 1,
+  eliminated_round INTEGER,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (bracket_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS bracket_matches (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  bracket_id INTEGER NOT NULL,
+  round      INTEGER NOT NULL,
+  date       TEXT NOT NULL,
+  a_id       TEXT,
+  b_id       TEXT,
+  a_score    INTEGER,
+  b_score    INTEGER,
+  winner_id  TEXT,
+  settled    INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_bracket_matches ON bracket_matches (bracket_id, round);
+CREATE TABLE IF NOT EXISTS challenge_days (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  slug        TEXT NOT NULL UNIQUE,
+  name        TEXT NOT NULL,
+  headline    TEXT,
+  date        TEXT NOT NULL,
+  ends        TEXT NOT NULL,
+  target_score INTEGER NOT NULL,
+  target_cents INTEGER NOT NULL DEFAULT 0,
+  plan_json   TEXT,
+  created_at  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS prize_pools (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  month       TEXT NOT NULL UNIQUE,
+  sponsor     TEXT NOT NULL,
+  amount_cents INTEGER NOT NULL,
+  fee_cents   INTEGER NOT NULL DEFAULT 0,
+  rules       TEXT,
+  status      TEXT NOT NULL DEFAULT 'open',
+  winner_id   TEXT,
+  created_at  INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS safety_sessions (
+  token      TEXT PRIMARY KEY,
+  user_id    TEXT NOT NULL,
+  task_id    INTEGER,
+  place      TEXT,
+  eta        TEXT,
+  status     TEXT NOT NULL DEFAULT 'heading',
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS ideas (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  week_end   TEXT NOT NULL,
+  agent      TEXT NOT NULL,
+  title      TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  evidence   TEXT,
+  status     TEXT NOT NULL DEFAULT 'new',
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS shows (
+  week_end   TEXT PRIMARY KEY,
+  data       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
 `;
 
 function open(file) {
@@ -233,6 +402,16 @@ const MIGRATIONS = [
   'ALTER TABLE daily_scores ADD COLUMN region TEXT',
   'ALTER TABLE daily_scores ADD COLUMN city TEXT',
   'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral ON users (referral_code)',
+  'ALTER TABLE users ADD COLUMN payout_balance_cents INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE users ADD COLUMN stripe_account_id TEXT',
+  'ALTER TABLE users ADD COLUMN success_fee_optin INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE users ADD COLUMN public_profile INTEGER NOT NULL DEFAULT 1',
+  'ALTER TABLE profiles ADD COLUMN gender TEXT',
+  'ALTER TABLE profiles ADD COLUMN safety_contact TEXT',
+  'ALTER TABLE profiles ADD COLUMN final_call_sent TEXT',
+  'ALTER TABLE tasks ADD COLUMN category TEXT',
+  'ALTER TABLE daily_scores ADD COLUMN category TEXT',
+  'ALTER TABLE daily_scores ADD COLUMN lesson_points INTEGER NOT NULL DEFAULT 0',
 ];
 function migrate(db) {
   for (const sql of MIGRATIONS) { try { db.exec(sql); } catch (_) { /* already applied */ } }

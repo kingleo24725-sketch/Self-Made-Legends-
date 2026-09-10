@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Owner Console · Rise N Grind</title>
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<style>
+  body{background:#0b0d12;color:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px 16px 60px;line-height:1.5}
+  main{max-width:900px;margin:0 auto}h1{font-size:1.4em}h2{font-size:.85em;color:#8d95a8;text-transform:uppercase;letter-spacing:.08em;margin:0 0 10px}
+  .card{background:#141824;border:1px solid #262c3d;border-radius:16px;padding:16px;margin:12px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+  .stat{background:#1b2030;border-radius:12px;padding:12px;text-align:center}.stat b{display:block;font-size:1.4em;color:#f5b942}.stat span{font-size:.75em;color:#8d95a8;text-transform:uppercase}
+  input,select,textarea,button{font:inherit;color:inherit}input,select,textarea{background:#1b2030;border:1px solid #262c3d;border-radius:10px;padding:10px;width:100%;box-sizing:border-box;margin:4px 0}
+  button{background:#f5b942;color:#1a1200;border:0;border-radius:10px;padding:10px 14px;font-weight:700;cursor:pointer}button.ghost{background:#1b2030;color:#eef0f5;border:1px solid #262c3d}
+  table{width:100%;border-collapse:collapse;font-size:.9em}td,th{padding:8px 6px;border-bottom:1px solid #262c3d;text-align:left}th{color:#8d95a8;font-weight:600;font-size:.8em;text-transform:uppercase}
+  .muted{color:#8d95a8}.ok{color:#3ddc84}.idea{border-left:3px solid #b58cff;padding:6px 0 6px 12px;margin:10px 0}.idea b{display:block}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+</style>
+</head>
+<body><main>
+<h1>Rise N Grind · Owner Console <span class="muted" style="font-weight:400;font-size:.7em">by SML</span></h1>
+<div class="card"><div class="row"><input type="password" id="key" placeholder="Admin key (ADMIN_KEY)" style="flex:1"><button onclick="saveKey()">Open</button></div><div class="muted" id="err"></div></div>
+<div id="console" hidden>
+  <div class="card"><h2>Revenue</h2><div class="grid" id="stats"></div><div id="months" style="margin-top:12px"></div></div>
+  <div class="card"><h2>Fees (percent of each dollar that moves through the app)</h2><div class="grid" id="fees"></div><button onclick="saveFees()" style="margin-top:8px">Save fees</button></div>
+  <div class="card"><h2>Ideas from the crew</h2><div class="row"><button class="ghost" onclick="runIdeas()">Ask the crew now</button></div><div id="ideas"></div></div>
+  <div class="grid">
+    <div class="card"><h2>Challenge Day (celebrity or brand)</h2><input id="cdName" placeholder="Name, e.g. Big Star"><input id="cdSlug" placeholder="slug (big-star)"><input id="cdHead" placeholder="Headline"><input id="cdDate" type="date"><input id="cdEnds" type="date"><input id="cdScore" type="number" placeholder="Score to beat"><input id="cdDollars" type="number" placeholder="Dollars they logged"><textarea id="cdPlan" placeholder='Their plan as JSON, e.g. {"tasks":[{"title":"Signed hats","hours":2,"icon":"🧢"}]}'></textarea><button onclick="createCD()">Publish challenge</button><div id="cdOut" class="muted"></div></div>
+    <div class="card"><h2>Sponsored prize pool</h2><input id="ppMonth" placeholder="YYYY-MM"><input id="ppSponsor" placeholder="Sponsor"><input id="ppAmount" type="number" placeholder="Amount ($)"><textarea id="ppRules" placeholder="Rules (optional)"></textarea><button onclick="createPP()">Create pool</button> <button class="ghost" onclick="settlePP()">Settle month</button><div id="ppOut" class="muted"></div></div>
+  </div>
+  <div class="card"><h2>Players</h2><div class="row"><button class="ghost" onclick="closeMonth()">Close last month (Legend Fee)</button><button class="ghost" onclick="runShow()">Write this week's show</button></div><table id="players"></table></div>
+</div>
+<script>
+let KEY = ''; try { KEY = localStorage.getItem('rng.adminKey') || ''; } catch (_) {}
+const $ = (id) => document.getElementById(id);
+const money = (c) => '$' + (Number(c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+async function api(path, opts = {}) { const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-key': KEY }, body: opts.body ? JSON.stringify(opts.body) : undefined }); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Failed'); return d; }
+function saveKey() { KEY = $('key').value.trim(); try { localStorage.setItem('rng.adminKey', KEY); } catch (_) {} load(); }
+async function load() {
+  $('err').textContent = '';
+  try {
+    const r = await api('/api/admin/revenue');
+    $('console').hidden = false;
+    const thisMonth = r.months[0] || { platformCents: 0, grossCents: 0 };
+    $('stats').innerHTML = [['Platform revenue this month', money(thisMonth.platformCents)], ['Gross moved this month', money(thisMonth.grossCents)], ['Players', r.players], ['Paying', r.paying], ['Verified earnings, all time', money(r.verifiedCents)], ['Logged earnings, all time', money(r.loggedCents)], ['Owed to Legends (payout balances)', money(r.owedToLegendsCents)]].map(([l, v]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+    $('months').innerHTML = r.months.map((m) => `<div><b>${m.month}</b> · platform ${money(m.platformCents)} · gross ${money(m.grossCents)}<div class="muted" style="font-size:.85em">${m.lines.map((l) => `${l.kind} ${l.status} ×${l.count}: gross ${money(l.grossCents)}, fee ${money(l.feeCents)}`).join(' · ')}</div></div>`).join('') || '<span class="muted">No money has moved yet.</span>';
+    const labels = { TIP_FEE_PCT: 'Tips', MENTOR_FEE_PCT: 'Mentor questions', POOL_FEE_PCT: 'Brackets and prize pools', SUCCESS_FEE_PCT: 'Legend Fee on verified earnings', SUCCESS_FEE_MIN_CENTS: 'Minimum Legend Fee invoice (cents)', TIP_MIN_CENTS: 'Minimum tip (cents)', TIP_MAX_CENTS: 'Maximum tip (cents)' };
+    $('fees').innerHTML = Object.entries(r.fees).map(([k, v]) => `<label><span class="muted" style="font-size:.8em">${labels[k] || k}</span><input type="number" step="1" data-k="${k}" value="${v}"></label>`).join('');
+    const ideas = (await api('/api/admin/ideas')).ideas;
+    $('ideas').innerHTML = ideas.length ? ideas.map((i) => `<div class="idea"><b>${esc(i.agent)}: ${esc(i.title)} <span class="muted">(${esc(i.weekEnd)}, ${esc(i.status)})</span></b>${esc(i.body)}<div class="muted" style="font-size:.8em">${esc(i.evidence)}</div><div class="row" style="margin-top:6px">${['doing', 'done', 'no'].map((s) => `<button class="ghost" onclick="idea(${i.id},'${s}')">${s}</button>`).join('')}</div></div>`).join('') : '<span class="muted">The crew reports every Monday. Or ask now.</span>';
+    const players = (await api('/api/admin/players')).players;
+    $('players').innerHTML = '<tr><th>Name</th><th>Email</th><th>City</th><th>Tier</th><th>Owed</th><th></th></tr>' + players.map((p) => `<tr><td><a href="/u/${encodeURIComponent(p.display_name)}" style="color:#5aa9ff">${esc(p.display_name)}</a></td><td class="muted">${esc(p.email)}</td><td class="muted">${esc([p.city, p.region].filter(Boolean).join(', '))}</td><td><select onchange="tier('${p.id}',this.value)">${['free', 'pro', 'boss'].map((t) => `<option ${p.tier === t ? 'selected' : ''}>${t}</option>`).join('')}</select></td><td>${money(p.payout_balance_cents)}${p.connected ? ' <span class="ok">connected</span>' : ''}</td><td>${p.payout_balance_cents > 0 ? `<button class="ghost" onclick="payout('${p.id}')">Mark paid</button>` : ''}</td></tr>`).join('');
+  } catch (e) { $('err').textContent = e.message; $('console').hidden = true; }
+}
+async function saveFees() { const body = {}; document.querySelectorAll('#fees input').forEach((i) => { body[i.dataset.k] = Number(i.value); }); await api('/api/admin/fees', { method: 'POST', body }); load(); }
+async function idea(id, status) { await api('/api/admin/ideas/' + id, { method: 'POST', body: { status } }); load(); }
+async function runIdeas() { await api('/api/admin/ideas/run', { method: 'POST', body: {} }); load(); }
+async function runShow() { const r = await api('/api/admin/show/run', { method: 'POST', body: {} }); alert('Show written: ' + r.show.title + '\n' + location.origin + r.show.url); }
+async function createCD() { try { let plan = null; if ($('cdPlan').value.trim()) plan = JSON.parse($('cdPlan').value); const r = await api('/api/admin/challenge-days', { method: 'POST', body: { name: $('cdName').value, slug: $('cdSlug').value, headline: $('cdHead').value, date: $('cdDate').value, ends: $('cdEnds').value, targetScore: $('cdScore').value, targetDollars: $('cdDollars').value, plan } }); $('cdOut').innerHTML = `Live at <a href="${r.challenge.url}" style="color:#5aa9ff">${location.origin}${r.challenge.url}</a>`; } catch (e) { $('cdOut').textContent = e.message; } }
+async function createPP() { try { const r = await api('/api/admin/prize-pools', { method: 'POST', body: { month: $('ppMonth').value, sponsor: $('ppSponsor').value, amountDollars: $('ppAmount').value, rules: $('ppRules').value } }); $('ppOut').textContent = `Pool for ${r.prize.month}: ${money(r.prize.amountCents)} to the winner after the platform cut.`; load(); } catch (e) { $('ppOut').textContent = e.message; } }
+async function settlePP() { try { const r = await api('/api/admin/prize-pools/' + $('ppMonth').value + '/settle', { method: 'POST', body: {} }); $('ppOut').textContent = r.prize ? `Paid to ${r.prize.standings[0].name}` : 'Nothing to settle yet.'; load(); } catch (e) { $('ppOut').textContent = e.message; } }
+async function payout(id) { const ref = prompt('How did you pay them? (Cash App handle, Zelle, check #)'); if (ref === null) return; await api('/api/admin/payouts/' + id, { method: 'POST', body: { method: 'manual', ref } }); load(); }
+async function tier(id, t) { await api('/api/admin/tier/' + id, { method: 'POST', body: { tier: t } }); }
+async function closeMonth() { const d = new Date(); d.setUTCDate(0); const m = d.toISOString().slice(0, 7); const r = await api('/api/admin/close-month', { method: 'POST', body: { month: m } }); alert(`${m}: ${r.results.length} Legend Fee records\n` + r.results.map((x) => `${x.userId.slice(0, 6)} $${(x.feeCents / 100).toFixed(2)} ${x.status}`).join('\n')); load(); }
+if (KEY) { $('key').value = KEY; load(); }
+</script></main></body></html>

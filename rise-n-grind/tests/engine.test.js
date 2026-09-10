@@ -123,13 +123,13 @@ describe('profiles and plans', () => {
     await expect(engine.ensurePlan('nobody')).rejects.toThrow(/profile/);
   });
 
-  test('leagues come from what you have, and Boss from results', async () => {
+  test('leagues come from what you have, and Legend from results', async () => {
     engine.saveProfile('u_a', { resources: [] });
     engine.saveProfile('u_b', { resources: ['vehicle', 'laptop'] });
     expect(engine.leagueFor('u_a', engine.getProfile('u_a'), '2026-09-09')).toBe('bronze');
     expect(engine.leagueFor('u_b', engine.getProfile('u_b'), '2026-09-09')).toBe('gold');
     db.prepare("INSERT INTO daily_scores (user_id, date, score, streak, closed, updated_at) VALUES ('u_a','2026-09-01',100,7,1,0)").run();
-    expect(engine.leagueFor('u_a', engine.getProfile('u_a'), '2026-09-09')).toBe('boss');
+    expect(engine.leagueFor('u_a', engine.getProfile('u_a'), '2026-09-09')).toBe('legend');
   });
 });
 

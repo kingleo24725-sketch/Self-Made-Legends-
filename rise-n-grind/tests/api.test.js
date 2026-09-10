@@ -158,3 +158,105 @@ describe('a full day through the API', () => {
     for (const p of ['/', '/manifest.json', '/terms', '/privacy', '/sw.js']) expect((await request(app).get(p)).status).toBe(200);
   });
 });
+
+describe('the public side and the money side', () => {
+  let ava, fanless;
+  beforeAll(async () => {
+    ava = await signup('ava2@x.com', 'Ava Stone');
+    await request(app).post('/api/profile').set(auth(ava.token)).send({ location: 'Atlanta, GA', resources: ['beauty'], tzOffset: 0, gender: 'woman', safetyContact: 'Mom 555' });
+    const today = (await request(app).get('/api/today').set(auth(ava.token))).body;
+    await request(app).post(`/api/tasks/${today.plan.tasks[0].taskId}`).set(auth(ava.token)).send({ status: 'done', earningsDollars: 80 });
+  });
+
+  test('the Grind Feed, Legend page, card, and tip all work without a session', async () => {
+    const feed = (await request(app).get('/api/feed')).body.feed;
+    expect(feed[0].text).toMatch(/^Ava in Atlanta, GA just finished/);
+    const prof = (await request(app).get('/api/u/ava%20stone')).body.profile;
+    expect(prof).toMatchObject({ displayName: 'Ava Stone', city: 'Atlanta, GA' });
+    expect((await request(app).get('/u/Ava%20Stone')).text).toContain('Tip the grind');
+    expect((await request(app).get('/u/Nobody')).status).toBe(404);
+    const card = (await request(app).get(`/api/cards/${ava.user.id}/2026-09-09`)).body;
+    expect(card.card.tasksDone).toBe(1);
+    const svg = await request(app).get(`/api/cards/${ava.user.id}/2026-09-09.svg`);
+    expect(svg.headers['content-type']).toMatch(/svg/);
+    expect((await request(app).get(`/card/${ava.user.id}/2026-09-09`)).text).toContain('og:image');
+    let r = await request(app).post('/api/tips/Ava%20Stone').send({ amountCents: 500, fromName: 'Fan', message: 'go' });
+    expect(r.body).toMatchObject({ fee: 75, net: 425, billing: false });
+    expect((await request(app).post('/api/tips/Ava%20Stone').send({ amountCents: 10 })).status).toBe(400);
+    const me = (await request(app).get('/api/me').set(auth(ava.token))).body;
+    expect(me.payoutBalanceCents).toBe(425);
+    expect(me.stats.tipsCount).toBe(1);
+    expect((await request(app).get('/api/payouts').set(auth(ava.token))).body.balanceCents).toBe(425);
+    expect((await request(app).post('/api/payouts/request').set(auth(ava.token))).status).toBe(400);
+  });
+
+  test('going private removes the Legend page and the feed', async () => {
+    await request(app).post('/api/me/settings').set(auth(ava.token)).send({ publicProfile: false });
+    expect((await request(app).get('/api/u/Ava%20Stone')).status).toBe(404);
+    expect((await request(app).post('/api/tips/Ava%20Stone').send({ amountCents: 500 })).status).toBe(404);
+    await request(app).post('/api/me/settings').set(auth(ava.token)).send({ publicProfile: true });
+  });
+
+  test('University, safety, bracket, cities, challenge days, prize, shows, stories endpoints', async () => {
+    const today = (await request(app).get('/api/today').set(auth(ava.token))).body;
+    expect(today.lesson.answered).toBe(false);
+    expect(today.bracket).toBeTruthy();
+    let r = await request(app).post('/api/lesson/answer').set(auth(ava.token)).send({ lessonId: today.lesson.id, answer: 99 });
+    expect(r.body.correct).toBe(false);
+    r = await request(app).post('/api/safety/start').set(auth(ava.token)).send({ taskId: today.plan.tasks[1].taskId, place: '5th St', eta: '4pm' });
+    const token = r.body.session.token;
+    expect((await request(app).get(`/safe/${token}`)).text).toContain('On the way');
+    expect((await request(app).get(`/api/safety/${token}`)).body.session.contact).toBeUndefined();
+    expect((await request(app).post(`/api/safety/${token}`).set(auth(ava.token)).send({ status: 'done' })).body.session.status).toBe('done');
+    expect((await request(app).get('/api/today').set(auth(ava.token))).body.safety).toBeNull();
+    r = await request(app).post('/api/bracket/enter').set(auth(ava.token));
+    expect(r.body.bracket.entries.some(e => e.userId === ava.user.id)).toBe(true);
+    expect((await request(app).get('/api/bracket')).status).toBe(200);
+    expect((await request(app).get('/api/cities')).body.weekStart).toBe('2026-09-07');
+    expect((await request(app).get('/api/challenge-days')).body.challenges).toEqual([]);
+    expect((await request(app).get('/api/prize')).body.prize).toBeNull();
+    expect((await request(app).get('/api/shows')).body.shows).toEqual([]);
+    expect((await request(app).get('/api/stories/latest')).body.stories).toEqual([]);
+    expect((await request(app).get('/challenge/nope')).status).toBe(404);
+    expect((await request(app).get('/show/2026-09-06')).status).toBe(404);
+    expect((await request(app).get('/story/1')).status).toBe(404);
+    const lb = (await request(app).get('/api/leaderboard?scope=women&category=beauty')).body;
+    expect(lb.scope).toBe('women');
+    expect(lb.leaderboard.some(x => x.displayName === 'Ava Stone')).toBe(true);
+  });
+
+  test('mentors need a record; asking and answering routes the fee', async () => {
+    expect((await request(app).post('/api/mentors').set(auth(ava.token)).send({ topics: ['nails'] })).status).toBe(400);
+    for (let i = 0; i < 7; i++) engine.db.prepare("INSERT OR IGNORE INTO daily_scores (user_id, date, score, tasks_done, closed, updated_at) VALUES (?, ?, 100, 1, 1, 0)").run(ava.user.id, `2026-08-0${i + 1}`);
+    let r = await request(app).post('/api/mentors').set(auth(ava.token)).send({ topics: ['nails'], priceDollars: 8, bio: 'Ask me' });
+    expect(r.body.mentor.priceCents).toBe(800);
+    expect((await request(app).get('/api/mentors')).body.mentors[0].name).toBe('Ava Stone');
+    const ben = (await request(app).post('/api/auth/login').send({ email: 'ben@x.com', password: 'longenough' })).body;
+    r = await request(app).post(`/api/mentors/${ava.user.id}/ask`).set(auth(ben.token)).send({ question: 'How do I price a full set of nails?' });
+    expect(r.body.question.status).toBe('open');
+    r = await request(app).post(`/api/mentors/questions/${r.body.question.id}/answer`).set(auth(ava.token)).send({ answer: 'Start at $45 and raise it when you are booked out a week.' });
+    expect(r.body.question.status).toBe('answered');
+    expect((await request(app).get('/api/me').set(auth(ava.token))).body.payoutBalanceCents).toBe(425 + 640);
+    await request(app).delete('/api/mentors').set(auth(ava.token));
+  });
+
+  test('the owner console is locked without the key and works with it', async () => {
+    expect((await request(app).get('/api/admin/revenue')).status).toBe(401);
+    const { createApp: mk } = require('../server');
+    const adminApp = mk({ db: open(':memory:'), now: () => clock, crew: new Crew({ apiKey: '' }), defaultTier: 'boss', adminKey: 'k1', env: {} }).app;
+    const h = { 'x-admin-key': 'k1' };
+    expect((await request(adminApp).get('/api/admin/revenue').set(h)).body.players).toBe(0);
+    let r = await request(adminApp).post('/api/admin/fees').set(h).send({ TIP_FEE_PCT: 20 });
+    expect(r.body.fees.TIP_FEE_PCT).toBe(20);
+    r = await request(adminApp).post('/api/admin/challenge-days').set(h).send({ name: 'Big Star', date: '2026-09-09', targetScore: 400, targetDollars: 900 });
+    expect(r.body.challenge.slug).toBe('big-star');
+    expect((await request(adminApp).get('/challenge/big-star')).text).toContain('Beat Big Star');
+    r = await request(adminApp).post('/api/admin/prize-pools').set(h).send({ month: '2026-09', sponsor: 'Brand', amountDollars: 500 });
+    expect(r.body.prize.amountCents).toBe(45000);
+    expect((await request(adminApp).get('/api/prize')).body.prize.sponsor).toBe('Brand');
+    r = await request(adminApp).post('/api/admin/ideas/run').set(h).send({});
+    expect(r.body.ideas.length).toBeGreaterThan(0);
+    expect((await request(adminApp).get('/api/admin/revenue').set(h)).body.months[0].platformCents).toBe(5000);
+    expect((await request(adminApp).get('/admin.html')).status).toBe(200);
+  });
+});
