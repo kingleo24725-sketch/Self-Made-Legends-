@@ -31,11 +31,11 @@ const money = (c) => '$' + (Number(c || 0) / 100).toLocaleString('en-US', { mini
 /** Small server-rendered page with Open Graph tags, for links people share. */
 function page({ title, description, image, body, url }) {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)} · SML Rise Nd Grinds</title><meta name="description" content="${esc(description)}">
+<title>${esc(title)} · Legends Only</title><meta name="description" content="${esc(description)}">
 <meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(description)}"><meta property="og:type" content="website">${url ? `<meta property="og:url" content="${esc(url)}">` : ''}${image ? `<meta property="og:image" content="${esc(image)}"><meta name="twitter:card" content="summary_large_image">` : ''}
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <style>body{background:#0b0d12 url('/logo.svg') no-repeat center 120px;background-size:520px;color:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px 16px 60px;line-height:1.5}main{max-width:560px;margin:0 auto}h1{font-size:1.5em;margin:8px 0}h2{font-size:1em;color:#f5b942;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 8px}.muted{color:#8d95a8}.card{background:#141824;border:1px solid #262c3d;border-radius:16px;padding:16px;margin:12px 0}.btn{display:inline-block;background:#f5b942;color:#1a1200;font-weight:700;padding:12px 18px;border-radius:12px;text-decoration:none;margin-top:8px}.ghost{background:#1b2030;color:#eef0f5;border:1px solid #262c3d}img.card-img{width:100%;border-radius:16px;border:1px solid #262c3d}.row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed #262c3d}a{color:#5aa9ff}.brand{font-weight:900;letter-spacing:.02em;display:flex;align-items:center;gap:10px}.brand span{color:#f5b942}.brand img{width:34px;height:34px}main{position:relative}main::before{content:"";position:fixed;inset:0;background:rgba(11,13,18,.86);z-index:-1}input,textarea{width:100%;background:#1b2030;border:1px solid #262c3d;border-radius:12px;padding:12px;color:#eef0f5;font:inherit;margin:6px 0;box-sizing:border-box}</style></head>
-<body><main><div class="brand"><img src="/icon.svg" alt=""><a href="/" style="color:inherit;text-decoration:none">SML <span>RISE ND GRINDS</span></a></div>${body}
+<body><main><div class="brand"><img src="/icon.svg" alt=""><a href="/" style="color:inherit;text-decoration:none">LEGENDS <span>ONLY</span></a></div>${body}
 <p class="muted" style="font-size:.78em;margin-top:30px">Earnings are self-reported unless marked verified. Plans are suggestions. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p></main></body></html>`;
 }
 
@@ -272,7 +272,7 @@ function createApp(opts = {}) {
     const s = community.safety(req.params.token);
     if (!s) return res.status(404).send(page({ title: 'Not found', description: '', body: '<h1>That link has expired.</h1>' }));
     const label = { heading: 'On the way', arrived: 'Arrived, working', done: 'Done and safe', help: 'NEEDS HELP' }[s.status] || s.status;
-    res.send(page({ title: `${s.name} · ${label}`, description: `Live safety status from SML Rise Nd Grinds`, url: `${APP_URL}/safe/${s.token}`,
+    res.send(page({ title: `${s.name} · ${label}`, description: `Live safety status from Legends Only`, url: `${APP_URL}/safe/${s.token}`,
       body: `<h1>${esc(s.name)} · <span style="color:${s.status === 'help' ? '#ff6b6b' : s.status === 'done' ? '#3ddc84' : '#f5b942'}">${esc(label)}</span></h1><div class="card">${s.task ? `<div class="row"><span class="muted">Job</span><span>${esc(s.task)}</span></div>` : ''}${s.place ? `<div class="row"><span class="muted">Where</span><span>${esc(s.place)}</span></div>` : ''}${s.eta ? `<div class="row"><span class="muted">Expected done</span><span>${esc(s.eta)}</span></div>` : ''}<div class="row"><span class="muted">Last update</span><span>${new Date(s.updatedAt).toLocaleString()}</span></div></div><p class="muted">This page updates when ${esc(s.name)} checks in. If it says NEEDS HELP or goes quiet past the expected time, call them.</p><script>setTimeout(()=>location.reload(),60000)</script>` }));
   });
 
@@ -301,9 +301,9 @@ function createApp(opts = {}) {
   app.post('/api/me/success-fee', requireUser, (req, res) => { db.prepare('UPDATE users SET success_fee_optin = ? WHERE id = ?').run((req.body || {}).optIn === false ? 0 : 1, req.user.id); res.json({ ok: true }); });
   app.get('/u/:name', (req, res) => {
     const p = community.publicProfile(req.params.name);
-    if (!p) return res.status(404).send(page({ title: 'No such Legend', description: '', body: '<h1>No public Legend by that name.</h1><a class="btn" href="/">Open SML Rise Nd Grinds</a>' }));
+    if (!p) return res.status(404).send(page({ title: 'No such Legend', description: '', body: '<h1>No public Legend by that name.</h1><a class="btn" href="/">Open Legends Only</a>' }));
     const tipped = req.query.tipped === '1';
-    res.send(page({ title: `${p.displayName} on SML Rise Nd Grinds`, description: `${p.stats.days} days, ${money(p.stats.earnedCents)} logged, ${p.stats.wins} world wins. Tip the grind.`, url: `${APP_URL}${p.url}`, image: p.lastDays[0] ? `${APP_URL}/api/cards/${p.id}/${p.lastDays[0].date}.svg` : undefined,
+    res.send(page({ title: `${p.displayName} on Legends Only`, description: `${p.stats.days} days, ${money(p.stats.earnedCents)} logged, ${p.stats.wins} world wins. Tip the grind.`, url: `${APP_URL}${p.url}`, image: p.lastDays[0] ? `${APP_URL}/api/cards/${p.id}/${p.lastDays[0].date}.svg` : undefined,
       body: `<div style="display:flex;gap:14px;align-items:center;margin-top:12px"><img src="/api/avatar/${esc(p.id)}" alt="" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:2px solid #C9A227"><div><h1 style="margin:0">${esc(p.displayName)}</h1><div class="muted">${esc(p.city)}${p.city ? ' · ' : ''}${esc(p.goals)}</div>${(() => { const b = social.botRating(p.id); return b.count ? `<div class="muted">Bot rated ${b.average}/5 by ${b.count} viewer${b.count === 1 ? '' : 's'}</div>` : ''; })()}</div></div>
 <div class="card"><div class="row"><span class="muted">Days on the grind</span><b>${p.stats.days}</b></div><div class="row"><span class="muted">Logged</span><b>${money(p.stats.earnedCents)}${p.stats.verifiedCents ? ` <span class="muted">(${money(p.stats.verifiedCents)} verified)</span>` : ''}</b></div><div class="row"><span class="muted">World wins</span><b>${p.stats.wins}</b></div><div class="row"><span class="muted">Best streak</span><b>${p.stats.bestStreak}</b></div>${p.badges.length ? `<div class="row"><span class="muted">Badges</span><span>${p.badges.slice(0, 6).map(b => esc(b.badge.replace(/_/g, ' '))).join(' · ')}</span></div>` : ''}</div>
 ${tipped ? '<div class="card" style="border-color:#3ddc84"><b>Thank you.</b> Your tip is on its way.</div>' : ''}
@@ -311,7 +311,7 @@ ${tipped ? '<div class="card" style="border-color:#3ddc84"><b>Thank you.</b> You
 ${p.mentor ? `<h2>Ask ${esc(p.displayName)}</h2><div class="card">${esc(p.mentor.bio || 'Taking questions.')}<div class="muted">${p.mentor.topics.map(esc).join(' · ')} · ${money(p.mentor.priceCents)} per question</div><a class="btn" href="/?ask=${encodeURIComponent(p.displayName)}">Ask in the app</a></div>` : ''}
 ${p.stories.length ? `<h2>Stories</h2>${p.stories.map(s => `<div class="card"><b>${esc(s.title)}</b><p>${esc(s.body)}</p><a href="${s.url}">Share this story</a></div>`).join('')}` : ''}
 ${p.lastDays.length ? `<h2>Last days</h2><div class="card">${p.lastDays.map(d => `<div class="row"><a href="/card/${p.id}/${d.date}">${esc(d.date)}</a><span>${d.tasksDone}/${d.tasksTotal} · ${money(d.earningsCents)}${d.verifiedCents ? ' ✓' : ''}</span><b style="color:#f5b942">${d.score}</b></div>`).join('')}</div>` : ''}
-<a class="btn" href="/?invite=">Think you can beat ${esc(p.displayName.split(' ')[0])}? Join SML Rise Nd Grinds</a>
+<a class="btn" href="/?invite=">Think you can beat ${esc(p.displayName.split(' ')[0])}? Join Legends Only</a>
 <script>let amt=0;function pick(c){amt=c;document.getElementById('amt').value=c/100}async function tip(e){e.preventDefault();const v=Number(document.getElementById('amt').value||0)*100||amt;const r=await fetch('/api/tips/${encodeURIComponent(p.displayName)}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({amountCents:v,fromName:document.getElementById('from').value,message:document.getElementById('msg').value})});const d=await r.json();if(!r.ok){document.getElementById('err').textContent=d.error;return false}if(d.url)location.href=d.url;else location.href='?tipped=1';return false}</script>` }));
   });
 
@@ -323,7 +323,7 @@ ${p.lastDays.length ? `<h2>Last days</h2><div class="card">${p.lastDays.map(d =>
     if (!c || !c.public) return res.status(404).send(page({ title: 'Not found', description: '', body: '<h1>No card here.</h1>' }));
     const img = `${APP_URL}/api/cards/${c.userId}/${c.date}.svg`;
     res.send(page({ title: `${c.name}: ${c.score} points on ${c.date}`, description: `${c.tasksDone}/${c.tasksTotal} plays, ${money(c.earningsCents)} logged${c.verifiedCents ? `, ${money(c.verifiedCents)} verified` : ''}${c.rank ? `, world #${c.rank}` : ''}. Think you can beat it?`, image: img, url: `${APP_URL}${c.url}`,
-      body: `<img class="card-img" src="${img}" alt="Receipt card"><a class="btn" href="/u/${encodeURIComponent(c.name)}">See ${esc(c.name)}'s profile and tip the grind</a> <a class="btn ghost" href="/">Play SML Rise Nd Grinds</a>` }));
+      body: `<img class="card-img" src="${img}" alt="Receipt card"><a class="btn" href="/u/${encodeURIComponent(c.name)}">See ${esc(c.name)}'s profile and tip the grind</a> <a class="btn ghost" href="/">Play Legends Only</a>` }));
   });
   app.get('/api/stories/latest', (req, res) => res.json({ stories: community.latestStories(10) }));
   app.get('/story/:id', (req, res) => {
@@ -364,7 +364,7 @@ ${p.lastDays.length ? `<h2>Last days</h2><div class="card">${p.lastDays.map(d =>
   app.get('/challenge/:slug', (req, res) => {
     const c = community.challengeDay(req.params.slug);
     if (!c) return res.status(404).send(page({ title: 'Not found', description: '', body: '<h1>No challenge here.</h1>' }));
-    res.send(page({ title: `Beat ${c.name}`, description: c.headline || `${c.name} scored ${c.targetScore} in one day on SML Rise Nd Grinds. ${c.beaters.length} people have beaten it.`, url: `${APP_URL}${c.url}`,
+    res.send(page({ title: `Beat ${c.name}`, description: c.headline || `${c.name} scored ${c.targetScore} in one day on Legends Only. ${c.beaters.length} people have beaten it.`, url: `${APP_URL}${c.url}`,
       body: `<h1>Beat ${esc(c.name)}</h1><p>${esc(c.headline || '')}</p><div class="card"><div class="row"><span class="muted">Score to beat</span><b style="color:#f5b942">${c.targetScore}</b></div>${c.targetCents ? `<div class="row"><span class="muted">${esc(c.name)} logged</span><b>${money(c.targetCents)}</b></div>` : ''}<div class="row"><span class="muted">Window</span><span>${esc(c.date)} to ${esc(c.ends)}</span></div><div class="row"><span class="muted">Players who tried</span><span>${c.attempts}</span></div><div class="row"><span class="muted">Beat it</span><b>${c.beaters.length}</b></div></div>
 ${c.plan ? `<h2>${esc(c.name)}'s plan</h2><div class="card">${(c.plan.tasks || []).map(t => `<div class="row"><span>${esc(t.icon || '')} ${esc(t.title)}</span><span class="muted">${t.hours ? t.hours + 'h' : ''}</span></div>`).join('')}</div>` : ''}
 ${c.beaters.length ? `<h2>Beat it</h2><div class="card">${c.beaters.slice(0, 10).map(b => `<div class="row"><span>${b.rank}. <a href="/u/${encodeURIComponent(b.name)}">${esc(b.name)}</a></span><b>${b.score}</b></div>`).join('')}</div>` : ''}
@@ -446,7 +446,7 @@ ${c.beaters.length ? `<h2>Beat it</h2><div class="card">${c.beaters.slice(0, 10)
 <h2>Verified track record</h2><div class="card"><div class="row"><span class="muted">Days on the grind</span><b>${r.days}</b></div><div class="row"><span class="muted">Plays approved by the bot</span><b>${r.approvedPlays}</b></div><div class="row"><span class="muted">Receipt-verified earnings</span><b>${money(r.verifiedCents)}</b></div><div class="row"><span class="muted">Employer confirmations</span><b>${r.employerConfirmations}</b></div><div class="row"><span class="muted">Best streak</span><b>${r.bestStreak}</b></div><div class="row"><span class="muted">Trust score</span><b>${r.trust}/100</b></div></div>
 ${r.categories.length ? `<h2>Work history by type</h2><div class="card">${r.categories.map(c => `<div class="row"><span>${esc(CATEGORIES[c.category] || c.category)}</span><span>${c.plays} plays · ${c.hours}h${c.verifiedCents ? ' · ' + money(c.verifiedCents) + ' verified' : ''}</span></div>`).join('')}</div>` : ''}
 ${r.skills.length ? `<h2>Skills</h2><div class="card">${r.skills.map(esc).join(' · ')}</div>` : ''}
-<p class="muted">Every line here was approved by the player's own Self-Made Legends bot, verified from a receipt, or confirmed by an employer through the app. Employers: open the full record inside the app.</p><a class="btn" href="/u/${encodeURIComponent(r.name)}">Legend page</a> <a class="btn ghost" href="/">Hire through SML Rise Nd Grinds</a>` }));
+<p class="muted">Every line here was approved by the player's own Self-Made Legends bot, verified from a receipt, or confirmed by an employer through the app. Employers: open the full record inside the app.</p><a class="btn" href="/u/${encodeURIComponent(r.name)}">Legend page</a> <a class="btn ghost" href="/">Hire through Legends Only</a>` }));
   });
   app.get('/api/reports/city', (req, res) => { const city = String(req.query.city || '').slice(0, 80); const month = /^\d{4}-\d{2}$/.test(req.query.month || '') ? req.query.month : todayUTC().slice(0, 7); if (!city) return res.status(400).json({ error: 'city required' }); res.json({ report: market.cityReport(city, month) }); });
   app.get('/report/:city', (req, res) => {
@@ -472,7 +472,7 @@ ${r.skills.length ? `<h2>Skills</h2><div class="card">${r.skills.map(esc).join('
     if (!c || !c.public) return res.status(404).send(page({ title: 'Not found', description: '', body: '<h1>No clip here.</h1>' }));
     const card = community.card(c.userId, c.date);
     res.send(page({ title: `${c.name}: ${c.title}`, description: `${c.seconds}s from ${c.name}'s live on Self-Made Legends.`, url: `${APP_URL}${c.url}`, image: card && card.public ? `${APP_URL}/api/cards/${c.userId}/${c.date}.svg` : undefined,
-      body: `<h1>${esc(c.title)}</h1><div class="muted">${esc(c.name)} · ${esc(c.date)} · ${c.views} views</div><video controls playsinline src="${esc(c.fileUrl)}" style="width:100%;border-radius:16px;border:1px solid #262c3d;margin:12px 0;background:#000"></video>${card && card.public ? `<img class="card-img" src="/api/cards/${esc(c.userId)}/${esc(c.date)}.svg" alt="Receipt card">` : ''}<a class="btn" href="/u/${encodeURIComponent(c.name)}">Tip ${esc(c.name.split(' ')[0])}</a> <a class="btn ghost" href="/">Play SML Rise Nd Grinds</a>` }));
+      body: `<h1>${esc(c.title)}</h1><div class="muted">${esc(c.name)} · ${esc(c.date)} · ${c.views} views</div><video controls playsinline src="${esc(c.fileUrl)}" style="width:100%;border-radius:16px;border:1px solid #262c3d;margin:12px 0;background:#000"></video>${card && card.public ? `<img class="card-img" src="/api/cards/${esc(c.userId)}/${esc(c.date)}.svg" alt="Receipt card">` : ''}<a class="btn" href="/u/${encodeURIComponent(c.name)}">Tip ${esc(c.name.split(' ')[0])}</a> <a class="btn ghost" href="/">Play Legends Only</a>` }));
   });
 
   // ── Health ───────────────────────────────────────────────────────────────
@@ -552,7 +552,7 @@ if (require.main === module) {
   setInterval(tick, 5 * 60 * 1000);
   setTimeout(tick, 3000);
   app.listen(PORT, () => {
-    console.log(`SML Rise Nd Grinds listening on http://localhost:${PORT}`);
+    console.log(`Legends Only listening on http://localhost:${PORT}`);
     console.log(crew.online ? 'Crew online: Claude + live web research' : 'Crew offline: playbook mode (set ANTHROPIC_API_KEY to enable the agents)');
     console.log(push.enabled ? 'Push notifications on' : 'Push off (set VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY)');
     console.log(`Default tier for new players: ${engine.defaultTier}${process.env.STRIPE_SECRET_KEY ? ' (billing on)' : ' (billing off)'}${process.env.ADMIN_KEY ? '' : ' · ADMIN_KEY not set: owner console is off'}`);

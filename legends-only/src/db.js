@@ -625,7 +625,7 @@ CREATE TABLE IF NOT EXISTS reports (
 `;
 
 function open(file) {
-  const target = file || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'sml-rise-nd-grinds.db');
+  const target = file || process.env.DB_PATH || path.join(__dirname, '..', 'data', 'legends-only.db');
   if (target !== ':memory:') fs.mkdirSync(path.dirname(target), { recursive: true });
   const db = new Database(target);
   db.pragma('journal_mode = WAL');

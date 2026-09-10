@@ -23,8 +23,8 @@ self.addEventListener('fetch', (e) => {
 
 self.addEventListener('push', (e) => {
   let data = {};
-  try { data = e.data ? e.data.json() : {}; } catch (_) { data = { title: 'SML Rise Nd Grinds', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(data.title || 'SML Rise Nd Grinds', {
+  try { data = e.data ? e.data.json() : {}; } catch (_) { data = { title: 'Legends Only', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(data.title || 'Legends Only', {
     body: data.body || '', icon: '/icon.svg', badge: '/icon.svg', tag: data.kind || 'sml', data: { url: data.url || '/', taskId: data.taskId || null }, renotify: data.kind === 'checkin',
   }));
 });

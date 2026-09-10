@@ -1,9 +1,9 @@
-# SML Rise Nd Grinds
+# Legends Only
 
-*Inside the app: Self-Made Legends. Outside: SML Rise Nd Grinds. By Self-Made Legends LLC.*
+*Inside the app: Self-Made Legends. Outside: Legends Only. By Self-Made Legends LLC.*
 **Your own crew of AI agents studies the real world every night and hands you a personal, legal, full-day money plan every morning. Everyone with the app competes on one world leaderboard.**
 
-SML Rise Nd Grinds is a standalone, phone-first app. It shares nothing with any other project: its own server, its own database, its own accounts.
+Legends Only is a standalone, phone-first app. It shares nothing with any other project: its own server, its own database, its own accounts.
 
 ## How a day works
 

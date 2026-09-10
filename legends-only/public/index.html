@@ -10,7 +10,7 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
-<title>SML Rise Nd Grinds</title>
+<title>Legends Only</title>
 <style>
   :root {
     --bg: #0b0d12; --card: #141824; --card-2: #1b2030; --line: #262c3d;
@@ -306,7 +306,7 @@
     <!-- ── Today ────────────────────────────────────────────────────── -->
     <section class="screen" id="screen-today">
       <div id="installBar" class="card install-bar hidden">
-        <div class="row between"><div><b>Put SML Rise Nd Grinds on your home screen</b><div class="small muted">Opens like an app. Your plan is there when you wake up.</div></div><button class="btn small" onclick="installApp()">Install</button></div>
+        <div class="row between"><div><b>Put Legends Only on your home screen</b><div class="small muted">Opens like an app. Your plan is there when you wake up.</div></div><button class="btn small" onclick="installApp()">Install</button></div>
       </div>
       <div id="checkinBar" class="card checkin-bar hidden"></div>
       <div id="todayLoading" class="card" style="text-align:center"><div class="spinner"></div><div class="muted">Your crew is finishing today's plan…</div></div>
@@ -384,7 +384,7 @@
       <div class="card">
         <button class="btn ghost" onclick="editProfile()">Update what the crew knows</button>
         <button class="btn ghost" style="margin-top:8px" onclick="logout()">Sign out</button>
-        <p class="legal">SML Rise Nd Grinds is made by Self-Made Legends LLC. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
+        <p class="legal">Legends Only is made by Self-Made Legends LLC. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p>
       </div>
     </section>
   </main>
@@ -902,7 +902,7 @@ async function shareCard(date) {
   try {
     if (navigator.share && navigator.canShare) {
       const png = await svgToPng('/api/cards/' + S.user.id + '/' + date + '.svg');
-      const file = new File([png], 'rise-n-grind-' + date + '.png', { type: 'image/png' });
+      const file = new File([png], 'legends-only-' + date + '.png', { type: 'image/png' });
       if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: 'Self-Made Legends', text }); return; }
       await navigator.share({ title: 'Self-Made Legends', text, url }); return;
     }

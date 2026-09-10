@@ -1,6 +1,6 @@
 {
-  "appId": "com.selfmadelegends.risendgrinds",
-  "appName": "SML Rise Nd Grinds",
+  "appId": "com.selfmadelegends.legendsonly",
+  "appName": "Legends Only",
   "webDir": "native/www",
   "server": {
     "url": "https://YOUR-DOMAIN.example",

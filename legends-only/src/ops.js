@@ -26,7 +26,7 @@ class Ops {
     const r = this.db.prepare('INSERT INTO ops_alerts (kind, severity, message, data, created_at) VALUES (?, ?, ?, ?, ?)').run(kind, severity, message, data ? JSON.stringify(data) : null, this.now());
     if (this.owner && this.engine) { try { this.engine.notify(this.owner, 'ops', `[${severity}] ${kind}`, message); } catch (_) {} }
     if (this.webhook) {
-      const payload = { text: `SML Rise Nd Grinds [${severity}] ${kind}: ${message}`, kind, severity, message, data };
+      const payload = { text: `Legends Only [${severity}] ${kind}: ${message}`, kind, severity, message, data };
       try { if (this.post) await this.post(this.webhook, payload); else await fetch(this.webhook, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); } catch (e) { this.logError('alert-webhook', e); }
     }
     return r.lastInsertRowid;

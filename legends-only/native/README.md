@@ -28,7 +28,7 @@ npx cap open android          # build a signed bundle from Android Studio
 
 ## Store listing
 
-- Name outside the app: **SML Rise Nd Grinds**. Inside, everything is Self-Made Legends.
+- Name outside the app: **Legends Only**. Inside, everything is Self-Made Legends.
 - Icon: `public/icon.svg` (export 1024x1024 PNG). Splash: gold seal on `#0b0d12`.
 - Category: Productivity (secondary: Business).
 - Push: web push works inside the wrapper on Android. On iOS, add `@capacitor/push-notifications` and an APNs key, then post the device token to `/api/push/subscribe` with `{ subscription: { endpoint: 'apns:<token>' } }` once an APNs sender is added to `src/push.js`. Until then iOS users get the in-app inbox and Final Call.

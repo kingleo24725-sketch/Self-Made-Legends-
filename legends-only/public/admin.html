@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Owner Console · SML Rise Nd Grinds</title>
+<title>Owner Console · Legends Only</title>
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <style>
   body{background:#0b0d12;color:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px 16px 60px;line-height:1.5}
@@ -16,7 +16,7 @@
 </style>
 </head>
 <body><main>
-<h1>SML Rise Nd Grinds · Owner Console <span class="muted" style="font-weight:400;font-size:.7em">by SML</span></h1>
+<h1>Legends Only · Owner Console <span class="muted" style="font-weight:400;font-size:.7em">by SML</span></h1>
 <div class="card"><div class="row"><input type="password" id="key" placeholder="Admin key (ADMIN_KEY)" style="flex:1"><button onclick="saveKey()">Open</button></div><div class="muted" id="err"></div></div>
 <div id="console" hidden>
   <div class="card"><h2>Health and alarms</h2><div class="grid" id="health"></div><div class="row" style="margin-top:8px"><button class="ghost" onclick="reconcileNow()">Reconcile yesterday now</button></div><div id="alerts" style="margin-top:10px"></div><details style="margin-top:8px"><summary class="muted">Reconciliations and recent errors</summary><table id="recon"></table><div id="errors" class="muted" style="font-size:.85em;margin-top:8px"></div></details></div>
@@ -34,12 +34,12 @@
   <div class="card"><h2>Players</h2><div class="row"><button class="ghost" onclick="closeMonth()">Close last month (Legend Fee)</button><button class="ghost" onclick="runShow()">Write this week's show</button></div><table id="players"></table></div>
 </div>
 <script>
-let KEY = ''; try { KEY = localStorage.getItem('rng.adminKey') || ''; } catch (_) {}
+let KEY = ''; try { KEY = localStorage.getItem('legends.adminKey') || ''; } catch (_) {}
 const $ = (id) => document.getElementById(id);
 const money = (c) => '$' + (Number(c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 async function api(path, opts = {}) { const r = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-key': KEY }, body: opts.body ? JSON.stringify(opts.body) : undefined }); const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Failed'); return d; }
-function saveKey() { KEY = $('key').value.trim(); try { localStorage.setItem('rng.adminKey', KEY); } catch (_) {} load(); }
+function saveKey() { KEY = $('key').value.trim(); try { localStorage.setItem('legends.adminKey', KEY); } catch (_) {} load(); }
 async function load() {
   $('err').textContent = '';
   try {
