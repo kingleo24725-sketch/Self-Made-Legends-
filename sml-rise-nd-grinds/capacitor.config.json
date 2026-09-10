@@ -1,0 +1,15 @@
+{
+  "appId": "com.selfmadelegends.risendgrinds",
+  "appName": "SML Rise Nd Grinds",
+  "webDir": "native/www",
+  "server": {
+    "url": "https://YOUR-DOMAIN.example",
+    "cleartext": false
+  },
+  "ios": { "contentInset": "always", "backgroundColor": "#0b0d12" },
+  "android": { "backgroundColor": "#0b0d12", "allowMixedContent": false },
+  "plugins": {
+    "SplashScreen": { "backgroundColor": "#0b0d12", "launchAutoHide": true, "showSpinner": false },
+    "PushNotifications": { "presentationOptions": ["badge", "sound", "alert"] }
+  }
+}

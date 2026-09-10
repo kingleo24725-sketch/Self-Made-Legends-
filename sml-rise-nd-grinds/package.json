@@ -10,7 +10,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "native:setup": "npm install --no-save @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android",
+    "native:add:ios": "npx cap add ios",
+    "native:add:android": "npx cap add android",
+    "native:sync": "npx cap sync"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

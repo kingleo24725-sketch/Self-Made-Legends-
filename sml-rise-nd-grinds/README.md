@@ -37,17 +37,37 @@ You are your own boss. The crew plans, you decide.
 - **Mentors.** Players with seven closed days or a world win can take paid questions from newcomers.
 - **Safety mode.** In-person plays get a "share where I am" link with I'm here / I'm done / need help check-ins that a contact can watch live.
 
+## Day one, trust, squads, employers, clips
+
+- **Day one.** The first plan carries a three-move card: finish one play, tell your bot, get approved. The first approval on any path (note, receipt, employer confirmation) earns the First Play Approved badge.
+- **One account per phone.** The app keeps a random device id; a phone that already carries an account cannot register another. **Phone verification** by text (Twilio; the code prints to the server log without it). Banned accounts lose their sessions and cannot sign in.
+- **Trust score, 0 to 100.** Up with a verified phone, approved days, receipts, approvals, and good crowd ratings; down with rejections and shared devices. It decides how much proof the Auditor wants: under 30, anything claiming more than $150 needs a receipt or a photo; over 60, a short note is enough. Shown on the Me tab and on the public résumé.
+- **Ops alarms.** `/api/health` for the load balancer. The scheduler checks for late plans, error spikes, approval backlogs, and unpaid balances, posts alarms to `ALERT_WEBHOOK_URL` and the owner's inbox, and ends lives left open. **Money reconciliation** runs nightly: ledger against Stripe's balance transactions when Stripe is on, otherwise the ledger against payout balances; a mismatch is an alarm. All of it is on the owner console.
+- **Squads.** Two to five Legends, a code to join, a squad board by the week's points, and a **crew call** (mesh video for the squad) from the World tab.
+- **Bot vs bot.** Put your bot up against theirs for a day; the crowd votes on the two plans, the score at close decides it, and the winner gets the badge.
+- **Local sponsor tiles.** The owner sells the featured tile in a city for a date range; it sits at the top of the Gig Finder for players there and counts clicks. Paid in full to the platform.
+- **Employers.** Any account can register a business and **post a shift straight into the Gig Finder** for its city ($5 a posting). A player claims it and it becomes a graded play on their day. When the employer confirms the work, the play is approved and receipt-verified, the pay lands in the player's balance, and the platform keeps 10%. Employers can search **verified track records** and open a full one for $2.
+- **Verified résumé.** Every public Legend has `/u/<name>/resume`: days, approved plays by type, receipt-verified dollars, employer confirmations, trust. Nothing on it is self-reported.
+- **City data report.** `/report/<city>?month=YYYY-MM`: anonymized, what paid per hour, done rates, grades. Minimum three plans per play to appear. The first data product.
+- **Clips.** While a host is live, the phone records in ten-second chunks; when the live ends, the busiest minute by chat uploads as a clip with a share page and the day's receipt card next to it.
+- **Native wrappers.** `capacitor.config.json` and `native/README.md` put the same app in the stores with Capacitor. Built on a laptop with Xcode and Android Studio, not here.
+
+**Not built: a Rise N Grind Bank.** Holding balances, cards, or instant cash-out is banking and needs a partner (Stripe Treasury, Unit, or similar) with KYC and a compliance program. The payout balance and Stripe Connect are the honest version today; the partner integration is the next step once the app has volume.
+
 ## How the platform gets paid
 
 Every dollar that moves through the app goes through one ledger, and the owner console shows it by month.
 
 | Stream | Platform cut (default, adjustable in the console) |
 |---|---|
-| Pro and Boss subscriptions | 100% |
+| Veteran and Hall of Fame memberships | 100% |
 | Tips from fans to Legends | 15% |
 | Mentor questions | 20% |
 | Bracket entry fees and sponsored prize pools | 10% |
 | **Legend Fee** on receipt-verified earnings | 5% per month, invoiced through Stripe to players with a card on file |
+| Employer shift postings | $5 per posting, plus 10% of the pay when the work is confirmed |
+| Employer résumé views | $2 per full record, once per 30 days per Legend |
+| Local sponsor tiles | 100% |
 
 The Legend Fee is the "fee on money made through the app." It is charged only on earnings the app can prove (receipts), and only to players who can be billed, because that is the only version of it that is enforceable and fair. Unverified earnings are never charged.
 
@@ -127,11 +147,14 @@ Without an API key the app runs in **playbook mode**: every player still gets a 
 | `ANTHROPIC_API_KEY` | The live crew (Scout, Strategist, Coach, Auditor) |
 | `ADMIN_KEY` | The owner console at `/admin.html` |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Push notifications (`npx web-push generate-vapid-keys`) |
-| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_PRICE_BOSS` | Paid plans, tips through Checkout, Connect payouts to Legends, Legend Fee invoices |
+| `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_VETERAN`, `STRIPE_PRICE_HOF` | Paid plans, tips through Checkout, Connect payouts to Legends, Legend Fee invoices |
 | `TIP_FEE_PCT`, `MENTOR_FEE_PCT`, `POOL_FEE_PCT`, `SUCCESS_FEE_PCT` | Starting fee percentages (the console can change them later) |
 | `APP_URL` | Absolute URL for invite links and Stripe redirects |
 | `DB_PATH` | Where the SQLite file lives (mount a volume in production) |
 | `DEFAULT_TIER` | Membership for players who have not paid (`free`; set `hof` to unlock everything while testing) |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Phone verification texts (without them the code prints to the server log) |
+| `ALERT_WEBHOOK_URL`, `OWNER_USER_ID` | Where ops alarms go |
+| `DATA_DIR` | Clips and other files (mount a volume) |
 
 ## Deploy
 
@@ -148,6 +171,11 @@ src/community.js   Feed, cards, stories, Final Call, University, safety, mentors
 src/social.js      Faces, friends, messages, call signaling, live rooms, bot ratings
 src/gigs.js        Gig Finder: real gigs and real search links, claims
 src/learning.js    Per-user, per-city, global learning and Bot IQ
+src/trust.js       Phone verification, one account per device, trust score, bans
+src/ops.js         Health checks, alarms, nightly money reconciliation
+src/squads.js      Squads, squad board, crew calls, bot vs bot
+src/market.js      Sponsor tiles, employers and postings, verified résumés, city reports
+src/clips.js       Clips from lives
 src/money.js       Fees, ledger, tips, payouts, Legend Fee, revenue
 src/university.js  Lessons and quizzes
 src/auth.js        Accounts, sessions, invite codes
@@ -179,7 +207,13 @@ GET  /api/admin/revenue|fees|ideas|players   POST /api/admin/fees|challenge-days
 GET  /api/people?q=   GET/POST/DELETE /api/friends/:id   POST /api/block/:id   GET /api/messages   GET/POST /api/messages/:id   POST /api/calls/:id/signal
 GET/POST/DELETE /api/live   POST /api/live/:id/join|leave|signal|chat|rate   GET /api/live/:id/chat   GET /api/avatar/:userId   POST/DELETE /api/me/avatar
 POST /api/gigs/refresh   POST /api/gigs/:id/claim|dismiss   GET /api/bot   GET /api/hall-of-fame
-Public pages: /u/:name  /card/:userId/:date  /story/:id  /safe/:token  /challenge/:slug  /show/:week  /hall-of-fame  /admin.html
+POST /api/phone/send {phone}   POST /api/phone/verify {code}   GET /api/trust   GET /api/health
+GET/POST/DELETE /api/squads   POST /api/squads/join {code}   POST /api/squads/room   POST /api/squads/room/:id/leave|signal
+GET/POST /api/bot-duels   POST /api/bot-duels/:id/vote {pick}
+GET /api/sponsor/:id/click   GET /api/postings   POST /api/postings/:id/claim   GET/POST /api/employer   POST /api/employer/postings   POST /api/employer/claims/:id/confirm   GET /api/employer/search   GET /api/employer/resume/:userId
+GET /api/u/:name/resume   GET /api/reports/city?city=&month=   GET /api/clips   GET /api/clips/mine   POST /api/clips (raw video)   GET /api/clips/:id/video   DELETE /api/clips/:id   GET /api/live/:id/best-window
+GET /api/admin/health|sponsor-tiles|postings|reports   POST /api/admin/alerts/:id/resolve|reconcile|ban/:userId|sponsor-tiles|employers/:userId/verify
+Public pages: /u/:name  /u/:name/resume  /card/:userId/:date  /story/:id  /safe/:token  /challenge/:slug  /show/:week  /hall-of-fame  /report/:city  /clip/:id  /admin.html
 ```
 
 Authenticated routes take `Authorization: Bearer <token>`.

@@ -521,7 +521,6 @@ class Engine {
     const verdict = await this.crewFor(userId).approveTask({ title: fresh.title, hours: fresh.hours, difficulty: fresh.difficulty, category: fresh.category }, { note: fresh.note, earningsCents: fresh.earnings_cents, verifiedCents: fresh.verified_cents, imageBase64, mediaType, proof });
     const out = this._applyApproval(userId, fresh, verdict, sha);
     if (this.trust) { try { this.trust.recompute(userId); } catch (_) {} }
-    if (out.approved && this.db.prepare("SELECT COUNT(*) AS c FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE p.user_id = ? AND t.approval = 'approved'").get(userId).c === 1) this.awardBadge(userId, 'first_approved', fresh.date, 'First play approved by your bot');
     return out;
   }
 
@@ -531,6 +530,8 @@ class Engine {
       const points = this.taskPoints(d, row.hours);
       this.db.prepare("UPDATE tasks SET approval = 'approved', approval_reason = ?, difficulty = ?, points = ?, graded = 1, proof_sha = COALESCE(?, proof_sha) WHERE id = ?").run(verdict.reason || 'Approved', d, points, sha, row.id);
       this.logCrew(userId, row.date, 'Auditor', `Approved "${row.title}" (${d}/10, ${points.toLocaleString()} points): ${verdict.reason}`);
+      // Every approval path (note, receipt, employer confirmation) can be the first one: day one's badge.
+      if (this.db.prepare("SELECT COUNT(*) AS c FROM tasks t JOIN plans p ON p.id = t.plan_id WHERE p.user_id = ? AND t.approval = 'approved'").get(userId).c === 1) this.awardBadge(userId, 'first_approved', row.date, 'First play approved by your bot');
       if (this.community && !quiet) this.community.onTaskDone(userId, { title: row.title, earningsCents: row.earnings_cents, points });
       this.onEvent(userId, 'approved', { taskId: row.id, points, difficulty: d });
     } else {

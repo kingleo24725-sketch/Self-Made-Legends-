@@ -37,6 +37,17 @@
   .gig { padding: 10px 0; border-bottom: 1px dashed var(--line); font-size: 0.9em; }
   .gig b { display: block; } .gig .meta { color: var(--muted); font-size: .85em; }
   .gig .row { margin-top: 6px; }
+  .sponsor { border: 1px solid rgba(245,185,66,.45); background: rgba(245,185,66,.06); border-radius: 12px; padding: 10px; margin: 8px 0; font-size: .9em; }
+  .sponsor small { color: var(--muted); display: block; }
+  .shift { border-left: 3px solid var(--green); padding: 8px 0 8px 10px; margin: 6px 0; font-size: .9em; }
+  .dayone { border-color: rgba(245,185,66,.6); }
+  .dayone ol { margin: 8px 0 0 18px; font-size: .92em; } .dayone li { margin: 4px 0; }
+  .squad-m { display: flex; justify-content: space-between; padding: 4px 0; font-size: .9em; border-bottom: 1px dashed var(--line); }
+  .duelbox { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .9em; }
+  .duelbox .side { text-align: center; } .duelbox .side b { display: block; } .duelbox .vs { color: var(--muted); }
+  .clip { margin: 8px 0; } .clip video { width: 100%; border-radius: 12px; background: #000; max-height: 260px; }
+  .trust { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 6px 0; } .trust i { display: block; height: 100%; background: var(--gold); }
+  .grid2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .people-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .92em; }
   .people-row .who { flex: 1; } .people-row .who small { display: block; color: var(--muted); }
   .online { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-left: 6px; }
@@ -324,6 +335,8 @@
         <div class="row" style="margin-bottom:10px"><input type="text" id="duelName" placeholder="Their name or email" style="flex:1"><button class="btn small purple" onclick="sendDuel()">Challenge</button></div>
         <div id="duels" class="small muted">Pick a rival. Same day, higher score wins, badge for the winner.</div>
       </div>
+      <div class="card"><h3>Self-Made Legends Squads</h3><p class="small muted">Two to five Legends. Your scores add up on the squad board, and your squad gets its own crew call.</p><div id="squadBody" class="small">Loading…</div><div id="squadBoard" style="margin-top:8px"></div></div>
+      <div class="card"><h3>Self-Made Legends Bot vs Bot</h3><p class="small muted">Put your bot up against theirs for a day. The crowd votes on the plans; the score at close decides it.</p><div class="row" style="margin-bottom:10px"><input type="text" id="botDuelName" placeholder="Their name" style="flex:1"><button class="btn small purple" onclick="sendBotDuel()">Bot vs bot</button></div><div id="botDuels" class="small muted">No bot fights yet.</div></div>
       <div class="card"><h3>All time</h3><div id="lbAll"></div></div>
       <div class="card"><h3>The Bench</h3><p class="small muted">Idle days cost points, and it grows every day in a row. This is who let the week get away from them.</p><div id="bench"></div></div>
       <div class="card"><h3>Mentors</h3><div id="mentors" class="small muted">Loading…</div></div>
@@ -335,6 +348,8 @@
     <section class="screen" id="screen-people">
       <div class="card"><div class="row between"><h2>Self-Made Legends Live</h2><button class="btn small purple" onclick="goLive()">Go live</button></div><div id="liveList" class="small muted">Nobody is live right now. Go live and tell the world how hard you worked and whether your bot is amazing or garbage.</div></div>
       <div class="card" id="liveRoom" hidden></div>
+      <div class="card" id="crewRoom" hidden></div>
+      <div class="card"><h3>Self-Made Legends Clips</h3><p class="small muted">The best minute of every live, picked by the chat, with the receipt card next to it. Auto-saved when a host ends a live.</p><div id="clipList" class="small muted">No clips yet. Go live.</div></div>
       <div class="card"><h3>Self-Made Legends Messages</h3><div class="row" style="margin-bottom:8px"><input type="text" id="peopleQ" placeholder="Find anyone by name" oninput="searchPeople(this.value)" style="flex:1"></div><div id="peopleResults"></div><div id="msgInbox" class="small muted">No conversations yet. Message anyone.</div></div>
       <div class="card" id="threadCard" hidden></div>
       <div class="card"><h3>Self-Made Legends Friends</h3><p class="small muted">Friends can video call each other, face to face. Anyone can message.</p><div id="friendList"></div><div id="callLog" class="small muted" style="margin-top:8px"></div></div>
@@ -346,6 +361,8 @@
       <div class="card hero" id="meHero"></div>
       <div class="card"><h3>Your face</h3><div class="row"><img class="avatar lg" id="meAvatar" src="" alt=""><div style="flex:1"><div class="small muted">A photo of you, or your likeness. It shows on the feed, your Legend page, and your receipt cards.</div><div class="row" style="margin-top:8px;flex-wrap:wrap"><label class="btn small">📷 Photo<input type="file" accept="image/*" hidden onchange="uploadAvatar(this)"></label><button class="btn small ghost" onclick="likeness('initials')">Initials</button><button class="btn small ghost" onclick="likeness('legend')">Crown</button></div></div></div></div>
       <div class="card" id="botCard"><h3>Your Self-Made Legends bot</h3><div id="botBody" class="small"></div></div>
+      <div class="card" id="trustCard"><h3>Trust and verification</h3><div id="trustBody" class="small"></div></div>
+      <div class="card" id="employerCard"><h3>Hire Legends (employer mode)</h3><div id="employerBody" class="small"></div></div>
       <div class="card" id="goalCard" hidden></div>
       <div class="card"><h3>Money from fans</h3><div id="fanMoney" class="small"></div></div>
       <div class="card" id="mentorCard"><h3>Mentoring</h3><div id="mentorBody" class="small"></div></div>
@@ -386,6 +403,8 @@
 const S = { token: null, user: null, profile: null, config: null, today: null, me: null, mode: 'signin', deferredInstall: null, es: null, invite: null,
   lb: { scope: 'world', league: '', mode: 'all', category: '' }, checkins: [], ask: null };
 try { S.token = localStorage.getItem('sml.token'); } catch (_) {}
+// One account per phone: a random id that lives in this browser for good.
+try { S.deviceId = localStorage.getItem('sml.device'); if (!S.deviceId) { S.deviceId = 'd_' + Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, '0')).join(''); localStorage.setItem('sml.device', S.deviceId); } } catch (_) { S.deviceId = null; }
 try { const q = new URLSearchParams(location.search); S.invite = q.get('invite'); S.ask = q.get('ask'); if (q.get('billing') === 'success') setTimeout(() => toast('Payment received. Your crew just got stronger.'), 800); if (q.get('payouts') === 'done') setTimeout(() => toast('Payout account connected. Tips go straight to you now.'), 800); } catch (_) {}
 
 const $ = (id) => document.getElementById(id);
@@ -394,7 +413,7 @@ const money = (cents) => { const c = Number(cents || 0); const whole = c % 100 =
 const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000); };
 const RANK_SHORT = { rookie: 'Rookie', pro: 'Pro', allstar: 'All Star', superstar: 'Superstar', veteran: 'Veteran', hof: 'Hall of Fame' };
 const leagueTag = (l) => `<span class="league ${esc(l || 'rookie')}">${esc(RANK_SHORT[l] || l || 'Rookie')}</span>`;
-const BADGE_LABELS = { hall_of_fame: ['🏛️', 'Hall of Fame'], world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
+const BADGE_LABELS = { first_approved: ['🤖', 'First play approved'], bot_vs_bot: ['🧠', 'Bot vs bot'], hall_of_fame: ['🏛️', 'Hall of Fame'], world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
 const CAT_LABELS = { gig: 'Gig', local: 'Local', online: 'Online', beauty: 'Beauty', care: 'Care', food: 'Food' };
 const feedIcon = (k) => ({ done: '✅', verified: '💵', champion: '👑', bracket: '🏆', tip: '💛', prize: '💰' }[k] || '•');
 function renderFeed(id, items) { const el = $(id); if (!el) return; el.innerHTML = items.length ? items.slice(0, 25).map((f) => `<div><span class="k">${feedIcon(f.kind)}</span><span>${esc(f.text)}</span><time>${fmtTime(f.at)}</time></div>`).join('') : '<span class="muted small">Quiet right now.</span>'; }
@@ -438,7 +457,7 @@ async function submitAuth(e) {
   $('authError').textContent = '';
   $('authBtn').disabled = true;
   try {
-    const body = { email: $('email').value, password: $('password').value, displayName: $('displayName').value, acceptTerms: $('acceptTerms').checked, referralCode: S.invite || undefined };
+    const body = { email: $('email').value, password: $('password').value, displayName: $('displayName').value, acceptTerms: $('acceptTerms').checked, referralCode: S.invite || undefined, deviceId: S.deviceId || undefined };
     const r = await api('/api/auth/' + (S.mode === 'signin' ? 'login' : 'register'), { method: 'POST', body });
     setToken(r.token); S.user = r.user;
     if (S.invite) { S.invite = null; history.replaceState(null, '', '/'); }
@@ -529,8 +548,9 @@ function renderToday() {
     ${!closed ? `<div class="card"><div class="row between"><div><h3 style="margin:0">${t.localHour >= 20 ? 'Final Call' : 'Day closes at midnight'}</h3><div class="small muted">${t.localHour >= 20 ? 'Last hours. Log everything.' : 'Final Call at 8pm with your rank and the gap to the leader.'}</div></div><div class="countdown" id="countdown">${countdown(t.localMinutes)}</div></div></div>` : ''}
     ${(t.challengeDays || []).map((c) => `<div class="card" style="border-color:rgba(181,140,255,.5)"><h3>Self-Made Legends Challenge Day</h3><b>Beat ${esc(c.name)}: ${c.targetScore} points</b><div class="small muted">${esc(c.headline || '')} · ${c.beaters.length} beat it so far · through ${esc(fmtDate(c.ends, true))}</div><a class="small" href="${esc(c.url)}" target="_blank">See the challenge page</a></div>`).join('')}
     ${t.bracket ? `<div class="card"><div class="row between"><div><h3 style="margin:0">Self-Made Legends Money Bracket</h3><div class="small muted">${t.bracket.status === 'running' ? (t.bracket.alive ? `Round ${t.bracket.round} of ${Math.log2(t.bracket.size)}. Higher score today wins.` : t.bracket.entered ? 'You are out this week. Next bracket opens Saturday.' : 'Running. Enter next week\'s.') : t.bracket.entered ? `You are in for the week of ${esc(fmtDate(t.bracket.weekStart, true))}.` : `Enter the week of ${esc(fmtDate(t.bracket.weekStart, true))}. Seeded by verified earnings.`}${t.bracket.poolCents ? ` Pool ${money(t.bracket.poolCents)}.` : ''}</div></div>${!t.bracket.entered && t.bracket.status === 'open' ? '<button class="btn small" onclick="enterBracket()">Enter</button>' : ''}</div></div>` : ''}
+    ${p.firstDay && !closed ? `<div class="card dayone"><h3>Day one. Three moves.</h3><ol><li><b>Finish one play</b> below and tap <i>Done</i>. Pick the easiest if you want, it still counts.</li><li><b>Tell your bot</b> what you did (or add a receipt or a photo). Points only exist after it approves.</li><li><b>Get approved.</b> That is your first points, your first badge, and day one of your streak.</li></ol><div class="small muted" style="margin-top:8px">Everything else on this screen is extra. Come back tomorrow at 4am and the crew has a new plan waiting.</div></div>` : ''}
     ${t.rank && t.rank.benched ? `<div class="card" style="border-color:rgba(255,107,107,.5)"><h3 style="color:var(--red)">You are on the Bench</h3><div class="small">${t.rank.idleStreak} days with nothing done. Every idle day costs more. Finish one play today and you are back in the game.</div></div>` : ''}
-    ${t.gigs ? renderGigs(t.gigs, t.bot) : ''}
+    ${t.gigs ? renderGigs(t.gigs, t.bot, t.sponsors, t.postings) : ''}
     ${t.memory.lastSummary ? `<div class="card"><h3>Coach, last night</h3><div class="small">${esc(t.memory.lastSummary)}</div></div>` : ''}
     ${t.lesson ? renderLesson(t.lesson) : ''}
     ${t.safety ? renderSafety(t.safety) : ''}
@@ -676,13 +696,16 @@ function renderCheckins() {
   bar.classList.remove('hidden');
 }
 
-function renderGigs(list, bot) {
+function renderGigs(list, bot, sponsors = [], postings = []) {
   const open = list.filter((g) => g.status === 'found');
   return `<div class="card"><div class="row between"><div><h3 style="margin:0">Self-Made Legends Gig Finder</h3><div class="small muted">${open.length ? `${open.length} real ${open[0].source === 'crew' ? 'gigs your bot found' : 'places to find paying work'} for today. Claim one and it joins your day, graded.` : 'Nothing open right now. Refresh to send the bot back out.'}</div></div><button class="btn small ghost" onclick="refreshGigs()">↻</button></div>
+    ${(sponsors || []).map((sp) => `<a class="sponsor" href="/api/sponsor/${sp.id}/click" target="_blank" rel="noopener" style="display:block;text-decoration:none;color:inherit"><b>${esc(sp.title)}</b><small>${esc(sp.sponsor)} · local sponsor</small>${sp.body ? `<div class="small">${esc(sp.body)}</div>` : ''}</a>`).join('')}
+    ${(postings || []).length ? `<div class="small muted" style="margin-top:6px">Posted straight into the app by local employers. Claim it, do the work, they confirm it here, your bot approves it, and the pay lands in your balance.</div>` + postings.slice(0, 5).map((ps) => `<div class="shift"><b>${esc(ps.org)}: ${esc(ps.title)}</b><div class="meta small muted">${esc(fmtDate(ps.date, true))} · ${ps.hours}h · <b style="color:var(--green)">${money(ps.payCents)}</b> · grade ${ps.difficulty}/10 · ${ps.points.toLocaleString()} pts · ${ps.slots - ps.filled} spot${ps.slots - ps.filled === 1 ? '' : 's'}</div>${ps.body ? `<div class="small">${esc(ps.body)}</div>` : ''}<div class="row" style="margin-top:6px"><button class="btn small" onclick="claimPosting(${ps.id})">Claim this shift</button></div></div>`).join('') : ''}
     ${open.slice(0, 8).map((g) => `<div class="gig"><b>${esc(g.title)}</b><div class="meta">${esc(g.platform)}${g.pay ? ' · ' + esc(g.pay) : ''} · ${g.hours}h · <span class="diff ${g.difficulty >= 7 ? 'hard' : g.difficulty >= 4 ? 'mid' : ''}">grade ${g.difficulty}/10</span> · <span class="pts">${g.points.toLocaleString()} pts</span></div><div class="small muted">${esc(g.why)}</div><div class="row"><a class="btn small ghost" href="${esc(g.url)}" target="_blank" rel="noopener">Open</a><button class="btn small" onclick="claimGig(${g.id})">Claim it</button><button class="btn small ghost" onclick="dismissGig(${g.id})">✕</button></div></div>`).join('')}
     ${bot ? `<div class="small muted" style="margin-top:8px">Bot IQ <b style="color:var(--gold)">${bot.iq}</b> · learned from ${bot.outcomesFromYou} of your outcomes and ${bot.outcomesFromWorld.toLocaleString()} from the world${bot.rating && bot.rating.count ? ` · crowd rates it ${bot.rating.average}/5` : ''}</div>` : ''}</div>`;
 }
 async function refreshGigs() { try { toast('Sending the bot out…'); const r = await api('/api/gigs/refresh', { method: 'POST' }); S.today.gigs = r.gigs; renderToday(); } catch (err) { toast(err.message); } }
+async function claimPosting(id) { try { const r = await api('/api/postings/' + id + '/claim', { method: 'POST' }); toast(`On your day: ${r.task.title}. Message ${r.posting.org} to confirm details.`); loadToday(); } catch (err) { toast(err.message); } }
 async function claimGig(id) { try { const r = await api('/api/gigs/' + id + '/claim', { method: 'POST' }); toast(`Added: ${r.task.title} · ${r.task.points.toLocaleString()} points if you finish it`); loadToday(); } catch (err) { toast(err.message); } }
 async function dismissGig(id) { try { await api('/api/gigs/' + id + '/dismiss', { method: 'POST' }); S.today.gigs = S.today.gigs.filter((g) => g.id !== id); renderToday(); } catch (_) {} }
 async function uploadAvatar(input) { const f = input.files && input.files[0]; if (!f) return; try { const img = await shrinkSquare(f, 320); await api('/api/me/avatar', { method: 'POST', body: { image: img } }); toast('Looking good.'); loadMe(); } catch (err) { toast(err.message); } input.value = ''; }
@@ -700,6 +723,7 @@ async function loadPeople() {
     $('friendList').innerHTML = f.friends.length ? f.friends.map((x) => `<div class="people-row"><img class="avatar" src="/api/avatar/${esc(x.userId)}" alt=""><div class="who"><b>${esc(x.name)}</b>${x.online ? '<span class="online"></span>' : ''}<small>${x.status === 'friends' ? (x.online ? 'online' : 'offline') : x.status === 'incoming' ? 'wants to be friends' : 'request sent'}</small></div>${x.status === 'friends' ? `<button class="btn small" onclick="startCall('${esc(x.userId)}','${esc(x.name)}')">📹 Call</button><button class="btn small ghost" onclick="openThread('${esc(x.userId)}')">Msg</button>` : x.status === 'incoming' ? `<button class="btn small" onclick="addFriend('${esc(x.userId)}')">Accept</button>` : '<span class="small muted">pending</span>'}</div>`).join('') : '<span class="muted small">Find someone above and add them.</span>';
     $('callLog').innerHTML = f.calls.length ? 'Recent calls: ' + f.calls.slice(0, 5).map((c) => `${c.outgoing ? '↗' : '↙'} ${esc(c.withName)} ${c.status === 'ended' ? Math.round(c.seconds / 60) + 'm' : c.status}`).join(' · ') : '';
     renderLiveList(l.live);
+    loadClips();
   } catch (err) { toast(err.message); }
 }
 let _pq;
@@ -745,11 +769,78 @@ async function endCall(tell = true) { if (tell && S.people.callWith) api('/api/c
 function toggleMic() { if (!S.people.stream) return; const t = S.people.stream.getAudioTracks()[0]; if (!t) return; t.enabled = !t.enabled; $('micBtn').textContent = t.enabled ? 'Mute' : 'Unmute'; }
 async function flipCam() { if (!S.people.stream) return; const cur = S.people.stream.getVideoTracks()[0]; const mode = cur && cur.getSettings().facingMode === 'environment' ? 'user' : 'environment'; try { const ns = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode }, audio: true }); const nt = ns.getVideoTracks()[0]; const pcs = [S.people.pc, ...Object.values(S.people.viewerPcs)].filter(Boolean); for (const pc of pcs) { const s = pc.getSenders().find((x) => x.track && x.track.kind === 'video'); if (s) await s.replaceTrack(nt); } cur.stop(); S.people.stream.removeTrack(cur); S.people.stream.addTrack(nt); $('localVideo').srcObject = S.people.stream; } catch (_) {} }
 
+// Crew call: everyone in the squad, mesh, up to five.
+S.crew = { room: null, pcs: {}, stream: null };
+async function crewCall() {
+  try {
+    const stream = await getMedia();
+    const r = await api('/api/squads/room', { method: 'POST' });
+    S.iceServers = r.iceServers; S.crew.room = r.roomId; S.crew.squad = r.squad;
+    $('videoLabel').textContent = 'Crew call · ' + r.squad.name; $('videoWrap').classList.add('on'); $('remoteVideo').srcObject = null;
+    renderCrewRoom();
+    for (const peer of r.peers) await crewOffer(peer, stream);
+    toast(r.peers.length ? 'Calling your squad…' : 'You are in. Squad-mates get a notification.');
+  } catch (err) { toast(err.message); }
+}
+function crewPc(peerId) {
+  const pc = new RTCPeerConnection({ iceServers: S.iceServers || [{ urls: 'stun:stun.l.google.com:19302' }] });
+  pc.onicecandidate = (e) => { if (e.candidate) api('/api/squads/room/' + S.crew.room + '/signal', { method: 'POST', body: { to: peerId, type: 'ice', payload: e.candidate } }).catch(() => {}); };
+  pc.ontrack = (e) => { let v = $('crew-' + peerId); if (!v) { v = document.createElement('video'); v.id = 'crew-' + peerId; v.autoplay = true; v.playsInline = true; v.style.cssText = 'width:100%;border-radius:10px;background:#000;margin-top:6px'; $('crewVideos').appendChild(v); } v.srcObject = e.streams[0]; if (!$('remoteVideo').srcObject) $('remoteVideo').srcObject = e.streams[0]; };
+  S.crew.pcs[peerId] = pc; return pc;
+}
+async function crewOffer(peerId, stream) { const pc = crewPc(peerId); stream.getTracks().forEach((t) => pc.addTrack(t, stream)); const offer = await pc.createOffer(); await pc.setLocalDescription(offer); await api('/api/squads/room/' + S.crew.room + '/signal', { method: 'POST', body: { to: peerId, type: 'offer', payload: offer } }); }
+async function onCrewSignal(d) {
+  try {
+    if (d.type === 'offer') { if (!S.crew.room) { if (!confirm('Your squad is on a crew call. Join?')) return; S.crew.room = d.roomId; const r = await api('/api/squads/room', { method: 'POST' }); S.iceServers = r.iceServers; S.crew.squad = r.squad; $('videoLabel').textContent = 'Crew call · ' + r.squad.name; $('videoWrap').classList.add('on'); renderCrewRoom(); } const stream = await getMedia(); const pc = crewPc(d.fromId); stream.getTracks().forEach((t) => pc.addTrack(t, stream)); await pc.setRemoteDescription(d.payload); const ans = await pc.createAnswer(); await pc.setLocalDescription(ans); await api('/api/squads/room/' + d.roomId + '/signal', { method: 'POST', body: { to: d.fromId, type: 'answer', payload: ans } }); return; }
+    const pc = S.crew.pcs[d.fromId]; if (!pc) return;
+    if (d.type === 'answer') await pc.setRemoteDescription(d.payload);
+    if (d.type === 'ice' && d.payload) { try { await pc.addIceCandidate(d.payload); } catch (_) {} }
+  } catch (err) { toast(err.message); }
+}
+function renderCrewRoom() { $('crewRoom').innerHTML = `<div class="row between"><b>📹 Crew call · ${esc(S.crew.squad ? S.crew.squad.name : '')}</b><button class="btn small danger" onclick="leaveCrewCall()">Leave</button></div><div id="crewVideos"></div><div class="small muted" style="margin-top:6px">Everyone in the squad who joins shows up here.</div>`; $('crewRoom').hidden = false; }
+async function leaveCrewCall() { if (S.crew.room) api('/api/squads/room/' + S.crew.room + '/leave', { method: 'POST' }).catch(() => {}); for (const pc of Object.values(S.crew.pcs)) pc.close(); S.crew = { room: null, pcs: {}, squad: null }; $('crewRoom').hidden = true; endCall(false); }
+function onCrewRoom(d) { if (S.crew.room && d.roomId === S.crew.room && d.action === 'leave') { const pc = S.crew.pcs[d.userId]; if (pc) { pc.close(); delete S.crew.pcs[d.userId]; } const v = $('crew-' + d.userId); if (v) v.remove(); } }
+
+// Clips: the host's phone records the live in 10-second chunks; when the live ends, the busiest minute (by chat) uploads.
+S.rec = null;
+function startClipRecorder(stream) {
+  if (!('MediaRecorder' in window)) return;
+  try {
+    const mime = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'].find((m) => MediaRecorder.isTypeSupported(m));
+    if (!mime) return;
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 600_000 });
+    S.rec = { rec, chunks: [], started: Date.now(), mime: mime.split(';')[0] };
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) { S.rec.chunks.push({ at: Date.now() - S.rec.started, blob: e.data }); while (S.rec.chunks.reduce((n, c) => n + c.blob.size, 0) > 60 * 1024 * 1024) S.rec.chunks.shift(); } };
+    rec.start(10_000);
+  } catch (_) { S.rec = null; }
+}
+async function finishClip(roomId, title) {
+  const r = S.rec; S.rec = null; if (!r) return;
+  try { if (r.rec.state !== 'inactive') r.rec.stop(); } catch (_) {}
+  await new Promise((res) => setTimeout(res, 300));
+  if (!r.chunks.length) return;
+  try {
+    const w = (await api('/api/live/' + roomId + '/best-window')).window;
+    const startMs = w.startSec * 1000, endMs = startMs + w.seconds * 1000;
+    // Chunk 0 must lead (it carries the container header); then every chunk that overlaps the window.
+    const picked = [r.chunks[0], ...r.chunks.slice(1).filter((c) => c.at > startMs && c.at - 10_000 < endMs)];
+    const blob = new Blob(picked.map((c) => c.blob), { type: r.mime });
+    if (blob.size > 25 * 1024 * 1024) return toast('The clip was too big to save.');
+    const res = await fetch('/api/clips', { method: 'POST', headers: { Authorization: 'Bearer ' + S.token, 'Content-Type': r.mime, 'x-title': encodeURIComponent(title || 'From the grind'), 'x-room-id': String(roomId), 'x-seconds': String(w.seconds) }, body: blob });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Clip failed');
+    toast('Best minute saved. Share it from Clips.');
+    loadClips();
+  } catch (err) { toast(err.message); }
+}
+async function loadClips() { try { const { clips } = await api('/api/clips'); if (!clips.length) return; $('clipList').innerHTML = clips.slice(0, 6).map((c) => `<div class="clip"><div class="row between"><b>${esc(c.name)}: ${esc(c.title)}</b><span class="small muted">${c.views} views</span></div><video controls playsinline preload="metadata" src="${esc(c.fileUrl)}"></video><div class="row" style="margin-top:4px"><a class="btn small ghost" href="${esc(c.url)}" target="_blank">Share page</a>${S.user && c.userId === S.user.id ? `<button class="btn small ghost" onclick="removeClip(${c.id})">Delete</button>` : ''}</div></div>`).join(''); } catch (_) {} }
+async function removeClip(id) { if (!confirm('Delete this clip?')) return; await api('/api/clips/' + id, { method: 'DELETE' }); loadClips(); }
+
 // Going live: the host streams to each viewer peer to peer; chat and ratings go through the server.
 function renderLiveList(list) { $('liveList').innerHTML = list.length ? list.map((r) => `<div class="people-row"><img class="avatar" src="/api/avatar/${esc(r.hostId)}" alt=""><div class="who"><b>🔴 ${esc(r.hostName)}</b><small>${esc(r.title)} · ${r.viewers} watching${r.botRating ? ` · bot ${r.botRating}/5` : ''}</small></div>${S.user && r.hostId === S.user.id ? `<button class="btn small danger" onclick="endLive()">End</button>` : `<button class="btn small purple" onclick="watchLive(${r.id})">Watch</button>`}</div>`).join('') : '<span class="small muted">Nobody is live right now. Go live and tell the world how hard you worked and whether your bot is amazing or garbage.</span>'; }
 async function goLive() {
   const title = prompt('What is this live about?', 'How hard I worked today and what my bot found me'); if (title === null) return;
-  try { await getMedia(); const r = await api('/api/live', { method: 'POST', body: { title } }); S.people.live = { room: r.room, host: true }; $('videoLabel').textContent = 'LIVE · ' + title; $('videoWrap').classList.add('on'); $('remoteVideo').srcObject = S.people.stream; renderLiveRoom(r.room, []); toast('You are live. Viewers connect as they join.'); }
+  try { const stream = await getMedia(); const r = await api('/api/live', { method: 'POST', body: { title } }); S.people.live = { room: r.room, host: true }; $('videoLabel').textContent = 'LIVE · ' + title; $('videoWrap').classList.add('on'); $('remoteVideo').srcObject = S.people.stream; renderLiveRoom(r.room, []); startClipRecorder(stream); toast('You are live. Viewers connect as they join.'); }
   catch (err) { toast(err.message); }
 }
 async function onLiveJoin(d) {
@@ -781,7 +872,7 @@ async function sendLiveChat() { const i = $('liveMsg'); if (!i.value.trim() || !
 function onLiveChat(m) { if (!S.people.live || m.roomId !== S.people.live.room.id) return; const c = $('liveChat'); if (!c) return; c.insertAdjacentHTML('beforeend', `<div><b>${esc(m.name)}</b> ${esc(m.body)}</div>`); c.scrollTop = c.scrollHeight; }
 async function rateBot(roomId, n) { try { const r = await api('/api/live/' + roomId + '/rate', { method: 'POST', body: { rating: n } }); toast(`Rated. Bot now ${r.rating.average}/5 from ${r.rating.count}.`); } catch (err) { toast(err.message); } }
 async function leaveLive() { if (!S.people.live) return; api('/api/live/' + S.people.live.room.id + '/leave', { method: 'POST' }).catch(() => {}); S.people.live = null; $('localVideo').style.display = ''; $('liveRoom').hidden = true; endCall(false); }
-async function endLive() { await api('/api/live', { method: 'DELETE' }).catch(() => {}); for (const pc of Object.values(S.people.viewerPcs)) pc.close(); S.people.viewerPcs = {}; S.people.live = null; $('liveRoom').hidden = true; endCall(false); loadPeople(); }
+async function endLive() { const live = S.people.live; await api('/api/live', { method: 'DELETE' }).catch(() => {}); for (const pc of Object.values(S.people.viewerPcs)) pc.close(); S.people.viewerPcs = {}; S.people.live = null; $('liveRoom').hidden = true; if (live && live.host) await finishClip(live.room.id, live.room.title); endCall(false); loadPeople(); }
 
 function countdown(localMinutes) { const left = Math.max(0, 24 * 60 - localMinutes); return `${Math.floor(left / 60)}h ${String(left % 60).padStart(2, '0')}m`; }
 setInterval(() => { const el = $('countdown'); if (el && S.today) { S.today.localMinutes += 1; el.textContent = countdown(S.today.localMinutes); } }, 60000);
@@ -848,8 +939,29 @@ async function loadWorld() {
       <td class="nm">${esc(r.displayName)}<small>${r.days} day${r.days === 1 ? '' : 's'} · ${r.wins} win${r.wins === 1 ? '' : 's'} · best streak ${r.bestStreak}</small></td>
       <td class="sc">${r.totalScore.toLocaleString()}<small>${money(r.totalEarningsCents)} logged</small></td></tr>`).join('')}</table>` : '<div class="empty">Nothing yet.</div>';
   } catch (err) { toast(err.message); if (err.status === 402 || err.status === 401) { S.lb.scope = 'world'; } }
-  loadDuels(); loadFeed('feedWorld'); loadCities(); loadBracket(); loadCommunity();
+  loadDuels(); loadFeed('feedWorld'); loadCities(); loadBracket(); loadCommunity(); loadSquads(); loadBotDuels();
 }
+async function loadSquads() {
+  try {
+    const s = S.token ? await api('/api/squads') : { mine: null, board: (await api('/api/squads/board')).board };
+    S.squad = s.mine;
+    $('squadBody').innerHTML = s.mine ? `<div class="row between"><b>${esc(s.mine.name)}</b><span class="pts">${s.mine.weekScore.toLocaleString()} this week</span></div><div class="small muted">Code <b>${esc(s.mine.code)}</b> · ${esc(s.mine.city || '')} · share the code to add up to five</div>${s.mine.members.map((m) => `<div class="squad-m"><span>${esc(m.name)}${m.online ? ' <span class="online"></span>' : ''}${m.userId === s.mine.captainId ? ' <span class="muted">captain</span>' : ''}</span><span>${(m.today.score || 0).toLocaleString()} today · ${m.today.tasks_done}/${m.today.tasks_total}</span></div>`).join('')}<div class="row" style="margin-top:8px;flex-wrap:wrap"><button class="btn small" onclick="crewCall()">📹 Crew call</button><button class="btn small ghost" onclick="shareSquad('${esc(s.mine.code)}')">Invite</button><button class="btn small ghost" onclick="leaveSquad()">Leave</button></div>`
+      : `<div class="row" style="flex-wrap:wrap"><input type="text" id="squadName" placeholder="Squad name" style="flex:1;min-width:120px"><button class="btn small" onclick="createSquad()">Create</button></div><div class="row" style="margin-top:6px;flex-wrap:wrap"><input type="text" id="squadCode" placeholder="Have a code?" style="flex:1;min-width:120px"><button class="btn small ghost" onclick="joinSquad()">Join</button></div>`;
+    $('squadBoard').innerHTML = s.board.length ? `<table class="lb">${s.board.slice(0, 10).map((q) => `<tr class="${s.mine && q.id === s.mine.id ? 'me' : ''}"><td class="rk ${q.rank <= 3 ? 'top' : ''}">${q.rank}</td><td class="nm">${esc(q.name)}<small>${q.size} Legend${q.size === 1 ? '' : 's'}${q.city ? ' · ' + esc(q.city) : ''}</small></td><td class="sc">${q.weekScore.toLocaleString()}<small>${q.todayScore.toLocaleString()} today</small></td></tr>`).join('')}</table>` : '<div class="empty">No squads yet. Start the first one.</div>';
+  } catch (_) {}
+}
+async function createSquad() { try { await api('/api/squads', { method: 'POST', body: { name: $('squadName').value } }); toast('Squad up. Share the code.'); loadSquads(); } catch (err) { toast(err.message); } }
+async function joinSquad() { try { const r = await api('/api/squads/join', { method: 'POST', body: { code: $('squadCode').value } }); toast(`You are in ${r.squad.name}`); loadSquads(); } catch (err) { toast(err.message); } }
+async function leaveSquad() { if (!confirm('Leave your squad?')) return; await api('/api/squads', { method: 'DELETE' }); loadSquads(); }
+async function shareSquad(code) { const text = `Join my squad on Self-Made Legends. Code ${code}: ${location.origin}/`; try { if (navigator.share) await navigator.share({ title: 'Self-Made Legends Squad', text }); else { await navigator.clipboard.writeText(text); toast('Copied'); } } catch (_) {} }
+function renderBotDuel(d) {
+  const me = S.user ? S.user.id : null; const inIt = me && (d.a.id === me || d.b.id === me);
+  const side = (x, pick) => `<div class="side"><b>${esc(x.name)}'s bot</b><span class="small muted">${x.plan ? `${x.plan.tasks.length} plays · ${x.plan.tasks.filter((t) => t.approval === 'approved').length} approved` : 'no plan yet'}</span><div class="small">${d.status === 'settled' ? `<b class="${d.winnerId === x.id ? 'won' : 'lost'}">${(x.score || 0).toLocaleString()}</b>` : `${x.votes} vote${x.votes === 1 ? '' : 's'}`}</div>${d.status === 'open' && S.token && !inIt ? `<button class="btn small ghost" onclick="voteBot(${d.id},'${pick}')">Vote</button>` : ''}</div>`;
+  return `<div class="duelbox">${side(d.a, 'a')}<span class="vs">vs<br><small>${esc(fmtDate(d.date, true))}</small></span>${side(d.b, 'b')}</div>`;
+}
+async function loadBotDuels() { try { const r = S.token ? await api('/api/squads') : await api('/api/bot-duels'); const list = (r.duels || []); if (list.length) $('botDuels').innerHTML = list.slice(0, 8).map(renderBotDuel).join(''); } catch (_) {} }
+async function sendBotDuel() { const opponent = $('botDuelName').value.trim(); if (!opponent) return; try { await api('/api/bot-duels', { method: 'POST', body: { opponent } }); $('botDuelName').value = ''; toast('Bot vs bot is on. Tell people to vote.'); loadBotDuels(); } catch (err) { toast(err.message); } }
+async function voteBot(id, pick) { try { await api('/api/bot-duels/' + id + '/vote', { method: 'POST', body: { pick } }); toast('Voted'); loadBotDuels(); } catch (err) { toast(err.message); } }
 async function loadCities() {
   try {
     const c = await api('/api/cities');
@@ -931,6 +1043,8 @@ async function loadMe() {
     $('botBody').innerHTML = `<div class="stats" style="margin-top:0"><div class="stat"><b class="pts">${b.iq || 100}</b><span>bot IQ</span></div><div class="stat"><b>${b.outcomesFromYou || 0}</b><span>learned from you</span></div><div class="stat"><b>${(b.outcomesFromWorld || 0).toLocaleString()}</b><span>from the world</span></div></div><div class="muted" style="margin-top:8px">Your bot learns from every play you finish or skip, from what pays in your city, and from every Legend in the world. It grades every job 1 to 10, and harder jobs pay more points.${me.botRating && me.botRating.count ? ` The crowd rates it ${me.botRating.average}/5.` : ''}${me.stats.benched ? ` <span style="color:var(--red)">You are on the Bench: ${me.stats.idleStreak} idle days.</span>` : ''}</div>`;
     renderFanMoney(me, bill);
     renderMentoring(me);
+    renderTrust(me);
+    renderEmployer(me);
     if (me.stories.length) { $('storiesMe').innerHTML = me.stories.map((s) => `<div class="story"><b>${esc(s.title)}</b><div class="muted">${esc(s.body).slice(0, 160)}…</div><a href="#" onclick="shareStory('${esc(s.url)}','${esc(s.title)}');return false">Share</a> · <a href="${esc(s.url)}" target="_blank">Read</a></div>`).join(''); $('storiesCard').hidden = false; } else $('storiesCard').hidden = true;
     renderPush(me);
     renderTier(me, bill);
@@ -938,6 +1052,31 @@ async function loadMe() {
     $('history').innerHTML = h.history.length ? h.history.map((d) => `<div class="hist"><span class="d">${esc(fmtDate(d.date, true))}${d.rank ? ` · world #${d.rank}` : ''}</span><span>${d.tasksDone}/${d.tasksTotal} · ${money(d.earningsCents)}${d.verifiedCents ? ' ✓' : ''}</span><span class="s">${d.score}</span></div>`).join('') : '<span class="muted">Your first day is today.</span>';
   } catch (err) { toast(err.message); }
 }
+function renderTrust(me) {
+  const p = me.proof || {};
+  $('trustBody').innerHTML = `<div class="row between"><span>Trust score</span><b style="color:var(--gold)">${me.trust}/100</b></div><div class="trust"><i style="width:${me.trust}%"></i></div>
+    <div class="muted">Right now your bot needs <b>${esc(p.needs || 'a note')}</b> before it approves a play${p.level === 'strict' ? ', and a receipt or photo for anything over $150' : ''}. Trust climbs with a verified phone, approved days, receipts, and good crowd ratings. It falls with rejections and shared devices.</div>
+    <div style="margin-top:10px">${me.phoneVerified ? '<span style="color:var(--green)">✓ Phone verified</span>' : `<div class="row" style="flex-wrap:wrap"><input type="tel" id="phoneNum" placeholder="Your mobile number" style="flex:1;min-width:150px"><button class="btn small" onclick="sendPhoneCode()">Text me a code</button></div><div class="row" id="phoneCodeRow" style="margin-top:6px;flex-wrap:wrap" hidden><input type="text" id="phoneCode" placeholder="6-digit code" inputmode="numeric" style="flex:1;min-width:120px"><button class="btn small" onclick="verifyPhoneCode()">Verify</button></div><div class="muted" style="margin-top:4px">Verifying your phone adds 20 trust and unlocks approvals on a note alone.</div>`}</div>
+    <div class="muted" style="margin-top:8px">Your verified track record is public at <a href="${esc(me.resumeUrl)}" target="_blank">your résumé page</a>: every approved play, receipt, and employer confirmation, so employers can hire you on proof.</div>`;
+}
+async function sendPhoneCode() { try { const r = await api('/api/phone/send', { method: 'POST', body: { phone: $('phoneNum').value } }); $('phoneCodeRow').hidden = false; toast(r.provider === 'console' ? 'Dev mode: the code is in the server log.' : 'Code sent to ' + r.phone); } catch (err) { toast(err.message); } }
+async function verifyPhoneCode() { try { await api('/api/phone/verify', { method: 'POST', body: { code: $('phoneCode').value } }); toast('Phone verified. Trust up.'); loadMe(); } catch (err) { toast(err.message); } }
+function renderEmployer(me) {
+  const e = me.employer;
+  if (!e) { $('employerBody').innerHTML = `<div class="muted">Run a business? Post a shift straight into the Gig Finder for Legends in your city. $5 a posting, 10% of the pay when you confirm the work, and you can search verified track records ($2 to open a full one).</div><div class="row" style="margin-top:8px;flex-wrap:wrap"><input type="text" id="empOrg" placeholder="Business name" style="flex:1;min-width:140px"><input type="text" id="empCity" placeholder="City, ST" style="flex:1;min-width:100px"><button class="btn small ghost" onclick="registerEmployer()">Register</button></div>`; return; }
+  $('employerBody').innerHTML = `<div><b>${esc(e.org)}</b> <span class="muted">${esc(e.city)}${e.verified ? ' · verified employer' : ''}</span></div>
+    <div class="row" style="margin-top:8px;flex-wrap:wrap"><input type="text" id="postTitle" placeholder="Shift title" style="flex:2;min-width:140px"><input type="date" id="postDate" style="flex:1;min-width:120px"></div>
+    <div class="grid2" style="margin-top:6px"><input type="number" id="postHours" placeholder="Hours" value="4" min="0.5" step="0.5"><input type="number" id="postPay" placeholder="Pay $" min="10"><input type="number" id="postSlots" placeholder="Spots" value="1" min="1"><input type="number" id="postDiff" placeholder="Grade 1-10" value="5" min="1" max="10"></div>
+    <input type="text" id="postBody" placeholder="What the work is, where, what to bring" style="margin-top:6px;width:100%" maxlength="600">
+    <div class="row" style="margin-top:6px"><button class="btn small" onclick="postShift()">Post shift ($5)</button><button class="btn small ghost" onclick="searchLegends()">Search verified Legends</button></div>
+    <div id="empPostings" style="margin-top:8px"></div><div id="empSearch" style="margin-top:8px"></div>`;
+  loadEmployerPostings();
+}
+async function registerEmployer() { try { await api('/api/employer', { method: 'POST', body: { org: $('empOrg').value, city: $('empCity').value } }); toast('Employer mode on.'); loadMe(); } catch (err) { toast(err.message); } }
+async function postShift() { try { await api('/api/employer/postings', { method: 'POST', body: { title: $('postTitle').value, date: $('postDate').value, hours: $('postHours').value, payDollars: $('postPay').value, slots: $('postSlots').value, difficulty: $('postDiff').value, body: $('postBody').value } }); toast('Posted. Legends in your city see it on Today.'); loadEmployerPostings(); } catch (err) { toast(err.message); } }
+async function loadEmployerPostings() { try { const r = await api('/api/employer'); $('empPostings').innerHTML = r.postings.length ? r.postings.map((p) => `<div class="shift"><b>${esc(p.title)}</b> <span class="muted">${esc(fmtDate(p.date, true))} · ${money(p.payCents)} · ${p.filled}/${p.slots} claimed · ${esc(p.status)}</span>${p.claims.map((c) => `<div class="row between" style="margin-top:4px"><span>${esc(c.name)} · ${esc(c.status)}</span>${c.status === 'claimed' ? `<span><button class="btn small ghost" onclick="openThread('${esc(c.userId)}')">Msg</button> <button class="btn small" onclick="confirmClaim(${c.id})">Confirm work</button></span>` : `<span class="muted">paid ${money(c.paidCents)}</span>`}</div>`).join('')}</div>`).join('') : '<span class="muted">No postings yet.</span>'; } catch (_) {} }
+async function confirmClaim(id) { if (!confirm('Confirm the work was done? Pay goes to their balance and the platform keeps its cut.')) return; try { await api('/api/employer/claims/' + id + '/confirm', { method: 'POST' }); toast('Confirmed. Their bot approved it.'); loadEmployerPostings(); } catch (err) { toast(err.message); } }
+async function searchLegends() { const city = prompt('City to search:', (S.profile && S.profile.location) || '') || ''; try { const r = await api('/api/employer/search?city=' + encodeURIComponent(city)); $('empSearch').innerHTML = r.results.length ? r.results.map((x) => `<div class="people-row"><img class="avatar" src="/api/avatar/${esc(x.id)}" alt=""><div class="who"><b>${esc(x.name)}</b><small>${esc(x.rank)} · ${x.days} days · ${x.approvedPlays} approved · ${money(x.verifiedCents)} verified · trust ${x.trust}</small></div><a class="btn small ghost" href="/u/${encodeURIComponent(x.name)}/resume" target="_blank">Record</a><button class="btn small ghost" onclick="openThread('${esc(x.id)}')">Msg</button></div>`).join('') : '<span class="muted">Nobody with a record there yet.</span>'; } catch (err) { toast(err.message); } }
 function renderFanMoney(me, bill) {
   const f = me.fees;
   const mf = bill.myFees || { tipPct: f.TIP_FEE_PCT, successPct: f.SUCCESS_FEE_PCT };
@@ -1011,6 +1150,10 @@ function connectEvents() {
   S.es.addEventListener('live_signal', (e) => { try { onLiveSignal(JSON.parse(e.data)); } catch (_) {} });
   S.es.addEventListener('live_chat', (e) => { try { onLiveChat(JSON.parse(e.data)); } catch (_) {} });
   S.es.addEventListener('live', (e) => { if ($('screen-people').classList.contains('active')) loadPeople(); try { const d = JSON.parse(e.data); if (d.action === 'start' && S.user && d.room.hostId !== S.user.id) toast(`🔴 ${d.room.hostName} is live`); if (d.action === 'end' && S.people.live && !S.people.live.host && S.people.live.room.id === d.roomId) { toast('The live ended'); leaveLive(); } } catch (_) {} });
+  S.es.addEventListener('crew_signal', (e) => { try { onCrewSignal(JSON.parse(e.data)); } catch (_) {} });
+  S.es.addEventListener('crew_room', (e) => { try { onCrewRoom(JSON.parse(e.data)); } catch (_) {} });
+  S.es.addEventListener('posting', () => { if ($('screen-today').classList.contains('active')) loadToday(); });
+  S.es.addEventListener('clip', () => { if ($('screen-people').classList.contains('active')) loadClips(); });
   S.es.addEventListener('friend_request', (e) => { try { const d = JSON.parse(e.data); toast(`${d.name} wants to be friends`); $('peoplePip').classList.remove('hidden'); } catch (_) {} });
   S.es.addEventListener('gigs', () => { if ($('screen-today').classList.contains('active')) loadToday(); });
   S.es.addEventListener('approved', (e) => { try { const d = JSON.parse(e.data); toast(`Your bot approved it: ${d.points.toLocaleString()} points`); } catch (_) {} });
