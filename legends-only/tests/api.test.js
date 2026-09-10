@@ -239,9 +239,13 @@ describe('the public side and the money side', () => {
     expect((await request(app).get('/challenge/nope')).status).toBe(404);
     expect((await request(app).get('/show/2026-09-06')).status).toBe(404);
     expect((await request(app).get('/story/1')).status).toBe(404);
-    const lb = (await request(app).get('/api/leaderboard?scope=women&category=beauty')).body;
+    // Play choice is seeded per user id, so the plan's dominant category varies run to run; filter by whatever it is.
+    const cat = (await request(app).get('/api/today').set(auth(ava.token))).body.plan.progress.category;
+    const lb = (await request(app).get('/api/leaderboard?scope=women&category=' + cat)).body;
     expect(lb.scope).toBe('women');
+    expect(lb.category).toBe(cat);
     expect(lb.leaderboard.some(x => x.displayName === 'Ava Stone')).toBe(true);
+    expect((await request(app).get('/api/leaderboard?scope=women&category=career')).body.leaderboard.some(x => x.displayName === 'Ava Stone')).toBe(false);
   });
 
   test('mentors need a record; asking and answering routes the fee', async () => {

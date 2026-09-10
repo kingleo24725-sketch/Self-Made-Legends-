@@ -48,6 +48,27 @@
   .clip { margin: 8px 0; } .clip video { width: 100%; border-radius: 12px; background: #000; max-height: 260px; }
   .trust { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 6px 0; } .trust i { display: block; height: 100%; background: var(--gold); }
   .grid2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  /* Fun layer */
+  .mood { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; padding: 10px; border-radius: 12px; background: rgba(245,185,66,.08); border: 1px solid rgba(245,185,66,.25); font-size: .92em; }
+  .mood .bot { font-size: 1.4em; line-height: 1; } .mood b { color: var(--gold); }
+  .combo-pill { display: inline-block; background: linear-gradient(90deg, #ff6b35, #f5b942); color: #1a1200; font-weight: 900; padding: 2px 10px; border-radius: 999px; font-size: .8em; animation: pulse 1.2s infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+  .task.boss { border-color: rgba(245,185,66,.7); box-shadow: 0 0 0 1px rgba(245,185,66,.25), 0 0 24px rgba(245,185,66,.12); }
+  .task.powered { border-color: rgba(90,169,255,.7); }
+  .tag { display: inline-block; font-size: .7em; font-weight: 800; padding: 2px 8px; border-radius: 999px; margin-left: 4px; vertical-align: middle; letter-spacing: .04em; }
+  .tag.boss { background: var(--gold); color: #1a1200; } .tag.power { background: #5aa9ff; color: #04101f; } .tag.bonus { background: rgba(61,220,132,.2); color: var(--green); }
+  .title-tag { display: inline-block; font-size: .72em; color: var(--gold); border: 1px solid rgba(245,185,66,.5); padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: middle; }
+  .quest { padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .9em; } .quest:last-child { border-bottom: 0; }
+  .quest .bar { height: 6px; margin-top: 6px; } .quest.done b { color: var(--green); }
+  .splash { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; background: rgba(11,13,18,.82); text-align: center; padding: 24px; }
+  .splash.on { display: flex; animation: fadein .2s; } @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+  .splash .big { font-size: 3.2em; font-weight: 900; color: var(--gold); text-shadow: 0 0 30px rgba(245,185,66,.5); animation: pop .45s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .splash .sub { font-size: 1.1em; margin-top: 8px; } .splash .line { color: var(--muted); margin-top: 10px; font-size: .95em; max-width: 320px; }
+  .splash .tags { margin-top: 10px; } .splash canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .callout-pick { position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; background: var(--card); border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; padding: 14px 16px 24px; display: none; }
+  .callout-pick.on { display: block; } .callout-pick button { display: block; width: 100%; text-align: left; margin: 6px 0; }
+  .callout-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .9em; }
   .people-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: .92em; }
   .people-row .who { flex: 1; } .people-row .who small { display: block; color: var(--muted); }
   .online { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--green); margin-left: 6px; }
@@ -397,6 +418,8 @@
   </nav>
 </div>
 <div class="toast" id="toast"></div>
+<div class="splash" id="splash" onclick="this.classList.remove('on')"><canvas id="confetti"></canvas><div><div class="big" id="splashBig"></div><div class="sub" id="splashSub"></div><div class="tags" id="splashTags"></div><div class="line" id="splashLine"></div><div class="small muted" style="margin-top:16px">tap to close</div></div></div>
+<div class="callout-pick" id="calloutPick"><div class="row between"><b id="calloutWho">Call out</b><button class="btn small ghost" onclick="$('calloutPick').classList.remove('on')">✕</button></div><div id="calloutLines"></div></div>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
@@ -413,9 +436,9 @@ const money = (cents) => { const c = Number(cents || 0); const whole = c % 100 =
 const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000); };
 const RANK_SHORT = { rookie: 'Rookie', pro: 'Pro', allstar: 'All Star', superstar: 'Superstar', veteran: 'Veteran', hof: 'Hall of Fame' };
 const leagueTag = (l) => `<span class="league ${esc(l || 'rookie')}">${esc(RANK_SHORT[l] || l || 'Rookie')}</span>`;
-const BADGE_LABELS = { first_approved: ['🤖', 'First play approved'], bot_vs_bot: ['🧠', 'Bot vs bot'], hall_of_fame: ['🏛️', 'Hall of Fame'], world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
+const BADGE_LABELS = { first_approved: ['🤖', 'First play approved'], bot_vs_bot: ['🧠', 'Bot vs bot'], boss_slayer: ['👑', 'Boss Slayer'], rank_pro: ['⬆', 'Made Pro'], rank_allstar: ['⭐', 'Made All Star'], rank_superstar: ['🌟', 'Made Superstar'], hall_of_fame: ['🏛️', 'Hall of Fame'], world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
 const CAT_LABELS = { gig: 'Gig', local: 'Local', online: 'Online', beauty: 'Beauty', care: 'Care', food: 'Food' };
-const feedIcon = (k) => ({ done: '✅', verified: '💵', champion: '👑', bracket: '🏆', tip: '💛', prize: '💰' }[k] || '•');
+const feedIcon = (k) => ({ done: '✅', verified: '💵', champion: '👑', bracket: '🏆', tip: '💛', prize: '💰', boss: '⚔️', callout: '🎯' }[k] || '•');
 function renderFeed(id, items) { const el = $(id); if (!el) return; el.innerHTML = items.length ? items.slice(0, 25).map((f) => `<div><span class="k">${feedIcon(f.kind)}</span><span>${esc(f.text)}</span><time>${fmtTime(f.at)}</time></div>`).join('') : '<span class="muted small">Quiet right now.</span>'; }
 async function loadFeed(id) { try { renderFeed(id, (await api('/api/feed')).feed); } catch (_) {} }
 
@@ -536,12 +559,13 @@ function renderToday() {
       <div class="headline">${esc(p.headline)}</div>
       <div class="small">Focus: <b>${esc(p.focus)}</b></div>
       <div class="stats">
-        <div class="stat"><b class="pts">${pr.score.toLocaleString()}</b><span>approved points${pr.pendingPoints ? ` · ${pr.pendingPoints.toLocaleString()} waiting` : ''}</span></div>
+        <div class="stat"><b class="pts">${pr.score.toLocaleString()}</b><span>approved points${pr.bonusPoints || pr.questPoints ? ` · ${((pr.bonusPoints || 0) + (pr.questPoints || 0)).toLocaleString()} bonus` : ''}${pr.pendingPoints ? ` · ${pr.pendingPoints.toLocaleString()} waiting` : ''}</span></div>
         <div class="stat"><b>${money(pr.earningsCents)}</b><span>${pr.verifiedCents ? money(pr.verifiedCents) + ' verified' : 'logged'}</span></div>
         <div class="stat"><b>#${t.rank ? t.rank.rank : '–'}</b><span>of ${t.rank ? t.rank.of : 0} world</span></div>
       </div>
       <div class="bar"><i style="width:${pct}%"></i></div>
       <div class="row between small muted" style="margin-top:6px"><span>${pr.tasksDone}/${pr.tasksTotal} plays · ${pr.hoursDone}h of ${pr.hoursTotal}h${t.rank && t.rank.leagueOf ? ` · #${t.rank.leagueRank} in ${t.rank.league}` : ''}</span><span>${pr.penalty ? `<span style="color:var(--red)">-${pr.penalty.toLocaleString()}</span> · ` : ''}${t.bot ? `bot IQ <b style="color:var(--gold)">${t.bot.iq}</b>` : ''}</span></div>
+      ${t.mood ? `<div class="mood"><span class="bot">🤖</span><div><b>${esc(t.mood.name)}</b>${pr.combo > 1 ? ` <span class="combo-pill">🔥 x${pr.combo} combo</span>` : ''}<div>${esc(t.mood.line)}</div></div></div>` : ''}
       ${goal ? `<div class="small" style="margin-top:12px">🎯 ${esc(goal.title)}: <b>${money(goal.progressCents)}</b> of ${money(goal.targetCents)} by ${esc(fmtDate(goal.byDate, true))}</div><div class="bar goal"><i style="width:${goalPct}%"></i></div>` : ''}
       ${closed ? '<p class="small" style="margin-top:10px;color:var(--green)">Day closed. Tomorrow\'s plan lands by 4am.</p>' : ''}
     </div>
@@ -550,6 +574,8 @@ function renderToday() {
     ${t.bracket ? `<div class="card"><div class="row between"><div><h3 style="margin:0">Self-Made Legends Money Bracket</h3><div class="small muted">${t.bracket.status === 'running' ? (t.bracket.alive ? `Round ${t.bracket.round} of ${Math.log2(t.bracket.size)}. Higher score today wins.` : t.bracket.entered ? 'You are out this week. Next bracket opens Saturday.' : 'Running. Enter next week\'s.') : t.bracket.entered ? `You are in for the week of ${esc(fmtDate(t.bracket.weekStart, true))}.` : `Enter the week of ${esc(fmtDate(t.bracket.weekStart, true))}. Seeded by verified earnings.`}${t.bracket.poolCents ? ` Pool ${money(t.bracket.poolCents)}.` : ''}</div></div>${!t.bracket.entered && t.bracket.status === 'open' ? '<button class="btn small" onclick="enterBracket()">Enter</button>' : ''}</div></div>` : ''}
     ${p.firstDay && !closed ? `<div class="card dayone"><h3>Day one. Three moves.</h3><ol><li><b>Finish one play</b> below and tap <i>Done</i>. Pick the easiest if you want, it still counts.</li><li><b>Tell your bot</b> what you did (or add a receipt or a photo). Points only exist after it approves.</li><li><b>Get approved.</b> That is your first points, your first badge, and day one of your streak.</li></ol><div class="small muted" style="margin-top:8px">Everything else on this screen is extra. Come back tomorrow at 4am and the crew has a new plan waiting.</div></div>` : ''}
     ${t.rank && t.rank.benched ? `<div class="card" style="border-color:rgba(255,107,107,.5)"><h3 style="color:var(--red)">You are on the Bench</h3><div class="small">${t.rank.idleStreak} days with nothing done. Every idle day costs more. Finish one play today and you are back in the game.</div></div>` : ''}
+    ${t.quests && t.quests.length ? `<div class="card"><div class="row between"><h3 style="margin:0">Self-Made Legends Quests</h3><span class="small muted">this week</span></div>${t.quests.map((q) => `<div class="quest ${q.done ? 'done' : ''}"><div class="row between"><b>${q.done ? '✅ ' : ''}${esc(q.label)}</b><span class="pts">+${q.reward.toLocaleString()}</span></div><div class="small muted">${q.unit === 'cents' ? money(q.progress) + ' of ' + money(q.target) : q.progress + ' of ' + q.target}</div><div class="bar"><i style="width:${Math.min(100, Math.round(q.progress / q.target * 100))}%"></i></div></div>`).join('')}</div>` : ''}
+    ${(t.callouts || []).some((c) => !c.mine && !c.challengeId) ? `<div class="card" style="border-color:rgba(181,140,255,.5)"><h3>You got called out</h3>${t.callouts.filter((c) => !c.mine && !c.challengeId).map((c) => `<div class="callout-row"><span><b>${esc(c.fromName)}</b>: "${esc(c.line)}"</span><button class="btn small purple" onclick="acceptCallout(${c.id})">Accept · head-to-head tomorrow</button></div>`).join('')}</div>` : ''}
     ${t.gigs ? renderGigs(t.gigs, t.bot, t.sponsors, t.postings) : ''}
     ${t.memory.lastSummary ? `<div class="card"><h3>Coach, last night</h3><div class="small">${esc(t.memory.lastSummary)}</div></div>` : ''}
     ${t.lesson ? renderLesson(t.lesson) : ''}
@@ -580,11 +606,11 @@ function renderTask(task) {
   const closed = S.today.plan.status === 'closed';
   const attention = S.checkins.includes(task.taskId) && st === 'pending';
   return `
-    <div class="task ${st} ${task._open || attention ? 'open' : ''} ${attention ? 'attention' : ''}" id="task-${task.taskId}">
+    <div class="task ${st} ${task._open || attention ? 'open' : ''} ${attention ? 'attention' : ''} ${task.boss ? 'boss' : ''} ${task.power ? 'powered' : ''}" id="task-${task.taskId}">
       <div class="head" onclick="toggleTask(${task.taskId})">
         <div class="time">${esc(task.startsAt)}<br>${esc(task.endsAt)}</div>
         <div style="flex:1">
-          <div class="title">${esc(task.icon)} ${esc(task.title)} <span class="diff ${task.difficulty >= 7 ? 'hard' : task.difficulty >= 4 ? 'mid' : ''}">grade ${task.difficulty}/10${task.graded ? ' ✓' : ''}</span>${st === 'done' ? (task.approval === 'approved' ? '<span class="badge done">approved</span>' : task.approval === 'rejected' ? '<span class="badge rejected">not approved</span>' : '<span class="badge pending">awaiting your bot</span>') : st === 'skipped' ? '<span class="badge">skipped</span>' : ''}${task.verifiedCents ? '<span class="badge verified">✓ verified</span>' : ''}</div>
+          <div class="title">${esc(task.icon)} ${esc(task.title)} <span class="diff ${task.difficulty >= 7 ? 'hard' : task.difficulty >= 4 ? 'mid' : ''}">grade ${task.difficulty}/10${task.graded ? ' ✓' : ''}</span>${task.boss ? '<span class="tag boss">👑 BOSS · 2×</span>' : ''}${task.power ? '<span class="tag power">⚡ POWER +50%</span>' : ''}${task.bonusPoints ? `<span class="tag bonus">+${task.bonusPoints.toLocaleString()} bonus</span>` : ''}${st === 'done' ? (task.approval === 'approved' ? '<span class="badge done">approved</span>' : task.approval === 'rejected' ? '<span class="badge rejected">not approved</span>' : '<span class="badge pending">awaiting your bot</span>') : st === 'skipped' ? '<span class="badge">skipped</span>' : ''}${task.verifiedCents ? '<span class="badge verified">✓ verified</span>' : ''}</div>
           <div class="est"><span class="pts">${st === 'done' && task.approval !== 'approved' ? `0 of ${(task.potentialPoints || 0).toLocaleString()} pts` : (st === 'done' ? task.points : task.potentialPoints || 0).toLocaleString() + ' pts'}</span> · ${task.estimatedEarnings.high > 0 ? `$${task.estimatedEarnings.low}–$${task.estimatedEarnings.high}` : 'builds tomorrow'} · ${task.hours}h${task.earningsCents ? ` · logged ${money(task.earningsCents)}` : ''}</div>
         </div>
       </div>
@@ -598,6 +624,7 @@ function renderTask(task) {
         <div class="actions">
           <button class="btn small ${st === 'done' ? 'ghost' : ''}" onclick="setStatus(${task.taskId}, '${st === 'done' ? 'pending' : 'done'}')">${st === 'done' ? 'Undo' : '✓ Done'}</button>
           <button class="btn small ghost" onclick="setStatus(${task.taskId}, '${st === 'skipped' ? 'pending' : 'skipped'}')">${st === 'skipped' ? 'Un-skip' : 'Skip'}</button>
+          ${st === 'pending' && !task.power && !S.today.plan.powerUsed ? `<button class="btn small ghost" onclick="powerPlay(${task.taskId})" title="One a day: +50% if approved">⚡ Power</button>` : ''}
         </div>
         ${st === 'done' && task.approval !== 'approved' ? `<div class="approve"><b>Your bot has to verify this before you get the ${(task.potentialPoints || 0).toLocaleString()} points.</b>${task.approval === 'rejected' ? `<div style="color:var(--red);margin-top:4px">${esc(task.approvalReason)}</div>` : '<div class="muted">Tell it what you did: where, for whom, what happened. Add a photo of the work if you have one. A payout screenshot approves it on the spot.</div>'}<textarea id="note-${task.taskId}" placeholder="Two full sets at my place this morning, both clients rebooked, paid by Cash App." maxlength="600">${esc(task.note || '')}</textarea><div class="row" style="flex-wrap:wrap"><button class="btn small" onclick="approveTask(${task.taskId})">Send to my bot</button><label class="btn small ghost">📷 Photo of the work<input type="file" accept="image/*" hidden onchange="approveTask(${task.taskId}, this)"></label></div></div>` : ''}
         ${S.today.canVerify ? `<label class="btn small ghost" style="margin-top:8px;width:100%">📸 Verify with a payout screenshot<input type="file" accept="image/*" hidden onchange="uploadReceipt(${task.taskId}, this)"></label>` : ''}
@@ -705,6 +732,36 @@ function renderGigs(list, bot, sponsors = [], postings = []) {
     ${bot ? `<div class="small muted" style="margin-top:8px">Bot IQ <b style="color:var(--gold)">${bot.iq}</b> · learned from ${bot.outcomesFromYou} of your outcomes and ${bot.outcomesFromWorld.toLocaleString()} from the world${bot.rating && bot.rating.count ? ` · crowd rates it ${bot.rating.average}/5` : ''}</div>` : ''}</div>`;
 }
 async function refreshGigs() { try { toast('Sending the bot out…'); const r = await api('/api/gigs/refresh', { method: 'POST' }); S.today.gigs = r.gigs; renderToday(); } catch (err) { toast(err.message); } }
+async function powerPlay(id) { try { const r = await api('/api/tasks/' + id + '/power', { method: 'POST' }); S.today.plan = r.plan; renderToday(); toast('⚡ Power Play set. +50% if your bot approves it.'); sound('tick'); } catch (err) { toast(err.message); } }
+// ── Hype: splash, confetti, sound, haptics ────────────────────────────────
+function splash(big, sub, line, tags = []) {
+  $('splashBig').textContent = big; $('splashSub').textContent = sub || ''; $('splashLine').textContent = line || '';
+  $('splashTags').innerHTML = tags.map((t) => `<span class="tag ${t.cls}">${esc(t.text)}</span>`).join(' ');
+  $('splash').classList.add('on'); confetti(); try { navigator.vibrate && navigator.vibrate([40, 30, 80]); } catch (_) {}
+  clearTimeout(splash._t); splash._t = setTimeout(() => $('splash').classList.remove('on'), 4200);
+}
+function confetti() {
+  const c = $('confetti'); const ctx = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
+  const colors = ['#f5b942', '#ffffff', '#3ddc84', '#5aa9ff', '#ff6b35'];
+  const parts = Array.from({ length: 120 }, () => ({ x: c.width / 2, y: c.height / 2, vx: (Math.random() - .5) * 18, vy: -Math.random() * 16 - 4, r: Math.random() * 6 + 3, col: colors[Math.floor(Math.random() * colors.length)], rot: Math.random() * 6 }));
+  let frame = 0;
+  (function draw() { ctx.clearRect(0, 0, c.width, c.height); for (const p of parts) { p.x += p.vx; p.y += p.vy; p.vy += .5; p.vx *= .99; p.rot += .1; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.col; ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * .6); ctx.restore(); } if (++frame < 110) requestAnimationFrame(draw); else ctx.clearRect(0, 0, c.width, c.height); })();
+}
+let _audio = null;
+function sound(kind) {
+  try { if (localStorage.getItem('sml.sound') === 'off') return; } catch (_) {}
+  try {
+    _audio = _audio || new (window.AudioContext || window.webkitAudioContext)();
+    const seq = { approve: [[523, 0], [659, .09], [784, .18], [1047, .3]], boss: [[196, 0], [262, .12], [392, .24], [523, .36], [784, .5]], climb: [[440, 0], [660, .1]], quest: [[660, 0], [880, .1], [1320, .2]], tick: [[880, 0]], rankup: [[392, 0], [523, .15], [659, .3], [784, .45], [1047, .6]] }[kind] || [[660, 0]];
+    for (const [f, t] of seq) { const o = _audio.createOscillator(); const g = _audio.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(.0001, _audio.currentTime + t); g.gain.exponentialRampToValueAtTime(.18, _audio.currentTime + t + .02); g.gain.exponentialRampToValueAtTime(.0001, _audio.currentTime + t + .22); o.connect(g).connect(_audio.destination); o.start(_audio.currentTime + t); o.stop(_audio.currentTime + t + .25); }
+  } catch (_) {}
+}
+function toggleSound() { let on = true; try { on = localStorage.getItem('sml.sound') !== 'off'; localStorage.setItem('sml.sound', on ? 'off' : 'on'); } catch (_) {} toast(on ? 'Sounds off' : 'Sounds on'); if (!on) sound('tick'); loadMe(); }
+// ── Callouts ──────────────────────────────────────────────────────────────
+function callOut(userId, name) { const lines = (S.config.fun && S.config.fun.CALLOUT_LINES) || []; $('calloutWho').textContent = 'Call out ' + name; $('calloutLines').innerHTML = lines.map((l, i) => `<button class="btn ghost" onclick="sendCallout('${esc(userId)}',${i})">"${esc(l)}"</button>`).join(''); $('calloutPick').classList.add('on'); }
+async function sendCallout(userId, line) { $('calloutPick').classList.remove('on'); try { await api('/api/callouts/' + userId, { method: 'POST', body: { line } }); toast('Callout sent. It is on the feed.'); sound('tick'); } catch (err) { toast(err.message); } }
+async function acceptCallout(id) { try { await api('/api/callouts/' + id + '/accept', { method: 'POST' }); toast('Head-to-head is on for tomorrow.'); sound('climb'); loadToday(); } catch (err) { toast(err.message); } }
+async function nameBot() { const name = prompt('Name your bot (this is who talks to you):', S.me && S.me.botName !== 'Your bot' ? S.me.botName : ''); if (name === null) return; try { const r = await api('/api/me/bot-name', { method: 'POST', body: { name } }); toast(`${r.botName} is ready.`); loadMe(); } catch (err) { toast(err.message); } }
 async function claimPosting(id) { try { const r = await api('/api/postings/' + id + '/claim', { method: 'POST' }); toast(`On your day: ${r.task.title}. Message ${r.posting.org} to confirm details.`); loadToday(); } catch (err) { toast(err.message); } }
 async function claimGig(id) { try { const r = await api('/api/gigs/' + id + '/claim', { method: 'POST' }); toast(`Added: ${r.task.title} · ${r.task.points.toLocaleString()} points if you finish it`); loadToday(); } catch (err) { toast(err.message); } }
 async function dismissGig(id) { try { await api('/api/gigs/' + id + '/dismiss', { method: 'POST' }); S.today.gigs = S.today.gigs.filter((g) => g.id !== id); renderToday(); } catch (_) {} }
@@ -931,7 +988,7 @@ async function loadWorld() {
     if (w.champion) { $('champCard').innerHTML = renderChampion(w.champion).replace(/^<div class="card">|<\/div>$/g, ''); $('champCard').hidden = false; } else $('champCard').hidden = true;
     $('lbToday').innerHTML = w.leaderboard.length ? `<table class="lb">${w.leaderboard.map((r) => `
       <tr class="${S.user && r.userId === S.user.id ? 'me' : ''}"><td class="rk ${r.rank <= 3 ? 'top' : ''}">${r.rank}</td>
-      <td class="nm"><img class="avatar" src="/api/avatar/${esc(r.userId)}" alt="" style="width:26px;height:26px;vertical-align:middle;margin-right:6px">${esc(r.displayName)} ${leagueTag(r.league)}${r.streak ? ' 🔥' + r.streak : ''}<small>${esc(r.location || '')}${r.location ? ' · ' : ''}${r.tasksDone}/${r.tasksTotal} plays · ${r.hoursDone}h</small></td>
+      <td class="nm"><img class="avatar" src="/api/avatar/${esc(r.userId)}" alt="" style="width:26px;height:26px;vertical-align:middle;margin-right:6px">${esc(r.displayName)} ${leagueTag(r.league)}${r.title ? `<span class="title-tag">${esc(r.title)}</span>` : ''}${r.streak ? ' 🔥' + r.streak : ''}${S.user && r.userId !== S.user.id ? ` <a href="#" onclick="callOut('${esc(r.userId)}','${esc(r.displayName)}');return false" title="Call them out">🎯</a>` : ''}<small>${esc(r.location || '')}${r.location ? ' · ' : ''}${r.tasksDone}/${r.tasksTotal} plays · ${r.hoursDone}h</small></td>
       <td class="sc">${r.score.toLocaleString()}<small>${money(r.earningsCents)}${r.verifiedCents ? ' ✓' : ''}</small></td></tr>`).join('')}</table>` : '<div class="empty">Nobody has scored here yet today.</div>';
     $('bench').innerHTML = (w.bench || []).length ? `<table class="lb bench">${w.bench.map((r) => `<tr><td class="rk">${r.rank}</td><td class="nm">${esc(r.displayName)}<small>${r.idleStreak} idle day${r.idleStreak === 1 ? '' : 's'} in a row</small></td><td class="sc" style="color:var(--red)">${r.weekScore.toLocaleString()}</td></tr>`).join('')}</table>` : '<div class="empty">Empty. Everyone showed up this week.</div>';
     $('lbAll').innerHTML = w.allTime.length ? `<table class="lb">${w.allTime.map((r) => `
@@ -1027,12 +1084,12 @@ async function loadMe() {
   try {
     const [me, h, ib, bill] = await Promise.all([api('/api/me'), api('/api/history'), api('/api/inbox'), api('/api/billing')]);
     S.me = me; S.profile = me.profile; $('mePip').classList.add('hidden');
-    $('meHero').innerHTML = `<div class="row between"><div class="date">${esc(me.user.displayName)}</div><span>${leagueTag(me.rank.rank)}${me.tier !== 'free' ? ' ' + leagueTag(me.tier) : ''}</span></div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
+    $('meHero').innerHTML = `<div class="row between"><div class="date">${esc(me.user.displayName)}${me.title ? `<span class="title-tag">${esc(me.title)}</span>` : ''}</div><span>${leagueTag(me.rank.rank)}${me.tier !== 'free' ? ' ' + leagueTag(me.tier) : ''}</span></div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
       <div class="stats"><div class="stat"><b>${me.stats.days}</b><span>days</span></div><div class="stat"><b>${money(me.stats.earnedCents)}</b><span>${me.stats.verifiedCents ? money(me.stats.verifiedCents) + ' verified' : 'logged'}</span></div><div class="stat"><b>${me.stats.wins}</b><span>world wins</span></div></div>
       <div class="small muted" style="margin-top:8px">Best streak ${me.stats.bestStreak} · duels ${me.stats.duelsWon}/${me.stats.duelsPlayed} · total score ${me.stats.totalScore}</div>`;
     const g = me.profile && me.profile.goal;
     if (g) { const pct = Math.min(100, Math.round(g.progressCents / g.targetCents * 100)); $('goalCard').innerHTML = `<h3>30-day goal</h3><b>🎯 ${esc(g.title)}</b><div class="small muted">${money(g.progressCents)} of ${money(g.targetCents)} by ${esc(fmtDate(g.byDate, true))} · ${pct}%</div><div class="bar goal"><i style="width:${pct}%"></i></div>`; $('goalCard').hidden = false; } else $('goalCard').hidden = true;
-    $('meBadges').innerHTML = me.badges.length ? me.badges.slice(0, 12).map((b) => { const [ic, lb] = BADGE_LABELS[b.badge] || ['🏷️', b.badge]; return `<span class="bdg">${ic} ${esc(lb)}<span class="muted">${esc(fmtDate(b.date, true))}</span></span>`; }).join('') : '<span class="small muted">Finish a full day for your first badge.</span>';
+    $('meBadges').innerHTML = me.badges.length ? me.badges.slice(0, 12).map((b) => { const [ic, lb] = BADGE_LABELS[b.badge] || (b.badge.startsWith('quest_') ? ['🏁', b.detail] : ['🏷️', b.badge]); return `<span class="bdg">${ic} ${esc(lb)}<span class="muted">${esc(fmtDate(b.date, true))}</span></span>`; }).join('') : '<span class="small muted">Finish a full day for your first badge.</span>';
     const m = (me.profile && me.profile.memory) || {};
     $('meNotes').innerHTML = (m.notes && m.notes.length) ? `<ul style="margin-left:18px">${m.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : '<span class="muted">Still getting to know you. Log real results and this fills in.</span>';
     if (m.tomorrowHint) $('meNotes').innerHTML += `<div class="small" style="margin-top:8px">Tomorrow: <b>${esc(m.tomorrowHint)}</b></div>`;
@@ -1040,7 +1097,7 @@ async function loadMe() {
     $('inviteUrl').value = me.inviteUrl; $('profileUrl').value = me.profileUrl; $('pubProfile').checked = !!me.user.publicProfile;
     $('meAvatar').src = me.avatarUrl; $('meAvatar').className = 'avatar lg' + (me.tier === 'hof' ? ' frame-hof' : me.tier === 'veteran' ? ' frame-veteran' : '');
     const b = me.stats.botIQ || {};
-    $('botBody').innerHTML = `<div class="stats" style="margin-top:0"><div class="stat"><b class="pts">${b.iq || 100}</b><span>bot IQ</span></div><div class="stat"><b>${b.outcomesFromYou || 0}</b><span>learned from you</span></div><div class="stat"><b>${(b.outcomesFromWorld || 0).toLocaleString()}</b><span>from the world</span></div></div><div class="muted" style="margin-top:8px">Your bot learns from every play you finish or skip, from what pays in your city, and from every Legend in the world. It grades every job 1 to 10, and harder jobs pay more points.${me.botRating && me.botRating.count ? ` The crowd rates it ${me.botRating.average}/5.` : ''}${me.stats.benched ? ` <span style="color:var(--red)">You are on the Bench: ${me.stats.idleStreak} idle days.</span>` : ''}</div>`;
+    $('botBody').innerHTML = `<div class="row between"><b>🤖 ${esc(me.botName)}</b><span><button class="btn small ghost" onclick="nameBot()">Name it</button> <button class="btn small ghost" onclick="toggleSound()">${(() => { try { return localStorage.getItem('sml.sound') === 'off' ? '🔇' : '🔊'; } catch (_) { return '🔊'; } })()}</button></span></div><div class="stats" style="margin-top:8px"><div class="stat"><b class="pts">${b.iq || 100}</b><span>bot IQ</span></div><div class="stat"><b>${b.outcomesFromYou || 0}</b><span>learned from you</span></div><div class="stat"><b>${(b.outcomesFromWorld || 0).toLocaleString()}</b><span>from the world</span></div></div><div class="muted" style="margin-top:8px">Your bot learns from every play you finish or skip, from what pays in your city, and from every Legend in the world. It grades every job 1 to 10, and harder jobs pay more points.${me.botRating && me.botRating.count ? ` The crowd rates it ${me.botRating.average}/5.` : ''}${me.stats.benched ? ` <span style="color:var(--red)">You are on the Bench: ${me.stats.idleStreak} idle days.</span>` : ''}</div>`;
     renderFanMoney(me, bill);
     renderMentoring(me);
     renderTrust(me);
@@ -1156,7 +1213,11 @@ function connectEvents() {
   S.es.addEventListener('clip', () => { if ($('screen-people').classList.contains('active')) loadClips(); });
   S.es.addEventListener('friend_request', (e) => { try { const d = JSON.parse(e.data); toast(`${d.name} wants to be friends`); $('peoplePip').classList.remove('hidden'); } catch (_) {} });
   S.es.addEventListener('gigs', () => { if ($('screen-today').classList.contains('active')) loadToday(); });
-  S.es.addEventListener('approved', (e) => { try { const d = JSON.parse(e.data); toast(`Your bot approved it: ${d.points.toLocaleString()} points`); } catch (_) {} });
+  S.es.addEventListener('approved', (e) => { try { const d = JSON.parse(e.data); const total = d.points + (d.bonus || 0); const tags = []; if (d.boss) tags.push({ cls: 'boss', text: '👑 BOSS DOWN · 2×' }); if (d.power) tags.push({ cls: 'power', text: '⚡ POWER PLAY +50%' }); if (d.combo > 1) tags.push({ cls: 'bonus', text: `🔥 x${d.combo} COMBO` }); splash('+' + total.toLocaleString(), `${d.botName} approved: ${d.title}`, d.line, tags); sound(d.boss ? 'boss' : 'approve'); if ($('screen-today').classList.contains('active')) loadToday(); } catch (_) {} });
+  S.es.addEventListener('quest', (e) => { try { const d = JSON.parse(e.data); splash('+' + d.reward.toLocaleString(), 'Quest complete', d.label, [{ cls: 'bonus', text: '🏁 QUEST' }]); sound('quest'); } catch (_) {} });
+  S.es.addEventListener('climb', (e) => { try { const d = JSON.parse(e.data); toast('📈 ' + d.line); sound('climb'); } catch (_) {} });
+  S.es.addEventListener('rankup', (e) => { try { const d = JSON.parse(e.data); splash('RANK UP', d.name, 'New rank, new rivals. The board just got harder.', [{ cls: 'boss', text: '⬆ ' + d.name }]); sound('rankup'); } catch (_) {} });
+  S.es.addEventListener('callout', (e) => { try { const d = JSON.parse(e.data); toast(`🎯 ${d.fromName} called you out: "${d.line}"`); sound('tick'); } catch (_) {} });
   S.es.addEventListener('graded', (e) => { try { const d = JSON.parse(e.data); toast(`Auditor graded it ${d.difficulty}/10: ${d.points.toLocaleString()} points`); if ($('screen-today').classList.contains('active')) loadToday(); } catch (_) {} });
   S.es.addEventListener('feed', () => { if ($('screen-world').classList.contains('active')) loadFeed('feedWorld'); });
   S.es.addEventListener('inbox', (e) => { try { const d = JSON.parse(e.data); toast(d.title); $('mePip').classList.remove('hidden'); } catch (_) {} });

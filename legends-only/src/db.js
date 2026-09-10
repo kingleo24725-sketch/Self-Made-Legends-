@@ -617,6 +617,28 @@ CREATE TABLE IF NOT EXISTS clips (
   public     INTEGER NOT NULL DEFAULT 1,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS quests (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id    TEXT NOT NULL,
+  week_start TEXT NOT NULL,
+  key        TEXT NOT NULL,
+  label      TEXT NOT NULL,
+  target     INTEGER NOT NULL,
+  reward     INTEGER NOT NULL,
+  done_at    INTEGER,
+  done_on    TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(user_id, week_start, key)
+);
+CREATE TABLE IF NOT EXISTS callouts (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  from_id      TEXT NOT NULL,
+  to_id        TEXT NOT NULL,
+  line         TEXT NOT NULL,
+  date         TEXT NOT NULL,
+  challenge_id INTEGER,
+  created_at   INTEGER NOT NULL
+);
 CREATE TABLE IF NOT EXISTS reports (
   key        TEXT PRIMARY KEY,
   data       TEXT NOT NULL,
@@ -692,6 +714,14 @@ const MIGRATIONS = [
   'ALTER TABLE tasks ADD COLUMN posting_id INTEGER',
   'ALTER TABLE live_rooms ADD COLUMN kind TEXT NOT NULL DEFAULT \'live\'',
   'ALTER TABLE live_rooms ADD COLUMN squad_id INTEGER',
+  'ALTER TABLE tasks ADD COLUMN boss INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE tasks ADD COLUMN power INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE tasks ADD COLUMN combo INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE tasks ADD COLUMN bonus_points INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE daily_scores ADD COLUMN bonus_points INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE daily_scores ADD COLUMN quest_points INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE users ADD COLUMN title TEXT',
+  'ALTER TABLE profiles ADD COLUMN bot_name TEXT',
 ];
 function migrate(db) {
   for (const sql of MIGRATIONS) { try { db.exec(sql); } catch (_) { /* already applied */ } }

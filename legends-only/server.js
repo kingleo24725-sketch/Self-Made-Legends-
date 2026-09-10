@@ -18,6 +18,7 @@ const Ops = require('./src/ops');
 const Squads = require('./src/squads');
 const Market = require('./src/market');
 const Clips = require('./src/clips');
+const Fun = require('./src/fun');
 const { RESOURCES, CATEGORIES } = require('./src/playbook');
 
 const APP_URL = process.env.APP_URL || 'http://localhost:' + (process.env.PORT || 3000);
@@ -63,6 +64,8 @@ function createApp(opts = {}) {
   engine.squads = squads;
   const market = new Market(db, { engine, money: money$, gigs, now, onEvent });
   const clips = new Clips(db, { now, onEvent, dir: opts.clipsDir });
+  const fun = new Fun(db, { engine, community, now, onEvent });
+  engine.fun = fun;
   const auth = new Auth(db, { now });
   const requireUserOnly = auth.middleware();
   const requireUser = (req, res, next) => requireUserOnly(req, res, () => { if (trust.banned(req.user.id)) return res.status(403).json({ error: 'This account is closed. Contact support@selfmadelegends.app.' }); social.seen(req.user.id); next(); });
@@ -144,7 +147,15 @@ function createApp(opts = {}) {
       unreadMessages: social.unreadCount(req.user.id), friends: social.friends(req.user.id), botRating: social.botRating(req.user.id),
       trust: trust.score(req.user.id), phoneVerified: trust.phoneVerified(req.user.id), proof: trust.proofRequired(req.user.id),
       squad: squads.mine(req.user.id), employer: market.employer(req.user.id), clips: clips.mine(req.user.id).slice(0, 6), resumeUrl: `${APP_URL}/u/${encodeURIComponent(req.user.displayName)}/resume`,
+      title: fun.title(req.user.id), botName: fun.botName(req.user.id), quests: (() => { const pr = engine.getProfile(req.user.id); return pr ? fun.quests(req.user.id, engine.localDateKey(pr)) : []; })(), callouts: fun.callouts(req.user.id),
     });
+  });
+  app.post('/api/me/bot-name', requireUser, (req, res) => { if (!engine.getProfile(req.user.id)) return res.status(400).json({ error: 'Set up your profile first' }); res.json({ botName: fun.setBotName(req.user.id, (req.body || {}).name) }); });
+  app.post('/api/tasks/:taskId/power', requireUser, (req, res) => { try { res.json({ plan: fun.power(req.user.id, parseInt(req.params.taskId, 10)) }); } catch (e) { fail(res, e); } });
+  app.get('/api/callouts', requireUser, (req, res) => res.json({ callouts: fun.callouts(req.user.id), lines: Fun.constants.CALLOUT_LINES }));
+  app.post('/api/callouts/:userId', requireUser, (req, res) => { const pr = engine.getProfile(req.user.id); if (!pr) return res.status(400).json({ error: 'Set up your profile first' }); try { res.json({ callout: fun.callout(req.user.id, req.params.userId, (req.body || {}).line, engine.localDateKey(pr)) }); } catch (e) { fail(res, e); } });
+  app.post('/api/callouts/:id/accept', requireUser, (req, res) => { try { res.json({ challenge: fun.accept(req.user.id, Number(req.params.id)) }); } catch (e) { fail(res, e); } });
+  app.get('/api/quests', requireUser, (req, res) => { const pr = engine.getProfile(req.user.id); res.json({ quests: pr ? fun.quests(req.user.id, engine.localDateKey(pr)) : [] });
   });
   app.post('/api/me/avatar', requireUser, express.json({ limit: '2mb' }), (req, res) => { try { res.json(social.setAvatar(req.user.id, (req.body || {}).image)); } catch (e) { fail(res, e); } });
   app.delete('/api/me/avatar', requireUser, (req, res) => { social.clearAvatar(req.user.id, (req.query || {}).style); res.json({ ok: true }); });
@@ -187,7 +198,7 @@ function createApp(opts = {}) {
   });
 
   // ── Config and profile ───────────────────────────────────────────────────
-  app.get('/api/config', (req, res) => res.json({ resources: RESOURCES, categories: CATEGORIES, crewOnline: crew.online, scoring: Engine.constants, billing: !!stripe, pushPublicKey: push.enabled ? push.publicKey : null, appUrl: APP_URL, fees: money$.fees }));
+  app.get('/api/config', (req, res) => res.json({ resources: RESOURCES, categories: CATEGORIES, crewOnline: crew.online, scoring: Engine.constants, fun: Fun.constants, billing: !!stripe, pushPublicKey: push.enabled ? push.publicKey : null, appUrl: APP_URL, fees: money$.fees }));
   app.post('/api/profile', requireUser, (req, res) => {
     const b = req.body || {};
     const valid = new Set(RESOURCES.map(r => r.key));
@@ -211,6 +222,8 @@ function createApp(opts = {}) {
       gigs: await gigs.find(userId, profile, date),
       sponsors: market.tilesFor(profile.location, date), postings: market.postingsFor(profile.location, date),
       squad: squads.mine(userId),
+      quests: fun.quests(userId, date), mood: fun.mood(userId, plan, engine.myRank(userId, date), engine.localHour(profile)), botName: fun.botName(userId), title: fun.title(userId),
+      callouts: fun.callouts(userId, 5), calloutLines: Fun.constants.CALLOUT_LINES,
       bot: { ...engine.learning.botIQ(userId), rating: social.botRating(userId) },
       safety: safe ? community.safety(safe.token) : null,
       challengeDays: community.activeChallenges(date),
@@ -304,7 +317,7 @@ function createApp(opts = {}) {
     if (!p) return res.status(404).send(page({ title: 'No such Legend', description: '', body: '<h1>No public Legend by that name.</h1><a class="btn" href="/">Open Legends Only</a>' }));
     const tipped = req.query.tipped === '1';
     res.send(page({ title: `${p.displayName} on Legends Only`, description: `${p.stats.days} days, ${money(p.stats.earnedCents)} logged, ${p.stats.wins} world wins. Tip the grind.`, url: `${APP_URL}${p.url}`, image: p.lastDays[0] ? `${APP_URL}/api/cards/${p.id}/${p.lastDays[0].date}.svg` : undefined,
-      body: `<div style="display:flex;gap:14px;align-items:center;margin-top:12px"><img src="/api/avatar/${esc(p.id)}" alt="" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:2px solid #C9A227"><div><h1 style="margin:0">${esc(p.displayName)}</h1><div class="muted">${esc(p.city)}${p.city ? ' · ' : ''}${esc(p.goals)}</div>${(() => { const b = social.botRating(p.id); return b.count ? `<div class="muted">Bot rated ${b.average}/5 by ${b.count} viewer${b.count === 1 ? '' : 's'}</div>` : ''; })()}</div></div>
+      body: `<div style="display:flex;gap:14px;align-items:center;margin-top:12px"><img src="/api/avatar/${esc(p.id)}" alt="" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:2px solid #C9A227"><div><h1 style="margin:0">${esc(p.displayName)}${(() => { const t = fun.title(p.id); return t ? ` <span style="font-size:.55em;color:#f5b942;vertical-align:middle">${esc(t)}</span>` : ''; })()}</h1><div class="muted">${esc(p.city)}${p.city ? ' · ' : ''}${esc(p.goals)}</div>${(() => { const b = social.botRating(p.id); return b.count ? `<div class="muted">Bot rated ${b.average}/5 by ${b.count} viewer${b.count === 1 ? '' : 's'}</div>` : ''; })()}</div></div>
 <div class="card"><div class="row"><span class="muted">Days on the grind</span><b>${p.stats.days}</b></div><div class="row"><span class="muted">Logged</span><b>${money(p.stats.earnedCents)}${p.stats.verifiedCents ? ` <span class="muted">(${money(p.stats.verifiedCents)} verified)</span>` : ''}</b></div><div class="row"><span class="muted">World wins</span><b>${p.stats.wins}</b></div><div class="row"><span class="muted">Best streak</span><b>${p.stats.bestStreak}</b></div>${p.badges.length ? `<div class="row"><span class="muted">Badges</span><span>${p.badges.slice(0, 6).map(b => esc(b.badge.replace(/_/g, ' '))).join(' · ')}</span></div>` : ''}</div>
 ${tipped ? '<div class="card" style="border-color:#3ddc84"><b>Thank you.</b> Your tip is on its way.</div>' : ''}
 <h2>Tip the grind</h2><div class="card"><form method="post" onsubmit="return tip(event)"><div style="display:flex;gap:8px">${[300, 500, 1000, 2000].map(c => `<button type="button" class="btn ghost" onclick="pick(${c})" style="flex:1;text-align:center">${money(c)}</button>`).join('')}</div><input type="number" id="amt" min="1" step="1" placeholder="Other amount ($)"><input type="text" id="from" placeholder="Your name" maxlength="40"><input type="text" id="msg" placeholder="Say something (optional)" maxlength="200"><button class="btn" type="submit" style="width:100%">Send tip</button><p class="muted" style="font-size:.8em">Self-Made Legends keeps ${money$.fees.TIP_FEE_PCT}% to run the crew. The rest goes to ${esc(p.displayName)}.</p><div id="err" style="color:#ff6b6b"></div></form></div>
@@ -542,7 +555,7 @@ ${r.skills.length ? `<h2>Skills</h2><div class="card">${r.skills.map(esc).join('
     res.status(err.status || 500).json({ error: err.message || 'Something broke' });
   });
 
-  return { app, db, engine, auth, crew, push, money: money$, community, social, gigs, trust, ops, squads, market, clips, handleBillingEvent };
+  return { app, db, engine, auth, crew, push, money: money$, community, social, gigs, trust, ops, squads, market, clips, fun, handleBillingEvent };
 }
 
 if (require.main === module) {

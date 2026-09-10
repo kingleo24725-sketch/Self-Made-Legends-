@@ -299,7 +299,7 @@ describe('closing the day', () => {
     expect(db.prepare('SELECT * FROM daily_scores WHERE user_id = ? AND date = ?').get('u_b', yesterday)).toMatchObject({ streak: 1, rank: 1, closed: 1 });
     expect(db.prepare('SELECT rank FROM daily_scores WHERE user_id = ? AND date = ?').get('u_a', yesterday).rank).toBe(2);
     expect(engine.podium(yesterday).map(p => p.userId)).toEqual(['u_b', 'u_a']);
-    expect(engine.badges('u_b').map(b => b.badge).sort()).toEqual(['first_approved', 'full_day', 'world_champion']);
+    expect(engine.badges('u_b').map(b => b.badge).sort()).toEqual(['first_approved', 'full_day', 'rank_pro', 'world_champion']); // a world win makes Pro
     expect(engine.inbox('u_b').find(i => i.kind === 'close').title).toMatch(/Full day/);
     expect(pushes.some(p => p.payload.kind === 'podium')).toBe(false); // no subscriptions registered
     const champ = engine.championPlan(yesterday);

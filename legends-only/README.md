@@ -37,6 +37,21 @@ You are your own boss. The crew plans, you decide.
 - **Mentors.** Players with seven closed days or a world win can take paid questions from newcomers.
 - **Safety mode.** In-person plays get a "share where I am" link with I'm here / I'm done / need help check-ins that a contact can watch live.
 
+## The fun
+
+The work is real, so the payoff has to hit. Every one of these is earned, none can be bought.
+
+- **Your bot talks.** Name it. It has a line for every moment: the morning, an approval, a combo, the Boss going down, an idle afternoon, the Bench, holding #1, the last hours. Approvals come with a full-screen splash, confetti, a chime, and a buzz.
+- **Boss of the Day.** The hardest play on your plan wears the crown. Take it down and it pays its points twice, you get the Boss Slayer badge, and the feed hears about it.
+- **Power Play.** Once a day, before you start it, you pick one play and call your shot. Approved, it pays +50%. You can move it until it locks.
+- **Combos.** Every approved play after the first pays +10% of its base, up to +50% by the sixth. The combo pill burns in the hero and the bot's voice changes.
+- **Weekly quests.** Three a week, different for every player: approve five plays, verify $100, beat two Bosses, hit a x3 combo, show up four days, pass three lessons, finish three hard plays, go live, finish a full day. Progress bars on Today, a badge and 3,000 to 10,000 points on completion.
+- **Titles.** Earned, shown next to your name on every board: Untouchable, Boss Slayer, Money Machine, Iron Streak, Crowd Favorite, The Closer, Early Bird, Combo King, Grinder.
+- **The climb.** Pass someone on the world board and the bot names them. Rank up (Pro, All Star, Superstar) and the screen takes over.
+- **Callouts.** Tap the target next to any name on the board, pick a line ("Bring receipts, not excuses."), and it lands in their inbox and on the feed. Three a day. They can accept it and it is a head-to-head tomorrow.
+
+Bonuses live in their own bucket (`tasks.bonus_points`, `daily_scores.quest_points`), so base grading never changes and the daily cap still holds.
+
 ## Day one, trust, squads, employers, clips
 
 - **Day one.** The first plan carries a three-move card: finish one play, tell your bot, get approved. The first approval on any path (note, receipt, employer confirmation) earns the First Play Approved badge.
@@ -176,6 +191,7 @@ src/ops.js         Health checks, alarms, nightly money reconciliation
 src/squads.js      Squads, squad board, crew calls, bot vs bot
 src/market.js      Sponsor tiles, employers and postings, verified résumés, city reports
 src/clips.js       Clips from lives
+src/fun.js         Bot voice, Boss of the Day, Power Play, combos, quests, titles, the climb, callouts
 src/money.js       Fees, ledger, tips, payouts, Legend Fee, revenue
 src/university.js  Lessons and quizzes
 src/auth.js        Accounts, sessions, invite codes
@@ -211,6 +227,7 @@ POST /api/phone/send {phone}   POST /api/phone/verify {code}   GET /api/trust   
 GET/POST/DELETE /api/squads   POST /api/squads/join {code}   POST /api/squads/room   POST /api/squads/room/:id/leave|signal
 GET/POST /api/bot-duels   POST /api/bot-duels/:id/vote {pick}
 GET /api/sponsor/:id/click   GET /api/postings   POST /api/postings/:id/claim   GET/POST /api/employer   POST /api/employer/postings   POST /api/employer/claims/:id/confirm   GET /api/employer/search   GET /api/employer/resume/:userId
+POST /api/tasks/:id/power   GET /api/quests   GET /api/callouts   POST /api/callouts/:userId {line}   POST /api/callouts/:id/accept   POST /api/me/bot-name {name}
 GET /api/u/:name/resume   GET /api/reports/city?city=&month=   GET /api/clips   GET /api/clips/mine   POST /api/clips (raw video)   GET /api/clips/:id/video   DELETE /api/clips/:id   GET /api/live/:id/best-window
 GET /api/admin/health|sponsor-tiles|postings|reports   POST /api/admin/alerts/:id/resolve|reconcile|ban/:userId|sponsor-tiles|employers/:userId/verify
 Public pages: /u/:name  /u/:name/resume  /card/:userId/:date  /story/:id  /safe/:token  /challenge/:slug  /show/:week  /hall-of-fame  /report/:city  /clip/:id  /admin.html
