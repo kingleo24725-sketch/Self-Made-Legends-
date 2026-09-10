@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Self-Made Legends University: one short lesson a day inside the plan, with a
 // one-question quiz. A correct answer earns points toward the day's score, so

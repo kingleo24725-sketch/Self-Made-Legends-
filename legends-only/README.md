@@ -1,6 +1,8 @@
 # Legends Only
 
 *Inside the app: Self-Made Legends. Outside: Legends Only. By Self-Made Legends LLC.*
+
+**© 2026 Self-Made Legends LLC. All rights reserved.** Proprietary. No license is granted to copy, modify, or reuse any part of this code or design. See [LICENSE](LICENSE).
 **Your own crew of AI agents studies the real world every night and hands you a personal, legal, full-day money plan every morning. Everyone with the app competes on one world leaderboard.**
 
 Legends Only is a standalone, phone-first app. It shares nothing with any other project: its own server, its own database, its own accounts.

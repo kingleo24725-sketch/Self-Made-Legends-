@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 require('dotenv').config();
 
@@ -39,7 +40,7 @@ function page({ title, description, image, body, url }) {
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <style>body{background:#0b0d12 url('/logo.svg') no-repeat center 120px;background-size:520px;color:#eef0f5;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:20px 16px 60px;line-height:1.5}main{max-width:560px;margin:0 auto}h1{font-size:1.5em;margin:8px 0}h2{font-size:1em;color:#f5b942;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 8px}.muted{color:#8d95a8}.card{background:#141824;border:1px solid #262c3d;border-radius:16px;padding:16px;margin:12px 0}.btn{display:inline-block;background:#f5b942;color:#1a1200;font-weight:700;padding:12px 18px;border-radius:12px;text-decoration:none;margin-top:8px}.ghost{background:#1b2030;color:#eef0f5;border:1px solid #262c3d}img.card-img{width:100%;border-radius:16px;border:1px solid #262c3d}.row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed #262c3d}a{color:#5aa9ff}.brand{font-weight:900;letter-spacing:.02em;display:flex;align-items:center;gap:10px}.brand span{color:#f5b942}.brand img{width:34px;height:34px}main{position:relative}main::before{content:"";position:fixed;inset:0;background:rgba(11,13,18,.86);z-index:-1}input,textarea{width:100%;background:#1b2030;border:1px solid #262c3d;border-radius:12px;padding:12px;color:#eef0f5;font:inherit;margin:6px 0;box-sizing:border-box}</style></head>
 <body><main><div class="brand"><img src="/icon.svg" alt=""><a href="/" style="color:inherit;text-decoration:none">LEGENDS <span>ONLY</span></a></div>${body}
-<p class="muted" style="font-size:.78em;margin-top:30px">Earnings are self-reported unless marked verified. Plans are suggestions. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a></p></main></body></html>`;
+<p class="muted" style="font-size:.78em;margin-top:30px">Earnings are self-reported unless marked verified. Plans are suggestions. <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a><br>© 2026 Self-Made Legends LLC. All rights reserved. Self-Made Legends, Legends Only, SML and the crown seal are trademarks of Self-Made Legends LLC.</p></main></body></html>`;
 }
 
 function createApp(opts = {}) {

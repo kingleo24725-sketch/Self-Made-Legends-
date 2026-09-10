@@ -1,0 +1,9 @@
+# Railway build: Node 22, native build tools for better-sqlite3 (it ships prebuilt binaries for Node 22; these are the fallback).
+[phases.setup]
+nixPkgs = ["nodejs_22", "python3", "gcc", "gnumake"]
+
+[phases.install]
+cmds = ["npm ci --omit=dev"]
+
+[start]
+cmd = "node server.js"

@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // The fun layer. Everything here is about the moment after the work: the bot
 // talking back, a Boss of the Day worth double, one Power Play a day the

@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // The marketplace side: employers post shifts straight into the Gig Finder,
 // local sponsors buy the featured tile in a city, players carry a verified

@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // The engine: profiles, daily plans, task tracking, verified earnings, scoring,
 // leagues, world/local leaderboards, head-to-head challenges, the nightly close,

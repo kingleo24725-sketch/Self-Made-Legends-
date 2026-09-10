@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Ops: the alarms that tell the owner when something is wrong before a
 // player does, and the nightly money reconciliation against Stripe.

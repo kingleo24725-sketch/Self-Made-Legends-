@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Everything that makes Self-Made Legends a public thing rather than a private
 // planner: the live Grind Feed, shareable receipt cards, streak stories, the

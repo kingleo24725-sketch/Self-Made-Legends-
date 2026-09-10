@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // The Gig Finder: the bots go out and look for real, paying work for this
 // person, today, on the sites where that work is posted.

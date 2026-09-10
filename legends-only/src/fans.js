@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // The Fan Club: the audience side of Legends Only. A fan has no bot, no plan,
 // and never shows on a board. Fans follow Legends and squads, pick the Legend

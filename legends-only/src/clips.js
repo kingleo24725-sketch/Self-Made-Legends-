@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Auto-clips from lives. The host's phone records the stream in short chunks
 // while the server keeps chat activity per chunk; when the live ends the app

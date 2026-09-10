@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Fraud defenses: phone verification, one account per device, and a trust
 // score the Auditor uses to decide how much proof a play needs.

@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Web push. Turned on by VAPID keys in the environment; silently off otherwise.
 // Generate keys once with:  npx web-push generate-vapid-keys

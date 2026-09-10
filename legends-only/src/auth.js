@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Accounts and sessions. bcryptjs (pure JS) for password hashing, random
 // 32-byte tokens for sessions, 30-day expiry, all in SQLite.

@@ -5,7 +5,7 @@
   "private": true,
   "main": "server.js",
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   },
   "scripts": {
     "start": "node server.js",
@@ -31,5 +31,7 @@
   },
   "jest": {
     "testEnvironment": "node"
-  }
+  },
+  "license": "UNLICENSED",
+  "author": "Self-Made Legends LLC"
 }

@@ -1,4 +1,5 @@
 'use strict';
+// Copyright (c) 2026 Self-Made Legends LLC. All rights reserved. Proprietary and confidential. See LICENSE.
 
 // Squads (crews of two to five), the squad leaderboard, crew video rooms,
 // and bot vs bot duels the crowd votes on.
