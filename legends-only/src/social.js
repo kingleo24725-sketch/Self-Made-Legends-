@@ -186,11 +186,12 @@ class Social {
     if (!body) throw new Error('Say something');
     if (!this.db.prepare("SELECT 1 FROM live_rooms WHERE id = ? AND status = 'live'").get(roomId)) throw new Error('That live has ended');
     this.db.prepare('INSERT INTO live_messages (room_id, user_id, body, created_at) VALUES (?, ?, ?, ?)').run(roomId, userId, body, this.now());
-    const msg = { roomId, userId, name: this.name(userId), body, at: this.now() };
+    const tier = (this.db.prepare('SELECT tier FROM users WHERE id = ?').get(userId) || {}).tier;
+    const msg = { roomId, userId, name: this.name(userId), body, at: this.now(), club: tier === 'fanclub' };
     this.onEvent(null, 'live_chat', msg);
     return msg;
   }
-  liveMessages(roomId, limit = 50) { return this.db.prepare('SELECT m.*, u.display_name FROM live_messages m JOIN users u ON u.id = m.user_id WHERE m.room_id = ? ORDER BY m.created_at DESC LIMIT ?').all(roomId, limit).reverse().map(m => ({ userId: m.user_id, name: m.display_name, body: m.body, at: m.created_at })); }
+  liveMessages(roomId, limit = 50) { return this.db.prepare('SELECT m.*, u.display_name, u.tier FROM live_messages m JOIN users u ON u.id = m.user_id WHERE m.room_id = ? ORDER BY m.created_at DESC LIMIT ?').all(roomId, limit).reverse().map(m => ({ userId: m.user_id, name: m.display_name, body: m.body, at: m.created_at, club: m.tier === 'fanclub' })); }
   /** The crowd grades the host's bot: 1 (garbage) to 5 (amazing). */
   rateBot(roomId, raterId, rating) {
     const r = this.db.prepare('SELECT host_id FROM live_rooms WHERE id = ?').get(roomId);

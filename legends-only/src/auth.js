@@ -16,7 +16,7 @@ class Auth {
     this.rounds = opts.rounds || 10;
   }
 
-  register({ email, password, displayName, acceptTerms, referralCode }) {
+  register({ email, password, displayName, acceptTerms, referralCode, role }) {
     email = String(email || '').trim().toLowerCase();
     displayName = String(displayName || '').trim().slice(0, 40);
     if (!EMAIL_RE.test(email)) throw new Error('Enter a valid email');
@@ -31,8 +31,8 @@ class Auth {
       referredBy = ref ? ref.referral_code : null;
     }
     const id = crypto.randomBytes(12).toString('hex');
-    this.db.prepare('INSERT INTO users (id, email, display_name, password_hash, referral_code, referred_by, terms_accepted_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-      .run(id, email, displayName, bcrypt.hashSync(password, this.rounds), this._newReferralCode(), referredBy, this.now(), this.now());
+    this.db.prepare('INSERT INTO users (id, email, display_name, password_hash, referral_code, referred_by, terms_accepted_at, created_at, role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(id, email, displayName, bcrypt.hashSync(password, this.rounds), this._newReferralCode(), referredBy, this.now(), this.now(), role === 'fan' ? 'fan' : 'player');
     return this._issue(id);
   }
 
@@ -69,8 +69,8 @@ class Auth {
   logout(token) { this.db.prepare('DELETE FROM sessions WHERE token = ?').run(token); }
 
   user(id) {
-    const u = this.db.prepare('SELECT id, email, display_name, tier, referral_code, created_at FROM users WHERE id = ?').get(id);
-    return u ? { id: u.id, email: u.email, displayName: u.display_name, tier: u.tier, referralCode: u.referral_code, createdAt: u.created_at } : null;
+    const u = this.db.prepare('SELECT id, email, display_name, tier, referral_code, created_at, role FROM users WHERE id = ?').get(id);
+    return u ? { id: u.id, email: u.email, displayName: u.display_name, tier: u.tier, role: u.role || 'player', referralCode: u.referral_code, createdAt: u.created_at } : null;
   }
 
   /** Express middleware: requires a bearer token or x-session-token header. */

@@ -217,17 +217,22 @@ class Fun {
     return { id: r.lastInsertRowid, fromId, toId, line, date: dateKey };
   }
   /** The called-out player accepts: a head-to-head for tomorrow, auto-accepted on both sides. */
+  /** The called-out player accepts. For a fan's callout ("Ava, go get Ben") it is Ava, the Legend named, who accepts. */
   accept(userId, calloutId) {
-    const c = this.db.prepare('SELECT * FROM callouts WHERE id = ? AND to_id = ?').get(calloutId, userId);
-    if (!c) throw new Error('No such callout');
+    const c = this.db.prepare('SELECT * FROM callouts WHERE id = ?').get(calloutId);
+    if (!c || (c.fan_id ? c.from_id !== userId : c.to_id !== userId)) throw new Error('No such callout');
     if (c.challenge_id) return this.engine.challenge(c.challenge_id);
-    const from = this.db.prepare('SELECT email FROM users WHERE id = ?').get(c.from_id);
-    const ch = this.engine.createChallenge(userId, from.email, Fun.shift(c.date, 1), { autoAccept: true });
+    const other = this.db.prepare('SELECT email FROM users WHERE id = ?').get(c.fan_id ? c.to_id : c.from_id);
+    const ch = this.engine.createChallenge(userId, other.email, Fun.shift(c.date, 1), { autoAccept: true });
     this.db.prepare('UPDATE callouts SET challenge_id = ? WHERE id = ?').run(ch.id, calloutId);
-    this.engine.notify(c.from_id, 'callout', 'They accepted', `Head-to-head tomorrow. Bring it.`);
+    this.engine.notify(c.fan_id ? c.to_id : c.from_id, 'callout', c.fan_id ? `${this.db.prepare('SELECT display_name FROM users WHERE id = ?').get(userId).display_name} is coming for you` : 'They accepted', 'Head-to-head tomorrow. Bring it.');
+    if (c.fan_id) this.engine.notify(c.fan_id, 'fan', 'Your callout landed', 'They accepted. Head-to-head tomorrow.', { push: false });
     return ch;
   }
-  callouts(userId, limit = 10) { return this.db.prepare('SELECT c.*, a.display_name AS from_name, b.display_name AS to_name FROM callouts c JOIN users a ON a.id = c.from_id JOIN users b ON b.id = c.to_id WHERE c.from_id = ? OR c.to_id = ? ORDER BY c.created_at DESC LIMIT ?').all(userId, userId, limit).map(c => ({ id: c.id, fromId: c.from_id, toId: c.to_id, fromName: c.from_name, toName: c.to_name, line: c.line, date: c.date, challengeId: c.challenge_id, mine: c.from_id === userId })); }
+  callouts(userId, limit = 10) {
+    return this.db.prepare('SELECT c.*, a.display_name AS from_name, b.display_name AS to_name, f.display_name AS fan_name FROM callouts c JOIN users a ON a.id = c.from_id JOIN users b ON b.id = c.to_id LEFT JOIN users f ON f.id = c.fan_id WHERE c.from_id = ? OR c.to_id = ? ORDER BY c.created_at DESC LIMIT ?').all(userId, userId, limit)
+      .map(c => ({ id: c.id, fromId: c.from_id, toId: c.to_id, fromName: c.fan_id ? c.fan_name : c.from_name, toName: c.to_name, legendName: c.from_name, line: c.line, date: c.date, challengeId: c.challenge_id, fan: !!c.fan_id, mine: c.fan_id ? c.from_id !== userId : c.from_id === userId }));
+  }
 
   /** What the bot says on the Today screen right now. */
   mood(userId, plan, rank, localHour) {

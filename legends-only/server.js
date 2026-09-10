@@ -19,10 +19,12 @@ const Squads = require('./src/squads');
 const Market = require('./src/market');
 const Clips = require('./src/clips');
 const Fun = require('./src/fun');
+const Season = require('./src/season');
+const Fans = require('./src/fans');
 const { RESOURCES, CATEGORIES } = require('./src/playbook');
 
 const APP_URL = process.env.APP_URL || 'http://localhost:' + (process.env.PORT || 3000);
-const TIER_PRICES = { veteran: process.env.STRIPE_PRICE_VETERAN || '', hof: process.env.STRIPE_PRICE_HOF || '' };
+const TIER_PRICES = { veteran: process.env.STRIPE_PRICE_VETERAN || '', hof: process.env.STRIPE_PRICE_HOF || '', fanclub: process.env.STRIPE_PRICE_FANCLUB || '' };
 // WebRTC: public STUN by default; add a TURN server for calls that cross strict networks.
 const ICE_SERVERS = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
   .concat(process.env.TURN_URL ? [{ urls: process.env.TURN_URL, username: process.env.TURN_USER || '', credential: process.env.TURN_PASS || '' }] : []);
@@ -66,6 +68,17 @@ function createApp(opts = {}) {
   const clips = new Clips(db, { now, onEvent, dir: opts.clipsDir });
   const fun = new Fun(db, { engine, community, now, onEvent });
   engine.fun = fun;
+  const fans = new Fans(db, { engine, community, social, now, onEvent });
+  const season = new Season(db, { engine, money: money$, community, social, squads, fans, stripe, now, onEvent, env: opts.env });
+  fans.season = season; engine.season = season; engine.fans = fans;
+  // Fans hear about their Legends: a live starting, a climb, a Boss going down.
+  listeners.add((userId, event, data) => {
+    try {
+      if (event === 'live' && data.action === 'start' && data.room) fans.notifyFollowers(data.room.hostId, 'live', `🔴 ${data.room.hostName} is live`, data.room.title || 'Jump in from People.');
+      if (event === 'climb' && userId) fans.notifyFollowers(userId, 'fan', `${social.name(userId)} is climbing`, data.line);
+      if (event === 'approved' && userId && data.boss) fans.notifyFollowers(userId, 'fan', `${social.name(userId)} took down the Boss`, `${data.title}: +${(data.points + data.bonus).toLocaleString()} points.`);
+    } catch (_) {}
+  });
   const auth = new Auth(db, { now });
   const requireUserOnly = auth.middleware();
   const requireUser = (req, res, next) => requireUserOnly(req, res, () => { if (trust.banned(req.user.id)) return res.status(403).json({ error: 'This account is closed. Contact support@selfmadelegends.app.' }); social.seen(req.user.id); next(); });
@@ -96,6 +109,17 @@ function createApp(opts = {}) {
       if (t) { engine.notify(t.to_user_id, 'tip', `${t.from_name} tipped you ${money(t.gross_cents)}`, t.message || 'Keep grinding.'); const w = community._who(t.to_user_id); if (w) community.post(t.to_user_id, 'tip', `A fan tipped ${w.name} ${money(t.gross_cents)}.`, { city: w.city, amountCents: t.gross_cents }); }
       return;
     }
+    if (event.type === 'checkout.session.completed' && meta.kind === 'votes' && meta.userId) {
+      const r = season.creditPack(meta.userId, meta.packId, obj.payment_intent || obj.id);
+      if (r.credited) engine.notify(meta.userId, 'vote', `${r.credited} votes are in your pocket`, 'Spend them on the People\'s Champion ballot.', { push: false });
+      return;
+    }
+    if (event.type === 'checkout.session.completed' && obj.client_reference_id && meta.tier === 'fanclub') {
+      try { fans.setClub(obj.client_reference_id, true); } catch (e) { console.error('[fanclub]', e.message); }
+      if (obj.customer) db.prepare('UPDATE users SET stripe_customer_id = ? WHERE id = ?').run(String(obj.customer), obj.client_reference_id);
+      money$.record('subscription', { userId: obj.client_reference_id, gross: obj.amount_total || 0, fee: obj.amount_total || 0, net: 0, status: 'paid', ref: obj.id, note: 'fanclub' });
+      return;
+    }
     if (event.type === 'checkout.session.completed' && obj.client_reference_id) {
       const tier = meta.tier;
       engine.setTier(obj.client_reference_id, Engine.constants.TIERS.includes(tier) ? tier : 'veteran');
@@ -108,8 +132,9 @@ function createApp(opts = {}) {
       if (u && !db.prepare('SELECT 1 FROM ledger WHERE ref = ?').get(obj.id)) money$.record('subscription', { userId: u.id, gross: obj.amount_paid || 0, fee: obj.amount_paid || 0, net: 0, status: 'paid', ref: obj.id, note: 'renewal' });
     }
     if (event.type === 'customer.subscription.deleted' && obj.customer) {
-      const u = db.prepare('SELECT id FROM users WHERE stripe_customer_id = ?').get(String(obj.customer));
-      if (u) engine.setTier(u.id, 'free');
+      const u = db.prepare('SELECT id, role FROM users WHERE stripe_customer_id = ?').get(String(obj.customer));
+      if (u && u.role === 'fan') db.prepare("UPDATE users SET tier = 'free' WHERE id = ?").run(u.id);
+      else if (u) engine.setTier(u.id, 'free');
     }
   }
 
@@ -123,6 +148,7 @@ function createApp(opts = {}) {
       if (b.deviceId) { const others = db.prepare('SELECT COUNT(*) AS c FROM devices WHERE device_id = ?').get(String(b.deviceId).slice(0, 80)).c; if (others >= Trust.constants.MAX_ACCOUNTS_PER_DEVICE) return res.status(409).json({ error: 'This phone already has a Self-Made Legends account. Sign in to it instead.' }); }
       const r = auth.register(b);
       trust.registerDevice(r.user.id, b.deviceId, { enforce: false });
+      if (b.role === 'fan') fans.join(r.user.id, { city: b.city });
       res.json(r);
     } catch (e) { fail(res, e); }
   });
@@ -147,6 +173,7 @@ function createApp(opts = {}) {
       unreadMessages: social.unreadCount(req.user.id), friends: social.friends(req.user.id), botRating: social.botRating(req.user.id),
       trust: trust.score(req.user.id), phoneVerified: trust.phoneVerified(req.user.id), proof: trust.proofRequired(req.user.id),
       squad: squads.mine(req.user.id), employer: market.employer(req.user.id), clips: clips.mine(req.user.id).slice(0, 6), resumeUrl: `${APP_URL}/u/${encodeURIComponent(req.user.displayName)}/resume`,
+      fan: req.user.role === 'fan' ? fans.profile(req.user.id) : null, club: fans.clubInfo(req.user.id), votes: season.credits(req.user.id), frame: season.frameFor(req.user.id), followers: fans.followerCount(req.user.id),
       title: fun.title(req.user.id), botName: fun.botName(req.user.id), quests: (() => { const pr = engine.getProfile(req.user.id); return pr ? fun.quests(req.user.id, engine.localDateKey(pr)) : []; })(), callouts: fun.callouts(req.user.id),
     });
   });
@@ -198,7 +225,7 @@ function createApp(opts = {}) {
   });
 
   // ── Config and profile ───────────────────────────────────────────────────
-  app.get('/api/config', (req, res) => res.json({ resources: RESOURCES, categories: CATEGORIES, crewOnline: crew.online, scoring: Engine.constants, fun: Fun.constants, billing: !!stripe, pushPublicKey: push.enabled ? push.publicKey : null, appUrl: APP_URL, fees: money$.fees }));
+  app.get('/api/config', (req, res) => res.json({ resources: RESOURCES, categories: CATEGORIES, crewOnline: crew.online, scoring: Engine.constants, fun: Fun.constants, season: { month: season.current(), daysLeft: season.daysLeft(), packs: Season.constants.PACKS, voteCents: Season.constants.VOTE_CENTS, presentedBy: season.presentedBy(), prizes: season.prizes() }, fans: Fans.constants, billing: !!stripe, pushPublicKey: push.enabled ? push.publicKey : null, appUrl: APP_URL, fees: money$.fees }));
   app.post('/api/profile', requireUser, (req, res) => {
     const b = req.body || {};
     const valid = new Set(RESOURCES.map(r => r.key));
@@ -208,6 +235,7 @@ function createApp(opts = {}) {
 
   // ── Today ────────────────────────────────────────────────────────────────
   const todayPayload = async (userId) => {
+    if (fans.isFan(userId)) return fans.home(userId);
     const profile = engine.getProfile(userId);
     if (!profile) return { needsProfile: true };
     const date = engine.localDateKey(profile);
@@ -224,6 +252,7 @@ function createApp(opts = {}) {
       squad: squads.mine(userId),
       quests: fun.quests(userId, date), mood: fun.mood(userId, plan, engine.myRank(userId, date), engine.localHour(profile)), botName: fun.botName(userId), title: fun.title(userId),
       callouts: fun.callouts(userId, 5), calloutLines: Fun.constants.CALLOUT_LINES,
+      season: { month: season.current(), daysLeft: season.daysLeft(), myRank: (season.race(season.current(), 500).find(r => r.userId === userId) || {}).rank || null, presentedBy: season.presentedBy() },
       bot: { ...engine.learning.botIQ(userId), rating: social.botRating(userId) },
       safety: safe ? community.safety(safe.token) : null,
       challengeDays: community.activeChallenges(date),
@@ -348,6 +377,7 @@ ${p.lastDays.length ? `<h2>Last days</h2><div class="card">${p.lastDays.map(d =>
   // ── Feed, cities, brackets, challenge days, prizes, shows, mentors ───────
   app.get('/api/feed', (req, res) => res.json({ feed: community.feed(40) }));
   const hallOfFame = () => ({
+    wall: season.wall(),
     members: db.prepare("SELECT u.id, u.display_name, p.city, p.region, u.created_at FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.tier = 'hof' AND u.public_profile = 1 ORDER BY u.display_name").all().map(m => ({ id: m.id, name: m.display_name, city: [m.city, m.region].filter(Boolean).join(', ') })),
     legends: engine.allTimeLeaderboard(10),
     champions: db.prepare('SELECT c.date, c.user_id, c.score, u.display_name FROM champions c JOIN users u ON u.id = c.user_id WHERE c.rank = 1 ORDER BY c.date DESC LIMIT 30').all().map(c => ({ date: c.date, userId: c.user_id, name: c.display_name, score: c.score })),
@@ -357,6 +387,10 @@ ${p.lastDays.length ? `<h2>Last days</h2><div class="card">${p.lastDays.map(d =>
     const h = hallOfFame();
     res.send(page({ title: 'Self-Made Legends Hall of Fame', description: 'The members, the all-time Legends, and every Legend of the Day.', url: `${APP_URL}/hall-of-fame`, body: `<h1>Self-Made Legends Hall of Fame</h1>
 <h2>Members</h2><div class="card">${h.members.length ? h.members.map(m => `<div class="row"><span><img src="/api/avatar/${esc(m.id)}" alt="" style="width:28px;height:28px;border-radius:50%;vertical-align:middle;border:2px solid #C9A227;margin-right:8px"><a href="/u/${encodeURIComponent(m.name)}">${esc(m.name)}</a></span><span class="muted">${esc(m.city)}</span></div>`).join('') : '<span class="muted">The first seat is open.</span>'}</div>
+<h2>Legends of the Month</h2><div class="card">${h.wall.legends.length ? h.wall.legends.map(l => `<div class="row"><span>${esc(l.month)} · <a href="/u/${encodeURIComponent(l.name)}">${esc(l.name)}</a> <span class="muted">jacket #${String(l.jacketNumber).padStart(3, '0')}</span></span><b style="color:#f5b942">${l.points.toLocaleString()}</b></div>`).join('') : '<span class="muted">The first month has not closed yet. The chain is waiting.</span>'}</div>
+${h.wall.champions.length ? `<h2>People's Champions</h2><div class="card">${h.wall.champions.map(c => `<div class="row"><span>${esc(c.month)} · <a href="/u/${encodeURIComponent(c.name)}">${esc(c.name)}</a></span><b>${c.votes.toLocaleString()} votes</b></div>`).join('')}</div>` : ''}
+${h.wall.crews.length ? `<h2>Squad Belt</h2><div class="card">${h.wall.crews.map(c => `<div class="row"><span>${esc(c.month)} · ${esc(c.name)}</span><b>${c.points.toLocaleString()}</b></div>`).join('')}</div>` : ''}
+${h.wall.fansOfMonth.length ? `<h2>Fans of the Month</h2><div class="card">${h.wall.fansOfMonth.map(c => `<div class="row"><span>${esc(c.month)} · ${esc(c.name)}</span><b>${c.fanPoints.toLocaleString()} fan pts</b></div>`).join('')}</div>` : ''}
 <h2>All-time Legends</h2><div class="card">${h.legends.map(l => `<div class="row"><span>${l.rank}. <a href="/u/${encodeURIComponent(l.displayName)}">${esc(l.displayName)}</a></span><b style="color:#f5b942">${l.totalScore.toLocaleString()}</b></div>`).join('') || '<span class="muted">Nobody yet.</span>'}</div>
 <h2>Legends of the Day</h2><div class="card">${h.champions.map(c => `<div class="row"><span>${esc(c.date)} · <a href="/u/${encodeURIComponent(c.name)}">${esc(c.name)}</a></span><b>${c.score.toLocaleString()}</b></div>`).join('') || '<span class="muted">The first day has not closed yet.</span>'}</div>
 <a class="btn" href="/">Earn your seat</a>` }));
@@ -488,6 +522,32 @@ ${r.skills.length ? `<h2>Skills</h2><div class="card">${r.skills.map(esc).join('
       body: `<h1>${esc(c.title)}</h1><div class="muted">${esc(c.name)} · ${esc(c.date)} · ${c.views} views</div><video controls playsinline src="${esc(c.fileUrl)}" style="width:100%;border-radius:16px;border:1px solid #262c3d;margin:12px 0;background:#000"></video>${card && card.public ? `<img class="card-img" src="/api/cards/${esc(c.userId)}/${esc(c.date)}.svg" alt="Receipt card">` : ''}<a class="btn" href="/u/${encodeURIComponent(c.name)}">Tip ${esc(c.name.split(' ')[0])}</a> <a class="btn ghost" href="/">Play Legends Only</a>` }));
   });
 
+  // ── Seasons: monthly races, the ballot, vote packs, prizes ───────────────
+  app.get('/api/season', (req, res) => { const user = auth.verify(tokenOf(req)); res.json(season.summary(user ? user.id : null)); });
+  app.get('/api/season/wall', (req, res) => res.json(season.wall()));
+  app.get('/api/season/:month', (req, res) => { const m = /^\d{4}-\d{2}$/.test(req.params.month) ? req.params.month : season.current(); res.json({ month: m, race: season.race(m, 50), crewRace: season.crewRace(m, 25), ballot: season.ballot(m), prizes: season.prizes(m), winners: season.winners(m) }); });
+  app.post('/api/season/vote', requireUser, (req, res) => { const b = req.body || {}; try { res.json(season.vote(req.user.id, String(b.userId || ''), b.n || 1)); } catch (e) { fail(res, e); } });
+  app.post('/api/season/votes/buy', requireUser, wrap(async (req, res) => { try { res.json({ ...(await season.buyPack(req.user.id, (req.body || {}).pack, { successUrl: `${APP_URL}/?votes=done`, cancelUrl: `${APP_URL}/` })), billing: !!stripe }); } catch (e) { fail(res, e); } }));
+
+  // ── The Fan Club ─────────────────────────────────────────────────────────
+  app.get('/api/fans/home', requireUser, (req, res) => res.json(fans.home(req.user.id)));
+  app.post('/api/fans/join', requireUser, (req, res) => { if (engine.getProfile(req.user.id) && !fans.isFan(req.user.id)) return res.status(400).json({ error: 'You already grind. Fans are a separate door.' }); res.json({ profile: fans.join(req.user.id, req.body || {}) }); });
+  app.post('/api/fans/become-player', requireUser, (req, res) => res.json(fans.becomePlayer(req.user.id)));
+  app.get('/api/fans/following', requireUser, (req, res) => res.json(fans.following(req.user.id)));
+  app.post('/api/fans/follow', requireUser, (req, res) => { const b = req.body || {}; try { res.json(fans.follow(req.user.id, b.type || 'user', b.id)); } catch (e) { fail(res, e); } });
+  app.delete('/api/fans/follow/:type/:id', requireUser, (req, res) => res.json(fans.unfollow(req.user.id, req.params.type, req.params.id)));
+  app.post('/api/fans/pick', requireUser, (req, res) => { try { res.json({ pick: fans.pick(req.user.id, String((req.body || {}).userId || '')) }); } catch (e) { fail(res, e); } });
+  app.get('/api/fans/top', (req, res) => { const m = /^\d{4}-\d{2}$/.test(req.query.month || '') ? req.query.month : season.current(); res.json({ month: m, fans: fans.topFans(m, 25) }); });
+  app.post('/api/fans/callout', requireUser, (req, res) => { const b = req.body || {}; try { res.json({ callout: fans.callout(req.user.id, String(b.legendId || ''), String(b.targetId || '')) }); } catch (e) { fail(res, e); } });
+  app.get('/api/fans/club', requireUser, (req, res) => res.json({ ...fans.clubInfo(req.user.id), billing: !!stripe, priceId: !!TIER_PRICES.fanclub }));
+  app.post('/api/fans/club', requireUser, wrap(async (req, res) => {
+    if (!fans.isFan(req.user.id)) return res.status(400).json({ error: 'The Fan Club is for fan accounts' });
+    if (!stripe || !TIER_PRICES.fanclub) { if (opts.allowFreeClub || process.env.ALLOW_FREE_CLUB === '1') { fans.setClub(req.user.id, true); return res.json({ club: true, billing: false }); } return res.status(404).json({ error: 'Fan Club billing is not switched on yet' }); }
+    const session = await stripe.checkout.sessions.create({ mode: 'subscription', client_reference_id: req.user.id, customer_email: req.user.email, metadata: { tier: 'fanclub' }, line_items: [{ price: TIER_PRICES.fanclub, quantity: 1 }], success_url: `${APP_URL}/?billing=success`, cancel_url: `${APP_URL}/?billing=cancel` });
+    res.json({ url: session.url });
+  }));
+  app.get('/api/u/:name/fan', (req, res) => { const u = db.prepare("SELECT id FROM users WHERE lower(display_name) = lower(?) AND role = 'fan' AND public_profile = 1").get(String(req.params.name || '')); if (!u) return res.status(404).json({ error: 'No public fan by that name' }); res.json({ fan: fans.profile(u.id) }); });
+
   // ── Health ───────────────────────────────────────────────────────────────
   app.get('/api/health', (req, res) => { const h = ops.health(); res.status(h.ok ? 200 : 503).json({ ok: h.ok, at: h.at, crewOnline: h.crewOnline }); });
 
@@ -534,6 +594,11 @@ ${r.skills.length ? `<h2>Skills</h2><div class="card">${r.skills.map(esc).join('
   app.get('/api/admin/postings', requireAdmin, (req, res) => res.json({ postings: db.prepare('SELECT id FROM postings ORDER BY created_at DESC LIMIT 100').all().map(r => market.posting(r.id)), employers: db.prepare('SELECT e.*, u.display_name, u.email FROM employers e JOIN users u ON u.id = e.user_id ORDER BY e.created_at DESC').all() }));
   app.post('/api/admin/employers/:userId/verify', requireAdmin, (req, res) => { db.prepare('UPDATE employers SET verified = ? WHERE user_id = ?').run((req.body || {}).verified === false ? 0 : 1, req.params.userId); res.json({ ok: true }); });
   app.get('/api/admin/reports', requireAdmin, (req, res) => res.json({ reports: market.reports() }));
+  app.get('/api/admin/season', requireAdmin, (req, res) => { const m = /^\d{4}-\d{2}$/.test(req.query.month || '') ? req.query.month : season.current(); res.json({ month: m, prizes: season.prizes(m), race: season.race(m, 10), crewRace: season.crewRace(m, 5), ballot: season.ballot(m), winners: season.winners(m), voteRevenueCents: season.voteRevenue(m), canSettle: season.canSettle(m), topFans: fans.topFans(m, 10), fanClubMembers: db.prepare("SELECT COUNT(*) AS c FROM users WHERE tier = 'fanclub'").get().c, fansTotal: db.prepare("SELECT COUNT(*) AS c FROM users WHERE role = 'fan'").get().c }); });
+  app.post('/api/admin/season/prizes', requireAdmin, (req, res) => { const b = req.body || {}; try { res.json({ prize: season.setPrize(b.month, b.kind, b) }); } catch (e) { fail(res, e); } });
+  app.post('/api/admin/season/:month/settle', requireAdmin, (req, res) => { try { res.json({ winners: season.settle(req.params.month, { force: !!(req.body || {}).force }) }); } catch (e) { fail(res, e); } });
+  app.post('/api/admin/fans/:userId/club', requireAdmin, (req, res) => { try { res.json(fans.setClub(req.params.userId, (req.body || {}).on !== false)); } catch (e) { fail(res, e); } });
+  app.post('/api/admin/votes/:userId/grant', requireAdmin, (req, res) => res.json({ credits: season.grantCredits(req.params.userId, parseInt((req.body || {}).n, 10) || 0) }));
 
   // ── Live updates (Server-Sent Events) ────────────────────────────────────
   app.get('/api/events', (req, res) => {
@@ -555,7 +620,7 @@ ${r.skills.length ? `<h2>Skills</h2><div class="card">${r.skills.map(esc).join('
     res.status(err.status || 500).json({ error: err.message || 'Something broke' });
   });
 
-  return { app, db, engine, auth, crew, push, money: money$, community, social, gigs, trust, ops, squads, market, clips, fun, handleBillingEvent };
+  return { app, db, engine, auth, crew, push, money: money$, community, social, gigs, trust, ops, squads, market, clips, fun, season, fans, handleBillingEvent };
 }
 
 if (require.main === module) {

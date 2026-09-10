@@ -639,6 +639,70 @@ CREATE TABLE IF NOT EXISTS callouts (
   challenge_id INTEGER,
   created_at   INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS fans (
+  user_id    TEXT PRIMARY KEY,
+  city_key   TEXT,
+  last_recap TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS follows (
+  fan_id      TEXT NOT NULL,
+  target_type TEXT NOT NULL,
+  target_id   TEXT NOT NULL,
+  created_at  INTEGER NOT NULL,
+  PRIMARY KEY (fan_id, target_type, target_id)
+);
+CREATE INDEX IF NOT EXISTS idx_follows_target ON follows (target_type, target_id);
+CREATE TABLE IF NOT EXISTS picks (
+  fan_id     TEXT NOT NULL,
+  date       TEXT NOT NULL,
+  user_id    TEXT NOT NULL,
+  settled    INTEGER NOT NULL DEFAULT 0,
+  points     INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (fan_id, date)
+);
+CREATE TABLE IF NOT EXISTS fan_points (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  fan_id     TEXT NOT NULL,
+  month      TEXT NOT NULL,
+  points     INTEGER NOT NULL,
+  reason     TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_fan_points ON fan_points (month, fan_id);
+CREATE TABLE IF NOT EXISTS votes (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  month      TEXT NOT NULL,
+  from_id    TEXT NOT NULL,
+  to_id      TEXT NOT NULL,
+  n          INTEGER NOT NULL DEFAULT 1,
+  date       TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_votes_month ON votes (month, to_id);
+CREATE TABLE IF NOT EXISTS season_prizes (
+  month       TEXT NOT NULL,
+  kind        TEXT NOT NULL,
+  title       TEXT NOT NULL,
+  description TEXT,
+  cash_cents  INTEGER NOT NULL DEFAULT 0,
+  fan_pct     INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (month, kind)
+);
+CREATE TABLE IF NOT EXISTS season_winners (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  month         TEXT NOT NULL,
+  kind          TEXT NOT NULL,
+  user_id       TEXT,
+  squad_id      INTEGER,
+  score         INTEGER NOT NULL DEFAULT 0,
+  votes         INTEGER NOT NULL DEFAULT 0,
+  cash_cents    INTEGER NOT NULL DEFAULT 0,
+  jacket_number INTEGER,
+  created_at    INTEGER NOT NULL,
+  UNIQUE(month, kind)
+);
 CREATE TABLE IF NOT EXISTS reports (
   key        TEXT PRIMARY KEY,
   data       TEXT NOT NULL,
@@ -722,6 +786,11 @@ const MIGRATIONS = [
   'ALTER TABLE daily_scores ADD COLUMN quest_points INTEGER NOT NULL DEFAULT 0',
   'ALTER TABLE users ADD COLUMN title TEXT',
   'ALTER TABLE profiles ADD COLUMN bot_name TEXT',
+  'ALTER TABLE users ADD COLUMN vote_credits INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE users ADD COLUMN hof_life INTEGER NOT NULL DEFAULT 0',
+  'ALTER TABLE users ADD COLUMN frame_until TEXT',
+  'ALTER TABLE users ADD COLUMN club_credit_month TEXT',
+  'ALTER TABLE callouts ADD COLUMN fan_id TEXT',
 ];
 function migrate(db) {
   for (const sql of MIGRATIONS) { try { db.exec(sql); } catch (_) { /* already applied */ } }

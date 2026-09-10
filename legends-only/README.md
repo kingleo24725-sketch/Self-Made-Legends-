@@ -52,6 +52,30 @@ The work is real, so the payoff has to hit. Every one of these is earned, none c
 
 Bonuses live in their own bucket (`tasks.bonus_points`, `daily_scores.quest_points`), so base grading never changes and the daily cap still holds.
 
+## Seasons: three crowns a month
+
+Points add up all month. Money never decides merit, so the crowns are kept apart.
+
+| Crown | Decided by | What you get |
+|---|---|---|
+| **Legend of the Month** | Most approved points in the month | The Legends Only Chain, engraved. Hall of Fame for life (survives a cancelled subscription). A numbered Legends Only jacket (#001, #002, ...). The app is yours next month: your face on the landing page as "Presented by", gold frame on your cards, your story on the feed. Any cash the owner announces in advance. |
+| **People's Champion** | Most fan votes among the top 50 of the month | The chain, and the fan-funded check: a set share of the month's vote revenue (default 20%, owner sets it) plus any cash announced up front. |
+| **Crew of the Month** | Squad with the most combined points | The Squad Belt: the squad's name under the leaderboard for the next month, badge for every member. |
+| **Fan of the Month** | Most fan points | On the show, the Legends Only fan jacket, the badge. |
+
+**Votes.** 50¢ each, sold in packs (5 for $2.50, 20 for $10, 100 for $50) through Stripe Checkout. Every cent is platform revenue, in the ledger. You cannot vote for yourself. The ballot opens to everyone on the 2nd; Fan Club members vote from the 1st. Inside an iOS wrapper Apple treats votes as a digital good, so sell them on the web and Android.
+
+**Settling.** The scheduler settles a month once every day of it has closed. Prizes for a month are set before it starts and shown on the season card; nothing changes mid-month. The owner console has the prize editor, the vote revenue, and a settle button. `/hall-of-fame` carries the wall: every Legend of the Month with jacket number, People's Champions, Squad Belts, Fans of the Month.
+
+## The Fan Club
+
+Sign-up has two doors: **I'm here to grind** and **I'm here to watch**. A fan has no bot, no plan, no score, and never shows on a board. Same app, same feed, same lives.
+
+- **Free:** follow Legends and squads (My Legends shows their day live), watch and chat in lives, rate bots, tip, ask mentors, vote, and **call today's Legend of the Day** before 2pm ET: 1,000 fan points for the right call, 300 for a podium finish. Votes on the eventual People's Champion pay 50 fan points each, double in the first ten days. Top Fans board each month. Fan points cannot be bought.
+- **Fan callouts.** "Ava, go get Ben." Lands in Ava's inbox with the fan's name, on the feed, and Ava can accept it as a head-to-head. Three a day.
+- **Fan Club, $4.99 a month (`STRIPE_PRICE_FANCLUB`):** ten votes a month, gold name and star in live chat, the early ballot, a nightly recap of your Legends, a push when one of them goes live, passes someone, or takes down the Boss, and the badge.
+- A fan can flip to player any time and starts at Rookie. Fan points and follows stay.
+
 ## Day one, trust, squads, employers, clips
 
 - **Day one.** The first plan carries a three-move card: finish one play, tell your bot, get approved. The first approval on any path (note, receipt, employer confirmation) earns the First Play Approved badge.
@@ -83,6 +107,8 @@ Every dollar that moves through the app goes through one ledger, and the owner c
 | Employer shift postings | $5 per posting, plus 10% of the pay when the work is confirmed |
 | Employer résumé views | $2 per full record, once per 30 days per Legend |
 | Local sponsor tiles | 100% |
+| People's Champion vote packs | 100% |
+| Fan Club memberships | 100% |
 
 The Legend Fee is the "fee on money made through the app." It is charged only on earnings the app can prove (receipts), and only to players who can be billed, because that is the only version of it that is enforceable and fair. Unverified earnings are never charged.
 
@@ -167,6 +193,8 @@ Without an API key the app runs in **playbook mode**: every player still gets a 
 | `APP_URL` | Absolute URL for invite links and Stripe redirects |
 | `DB_PATH` | Where the SQLite file lives (mount a volume in production) |
 | `DEFAULT_TIER` | Membership for players who have not paid (`free`; set `hof` to unlock everything while testing) |
+| `STRIPE_PRICE_FANCLUB` | Fan Club subscription price ($4.99). `ALLOW_FREE_CLUB=1` turns it on without billing while testing |
+| `FAN_PRIZE_PCT` | Default share of monthly vote revenue that funds the People's Champion check (20) |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | Phone verification texts (without them the code prints to the server log) |
 | `ALERT_WEBHOOK_URL`, `OWNER_USER_ID` | Where ops alarms go |
 | `DATA_DIR` | Clips and other files (mount a volume) |
@@ -192,6 +220,8 @@ src/squads.js      Squads, squad board, crew calls, bot vs bot
 src/market.js      Sponsor tiles, employers and postings, verified résumés, city reports
 src/clips.js       Clips from lives
 src/fun.js         Bot voice, Boss of the Day, Power Play, combos, quests, titles, the climb, callouts
+src/season.js      Monthly races, the ballot, vote packs, prizes, settle, the wall
+src/fans.js        Fan accounts, follows, picks, fan points, Fan Club, fan callouts, nightly recap
 src/money.js       Fees, ledger, tips, payouts, Legend Fee, revenue
 src/university.js  Lessons and quizzes
 src/auth.js        Accounts, sessions, invite codes
@@ -204,7 +234,7 @@ tests/             Engine and API suites
 ## API
 
 ```
-POST /api/auth/register {email,password,displayName,acceptTerms,referralCode?}
+POST /api/auth/register {email,password,displayName,acceptTerms,referralCode?,role?:'fan',city?,deviceId?}
 POST /api/auth/login    POST /api/auth/logout    GET /api/me    GET /api/config
 POST /api/profile       {location,country,resources,skills,goals,comfort,targetHours,startHour,tzOffset,blockedHours,goal}
 GET  /api/today         POST /api/today/regenerate   POST /api/today/conditions   POST /api/today/chat   POST /api/today/close
@@ -228,6 +258,9 @@ GET/POST/DELETE /api/squads   POST /api/squads/join {code}   POST /api/squads/ro
 GET/POST /api/bot-duels   POST /api/bot-duels/:id/vote {pick}
 GET /api/sponsor/:id/click   GET /api/postings   POST /api/postings/:id/claim   GET/POST /api/employer   POST /api/employer/postings   POST /api/employer/claims/:id/confirm   GET /api/employer/search   GET /api/employer/resume/:userId
 POST /api/tasks/:id/power   GET /api/quests   GET /api/callouts   POST /api/callouts/:userId {line}   POST /api/callouts/:id/accept   POST /api/me/bot-name {name}
+GET /api/season   GET /api/season/:month   POST /api/season/vote {userId,n}   POST /api/season/votes/buy {pack}   GET /api/season/wall
+GET /api/fans/home   POST /api/fans/join|become-player|follow|pick|callout|club   DELETE /api/fans/follow/:type/:id   GET /api/fans/following|top|club   GET /api/u/:name/fan
+GET /api/admin/season   POST /api/admin/season/prizes   POST /api/admin/season/:month/settle   POST /api/admin/fans/:userId/club   POST /api/admin/votes/:userId/grant
 GET /api/u/:name/resume   GET /api/reports/city?city=&month=   GET /api/clips   GET /api/clips/mine   POST /api/clips (raw video)   GET /api/clips/:id/video   DELETE /api/clips/:id   GET /api/live/:id/best-window
 GET /api/admin/health|sponsor-tiles|postings|reports   POST /api/admin/alerts/:id/resolve|reconcile|ban/:userId|sponsor-tiles|employers/:userId/verify
 Public pages: /u/:name  /u/:name/resume  /card/:userId/:date  /story/:id  /safe/:token  /challenge/:slug  /show/:week  /hall-of-fame  /report/:city  /clip/:id  /admin.html

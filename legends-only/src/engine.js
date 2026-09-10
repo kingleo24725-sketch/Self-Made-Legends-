@@ -88,6 +88,8 @@ class Engine {
     this.squads = null;  // squads and bot vs bot (attached by the server)
     this.ops = null;     // alarms and reconciliation (attached by the server)
     this.fun = null;     // boss, power play, combos, quests, titles, callouts (attached by the server)
+    this.season = null;  // monthly races and prizes (attached by the server)
+    this.fans = null;    // the Fan Club (attached by the server)
     this.briefCache = {
       get: (key, date) => { const r = this.db.prepare('SELECT brief FROM briefs WHERE city_key = ? AND date = ?').get(key, date); return r ? r.brief : null; },
       set: (key, date, brief) => this.db.prepare('INSERT OR REPLACE INTO briefs (city_key, date, brief, created_at) VALUES (?, ?, ?, ?)').run(key, date, brief, this.now()),
@@ -111,6 +113,8 @@ class Engine {
   setTier(userId, tier) {
     if (['boss', 'pro', 'allstar'].includes(tier)) tier = 'free'; // old paid names are free ranks now
     if (!TIERS.includes(tier)) throw new Error('Unknown tier');
+    const u = this.db.prepare('SELECT hof_life FROM users WHERE id = ?').get(userId);
+    if (u && u.hof_life && tier !== 'hof') return; // Legend of the Month: Hall of Fame for life
     this.db.prepare('UPDATE users SET tier = ? WHERE id = ?').run(tier, userId);
     if (tier === 'hof') this.awardBadge(userId, 'hall_of_fame', new Date(this.now()).toISOString().slice(0, 10), 'Self-Made Legends Hall of Fame');
   }
@@ -795,6 +799,7 @@ class Engine {
       if (w) { this.awardBadge(w.user_id, 'womens_grind', dateKey, "Women's Grind Legend of the Day"); this.notify(w.user_id, 'podium', "Women's Grind Legend of the Day", `Top woman in the world on ${dateKey}.`); }
     }
     this.onEvent(null, 'champion', { date: dateKey, podium: all.slice(0, 3).map((t, i) => ({ userId: t.user_id, rank: i + 1, score: t.score })) });
+    if (this.fans) { try { this.fans.settlePicks(dateKey); } catch (e) { console.error('[picks]', e.message); } }
     return all.slice(0, 3);
   }
 
@@ -997,6 +1002,8 @@ class Engine {
       for (const d of touched) { try { this.squads.settle(d); } catch (e) { console.error('[bot-duel]', d, e.message); } }
     }
     if (this.community) { try { await this.community.weeklyTick(new Date(this.now()).toISOString().slice(0, 10)); } catch (e) { console.error('[weekly]', e.message); } }
+    if (this.season) { try { this.season.tick(); } catch (e) { console.error('[season]', e.message); } }
+    if (this.fans) { try { this.fans.nightlyRecap(new Date(this.now()).toISOString().slice(0, 10)); } catch (e) { console.error('[fans]', e.message); } }
     if (this.ops) {
       try { await this.ops.check(); } catch (e) { console.error('[ops]', e.message); }
       // Reconcile yesterday's money once a day.

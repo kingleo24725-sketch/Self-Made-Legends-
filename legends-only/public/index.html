@@ -48,6 +48,19 @@
   .clip { margin: 8px 0; } .clip video { width: 100%; border-radius: 12px; background: #000; max-height: 260px; }
   .trust { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 6px 0; } .trust i { display: block; height: 100%; background: var(--gold); }
   .grid2 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  /* Seasons and fans */
+  .door { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .door button { background: var(--card-2); border: 1px solid var(--line); border-radius: 12px; padding: 10px; color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+  .door button.on { border-color: var(--gold); box-shadow: 0 0 0 1px rgba(245,185,66,.4); } .door b { display: block; } .door small { color: var(--muted); }
+  .presented { display: flex; gap: 10px; align-items: center; background: linear-gradient(90deg, rgba(245,185,66,.18), transparent); border: 1px solid rgba(245,185,66,.4); border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; font-size: .88em; }
+  .presented img { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--gold); }
+  .race { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px dashed var(--line); font-size: .9em; gap: 8px; }
+  .race .n { color: var(--muted); min-width: 22px; } .race .v { color: var(--gold); font-weight: 800; white-space: nowrap; }
+  .prize { background: rgba(245,185,66,.06); border: 1px solid rgba(245,185,66,.3); border-radius: 12px; padding: 10px; margin: 8px 0; font-size: .88em; } .prize b { color: var(--gold); display: block; }
+  .club { border-color: rgba(181,140,255,.6) !important; } .club-name { color: var(--gold); font-weight: 800; }
+  .legend-row { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--line); font-size: .9em; } .legend-row .who { flex: 1; } .legend-row small { color: var(--muted); display: block; }
+  .avatar.frame-gold { box-shadow: 0 0 0 3px var(--gold), 0 0 18px rgba(245,185,66,.6); }
+  .packs { display: flex; gap: 6px; flex-wrap: wrap; }
   /* Fun layer */
   .mood { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; padding: 10px; border-radius: 12px; background: rgba(245,185,66,.08); border: 1px solid rgba(245,185,66,.25); font-size: .92em; }
   .mood .bot { font-size: 1.4em; line-height: 1; } .mood b { color: var(--gold); }
@@ -270,6 +283,8 @@
         <div class="headline">Wake up to a money plan built for you.</div>
         <p class="muted small">Every night your crew of AI agents studies the news, the gig market and what is hiring near you, then writes your working day. You do the work, log what you earn, and compete with the world. The best become Legends.</p>
       </div>
+      <div id="presentedAuth"></div>
+      <div class="card" id="doorCard" hidden><div class="small muted" style="margin-bottom:6px">Which door?</div><div class="door"><button type="button" id="doorGrind" class="on" onclick="setDoor('player')"><b>💪 I'm here to grind</b><small>Get a bot, a plan every morning, a spot on the board.</small></button><button type="button" id="doorFan" onclick="setDoor('fan')"><b>📣 I'm here to watch</b><small>Follow Legends, call the day's winner, vote, tip. No bot, no board.</small></button></div><input type="text" id="fanCity" placeholder="Your city (for local Legends and sponsors)" hidden style="width:100%;margin-top:6px"></div>
       <div class="card" id="inviteCard" hidden><b>You were invited.</b><div class="small muted">Create your account and your first day is a head-to-head against the person who sent you.</div></div>
       <div class="card"><h3>Live from the grind</h3><div class="feed" id="feedAuth"><span class="muted small">Quiet right now.</span></div></div>
       <div class="card">
@@ -336,6 +351,8 @@
 
     <!-- ── World ────────────────────────────────────────────────────── -->
     <section class="screen" id="screen-world">
+      <div id="presentedWorld"></div>
+      <div class="card" id="seasonCard"><h3>Self-Made Legends Season</h3><div class="small muted">Loading…</div></div>
       <div class="card">
         <div class="row between"><h2>Self-Made Legends Leaderboard</h2><span class="small muted" id="lbDate"></span></div>
         <div class="chips" id="scopeChips" style="margin:8px 0"></div>
@@ -436,9 +453,9 @@ const money = (cents) => { const c = Number(cents || 0); const whole = c % 100 =
 const toast = (msg) => { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove('show'), 3000); };
 const RANK_SHORT = { rookie: 'Rookie', pro: 'Pro', allstar: 'All Star', superstar: 'Superstar', veteran: 'Veteran', hof: 'Hall of Fame' };
 const leagueTag = (l) => `<span class="league ${esc(l || 'rookie')}">${esc(RANK_SHORT[l] || l || 'Rookie')}</span>`;
-const BADGE_LABELS = { first_approved: ['🤖', 'First play approved'], bot_vs_bot: ['🧠', 'Bot vs bot'], boss_slayer: ['👑', 'Boss Slayer'], rank_pro: ['⬆', 'Made Pro'], rank_allstar: ['⭐', 'Made All Star'], rank_superstar: ['🌟', 'Made Superstar'], hall_of_fame: ['🏛️', 'Hall of Fame'], world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
+const BADGE_LABELS = { legend_of_month: ['⛓️', 'Legend of the Month'], peoples_champion: ['📣', "People's Champion"], crew_of_month: ['🛡️', 'Crew of the Month'], fan_of_month: ['🎟️', 'Fan of the Month'], fan_club: ['★', 'Fan Club'], first_approved: ['🤖', 'First play approved'], bot_vs_bot: ['🧠', 'Bot vs bot'], boss_slayer: ['👑', 'Boss Slayer'], rank_pro: ['⬆', 'Made Pro'], rank_allstar: ['⭐', 'Made All Star'], rank_superstar: ['🌟', 'Made Superstar'], hall_of_fame: ['🏛️', 'Hall of Fame'], world_champion: ['👑', 'Legend of the Day'], podium: ['🏅', 'World podium'], full_day: ['✅', 'Full day'], streak_7: ['🔥', '7-day streak'], streak_30: ['🔥', '30-day streak'], streak_100: ['💯', '100-day streak'], duel_win: ['⚔️', 'Duel won'], recruiter: ['🤝', 'Recruiter'], womens_grind: ['👑', "Women's Grind Legend"], bracket_legend: ['🏆', 'Bracket Legend'], legend_of_week: ['📺', 'Legend of the Week'], monthly_legend: ['💰', 'Monthly prize'], graduate: ['🎓', 'University graduate'] };
 const CAT_LABELS = { gig: 'Gig', local: 'Local', online: 'Online', beauty: 'Beauty', care: 'Care', food: 'Food' };
-const feedIcon = (k) => ({ done: '✅', verified: '💵', champion: '👑', bracket: '🏆', tip: '💛', prize: '💰', boss: '⚔️', callout: '🎯' }[k] || '•');
+const feedIcon = (k) => ({ done: '✅', verified: '💵', champion: '👑', bracket: '🏆', tip: '💛', prize: '💰', boss: '⚔️', callout: '🎯', season: '⛓️' }[k] || '•');
 function renderFeed(id, items) { const el = $(id); if (!el) return; el.innerHTML = items.length ? items.slice(0, 25).map((f) => `<div><span class="k">${feedIcon(f.kind)}</span><span>${esc(f.text)}</span><time>${fmtTime(f.at)}</time></div>`).join('') : '<span class="muted small">Quiet right now.</span>'; }
 async function loadFeed(id) { try { renderFeed(id, (await api('/api/feed')).feed); } catch (_) {} }
 
@@ -466,11 +483,15 @@ function show(name) {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────
+S.door = 'player';
+function setDoor(d) { S.door = d; $('doorGrind').classList.toggle('on', d === 'player'); $('doorFan').classList.toggle('on', d === 'fan'); $('fanCity').hidden = d !== 'fan'; }
+function renderPresented(id, pb) { const el = $(id); if (!el) return; if (!pb || !pb.legend) { el.innerHTML = ''; return; } el.innerHTML = `<div class="presented"><img src="/api/avatar/${esc(pb.legend.userId)}" alt=""><div><b>Presented by ${esc(pb.legend.name)}</b>, Legend of the Month · jacket #${String(pb.legend.jacketNumber || 0).padStart(3, '0')}${pb.fans ? ` · People's Champion <b>${esc(pb.fans.name)}</b>` : ''}${pb.crew ? ` · Squad Belt: <b>${esc(pb.crew.squadName)}</b>` : ''}</div></div>`; }
 function authMode(m) {
   S.mode = m;
   $('tabSignin').classList.toggle('on', m === 'signin');
   $('tabSignup').classList.toggle('on', m === 'signup');
   $('nameField').classList.toggle('hidden', m === 'signin');
+  $('doorCard').hidden = m === 'signin';
   $('termsField').classList.toggle('hidden', m === 'signin');
   $('authBtn').textContent = m === 'signin' ? 'Sign in' : 'Create account';
   $('password').autocomplete = m === 'signin' ? 'current-password' : 'new-password';
@@ -480,7 +501,7 @@ async function submitAuth(e) {
   $('authError').textContent = '';
   $('authBtn').disabled = true;
   try {
-    const body = { email: $('email').value, password: $('password').value, displayName: $('displayName').value, acceptTerms: $('acceptTerms').checked, referralCode: S.invite || undefined, deviceId: S.deviceId || undefined };
+    const body = { email: $('email').value, password: $('password').value, displayName: $('displayName').value, acceptTerms: $('acceptTerms').checked, referralCode: S.invite || undefined, deviceId: S.deviceId || undefined, role: S.door === 'fan' ? 'fan' : undefined, city: S.door === 'fan' ? $('fanCity').value : undefined };
     const r = await api('/api/auth/' + (S.mode === 'signin' ? 'login' : 'register'), { method: 'POST', body });
     setToken(r.token); S.user = r.user;
     if (S.invite) { S.invite = null; history.replaceState(null, '', '/'); }
@@ -544,9 +565,56 @@ async function loadToday() {
   try {
     const t = await api('/api/today');
     if (t.needsProfile) { renderProfileForm(); show('profile'); return; }
+    if (t.fan) { S.fanHome = t; renderFanHome(); return; }
     S.today = t; renderToday();
   } catch (err) { toast(err.message); }
 }
+// ── Fan home ───────────────────────────────────────────────────────────────
+function renderFanHome() {
+  const h = S.fanHome, sz = h.season, b = sz.ballot;
+  const html = `
+    ${sz.presentedBy && sz.presentedBy.legend ? `<div class="presented"><img src="/api/avatar/${esc(sz.presentedBy.legend.userId)}" alt=""><div><b>Presented by ${esc(sz.presentedBy.legend.name)}</b>, Legend of the Month</div></div>` : ''}
+    <div class="card hero"><div class="row between"><div class="date">Fan Club · ${esc(fmtDate(h.date))}</div>${h.profile.club ? '<span class="league superstar">Fan Club</span>' : ''}</div><div class="headline">${esc(h.profile.name)}${h.profile.club ? ' <span class="club-name">★</span>' : ''}</div>
+      <div class="stats"><div class="stat"><b class="pts">${h.profile.fanPoints.toLocaleString()}</b><span>fan points</span></div><div class="stat"><b>${b.credits}</b><span>votes in pocket</span></div><div class="stat"><b>#${h.profile.topFanRank || '–'}</b><span>top fans</span></div></div>
+      <div class="small muted" style="margin-top:8px">Fan points come from calling it right. Nobody can buy them.</div></div>
+    <div class="card"><div class="row between"><h3 style="margin:0">Call today's Legend of the Day</h3><span class="small muted">${h.picksOpen ? 'closes 2pm ET' : 'closed for today'}</span></div>
+      ${h.pick ? `<div class="small" style="margin:6px 0">Your pick: <b>${esc(h.pick.name)}</b>${h.pick.settled ? (h.pick.points ? ` · <span style="color:var(--green)">+${h.pick.points.toLocaleString()} fan points</span>` : ' · missed') : ''}</div>` : '<div class="small muted" style="margin:6px 0">Right call pays 1,000 fan points. Podium pays 300.</div>'}
+      ${h.board.length ? h.board.slice(0, 10).map((r) => `<div class="race"><span class="n">${r.rank}</span><span style="flex:1"><img class="avatar" src="/api/avatar/${esc(r.userId)}" alt="" style="width:22px;height:22px;vertical-align:middle;margin-right:6px">${esc(r.displayName)}${r.title ? `<span class="title-tag">${esc(r.title)}</span>` : ''}<small class="muted"> ${r.tasksDone}/${r.tasksTotal}</small></span><span class="v">${r.score.toLocaleString()}</span>${h.picksOpen ? `<button class="btn small ${h.pick && h.pick.userId === r.userId ? '' : 'ghost'}" onclick="pickLegend('${esc(r.userId)}')">${h.pick && h.pick.userId === r.userId ? 'Picked' : 'Pick'}</button>` : ''}</div>`).join('') : '<div class="empty">Nobody has opened today yet.</div>'}</div>
+    ${renderSeasonCard(sz, true)}
+    <div class="card"><div class="row between"><h3 style="margin:0">My Legends</h3><button class="btn small ghost" onclick="show('people')">Find more</button></div>
+      ${h.following.users.length || h.following.squads.length ? h.following.users.map((u) => `<div class="legend-row"><img class="avatar" src="/api/avatar/${esc(u.id)}" alt=""><div class="who"><b>${esc(u.name)}</b>${u.online ? '<span class="online"></span>' : ''}${u.live ? ' <span style="color:var(--red)">🔴 live</span>' : ''}${u.today.bossDown ? ' 👑' : ''}<small>#${u.today.rank} today · ${u.today.score.toLocaleString()} pts · ${u.today.tasksDone}/${u.today.tasksTotal}${u.monthRank ? ` · #${u.monthRank} this month` : ''}</small></div>${u.live ? `<button class="btn small purple" onclick="show('people');setTimeout(()=>watchLive(${u.live.roomId}),600)">Watch</button>` : ''}<button class="btn small ghost" onclick="openThread('${esc(u.id)}')">Msg</button><button class="btn small ghost" onclick="unfollow('user','${esc(u.id)}')">✕</button></div>`).join('') + h.following.squads.map((q) => `<div class="legend-row"><span style="font-size:1.4em">🛡️</span><div class="who"><b>${esc(q.name)}</b><small>${esc(q.city || '')} · ${q.todayScore.toLocaleString()} today</small></div><button class="btn small ghost" onclick="unfollow('squad',${q.id})">✕</button></div>`).join('') : '<div class="small muted">Follow a Legend from the board above or from World, and their day shows up here live.</div>'}</div>
+    <div class="card"><h3>Fan callout</h3><div class="small muted">Tell a Legend who to go get. Three a day.</div><div class="row" style="margin-top:6px;flex-wrap:wrap"><select id="fcLegend" style="flex:1;min-width:120px">${h.board.map((r) => `<option value="${esc(r.userId)}">${esc(r.displayName)}</option>`).join('')}</select><span class="small muted">go get</span><select id="fcTarget" style="flex:1;min-width:120px">${h.board.map((r) => `<option value="${esc(r.userId)}">${esc(r.displayName)}</option>`).join('')}</select><button class="btn small purple" onclick="fanCallout()">Send</button></div>${h.callouts.length ? `<div class="small muted" style="margin-top:6px">${h.callouts.map((c) => `${esc(c.legend)} → ${esc(c.target)}${c.accepted ? ' ✓ on' : ''}`).join(' · ')}</div>` : ''}</div>
+    <div class="card"><h3>Top Fans · ${esc(h.month)}</h3>${h.topFans.length ? h.topFans.map((f) => `<div class="race"><span class="n">${f.rank}</span><span style="flex:1">${esc(f.name)}${f.club ? ' <span class="club-name">★</span>' : ''}<small class="muted"> ${f.picks} right</small></span><span class="v">${f.points.toLocaleString()}</span></div>`).join('') : '<div class="empty">Call today\'s winner to get on the board.</div>'}<div class="small muted" style="margin-top:6px">Fan of the Month: on the show, and the Legends Only fan jacket.</div></div>
+    <div class="card ${h.profile.club ? 'club' : ''}"><h3>Fan Club · ${money(h.club.priceCents)}/mo</h3>${h.profile.club ? '<div style="color:var(--green)">You are in. Front row.</div>' : `<ul style="margin:6px 0 10px 18px;font-size:.9em">${h.club.perks.map((x) => `<li>${esc(x)}</li>`).join('')}</ul><button class="btn purple" onclick="joinClub()">Join the Fan Club</button>`}</div>
+    <div class="card"><h3>Self-Made Legends Live</h3>${h.lives.length ? h.lives.map((r) => `<div class="people-row"><img class="avatar" src="/api/avatar/${esc(r.hostId)}" alt=""><div class="who"><b>🔴 ${esc(r.hostName)}</b><small>${esc(r.title)} · ${r.viewers} watching</small></div><button class="btn small purple" onclick="show('people');setTimeout(()=>watchLive(${r.id}),600)">Watch</button></div>`).join('') : '<div class="small muted">Nobody is live right now.</div>'}</div>
+    <div class="card"><div class="small muted">Want in on the board yourself? <a href="#" onclick="becomePlayer();return false">Flip to player</a>. You start at Rookie like everyone.</div></div>`;
+  $('todayContent').innerHTML = html;
+  $('todayLoading').classList.add('hidden'); $('todayContent').classList.remove('hidden');
+}
+async function pickLegend(id) { try { await api('/api/fans/pick', { method: 'POST', body: { userId: id } }); toast('Locked in. 1,000 fan points if they take the day.'); sound('tick'); loadToday(); } catch (err) { toast(err.message); } }
+async function followUser(id) { try { await api('/api/fans/follow', { method: 'POST', body: { type: 'user', id } }); toast('Following. Their day shows on your home.'); if (S.fanHome) loadToday(); } catch (err) { toast(err.message); } }
+async function followSquad(id) { try { await api('/api/fans/follow', { method: 'POST', body: { type: 'squad', id } }); toast('Following the squad.'); } catch (err) { toast(err.message); } }
+async function unfollow(type, id) { await api('/api/fans/follow/' + type + '/' + id, { method: 'DELETE' }); loadToday(); }
+async function fanCallout() { try { const r = await api('/api/fans/callout', { method: 'POST', body: { legendId: $('fcLegend').value, targetId: $('fcTarget').value } }); toast(r.callout.line); sound('tick'); loadToday(); } catch (err) { toast(err.message); } }
+async function joinClub() { try { const r = await api('/api/fans/club', { method: 'POST' }); if (r.url) location.href = r.url; else { toast('Welcome to the Fan Club.'); sound('quest'); loadToday(); } } catch (err) { toast(err.message); } }
+async function becomePlayer() { if (!confirm('Flip to player? You get a bot and a plan tomorrow morning, and you start at Rookie.')) return; await api('/api/fans/become-player', { method: 'POST' }); S.fanHome = null; loadToday(); }
+// ── Season card: races, ballot, prizes ─────────────────────────────────────
+function renderSeasonCard(sz, fanView = false) {
+  if (!sz) return '';
+  const b = sz.ballot, me = S.user ? S.user.id : null;
+  const cand = b.candidates.slice(0, 8);
+  return `<div class="card"><div class="row between"><h3 style="margin:0">Self-Made Legends Season · ${esc(sz.month)}</h3><span class="small muted">${sz.daysLeft} day${sz.daysLeft === 1 ? '' : 's'} left</span></div>
+    <div class="prize"><b>👑 Legend of the Month: ${esc(sz.prizes.legend.title)}</b>${sz.prizes.legend.cashCents ? `<div>${money(sz.prizes.legend.cashCents)} cash, announced up front.</div>` : ''}<div class="muted">${esc(sz.prizes.legend.description)}</div></div>
+    ${sz.race.slice(0, 5).map((r) => `<div class="race"><span class="n">${r.rank}</span><span style="flex:1">${esc(r.name)}${r.title ? `<span class="title-tag">${esc(r.title)}</span>` : ''}<small class="muted"> ${r.days} day${r.days === 1 ? '' : 's'}</small></span><span class="v">${r.points.toLocaleString()}</span>${fanView ? `<button class="btn small ghost" onclick="followUser('${esc(r.userId)}')">+ Follow</button>` : ''}</div>`).join('') || '<div class="empty">The month is wide open.</div>'}
+    <div class="prize" style="margin-top:12px"><b>📣 People's Champion: ${esc(sz.prizes.fans.title)}</b><div>${sz.prizes.fans.fanFundedCents || sz.prizes.fans.cashCents ? `Prize so far: ${money(sz.prizes.fans.cashCents + sz.prizes.fans.fanFundedCents)} (${sz.prizes.fans.fanPct}% of this month's votes${sz.prizes.fans.cashCents ? ' plus ' + money(sz.prizes.fans.cashCents) : ''}).` : `${sz.prizes.fans.fanPct}% of every vote this month goes into the check.`}</div><div class="muted">Votes are 50¢. You have <b style="color:var(--gold)">${b.credits}</b>. ${b.open ? 'Ballot is open.' : `Ballot opens to everyone ${esc(fmtDate(b.opensForAll, true))}. Fan Club votes now.`}</div><div class="packs" style="margin-top:6px">${b.packs.map((p) => `<button class="btn small ghost" onclick="buyVotes('${p.id}')">${esc(p.label)}</button>`).join('')}</div></div>
+    ${cand.map((c) => `<div class="race"><span class="n">${c.voteRank}</span><span style="flex:1">${esc(c.name)}<small class="muted"> #${c.rank} in points${c.mine ? ` · you: ${c.mine}` : ''}</small></span><span class="v">${c.votes.toLocaleString()} 🗳</span>${me && c.userId !== me ? `<button class="btn small" onclick="castVote('${esc(c.userId)}','${esc(c.name)}')">Vote</button>` : ''}</div>`).join('')}
+    <div class="prize" style="margin-top:12px"><b>🛡️ Crew of the Month: ${esc(sz.prizes.crew.title)}</b><div class="muted">${esc(sz.prizes.crew.description)}</div></div>
+    ${sz.crewRace.slice(0, 5).map((q) => `<div class="race"><span class="n">${q.rank}</span><span style="flex:1">${esc(q.name)}<small class="muted"> ${q.size} Legends</small></span><span class="v">${q.points.toLocaleString()}</span>${fanView ? `<button class="btn small ghost" onclick="followSquad(${q.squadId})">+ Follow</button>` : ''}</div>`).join('') || '<div class="small muted">No squads in the race yet.</div>'}
+    <div class="small muted" style="margin-top:10px">${esc(sz.rules)} <a href="/hall-of-fame" target="_blank">The wall</a></div></div>`;
+}
+async function castVote(userId, name) { const n = prompt(`How many votes for ${name}? (you have ${S.season ? S.season.ballot.credits : '?'})`, '1'); if (!n) return; try { const r = await api('/api/season/vote', { method: 'POST', body: { userId, n: Number(n) } }); toast(`${r.n} vote${r.n === 1 ? '' : 's'} for ${name}. They have ${r.total.toLocaleString()}.`); sound('tick'); loadSeason(); if (S.fanHome) loadToday(); } catch (err) { toast(err.message); } }
+async function buyVotes(pack) { try { const r = await api('/api/season/votes/buy', { method: 'POST', body: { pack } }); if (r.url) location.href = r.url; else { toast(`${r.credited} votes added. You have ${r.credits}.`); sound('quest'); loadSeason(); if (S.fanHome) loadToday(); } } catch (err) { toast(err.message); } }
+async function loadSeason() { try { S.season = await api('/api/season'); const el = $('seasonCard'); if (el) el.innerHTML = renderSeasonCard(S.season).replace(/^<div class="card">|<\/div>$/g, ''); renderPresented('presentedWorld', S.season.presentedBy); } catch (_) {} }
 function renderToday() {
   const t = S.today, p = t.plan, pr = p.progress;
   const pct = pr.tasksTotal ? Math.round((pr.tasksDone / pr.tasksTotal) * 100) : 0;
@@ -920,13 +988,13 @@ async function onLiveSignal(d) {
   if (d.type === 'ice' && S.people.pc && d.payload) { try { await S.people.pc.addIceCandidate(d.payload); } catch (_) {} }
 }
 function renderLiveRoom(room, messages) {
-  $('liveRoom').innerHTML = `<div class="row between"><b>🔴 ${esc(room.title)}</b><span class="small muted">${esc(room.hostName)}</span></div><div class="live-chat" id="liveChat">${(messages || []).map((m) => `<div><b>${esc(m.name)}</b> ${esc(m.body)}</div>`).join('')}</div>
+  $('liveRoom').innerHTML = `<div class="row between"><b>🔴 ${esc(room.title)}</b><span class="small muted">${esc(room.hostName)}</span></div><div class="live-chat" id="liveChat">${(messages || []).map((m) => `<div><b class="${m.club ? 'club-name' : ''}">${m.club ? '★ ' : ''}${esc(m.name)}</b> ${esc(m.body)}</div>`).join('')}</div>
     <div class="chat-input" style="margin-top:8px"><input type="text" id="liveMsg" placeholder="Say something" maxlength="300" onkeydown="if(event.key==='Enter')sendLiveChat()"><button class="btn small" onclick="sendLiveChat()">Send</button></div>
     ${S.user && room.hostId !== S.user.id ? `<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="small muted">Rate the bot:</span>${[1, 2, 3, 4, 5].map((n) => `<button class="btn small ghost" onclick="rateBot(${room.id},${n})">${n === 1 ? '🗑️ garbage' : n === 5 ? '🔥 amazing' : n}</button>`).join('')}</div><button class="btn small ghost" style="margin-top:8px" onclick="leaveLive()">Leave</button>` : '<button class="btn small danger" style="margin-top:8px" onclick="endLive()">End live</button>'}`;
   $('liveRoom').hidden = false;
 }
 async function sendLiveChat() { const i = $('liveMsg'); if (!i.value.trim() || !S.people.live) return; try { await api('/api/live/' + S.people.live.room.id + '/chat', { method: 'POST', body: { body: i.value } }); i.value = ''; } catch (err) { toast(err.message); } }
-function onLiveChat(m) { if (!S.people.live || m.roomId !== S.people.live.room.id) return; const c = $('liveChat'); if (!c) return; c.insertAdjacentHTML('beforeend', `<div><b>${esc(m.name)}</b> ${esc(m.body)}</div>`); c.scrollTop = c.scrollHeight; }
+function onLiveChat(m) { if (!S.people.live || m.roomId !== S.people.live.room.id) return; const c = $('liveChat'); if (!c) return; c.insertAdjacentHTML('beforeend', `<div><b class="${m.club ? 'club-name' : ''}">${m.club ? '★ ' : ''}${esc(m.name)}</b> ${esc(m.body)}</div>`); c.scrollTop = c.scrollHeight; }
 async function rateBot(roomId, n) { try { const r = await api('/api/live/' + roomId + '/rate', { method: 'POST', body: { rating: n } }); toast(`Rated. Bot now ${r.rating.average}/5 from ${r.rating.count}.`); } catch (err) { toast(err.message); } }
 async function leaveLive() { if (!S.people.live) return; api('/api/live/' + S.people.live.room.id + '/leave', { method: 'POST' }).catch(() => {}); S.people.live = null; $('localVideo').style.display = ''; $('liveRoom').hidden = true; endCall(false); }
 async function endLive() { const live = S.people.live; await api('/api/live', { method: 'DELETE' }).catch(() => {}); for (const pc of Object.values(S.people.viewerPcs)) pc.close(); S.people.viewerPcs = {}; S.people.live = null; $('liveRoom').hidden = true; if (live && live.host) await finishClip(live.room.id, live.room.title); endCall(false); loadPeople(); }
@@ -988,7 +1056,7 @@ async function loadWorld() {
     if (w.champion) { $('champCard').innerHTML = renderChampion(w.champion).replace(/^<div class="card">|<\/div>$/g, ''); $('champCard').hidden = false; } else $('champCard').hidden = true;
     $('lbToday').innerHTML = w.leaderboard.length ? `<table class="lb">${w.leaderboard.map((r) => `
       <tr class="${S.user && r.userId === S.user.id ? 'me' : ''}"><td class="rk ${r.rank <= 3 ? 'top' : ''}">${r.rank}</td>
-      <td class="nm"><img class="avatar" src="/api/avatar/${esc(r.userId)}" alt="" style="width:26px;height:26px;vertical-align:middle;margin-right:6px">${esc(r.displayName)} ${leagueTag(r.league)}${r.title ? `<span class="title-tag">${esc(r.title)}</span>` : ''}${r.streak ? ' 🔥' + r.streak : ''}${S.user && r.userId !== S.user.id ? ` <a href="#" onclick="callOut('${esc(r.userId)}','${esc(r.displayName)}');return false" title="Call them out">🎯</a>` : ''}<small>${esc(r.location || '')}${r.location ? ' · ' : ''}${r.tasksDone}/${r.tasksTotal} plays · ${r.hoursDone}h</small></td>
+      <td class="nm"><img class="avatar" src="/api/avatar/${esc(r.userId)}" alt="" style="width:26px;height:26px;vertical-align:middle;margin-right:6px">${esc(r.displayName)} ${leagueTag(r.league)}${r.title ? `<span class="title-tag">${esc(r.title)}</span>` : ''}${r.streak ? ' 🔥' + r.streak : ''}${S.user && r.userId !== S.user.id ? (S.user.role === 'fan' ? ` <a href="#" onclick="followUser('${esc(r.userId)}');return false" title="Follow">＋</a>` : ` <a href="#" onclick="callOut('${esc(r.userId)}','${esc(r.displayName)}');return false" title="Call them out">🎯</a>`) : ''}<small>${esc(r.location || '')}${r.location ? ' · ' : ''}${r.tasksDone}/${r.tasksTotal} plays · ${r.hoursDone}h</small></td>
       <td class="sc">${r.score.toLocaleString()}<small>${money(r.earningsCents)}${r.verifiedCents ? ' ✓' : ''}</small></td></tr>`).join('')}</table>` : '<div class="empty">Nobody has scored here yet today.</div>';
     $('bench').innerHTML = (w.bench || []).length ? `<table class="lb bench">${w.bench.map((r) => `<tr><td class="rk">${r.rank}</td><td class="nm">${esc(r.displayName)}<small>${r.idleStreak} idle day${r.idleStreak === 1 ? '' : 's'} in a row</small></td><td class="sc" style="color:var(--red)">${r.weekScore.toLocaleString()}</td></tr>`).join('')}</table>` : '<div class="empty">Empty. Everyone showed up this week.</div>';
     $('lbAll').innerHTML = w.allTime.length ? `<table class="lb">${w.allTime.map((r) => `
@@ -996,7 +1064,7 @@ async function loadWorld() {
       <td class="nm">${esc(r.displayName)}<small>${r.days} day${r.days === 1 ? '' : 's'} · ${r.wins} win${r.wins === 1 ? '' : 's'} · best streak ${r.bestStreak}</small></td>
       <td class="sc">${r.totalScore.toLocaleString()}<small>${money(r.totalEarningsCents)} logged</small></td></tr>`).join('')}</table>` : '<div class="empty">Nothing yet.</div>';
   } catch (err) { toast(err.message); if (err.status === 402 || err.status === 401) { S.lb.scope = 'world'; } }
-  loadDuels(); loadFeed('feedWorld'); loadCities(); loadBracket(); loadCommunity(); loadSquads(); loadBotDuels();
+  loadDuels(); loadFeed('feedWorld'); loadCities(); loadBracket(); loadCommunity(); loadSquads(); loadBotDuels(); loadSeason();
 }
 async function loadSquads() {
   try {
@@ -1084,7 +1152,7 @@ async function loadMe() {
   try {
     const [me, h, ib, bill] = await Promise.all([api('/api/me'), api('/api/history'), api('/api/inbox'), api('/api/billing')]);
     S.me = me; S.profile = me.profile; $('mePip').classList.add('hidden');
-    $('meHero').innerHTML = `<div class="row between"><div class="date">${esc(me.user.displayName)}${me.title ? `<span class="title-tag">${esc(me.title)}</span>` : ''}</div><span>${leagueTag(me.rank.rank)}${me.tier !== 'free' ? ' ' + leagueTag(me.tier) : ''}</span></div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
+    $('meHero').innerHTML = `<div class="row between"><div class="date">${esc(me.user.displayName)}${me.title ? `<span class="title-tag">${esc(me.title)}</span>` : ''}</div><span>${me.user.role === 'fan' ? (me.club.member ? '<span class="league superstar">Fan Club</span>' : '<span class="league rookie">Fan</span>') : leagueTag(me.rank.rank) + (me.tier !== 'free' ? ' ' + leagueTag(me.tier) : '')}</span></div><div class="headline">${esc(me.profile ? me.profile.goals || 'Own the day.' : 'Own the day.')}</div>
       <div class="stats"><div class="stat"><b>${me.stats.days}</b><span>days</span></div><div class="stat"><b>${money(me.stats.earnedCents)}</b><span>${me.stats.verifiedCents ? money(me.stats.verifiedCents) + ' verified' : 'logged'}</span></div><div class="stat"><b>${me.stats.wins}</b><span>world wins</span></div></div>
       <div class="small muted" style="margin-top:8px">Best streak ${me.stats.bestStreak} · duels ${me.stats.duelsWon}/${me.stats.duelsPlayed} · total score ${me.stats.totalScore}</div>`;
     const g = me.profile && me.profile.goal;
@@ -1095,7 +1163,8 @@ async function loadMe() {
     if (m.tomorrowHint) $('meNotes').innerHTML += `<div class="small" style="margin-top:8px">Tomorrow: <b>${esc(m.tomorrowHint)}</b></div>`;
     if (h.recaps && h.recaps.length) { $('recaps').innerHTML = h.recaps.slice(0, 4).map((r) => `<div class="recap"><b>Week of ${esc(fmtDate(r.weekEnd, true))}: ${esc(r.headline)}</b>${(r.wins || []).map((w) => `<div>✔ ${esc(w)}</div>`).join('')}<div style="margin-top:4px">Change: ${esc(r.change)}</div><div class="muted">Next: ${esc(r.nextWeekFocus)}</div></div>`).join(''); $('recapCard').hidden = false; } else $('recapCard').hidden = true;
     $('inviteUrl').value = me.inviteUrl; $('profileUrl').value = me.profileUrl; $('pubProfile').checked = !!me.user.publicProfile;
-    $('meAvatar').src = me.avatarUrl; $('meAvatar').className = 'avatar lg' + (me.tier === 'hof' ? ' frame-hof' : me.tier === 'veteran' ? ' frame-veteran' : '');
+    $('meAvatar').src = me.avatarUrl; $('meAvatar').className = 'avatar lg' + (me.frame === 'gold' ? ' frame-gold' : me.tier === 'hof' ? ' frame-hof' : me.tier === 'veteran' ? ' frame-veteran' : '');
+    if (me.user.role === 'fan') { ['botCard', 'trustCard', 'employerCard', 'mentorCard', 'goalCard', 'recapCard', 'storiesCard'].forEach((id) => { const el = $(id); if (el) el.hidden = true; }); $('history').innerHTML = `<div class="small muted">Fan account. ${me.fan.votesCast} votes cast, ${me.fan.fanPoints.toLocaleString()} fan points this month${me.fan.topFanRank ? `, #${me.fan.topFanRank} on Top Fans` : ''}. Following ${me.fan.follows}.</div>`; }
     const b = me.stats.botIQ || {};
     $('botBody').innerHTML = `<div class="row between"><b>🤖 ${esc(me.botName)}</b><span><button class="btn small ghost" onclick="nameBot()">Name it</button> <button class="btn small ghost" onclick="toggleSound()">${(() => { try { return localStorage.getItem('sml.sound') === 'off' ? '🔇' : '🔊'; } catch (_) { return '🔊'; } })()}</button></span></div><div class="stats" style="margin-top:8px"><div class="stat"><b class="pts">${b.iq || 100}</b><span>bot IQ</span></div><div class="stat"><b>${b.outcomesFromYou || 0}</b><span>learned from you</span></div><div class="stat"><b>${(b.outcomesFromWorld || 0).toLocaleString()}</b><span>from the world</span></div></div><div class="muted" style="margin-top:8px">Your bot learns from every play you finish or skip, from what pays in your city, and from every Legend in the world. It grades every job 1 to 10, and harder jobs pay more points.${me.botRating && me.botRating.count ? ` The crowd rates it ${me.botRating.average}/5.` : ''}${me.stats.benched ? ` <span style="color:var(--red)">You are on the Bench: ${me.stats.idleStreak} idle days.</span>` : ''}</div>`;
     renderFanMoney(me, bill);
@@ -1136,10 +1205,12 @@ async function confirmClaim(id) { if (!confirm('Confirm the work was done? Pay g
 async function searchLegends() { const city = prompt('City to search:', (S.profile && S.profile.location) || '') || ''; try { const r = await api('/api/employer/search?city=' + encodeURIComponent(city)); $('empSearch').innerHTML = r.results.length ? r.results.map((x) => `<div class="people-row"><img class="avatar" src="/api/avatar/${esc(x.id)}" alt=""><div class="who"><b>${esc(x.name)}</b><small>${esc(x.rank)} · ${x.days} days · ${x.approvedPlays} approved · ${money(x.verifiedCents)} verified · trust ${x.trust}</small></div><a class="btn small ghost" href="/u/${encodeURIComponent(x.name)}/resume" target="_blank">Record</a><button class="btn small ghost" onclick="openThread('${esc(x.id)}')">Msg</button></div>`).join('') : '<span class="muted">Nobody with a record there yet.</span>'; } catch (err) { toast(err.message); } }
 function renderFanMoney(me, bill) {
   const f = me.fees;
+  if (me.user.role === 'fan') { $('fanMoney').innerHTML = `<div class="stats" style="margin-top:0"><div class="stat"><b class="pts">${me.votes}</b><span>votes in pocket</span></div><div class="stat"><b>${me.fan.fanPoints.toLocaleString()}</b><span>fan points</span></div><div class="stat"><b>${me.fan.follows}</b><span>following</span></div></div><div class="muted" style="margin-top:8px">Votes are 50¢ and go to the People's Champion race. ${me.club.member ? 'Fan Club sends you ten a month.' : 'Fan Club members get ten a month.'}</div><div class="packs" style="margin-top:8px">${(S.config.season.packs || []).map((p) => `<button class="btn small ghost" onclick="buyVotes('${p.id}')">${esc(p.label)}</button>`).join('')}</div>${me.club.member ? '' : `<button class="btn purple" style="margin-top:10px" onclick="joinClub()">Join the Fan Club · ${money(me.club.priceCents)}/mo</button>`}`; return; }
   const mf = bill.myFees || { tipPct: f.TIP_FEE_PCT, successPct: f.SUCCESS_FEE_PCT };
   $('fanMoney').innerHTML = `<div class="stats" style="margin-top:0"><div class="stat"><b>${money(me.stats.tipsCents)}</b><span>tips (${me.stats.tipsCount})</span></div><div class="stat"><b>${money(me.payoutBalanceCents)}</b><span>owed to you</span></div><div class="stat"><b>${money(bill.successFee.verifiedCents)}</b><span>verified this month</span></div></div>
     <div class="muted" style="margin-top:8px">Fans tip you on your Legend page. Self-Made Legends keeps ${mf.tipPct}% of your tips and ${f.MENTOR_FEE_PCT}% of mentor questions. Your Legend Fee is ${mf.successPct}% of receipt-verified earnings each month${bill.successFee.feeCents ? ` (${money(bill.successFee.feeCents)} so far this month)` : ''}, billed only when you have a card on file.</div>
     <div class="row" style="margin-top:8px;flex-wrap:wrap">${me.payoutBalanceCents > 0 ? (me.user.payoutsConnected ? '<button class="btn small" onclick="requestPayout()">Pay me out</button>' : '<span class="muted">The owner pays balances out by hand until you connect an account.</span>') : ''}${bill.enabled && !me.user.payoutsConnected ? '<button class="btn small ghost" onclick="connectPayouts()">Connect payouts (Stripe)</button>' : ''}</div>
+    <div class="muted" style="margin-top:10px">🗳 <b style="color:var(--gold)">${me.votes}</b> People's Champion votes in your pocket${me.followers ? ` · ${me.followers} fan${me.followers === 1 ? '' : 's'} following you` : ''}. <span class="packs" style="display:inline-flex">${(S.config.season.packs || []).map((p) => `<button class="btn small ghost" onclick="buyVotes('${p.id}')">${esc(p.label)}</button>`).join('')}</span></div>
     ${me.tips.length ? `<div style="margin-top:8px">${me.tips.slice(0, 5).map((t) => `<div class="inbox-item"><b>${esc(t.fromName)} · ${money(t.grossCents)}</b><span>${esc(t.message || '')}</span></div>`).join('')}</div>` : ''}`;
 }
 async function connectPayouts() { try { const r = await api('/api/payouts/connect', { method: 'POST' }); location.href = r.url; } catch (err) { toast(err.message); } }
@@ -1159,6 +1230,7 @@ async function shareProfile() { const url = $('profileUrl').value; try { if (nav
 async function shareStory(path, title) { const url = location.origin + path; try { if (navigator.share) await navigator.share({ title, text: `${title} on Self-Made Legends ${url}`, url }); else { await navigator.clipboard.writeText(url); toast('Copied'); } } catch (_) {} }
 function renderTier(me, bill) {
   const short = { free: 'Member', veteran: 'Veteran', hof: 'Hall of Fame' };
+  if (me.user.role === 'fan') { $('tierBody').innerHTML = `<h3>Fan Club</h3><div class="small muted">${me.club.member ? 'You are a member. Front row, ten votes a month, early ballot, nightly recap.' : 'Ten votes a month, front row in lives, the early ballot, the nightly recap of your Legends.'}</div>${me.club.member ? '' : `<button class="btn purple" style="margin-top:8px" onclick="joinClub()">Join · ${money(me.club.priceCents)}/mo</button>`}`; return; }
   const ri = bill.rankInfo;
   const rankRow = bill.ranks.map((r) => `<div class="tier ${ri.rank === r ? 'on' : ''}"><b>${esc(RANK_SHORT[r])}</b>${r === 'rookie' ? 'Day one' : `${bill.rankRules[r].days} active days, or ${bill.rankRules[r].points.toLocaleString()} points, or ${bill.rankRules[r].wins} world win${bill.rankRules[r].wins === 1 ? '' : 's'}`}</div>`).join('');
   $('tierBody').innerHTML = `<h3>Your rank: <span style="color:var(--gold)">${esc(ri.name)}</span></h3><div class="small muted" style="margin-bottom:8px">Earned by playing, free for everyone. ${ri.next ? `Next: <b>${esc(RANK_SHORT[ri.next.rank])}</b> at ${ri.next.needs.days} active days, ${ri.next.needs.points.toLocaleString()} points, or ${ri.next.needs.wins} world win${ri.next.needs.wins === 1 ? '' : 's'}. You have ${ri.have.days} days, ${ri.have.points.toLocaleString()} points, ${ri.have.wins} wins.` : 'You are at the top.'}</div><div class="tier-row" style="grid-template-columns:1fr 1fr 1fr 1fr">${rankRow}</div>
@@ -1217,6 +1289,9 @@ function connectEvents() {
   S.es.addEventListener('quest', (e) => { try { const d = JSON.parse(e.data); splash('+' + d.reward.toLocaleString(), 'Quest complete', d.label, [{ cls: 'bonus', text: '🏁 QUEST' }]); sound('quest'); } catch (_) {} });
   S.es.addEventListener('climb', (e) => { try { const d = JSON.parse(e.data); toast('📈 ' + d.line); sound('climb'); } catch (_) {} });
   S.es.addEventListener('rankup', (e) => { try { const d = JSON.parse(e.data); splash('RANK UP', d.name, 'New rank, new rivals. The board just got harder.', [{ cls: 'boss', text: '⬆ ' + d.name }]); sound('rankup'); } catch (_) {} });
+  S.es.addEventListener('season', (e) => { try { const d = JSON.parse(e.data); const w = d.winners || {}; splash('SEASON OVER', `${w.legend ? 'Legend of the Month: ' + w.legend.name : ''}`, `${w.fans ? "People's Champion: " + w.fans.name + '. ' : ''}${w.crew ? 'Squad Belt: ' + w.crew.squadName + '.' : ''}`, [{ cls: 'boss', text: '👑 ' + d.month }]); sound('rankup'); } catch (_) {} });
+  S.es.addEventListener('season_vote', () => { if ($('screen-world').classList.contains('active')) loadSeason(); });
+  S.es.addEventListener('fan_points', (e) => { try { const d = JSON.parse(e.data); toast(`+${d.points.toLocaleString()} fan points: ${d.reason}`); sound('quest'); } catch (_) {} });
   S.es.addEventListener('callout', (e) => { try { const d = JSON.parse(e.data); toast(`🎯 ${d.fromName} called you out: "${d.line}"`); sound('tick'); } catch (_) {} });
   S.es.addEventListener('graded', (e) => { try { const d = JSON.parse(e.data); toast(`Auditor graded it ${d.difficulty}/10: ${d.points.toLocaleString()} points`); if ($('screen-today').classList.contains('active')) loadToday(); } catch (_) {} });
   S.es.addEventListener('feed', () => { if ($('screen-world').classList.contains('active')) loadFeed('feedWorld'); });
@@ -1237,6 +1312,7 @@ async function boot() {
   $('crewPill').classList.toggle('on', S.config.crewOnline);
   $('crewText').textContent = S.config.crewOnline ? 'crew online' : 'playbook mode';
   if (S.invite) { $('inviteCard').hidden = false; }
+  renderPresented('presentedAuth', S.config.season && S.config.season.presentedBy);
   loadFeed('feedAuth');
   if (!S.token) { authMode(S.invite ? 'signup' : 'signin'); show('auth'); return; }
   try {
