@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Partner With Us - Self-Made Legends</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #1a1a1a;
+            --gold: #d4af37;
+            --white: #ffffff;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--white);
+            background-color: var(--black);
+        }
+
+        nav {
+            background-color: var(--black);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--gold);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .hero h1 {
+            color: var(--gold);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            color: var(--light-gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .partner-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .partner-type-card {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 10px;
+            border-top: 4px solid var(--gold);
+            transition: all 0.3s ease;
+        }
+
+        .partner-type-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+        }
+
+        .partner-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--gold);
+        }
+
+        .partner-type-card h3 {
+            color: var(--gold);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .partner-type-card p {
+            color: var(--light-gray);
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .partner-benefits {
+            list-style: none;
+            margin: 1.5rem 0;
+        }
+
+        .partner-benefits li {
+            color: var(--light-gray);
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .partner-benefits li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-weight: bold;
+        }
+
+        .section {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border-left: 4px solid var(--gold);
+        }
+
+        .section h2 {
+            color: var(--gold);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .section p {
+            color: var(--light-gray);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .partnership-highlights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .highlight {
+            background-color: rgba(212, 175, 55, 0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+            text-align: center;
+        }
+
+        .highlight-number {
+            color: var(--gold);
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .highlight-label {
+            color: var(--light-gray);
+            font-size: 0.95rem;
+        }
+
+        .form-section {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+            margin: 3rem 0;
+        }
+
+        .form-section h2 {
+            color: var(--gold);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: var(--gold);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.3);
+            color: var(--white);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+
+        .submit-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background-color: var(--gold);
+            color: var(--black);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid var(--gold);
+            width: 100%;
+            text-align: center;
+        }
+
+        .submit-btn:hover {
+            background-color: transparent;
+            color: var(--gold);
+            transform: translateY(-2px);
+        }
+
+        .success-message {
+            display: none;
+            background-color: rgba(212, 175, 55, 0.1);
+            border-left: 4px solid var(--gold);
+            padding: 1.5rem;
+            border-radius: 4px;
+            margin-bottom: 1.5rem;
+            color: var(--light-gray);
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .partner-types {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .partnership-highlights {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        footer {
+            background-color: var(--dark-gray);
+            text-align: center;
+            padding: 2rem;
+            border-top: 2px solid var(--gold);
+            margin-top: 3rem;
+            color: var(--light-gray);
+        }
+
+        footer a {
+            color: var(--gold);
+            text-decoration: none;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="how-it-works.html">How It Works</a></li>
+            <li><a href="why-choose-us.html">Why Choose Us</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <h1>Partner With Self-Made Legends</h1>
+        <p>We're building a new standard for life insurance distribution. Join us in serving families and building generational wealth.</p>
+    </section>
+
+    <div class="container">
+        <section class="section">
+            <h2>Why Partner With Us?</h2>
+            <p>Self-Made Legends is creating a better way to deliver Final Expense insurance. We're looking for partners who share our mission: clarity, compassion, and community-focused service.</p>
+            <div class="partnership-highlights">
+                <div class="highlight">
+                    <div class="highlight-number">100%</div>
+                    <div class="highlight-label">Digital Distribution</div>
+                </div>
+                <div class="highlight">
+                    <div class="highlight-number">15%</div>
+                    <div class="highlight-label">Commission Rate</div>
+                </div>
+                <div class="highlight">
+                    <div class="highlight-number">24/7</div>
+                    <div class="highlight-label">Partner Support</div>
+                </div>
+                <div class="highlight">
+                    <div class="highlight-number">Days</div>
+                    <div class="highlight-label">To Approval</div>
+                </div>
+            </div>
+        </section>
+
+        <h2 style="color: var(--gold); text-align: center; font-size: 2rem; margin: 3rem 0 2rem 0;">Two Ways to Partner</h2>
+
+        <div class="partner-types">
+            <div class="partner-type-card">
+                <div class="partner-icon">🏛️</div>
+                <h3>Insurance Carriers</h3>
+                <p>Expand your Final Expense distribution through our digital platform. Reach pre-qualified customers without the overhead.</p>
+                <ul class="partner-benefits">
+                    <li>Pre-qualified, qualified leads</li>
+                    <li>Structured, complete data</li>
+                    <li>Scalable volume potential</li>
+                    <li>Digital-first efficiency</li>
+                    <li>Dedicated account management</li>
+                </ul>
+            </div>
+
+            <div class="partner-type-card">
+                <div class="partner-icon">🌹</div>
+                <h3>Funeral Homes</h3>
+                <p>Help families protect themselves while building new revenue streams. Simple, dignified, and supportive.</p>
+                <ul class="partner-benefits">
+                    <li>Custom QR codes and referral links</li>
+                    <li>Commission on every referral</li>
+                    <li>Marketing materials provided</li>
+                    <li>Support tool for families</li>
+                    <li>Monthly partnership support</li>
+                </ul>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2>For Insurance Carriers</h2>
+            <p><strong>The Opportunity:</strong> Self-Made Legends is a digital distribution channel that connects you with qualified Final Expense prospects. We handle the customer acquisition, qualification, and initial intake. You handle underwriting, approval, and claims management.</p>
+
+            <p><strong>What We Provide:</strong></p>
+            <ul style="margin-left: 2rem; color: var(--light-gray); margin-bottom: 1.5rem;">
+                <li>Pre-qualified customer leads</li>
+                <li>Complete, structured application data</li>
+                <li>Scalable volume with predictable quality</li>
+                <li>Digital integration and reporting</li>
+                <li>Dedicated partnership support</li>
+            </ul>
+
+            <p><strong>How It Works:</strong></p>
+            <ul style="margin-left: 2rem; color: var(--light-gray);">
+                <li>Customers complete our online quote form</li>
+                <li>We provide their data to you for underwriting</li>
+                <li>You make approval decisions</li>
+                <li>Customer purchases policy directly from you</li>
+                <li>We handle all ongoing support</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>For Funeral Homes</h2>
+            <p><strong>The Opportunity:</strong> Help families prepare for the inevitable while creating a new revenue stream. When families come to you, you can now offer them a trusted way to protect themselves financially.</p>
+
+            <p><strong>What We Provide:</strong></p>
+            <ul style="margin-left: 2rem; color: var(--light-gray); margin-bottom: 1.5rem;">
+                <li>Custom QR code for your location</li>
+                <li>Marketing materials for your team</li>
+                <li>Training for your staff</li>
+                <li>Commission on every referral (15% standard)</li>
+                <li>Monthly support and reporting</li>
+            </ul>
+
+            <p><strong>How It Works:</strong></p>
+            <ul style="margin-left: 2rem; color: var(--light-gray);">
+                <li>Families come to your funeral home</li>
+                <li>You share our QR code or referral link</li>
+                <li>They complete the quote at home on their phone</li>
+                <li>If they purchase, you earn commission</li>
+                <li>You stay focused on your core service</li>
+            </ul>
+        </section>
+
+        <section class="form-section">
+            <h2>Start a Partnership</h2>
+            <p>Ready to partner with Self-Made Legends? Tell us about your organization and what partnership type interests you.</p>
+
+            <div class="success-message" id="successMessage">
+                <strong>Thank you!</strong> We've received your partnership inquiry. Our team will contact you within 2 business days to discuss opportunities.
+            </div>
+
+            <form id="partnerForm">
+                <div class="form-group">
+                    <label for="orgName">Organization Name *</label>
+                    <input type="text" id="orgName" name="orgName" placeholder="Your Company Name" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactName">Contact Name *</label>
+                        <input type="text" id="contactName" name="contactName" placeholder="John Smith" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="title">Job Title *</label>
+                        <input type="text" id="title" name="title" placeholder="e.g., Director, Manager" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" placeholder="john@company.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone *</label>
+                        <input type="tel" id="phone" name="phone" placeholder="555-123-4567" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="partnerType">Partnership Type *</label>
+                    <select id="partnerType" name="partnerType" required>
+                        <option value="">-- Select One --</option>
+                        <option value="carrier">Insurance Carrier</option>
+                        <option value="funeral-home">Funeral Home</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="region">Region / Location *</label>
+                    <input type="text" id="region" name="region" placeholder="e.g., Texas, Southeast Region" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="message">Tell Us More About Your Organization</label>
+                    <textarea id="message" name="message" placeholder="What's your current business model? Why are you interested in partnering?"></textarea>
+                </div>
+
+                <button type="submit" class="submit-btn">Submit Partnership Inquiry</button>
+            </form>
+        </section>
+
+        <section class="section">
+            <h2>What Happens Next?</h2>
+            <p><strong>1. We Review Your Application</strong> - Our partnership team reviews your inquiry and qualifications. (1-2 days)</p>
+            <p><strong>2. Initial Call</strong> - We schedule a brief call to discuss your organization and partnership goals. (Days 3-5)</p>
+            <p><strong>3. Partnership Discussion</strong> - We discuss terms, requirements, and how we can support your success. (Days 7-14)</p>
+            <p><strong>4. Agreement & Onboarding</strong> - Once terms are agreed, we provide training, materials, and support. (Ongoing)</p>
+            <p><strong>5. Launch & Growth</strong> - You launch referrals and we support you every step of the way with reporting, optimization, and partnership management.</p>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; Self-Made Legends Life & Legacy Insurance Co. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="privacy-policy.html">Privacy Policy</a>
+            <a href="terms-conditions.html">Terms & Conditions</a>
+            <a href="contact.html">Contact</a>
+            <a href="partner-with-us.html">Partner With Us</a>
+        </div>
+    </footer>
+
+    <script>
+        const partnerForm = document.getElementById('partnerForm');
+        const successMessage = document.getElementById('successMessage');
+
+        partnerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = {
+                orgName: document.getElementById('orgName').value,
+                contactName: document.getElementById('contactName').value,
+                title: document.getElementById('title').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                partnerType: document.getElementById('partnerType').value,
+                region: document.getElementById('region').value,
+                message: document.getElementById('message').value,
+                timestamp: new Date().toISOString()
+            };
+
+            localStorage.setItem('partnerForm_' + Date.now(), JSON.stringify(formData));
+
+            successMessage.classList.add('show');
+            partnerForm.reset();
+
+            setTimeout(() => {
+                successMessage.classList.remove('show');
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
