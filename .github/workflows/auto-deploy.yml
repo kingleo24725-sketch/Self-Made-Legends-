@@ -1,0 +1,25 @@
+name: Auto Deploy to Main
+
+on:
+  push:
+    branches:
+      - claude/ai-stock-trading-bot-hwyx7b
+
+jobs:
+  merge-to-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge feature branch into main
+        run: |
+          git config user.email "deploy-bot@self-made-legends.app"
+          git config user.name "SML Deploy Bot"
+          git fetch origin main
+          git checkout main
+          git merge origin/claude/ai-stock-trading-bot-hwyx7b --no-ff -m "Auto-deploy: sync from feature branch"
+          git push origin main

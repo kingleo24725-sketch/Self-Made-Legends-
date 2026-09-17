@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About the Founder - Self-Made Legends</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #1a1a1a;
+            --gold: #d4af37;
+            --white: #ffffff;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--white);
+            background-color: var(--black);
+        }
+
+        nav {
+            background-color: var(--black);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--gold);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .hero h1 {
+            color: var(--gold);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            color: var(--light-gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .founder-intro {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        .founder-image {
+            background: linear-gradient(135deg, var(--dark-gray) 0%, rgba(212, 175, 55, 0.1) 100%);
+            padding: 2rem;
+            border-radius: 10px;
+            border: 2px solid var(--gold);
+            text-align: center;
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+        }
+
+        .founder-text h2 {
+            color: var(--gold);
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .founder-text p {
+            color: var(--light-gray);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .section {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border-left: 4px solid var(--gold);
+        }
+
+        .section h2 {
+            color: var(--gold);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .section p {
+            color: var(--light-gray);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .section ul {
+            margin-left: 2rem;
+            color: var(--light-gray);
+            margin-bottom: 1rem;
+        }
+
+        .section li {
+            margin-bottom: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .quote {
+            background-color: rgba(212, 175, 55, 0.1);
+            border-left: 4px solid var(--gold);
+            padding: 2rem;
+            border-radius: 4px;
+            margin: 2rem 0;
+            font-style: italic;
+            font-size: 1.1rem;
+            color: var(--light-gray);
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .value-card {
+            background-color: rgba(212, 175, 55, 0.05);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+        }
+
+        .value-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--gold);
+        }
+
+        .value-card h3 {
+            color: var(--gold);
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .value-card p {
+            color: var(--light-gray);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .mission-statement {
+            text-align: center;
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(212, 175, 55, 0.05) 100%);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 2px solid var(--gold);
+            margin: 2rem 0;
+        }
+
+        .mission-statement p {
+            color: var(--light-gray);
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+        }
+
+        .mission-statement .mission-text {
+            color: var(--gold);
+            font-size: 1.3rem;
+            font-style: italic;
+            margin: 1rem 0;
+        }
+
+        .journey {
+            margin: 2rem 0;
+        }
+
+        .journey-item {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .journey-year {
+            color: var(--gold);
+            font-weight: bold;
+            font-size: 1.1rem;
+            min-width: 100px;
+        }
+
+        .journey-description {
+            color: var(--light-gray);
+            flex: 1;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background-color: var(--gold);
+            color: var(--black);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid var(--gold);
+            margin-top: 1rem;
+        }
+
+        .cta-button:hover {
+            background-color: transparent;
+            color: var(--gold);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .founder-intro {
+                grid-template-columns: 1fr;
+            }
+
+            .founder-text h2 {
+                font-size: 1.5rem;
+            }
+
+            .founder-image {
+                min-height: 200px;
+                font-size: 3rem;
+            }
+
+            .journey-item {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .journey-year {
+                min-width: auto;
+            }
+        }
+
+        footer {
+            background-color: var(--dark-gray);
+            text-align: center;
+            padding: 2rem;
+            border-top: 2px solid var(--gold);
+            margin-top: 3rem;
+            color: var(--light-gray);
+        }
+
+        footer a {
+            color: var(--gold);
+            text-decoration: none;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="how-it-works.html">How It Works</a></li>
+            <li><a href="why-choose-us.html">Why Choose Us</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <h1>About the Founder</h1>
+        <p>The story behind Self-Made Legends Life & Legacy Insurance Co.</p>
+    </section>
+
+    <div class="container">
+        <div class="founder-intro">
+            <div class="founder-image">👨‍💼</div>
+            <div class="founder-text">
+                <h2>Jason Brown, Founder</h2>
+                <p>Jason Brown founded Self-Made Legends Life & Legacy Insurance Co. with a simple mission: to make life insurance simple, accessible, and affordable for Black families and communities that have been overlooked by traditional insurance companies.</p>
+                <p>What started as a personal frustration has become a movement to transform how families protect themselves and build generational wealth.</p>
+            </div>
+        </div>
+
+        <div class="mission-statement">
+            <p>A company built on three pillars:</p>
+            <div class="mission-text">Clarity • Compassion • Community</div>
+        </div>
+
+        <section class="section">
+            <h2>The Story</h2>
+            <p>Jason Brown's journey to founding Self-Made Legends began with a personal moment that changed everything. When a close family member became seriously ill, Jason watched as his family struggled with the complexity and confusion of traditional life insurance.</p>
+
+            <p>The experience revealed a painful truth: life insurance—something so essential to protecting family—was designed to confuse, not clarify. Terms were unclear. Processes were complicated. And for Black families and communities, the experience was often dismissive and exclusionary.</p>
+
+            <p>Jason knew there had to be a better way. A way that was simple. A way that was respectful. A way that actually served the families and communities that needed it most.</p>
+
+            <div class="quote">
+                "Insurance companies spend millions convincing people to buy their products. What if we spent that energy making insurance actually simple to understand?"
+            </div>
+
+            <p>That insight became the foundation of Self-Made Legends. Jason realized that the problem wasn't life insurance itself—it was how it was being sold and explained. Traditional insurance companies had designed their systems for complexity, not clarity. For profit extraction, not family protection.</p>
+
+            <p>Self-Made Legends was built to be different. To put families first. To make protection simple. To honor the dignity of families building their legacy.</p>
+        </section>
+
+        <section class="section">
+            <h2>Why This Matters</h2>
+            <p>Black families in America have historically been denied access to wealth-building tools like life insurance. Systemic barriers have kept insurance expensive, complicated, and inaccessible. The financial security that life insurance provides—the chance to pass wealth to your family, to ensure your kids' education, to leave a legacy—has been systematically withheld.</p>
+
+            <p>Self-Made Legends exists to change that narrative. We believe:</p>
+            <ul>
+                <li><strong>Every family deserves protection.</strong> Not just wealthy families. Not just connected families. Every family, especially Black families, deserves access to affordable, trusted life insurance.</li>
+                <li><strong>Insurance should be simple.</strong> Not confusing. Not designed to trip you up. Simple, transparent, and clear.</li>
+                <li><strong>Businesses can do good and do well.</strong> We don't have to choose between being profitable and being purposeful. We can build a sustainable business while serving our community with real integrity.</li>
+                <li><strong>Community is everything.</strong> We're not a distant, faceless corporation. We're part of this community. We understand your values. We share your mission.</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>The Vision</h2>
+            <p>Self-Made Legends is just the beginning. The long-term vision is to become the trusted insurance brand for Black families—not just in Final Expense insurance, but across the full spectrum of life insurance and wealth-building products.</p>
+
+            <p>Jason envisions a future where:</p>
+            <ul>
+                <li>Black families have access to the same wealth-building tools as everyone else</li>
+                <li>Insurance is a bridge to financial security, not an obstacle</li>
+                <li>Technology and human care work together to serve families better</li>
+                <li>Black-owned businesses are leading the financial services industry</li>
+                <li>Generational wealth becomes normal in Black communities</li>
+            </ul>
+
+            <p>Every day, the team at Self-Made Legends is working toward that vision. From the engineers who build our technology, to the customer support specialists who answer your questions, to the partnerships we form with carriers and funeral homes—everyone is focused on the same goal: helping families protect what matters most.</p>
+        </section>
+
+        <div class="section">
+            <h2>Core Values That Guide Everything</h2>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">💡</div>
+                    <h3>Clarity</h3>
+                    <p>We explain everything in plain language. No jargon. No confusion. Just honest, clear communication about what we offer and why it matters.</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">❤️</div>
+                    <h3>Compassion</h3>
+                    <p>We understand that thinking about death and finances is emotional. We approach every interaction with respect, empathy, and genuine care.</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">🤝</div>
+                    <h3>Community</h3>
+                    <p>We're built for Black families and communities. We listen. We serve. We celebrate our customers' success and their legacy.</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">⭐</div>
+                    <h3>Excellence</h3>
+                    <p>We never compromise on quality. Your protection matters. Your family matters. We bring our best to everything we do.</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">🚪</div>
+                    <h3>Accessibility</h3>
+                    <p>Financial tools shouldn't be locked away for the wealthy. We make life insurance available and affordable for everyone.</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">🏛️</div>
+                    <h3>Legacy</h3>
+                    <p>We help families build generational wealth. Your legacy matters. Your children's future matters. That drives everything we do.</p>
+                </div>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2>Jason's Journey</h2>
+            <div class="journey">
+                <div class="journey-item">
+                    <div class="journey-year">2020</div>
+                    <div class="journey-description">
+                        <strong>The Inspiration:</strong> A family health crisis reveals the gaps in life insurance accessibility and clarity for Black families.
+                    </div>
+                </div>
+
+                <div class="journey-item">
+                    <div class="journey-year">2021-2022</div>
+                    <div class="journey-description">
+                        <strong>Research & Development:</strong> Jason researches the insurance industry, talks to families, and identifies the core problem: complexity masquerading as necessity.
+                    </div>
+                </div>
+
+                <div class="journey-item">
+                    <div class="journey-year">2023</div>
+                    <div class="journey-description">
+                        <strong>Building the Platform:</strong> Self-Made Legends Life & Legacy Insurance Co. launches with a mission to transform life insurance through clarity, compassion, and community focus.
+                    </div>
+                </div>
+
+                <div class="journey-item">
+                    <div class="journey-year">2024</div>
+                    <div class="journey-description">
+                        <strong>Growth & Expansion:</strong> Partnerships with insurance carriers and funeral homes expand our reach. Hundreds of families protected.
+                    </div>
+                </div>
+
+                <div class="journey-item">
+                    <div class="journey-year">2025-2026</div>
+                    <div class="journey-description">
+                        <strong>The Future:</strong> Expanding product offerings, deepening community partnerships, and building toward a vision where every Black family has access to the wealth-building tools they deserve.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Join the Mission</h2>
+            <p>Self-Made Legends is more than a company. It's a movement. A movement to put families first. A movement to build wealth in Black communities. A movement to prove that business can be profitable and purposeful at the same time.</p>
+
+            <p>Whether you're a family looking to protect your future, a partner organization ready to join us, or someone who believes in our mission—there's a place for you in this journey.</p>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="underwriting-form.html" class="cta-button">Get Your Quote</a>
+                <a href="partner-with-us.html" class="cta-button" style="margin-left: 1rem;">Become a Partner</a>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; Self-Made Legends Life & Legacy Insurance Co. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="privacy-policy.html">Privacy Policy</a>
+            <a href="terms-conditions.html">Terms & Conditions</a>
+            <a href="contact.html">Contact</a>
+            <a href="partner-with-us.html">Partner With Us</a>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ - Self-Made Legends</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #1a1a1a;
+            --gold: #d4af37;
+            --white: #ffffff;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--white);
+            background-color: var(--black);
+        }
+
+        nav {
+            background-color: var(--black);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--gold);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .hero h1 {
+            color: var(--gold);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            color: var(--light-gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .faq-intro {
+            text-align: center;
+            margin-bottom: 3rem;
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+        }
+
+        .faq-intro p {
+            color: var(--light-gray);
+            font-size: 1.05rem;
+            margin-bottom: 1rem;
+        }
+
+        .faq-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .faq-item {
+            background-color: var(--dark-gray);
+            border-left: 4px solid var(--gold);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.15);
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            background-color: var(--dark-gray);
+        }
+
+        .faq-question:hover {
+            background-color: rgba(212, 175, 55, 0.05);
+        }
+
+        .faq-question h3 {
+            color: var(--gold);
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-align: left;
+            margin: 0;
+            flex: 1;
+        }
+
+        .faq-toggle {
+            color: var(--gold);
+            font-size: 1.5rem;
+            margin-left: 1rem;
+            transition: transform 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .faq-item.open .faq-toggle {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .faq-item.open .faq-answer {
+            max-height: 500px;
+            padding: 1.5rem;
+            border-top: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .faq-answer p {
+            color: var(--light-gray);
+            font-size: 1rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .faq-answer p:last-child {
+            margin-bottom: 0;
+        }
+
+        .faq-answer ul {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+            color: var(--light-gray);
+        }
+
+        .faq-answer li {
+            margin-bottom: 0.5rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background-color: var(--gold);
+            color: var(--black);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid var(--gold);
+            margin-top: 1rem;
+        }
+
+        .cta-button:hover {
+            background-color: transparent;
+            color: var(--gold);
+            transform: translateY(-2px);
+        }
+
+        .faq-contact {
+            text-align: center;
+            margin: 3rem 0;
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+        }
+
+        .faq-contact h2 {
+            color: var(--gold);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .faq-contact p {
+            color: var(--light-gray);
+            font-size: 1.05rem;
+            margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .faq-question {
+                padding: 1rem;
+            }
+
+            .faq-question h3 {
+                font-size: 1rem;
+            }
+
+            .faq-toggle {
+                font-size: 1.2rem;
+                margin-left: 0.5rem;
+            }
+        }
+
+        footer {
+            background-color: var(--dark-gray);
+            text-align: center;
+            padding: 2rem;
+            border-top: 2px solid var(--gold);
+            margin-top: 3rem;
+            color: var(--light-gray);
+        }
+
+        footer a {
+            color: var(--gold);
+            text-decoration: none;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="how-it-works.html">How It Works</a></li>
+            <li><a href="why-choose-us.html">Why Choose Us</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <h1>Frequently Asked Questions</h1>
+        <p>Got questions about Final Expense insurance? We've got answers. Here's what families usually want to know.</p>
+    </section>
+
+    <div class="container">
+        <div class="faq-intro">
+            <p>We're here to make life insurance simple and clear. If you don't see your question answered below, please reach out to us anytime.</p>
+        </div>
+
+        <div class="faq-list">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What is Final Expense insurance?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Final Expense insurance is a simple, affordable life insurance product designed to help your family cover funeral costs and other end-of-life expenses. It typically provides a death benefit between $5,000 and $25,000 that your loved ones can use to pay for funeral services, burial, medical bills, and other expenses.</p>
+                    <p>Unlike traditional life insurance, Final Expense insurance is designed to be easier to qualify for, faster to approve, and more affordable. There are no medical exams required, just honest answers to a few simple health questions.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How fast is approval?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Most applications are reviewed and approved within 1-2 weeks. Here's our typical timeline:</p>
+                    <ul>
+                        <li><strong>Day 1-2:</strong> You complete your quote and application</li>
+                        <li><strong>Day 2-7:</strong> We review your information</li>
+                        <li><strong>Day 7-14:</strong> You receive approval and your policy is active</li>
+                    </ul>
+                    <p>This is much faster than traditional insurance companies, which often take 4-6 weeks or longer. Your approval speed depends on how quickly you submit your application and how straightforward your health information is.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>Do I need a medical exam?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p><strong>No medical exam required.</strong> That's one of our biggest advantages. No blood tests, no doctor visits, no intrusive health interviews. Just honest answers to straightforward health questions.</p>
+                    <p>We ask about your age, smoking status, and any major health conditions. That's it. Our underwriting process is designed to be simple and respectful, not invasive and complicated like traditional insurance companies.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does this help my family?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Final Expense insurance helps your family in a real, tangible way. When the time comes, your family will have the money they need to:</p>
+                    <ul>
+                        <li>Pay for funeral services and arrangements</li>
+                        <li>Cover burial or cremation costs</li>
+                        <li>Pay outstanding medical bills</li>
+                        <li>Handle other final expenses</li>
+                        <li>Avoid financial stress during an emotional time</li>
+                    </ul>
+                    <p>Your family won't have to worry about where the money is coming from. They can focus on grieving and celebrating your life, knowing you've taken care of them.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How does the claims process work?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>When someone you've named as a beneficiary needs to file a claim, here's what they do:</p>
+                    <ul>
+                        <li><strong>Contact our partner carrier:</strong> They'll reach out to the insurance company with your policy number</li>
+                        <li><strong>Provide documentation:</strong> They'll need a death certificate and the original policy documents</li>
+                        <li><strong>File the claim:</strong> Our partner handles all the paperwork and processing</li>
+                        <li><strong>Receive payment:</strong> Once approved, the death benefit is paid directly to your beneficiary</li>
+                    </ul>
+                    <p>Our partner carriers are committed to processing claims quickly and respectfully. Most death claims are processed within 2-4 weeks of receiving all required documentation.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What ages qualify for Final Expense insurance?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Final Expense insurance is available to adults age <strong>40 through 85</strong>. This age range covers most adults looking for affordable end-of-life coverage.</p>
+                    <p>If you're under 40 or over 85, you may still have options. Contact us to discuss your specific situation. We're here to help find solutions that work for you and your family.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>What coverage amounts are available?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>Final Expense insurance coverage typically ranges from <strong>$5,000 to $25,000</strong>. You choose the amount that makes sense for your situation.</p>
+                    <p>Here's how to think about it:</p>
+                    <ul>
+                        <li><strong>$5,000-$10,000:</strong> Basic coverage for funeral services</li>
+                        <li><strong>$10,000-$15,000:</strong> Covers funeral plus some additional expenses</li>
+                        <li><strong>$15,000-$25,000:</strong> Comprehensive coverage including medical bills and other costs</li>
+                    </ul>
+                    <p>Our quote form will help you determine the right amount based on your family's needs and budget.</p>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">
+                    <h3>How do I contact support?</h3>
+                    <span class="faq-toggle">+</span>
+                </div>
+                <div class="faq-answer">
+                    <p>We're here to help. You can reach our support team:</p>
+                    <ul>
+                        <li><strong>Online Chat:</strong> Use our AI assistant on our website anytime</li>
+                        <li><strong>Email:</strong> support@selfmadelegends.com</li>
+                        <li><strong>Contact Form:</strong> <a href="contact.html" style="color: var(--gold);">Visit our contact page</a></li>
+                        <li><strong>Phone:</strong> [Your Phone Number] (coming soon)</li>
+                    </ul>
+                    <p>Our team responds to all inquiries within 24 business hours. We're committed to answering your questions clearly and helping you feel confident about your decision.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="faq-contact">
+            <h2>Still Have Questions?</h2>
+            <p>We're here for you. Our team is ready to answer any questions and help you find the right coverage for your family.</p>
+            <a href="contact.html" class="cta-button">Get in Touch</a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; Self-Made Legends Life & Legacy Insurance Co. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="privacy-policy.html">Privacy Policy</a>
+            <a href="terms-conditions.html">Terms & Conditions</a>
+            <a href="contact.html">Contact</a>
+            <a href="partner-with-us.html">Partner With Us</a>
+        </div>
+    </footer>
+
+    <script>
+        const faqItems = document.querySelectorAll('.faq-item');
+
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+
+            question.addEventListener('click', () => {
+                item.classList.toggle('open');
+
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item) {
+                        otherItem.classList.remove('open');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

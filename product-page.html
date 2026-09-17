@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Expense Life Insurance - Self-Made Legends</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #1a1a1a;
+            --gold: #d4af37;
+            --white: #ffffff;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--white);
+            background-color: var(--black);
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--black);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid var(--gold);
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.2);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        nav a:hover {
+            color: var(--gold);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
+            padding: 5rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 2rem;
+            color: var(--gold);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Main Content */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        section {
+            padding: 4rem 0;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        section:last-child {
+            border-bottom: none;
+            padding-bottom: 4rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            color: var(--gold);
+            margin-bottom: 2rem;
+            text-align: center;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 3px;
+            background-color: var(--gold);
+        }
+
+        /* Description Section */
+        .description {
+            background-color: var(--dark-gray);
+            padding: 3rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--gold);
+            margin-bottom: 3rem;
+        }
+
+        .description p {
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: var(--light-gray);
+            margin-bottom: 1rem;
+        }
+
+        .description p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Coverage & Eligibility */
+        .coverage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .coverage-card {
+            background-color: var(--dark-gray);
+            padding: 2.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border-top: 3px solid var(--gold);
+            transition: all 0.3s ease;
+        }
+
+        .coverage-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+        }
+
+        .coverage-card h3 {
+            color: var(--gold);
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .coverage-card p {
+            font-size: 1.1rem;
+            color: var(--light-gray);
+            line-height: 1.7;
+        }
+
+        /* Benefits Section */
+        .benefits {
+            background-color: var(--dark-gray);
+            padding: 2.5rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--gold);
+            margin-bottom: 3rem;
+        }
+
+        .benefits h3 {
+            color: var(--gold);
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .benefits p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--light-gray);
+        }
+
+        /* CTA Button */
+        .cta-section {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1.2rem 3rem;
+            background-color: var(--gold);
+            color: var(--black);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid var(--gold);
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .cta-button:hover {
+            background-color: transparent;
+            color: var(--gold);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+        }
+
+        .cta-button:active {
+            transform: translateY(-1px);
+        }
+
+        /* FAQ Section */
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background-color: var(--dark-gray);
+            margin-bottom: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .faq-item:hover {
+            box-shadow: 0 5px 20px rgba(212, 175, 55, 0.2);
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--gold);
+            user-select: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .faq-question:hover {
+            background-color: rgba(212, 175, 55, 0.1);
+        }
+
+        .faq-icon {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+            color: var(--gold);
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background-color: rgba(212, 175, 55, 0.05);
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 500px;
+        }
+
+        .faq-answer p {
+            padding: 1.5rem;
+            color: var(--light-gray);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Key Points */
+        .key-points {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold);
+            margin: 3rem 0;
+        }
+
+        .key-points h3 {
+            color: var(--gold);
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .points-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .points-list li {
+            padding: 0.8rem 0;
+            padding-left: 2rem;
+            color: var(--light-gray);
+            font-size: 1.05rem;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .points-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--dark-gray);
+            text-align: center;
+            padding: 2rem;
+            border-top: 2px solid var(--gold);
+            margin-top: 3rem;
+            color: var(--light-gray);
+        }
+
+        footer p {
+            font-size: 0.95rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .section-title {
+                font-size: 1.6rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            section {
+                padding: 2.5rem 0;
+            }
+
+            .description {
+                padding: 2rem;
+            }
+
+            .description p {
+                font-size: 1rem;
+            }
+
+            .coverage-grid {
+                gap: 1.5rem;
+            }
+
+            .cta-button {
+                padding: 1rem 2rem;
+                font-size: 1rem;
+            }
+
+            .faq-question {
+                font-size: 1rem;
+                padding: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero {
+                padding: 3rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            nav ul {
+                gap: 0.8rem;
+            }
+
+            nav a {
+                font-size: 0.9rem;
+            }
+
+            .section-title {
+                font-size: 1.4rem;
+            }
+
+            .description {
+                padding: 1.5rem;
+            }
+
+            .description p {
+                font-size: 0.95rem;
+                line-height: 1.6;
+            }
+
+            .coverage-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .coverage-card {
+                padding: 1.5rem;
+            }
+
+            .faq-question {
+                font-size: 0.95rem;
+            }
+
+            .faq-answer p {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="#product">Product</a></li>
+            <li><a href="underwriting-form.html">Get Quote</a></li>
+            <li><a href="index.html#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="product">
+        <h1>Final Expense Life Insurance</h1>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Description -->
+        <section>
+            <div class="description">
+                <p>Final Expense insurance helps your family cover funeral costs, burial expenses, and small debts when you pass away. No medical exams. No long forms. Just simple protection your family can count on.</p>
+            </div>
+        </section>
+
+        <!-- Coverage and Eligibility -->
+        <section>
+            <h2 class="section-title">Coverage & Eligibility</h2>
+            <div class="coverage-grid">
+                <div class="coverage-card">
+                    <h3>Coverage Amounts</h3>
+                    <p>Choose coverage from <strong>$5,000 to $25,000</strong> based on your family's needs and budget.</p>
+                </div>
+                <div class="coverage-card">
+                    <h3>Age Eligibility</h3>
+                    <p>Available for ages <strong>40 to 85</strong> with a simple, straightforward application process.</p>
+                </div>
+            </div>
+
+            <div class="benefits">
+                <h3>Designed to Remove Financial Stress</h3>
+                <p>This product is specifically designed to remove financial stress from families during difficult moments. When a loved one passes, the last thing your family needs is worry about how to cover funeral and burial expenses. Final Expense insurance ensures that your family can focus on honoring your memory while we handle the financial burden. It's simple, affordable, and built with your family's peace of mind in mind.</p>
+            </div>
+        </section>
+
+        <!-- Call to Action -->
+        <section class="cta-section">
+            <a href="underwriting-form.html" class="cta-button">Get My Quote</a>
+        </section>
+
+        <!-- Key Points -->
+        <section>
+            <div class="key-points">
+                <h3>Why Choose Final Expense Insurance?</h3>
+                <ul class="points-list">
+                    <li>No medical exam required</li>
+                    <li>Simple application process</li>
+                    <li>Fast approval and coverage</li>
+                    <li>Affordable monthly premiums</li>
+                    <li>Coverage from $5,000 to $25,000</li>
+                    <li>Available for ages 40 to 85</li>
+                    <li>Peace of mind for your family</li>
+                    <li>Built for Black families and communities</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section>
+            <h2 class="section-title">Frequently Asked Questions</h2>
+            <div class="faq-container">
+                <!-- FAQ 1 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>What is Final Expense insurance?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Final Expense insurance is a type of life insurance designed to help your family cover the costs associated with your death. This includes funeral expenses, burial or cremation costs, and other outstanding debts or expenses. It's a simple, affordable way to ensure your family isn't burdened with these costs during an already difficult time. The benefit is paid directly to your beneficiary, who can use it however they need.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ 2 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How fast is approval?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We pride ourselves on quick and simple approval. Our streamlined application process means you can get coverage fast. In many cases, you can receive approval and start your coverage within days of submitting your application. We understand that peace of mind is important, so we've designed our process to be as quick and painless as possible while ensuring we have all the information we need.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ 3 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>Do I need a medical exam?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>No, you do not need a medical exam to apply for Final Expense insurance. We understand that medical exams can be inconvenient and time-consuming. Our application process is designed to be simple and accessible. You simply answer a few straightforward health questions on our form, and that's all we need. No blood tests, no doctor visits, no hassle. Just honest answers and you're on your way to coverage.</p>
+                    </div>
+                </div>
+
+                <!-- FAQ 4 -->
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFAQ(this)">
+                        <span>How does this help my family?</span>
+                        <span class="faq-icon">▼</span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Final Expense insurance provides your family with financial protection when they need it most. Instead of scrambling to cover funeral costs, burial expenses, or other debts after you pass away, your family will have the funds to handle these costs with dignity and without financial stress. This means they can focus on grieving and honoring your memory, rather than worrying about money. Your coverage amount goes directly to your beneficiary, giving them the resources to make the decisions that are right for your family.</p>
+                    </div>
+                </section>
+
+        <!-- Final CTA -->
+        <section class="cta-section">
+            <p style="font-size: 1.1rem; color: var(--light-gray); margin-bottom: 1.5rem;">Ready to protect your family? Get your personalized quote today.</p>
+            <a href="underwriting-form.html" class="cta-button">Get My Quote Now</a>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; Self-Made Legends Life & Legacy Insurance Co. All rights reserved.</p>
+        <p style="margin-top: 1rem; opacity: 0.8;">Protecting families. Building legacy. Inspired by excellence.</p>
+    </footer>
+
+    <script>
+        function toggleFAQ(element) {
+            const faqItem = element.parentElement;
+
+            // Close all other FAQ items
+            document.querySelectorAll('.faq-item').forEach(item => {
+                if (item !== faqItem) {
+                    item.classList.remove('active');
+                }
+            });
+
+            // Toggle current FAQ item
+            faqItem.classList.toggle('active');
+        }
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('nav a').forEach(link => {
+            link.addEventListener('click', (e) => {
+                const href = link.getAttribute('href');
+                // Only smooth scroll for internal links on this page
+                if (href.startsWith('#')) {
+                    e.preventDefault();
+                    const targetId = href.substring(1);
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                    }
+                }
+            });
+        });
+
+        // Close FAQ when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.faq-item')) {
+                // Optional: Keep FAQ open for better UX
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Why Choose Us - Self-Made Legends</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --black: #1a1a1a;
+            --gold: #d4af37;
+            --white: #ffffff;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--white);
+            background-color: var(--black);
+        }
+
+        nav {
+            background-color: var(--black);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav a {
+            color: var(--white);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--gold);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--black) 0%, var(--dark-gray) 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid var(--gold);
+        }
+
+        .hero h1 {
+            color: var(--gold);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            color: var(--light-gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .feature-card {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 10px;
+            border-top: 4px solid var(--gold);
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.2);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card h3 {
+            color: var(--gold);
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-card p {
+            color: var(--light-gray);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .section {
+            background-color: var(--dark-gray);
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border-left: 4px solid var(--gold);
+        }
+
+        .section h2 {
+            color: var(--gold);
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .section p {
+            color: var(--light-gray);
+            font-size: 1.05rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+
+        .values-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .value-item {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .value-checkmark {
+            color: var(--gold);
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            margin-top: 0.3rem;
+        }
+
+        .value-text {
+            color: var(--light-gray);
+        }
+
+        .value-text strong {
+            color: var(--gold);
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background-color: var(--gold);
+            color: var(--black);
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid var(--gold);
+            margin-top: 1rem;
+        }
+
+        .cta-button:hover {
+            background-color: transparent;
+            color: var(--gold);
+            transform: translateY(-2px);
+        }
+
+        .comparison-table {
+            width: 100%;
+            margin: 2rem 0;
+            border-collapse: collapse;
+            background-color: var(--dark-gray);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        }
+
+        .comparison-table th {
+            background-color: rgba(212, 175, 55, 0.1);
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            color: var(--light-gray);
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .checkmark {
+            color: var(--gold);
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-table {
+                font-size: 0.9rem;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 0.8rem;
+            }
+        }
+
+        footer {
+            background-color: var(--dark-gray);
+            text-align: center;
+            padding: 2rem;
+            border-top: 2px solid var(--gold);
+            margin-top: 3rem;
+            color: var(--light-gray);
+        }
+
+        footer a {
+            color: var(--gold);
+            text-decoration: none;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="how-it-works.html">How It Works</a></li>
+            <li><a href="why-choose-us.html">Why Choose Us</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+            <li><a href="contact.html">Contact</a></li>
+        </ul>
+    </nav>
+
+    <section class="hero">
+        <h1>Why Choose Us</h1>
+        <p>Self-Made Legends Life & Legacy Insurance Co. is building a new standard for life insurance—one focused on clarity, compassion, and community.</p>
+    </section>
+
+    <div class="container">
+        <section class="section">
+            <h2>Who We Are</h2>
+            <p>Self-Made Legends Life & Legacy Insurance Co. is a modern, Black-owned digital insurance brand dedicated to helping families protect what matters most. We're not a traditional insurance company—we're a digital distribution platform designed for the families that traditional insurance often overlooks or confuses.</p>
+            <p>Our mission is simple: make life insurance simple, accessible, and affordable for everyone. We believe every family deserves the chance to protect their loved ones without confusion, frustration, or unnecessary bureaucracy.</p>
+        </section>
+
+        <h2 style="color: var(--gold); text-align: center; font-size: 2rem; margin: 3rem 0 2rem 0;">What Makes Us Different</h2>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Simple Online Process</h3>
+                <p>No offices to visit, no paperwork to mail. Everything is online, secure, and straightforward. You can get your quote from home in minutes.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Fast Approvals</h3>
+                <p>Our streamlined process means quick decisions. Most applications are reviewed and approved within days, not weeks.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">✓</div>
+                <h3>No Medical Exams</h3>
+                <p>No blood tests, no doctor visits, no intrusive health interviews. Just honest answers to straightforward questions.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3>AI-Assisted Experience</h3>
+                <p>Our intelligent assistant explains everything in plain language, helping you understand your options without confusion.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3>Secure & Private</h3>
+                <p>Your information is encrypted and secured. We never sell your data. Your privacy is our priority.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Community Focused</h3>
+                <p>We're built for Black families and communities. Our mission is to help you build generational wealth and legacy.</p>
+            </div>
+        </div>
+
+        <section class="section">
+            <h2>Our Core Values</h2>
+            <div class="values-list">
+                <div class="value-item">
+                    <div class="value-checkmark">✓</div>
+                    <div class="value-text">
+                        <strong>Clarity:</strong> We explain everything in plain language. No jargon, no confusion.
+                    </div>
+                </div>
+                <div class="value-item">
+                    <div class="value-checkmark">✓</div>
+                    <div class="value-text">
+                        <strong>Compassion:</strong> We understand life insurance is about protecting loved ones during difficult times.
+                    </div>
+                </div>
+                <div class="value-item">
+                    <div class="value-checkmark">✓</div>
+                    <div class="value-text">
+                        <strong>Community:</strong> We're dedicated to serving families that have been overlooked by traditional insurance.
+                    </div>
+                </div>
+                <div class="value-item">
+                    <div class="value-checkmark">✓</div>
+                    <div class="value-text">
+                        <strong>Excellence:</strong> We never compromise on quality. Your protection matters.
+                    </div>
+                </div>
+                <div class="value-item">
+                    <div class="value-checkmark">✓</div>
+                    <div class="value-text">
+                        <strong>Accessibility:</strong> Insurance should be available to everyone, not just the privileged few.
+                    </div>
+                </div>
+                <div class="value-item">
+                    <div class="value-checkmark">✓</div>
+                    <div class="value-text">
+                        <strong>Legacy:</strong> We help families build generational wealth and lasting protection.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Our Mission</h2>
+            <p style="font-size: 1.2rem; color: var(--gold); font-weight: 600; margin-bottom: 1rem;">To protect families and build generational legacy through modern, AI-assisted insurance solutions.</p>
+            <p>We believe that every family deserves the chance to protect their loved ones. We believe that insurance should be simple, not complicated. And we believe that every family, especially Black families, should have access to affordable, trusted protection.</p>
+            <p>That's what drives us every day. That's what Self-Made Legends is built on.</p>
+        </section>
+
+        <section class="section">
+            <h2>How We Compare</h2>
+            <p style="margin-bottom: 1.5rem;">Here's how Self-Made Legends stacks up against traditional insurance approaches:</p>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Self-Made Legends</th>
+                        <th>Traditional Insurance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Online Process</td>
+                        <td class="checkmark">✓</td>
+                        <td>Limited</td>
+                    </tr>
+                    <tr>
+                        <td>Medical Exam Required</td>
+                        <td class="checkmark">No</td>
+                        <td>Often Yes</td>
+                    </tr>
+                    <tr>
+                        <td>Approval Speed</td>
+                        <td class="checkmark">Days</td>
+                        <td>Weeks/Months</td>
+                    </tr>
+                    <tr>
+                        <td>AI-Assisted Guidance</td>
+                        <td class="checkmark">✓</td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td>Plain Language Explanation</td>
+                        <td class="checkmark">✓</td>
+                        <td>Limited</td>
+                    </tr>
+                    <tr>
+                        <td>Community Focused</td>
+                        <td class="checkmark">✓</td>
+                        <td>No</td>
+                    </tr>
+                    <tr>
+                        <td>No Paperwork Required</td>
+                        <td class="checkmark">✓</td>
+                        <td>Limited</td>
+                    </tr>
+                    <tr>
+                        <td>Trustworthy Black-Owned</td>
+                        <td class="checkmark">✓</td>
+                        <td>Varies</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <h2>What Families Say</h2>
+            <p>"I was overwhelmed by traditional insurance options. Self-Made Legends made everything simple and clear. I got my quote in minutes and approval in a week. Highly recommend!" — Maria, Texas</p>
+            <p style="margin-top: 1rem;">"As a Black father, I appreciate that this is a Black-owned company with a real mission. You can feel it in how they treat you." — DeShawn, Georgia</p>
+            <p style="margin-top: 1rem;">"No medical exam, no complicated paperwork, fast approval—exactly what I needed. Thank you for making this so easy." — Gloria, Florida</p>
+        </section>
+
+        <section class="section">
+            <h2>Ready to Protect Your Family?</h2>
+            <p>Getting started with Self-Made Legends is easy. In just minutes, you can learn about Final Expense insurance, get your personalized quote, and take the first step toward protecting your family's future.</p>
+            <p style="margin-top: 1rem; font-weight: 600;">Your family deserves protection. Let's make it simple.</p>
+            <div style="text-align: center;">
+                <a href="underwriting-form.html" class="cta-button">Get My Quote Today</a>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; Self-Made Legends Life & Legacy Insurance Co. All rights reserved.</p>
+        <div class="footer-links">
+            <a href="privacy-policy.html">Privacy Policy</a>
+            <a href="terms-conditions.html">Terms & Conditions</a>
+            <a href="contact.html">Contact</a>
+            <a href="partner-with-us.html">Partner With Us</a>
+        </div>
+    </footer>
+</body>
+</html>
