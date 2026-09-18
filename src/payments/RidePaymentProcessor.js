@@ -40,8 +40,12 @@ class RidePaymentProcessor {
     const waitTimeCharge = waitTimeMinutes * waitTimeRate;
 
     // Total charged to rider upfront
+    // Rider pays: base fare + booking fee + platform fee + wait time
     const totalRiderPay =
-      baseFare + RidePaymentProcessor.FEES.BOOKING_FEE + waitTimeCharge;
+      baseFare +
+      RidePaymentProcessor.FEES.BOOKING_FEE +
+      RidePaymentProcessor.FEES.PLATFORM_FEE +
+      waitTimeCharge;
 
     // Fee distribution
     const platformFee = RidePaymentProcessor.FEES.PLATFORM_FEE;
