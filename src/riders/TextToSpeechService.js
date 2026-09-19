@@ -2,12 +2,52 @@ class TextToSpeechService {
   constructor() {
     this.voices = {
       en: {
-        male: { lang: 'en-US', name: 'Google US English Male' },
-        female: { lang: 'en-US', name: 'Google US English Female' },
+        male: { lang: 'en-US', name: 'English Male' },
+        female: { lang: 'en-US', name: 'English Female' },
       },
       es: {
-        male: { lang: 'es-MX', name: 'Google Mexican Spanish Male' },
-        female: { lang: 'es-MX', name: 'Google Mexican Spanish Female' },
+        male: { lang: 'es-MX', name: 'Spanish (Mexico) Male' },
+        female: { lang: 'es-MX', name: 'Spanish (Mexico) Female' },
+      },
+      pt: {
+        male: { lang: 'pt-BR', name: 'Portuguese (Brazil) Male' },
+        female: { lang: 'pt-BR', name: 'Portuguese (Brazil) Female' },
+      },
+      fr: {
+        male: { lang: 'fr-FR', name: 'French Male' },
+        female: { lang: 'fr-FR', name: 'French Female' },
+      },
+      zh: {
+        male: { lang: 'zh-CN', name: 'Chinese (Mandarin) Male' },
+        female: { lang: 'zh-CN', name: 'Chinese (Mandarin) Female' },
+      },
+      ja: {
+        male: { lang: 'ja-JP', name: 'Japanese Male' },
+        female: { lang: 'ja-JP', name: 'Japanese Female' },
+      },
+      ko: {
+        male: { lang: 'ko-KR', name: 'Korean Male' },
+        female: { lang: 'ko-KR', name: 'Korean Female' },
+      },
+      vi: {
+        male: { lang: 'vi-VN', name: 'Vietnamese Male' },
+        female: { lang: 'vi-VN', name: 'Vietnamese Female' },
+      },
+      tl: {
+        male: { lang: 'tl-PH', name: 'Tagalog Male' },
+        female: { lang: 'tl-PH', name: 'Tagalog Female' },
+      },
+      de: {
+        male: { lang: 'de-DE', name: 'German Male' },
+        female: { lang: 'de-DE', name: 'German Female' },
+      },
+      it: {
+        male: { lang: 'it-IT', name: 'Italian Male' },
+        female: { lang: 'it-IT', name: 'Italian Female' },
+      },
+      ru: {
+        male: { lang: 'ru-RU', name: 'Russian Male' },
+        female: { lang: 'ru-RU', name: 'Russian Female' },
       },
     };
 
