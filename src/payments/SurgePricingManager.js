@@ -67,7 +67,7 @@ class SurgePricingManager {
 
   /**
    * Apply surge pricing to a ride
-   * Returns surge multiplier and premium amount
+   * Returns surge multiplier and premium split: 75% mogo, 25% driver
    */
   applySurge(rideData, timestamp, demand, weather = 'clear') {
     const surgeMultiplier = this.calculateSurgeLevel(timestamp, demand, weather);
@@ -81,19 +81,25 @@ class SurgePricingManager {
         surgedFare: rideData.baseFare,
         baseFare: rideData.baseFare,
         mogoRevenue: 0,
-        driverEarningsUnaffected: true,
+        driverBonus: 0,
       };
     }
 
-    // Calculate surge premium (rider pays extra, mogo keeps 100%)
+    // Calculate surge premium (rider pays extra)
     const surgePremium = rideData.baseFare * (surgeMultiplier - 1);
     const surgedFare = rideData.baseFare * surgeMultiplier;
+
+    // Split surge: 75% to mogo, 25% to driver
+    const mogoShare = surgePremium * 0.75;
+    const driverBonus = surgePremium * 0.25;
 
     // Log surge event
     this.surgeHistory.push({
       timestamp,
       surgeMultiplier,
       surgePremium,
+      mogoRevenue: mogoShare,
+      driverBonus: driverBonus,
       baseFare: rideData.baseFare,
       demand,
       weather,
@@ -105,8 +111,8 @@ class SurgePricingManager {
       surgePremium,
       surgedFare,
       baseFare: rideData.baseFare,
-      mogoRevenue: surgePremium, // 100% to mogo
-      driverEarningsUnaffected: true, // Driver gets normal payment
+      mogoRevenue: mogoShare, // 75% to mogo
+      driverBonus: driverBonus, // 25% to driver as incentive
     };
   }
 

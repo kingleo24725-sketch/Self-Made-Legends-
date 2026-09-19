@@ -7,7 +7,7 @@
  */
 
 const SurgePricingManager = require("./SurgePricingManager");
-const TipsCommissionManager = require("./TipsCommissionManager");
+const PlatformFeeAdjustment = require("./PlatformFeeAdjustment");
 const PremiumFeaturesManager = require("./PremiumFeaturesManager");
 
 console.log("=".repeat(80));
@@ -15,9 +15,9 @@ console.log("PHASE 1 QUICK WINS - INTEGRATION TEST");
 console.log("Combined Revenue from 3 Pure Profit Streams");
 console.log("=".repeat(80));
 
-// Initialize all three managers
+// Initialize all Phase 1 managers
 const surgeMgr = new SurgePricingManager();
-const tipsMgr = new TipsCommissionManager();
+const feeAdj = new PlatformFeeAdjustment();
 const featuresMgr = new PremiumFeaturesManager();
 
 // =============================================================================
@@ -26,30 +26,37 @@ const featuresMgr = new PremiumFeaturesManager();
 console.log("\n📍 TEST 1: Individual Stream Revenue Calculations");
 console.log("-".repeat(80));
 
-// Surge Pricing: 20% of rides with 1.5x multiplier, $12.50 average base fare
-// Target: $2,813/month = $2.50 premium × 1,127 surged rides
+// Surge Pricing: 20% of rides with 1.5x multiplier
+// Split: 75% to mogo, 25% to driver
+// Note: Calculate total premium first, then apply split
 const surgeRevenue = surgeMgr.calculateMonthlySurgeRevenue(1254, 0.20, 12.50);
-const monthlyFromSurge = parseFloat(surgeRevenue.monthlySurgeRevenue);
+// Revenue shown includes both mogo (75%) and driver (25%) portions
+// Extract mogo's share by calculating: premium × 0.75
+const surgePremiumTotal = parseFloat(surgeRevenue.monthlySurgeRevenue);
+const mogoSurgeShare = surgePremiumTotal * 0.75; // Mogo gets 75% of surge premium
+const monthlyFromSurge = mogoSurgeShare;
 
-console.log(`\n1. SURGE PRICING (20% of rides)`);
-console.log(`   Monthly: $${surgeRevenue.monthlySurgeRevenue}`);
-console.log(`   Annual: $${surgeRevenue.annualSurgeRevenue}`);
+console.log(`\n1. SURGE PRICING (20% of rides, 75% mogo / 25% driver split)`);
+console.log(`   Surge Premium Total: $${surgePremiumTotal.toFixed(2)}`);
+console.log(`   Mogo Share (75%): $${mogoSurgeShare.toFixed(2)}/month`);
+console.log(`   Driver Bonus (25%): $${(surgePremiumTotal * 0.25).toFixed(2)}/month`);
+console.log(`   Annual (Mogo): $${(mogoSurgeShare * 12).toFixed(2)}`);
 
-// Tips Commission: 30% take from 25% of rides with $5 average tip
-// Target: $1,879/month = $1,567.50 total tips × 30% = $470.25 (or higher tip rate)
-// Adjusted: 30% of 1,254 rides × $5 tip = $1,890.60 total tips × 30% = $567
-const tipsRevenue = tipsMgr.calculateMonthlyTipsRevenue(1254, 0.30, 5.0);
-const monthlyFromTips = parseFloat(tipsRevenue.monthlyMogoRevenue);
+// Platform Fee Adjustment: +$0.25 platform fee, +$0.25 booking fee per ride
+// 100% goes to mogo, zero driver impact
+const feeAdjustment = feeAdj.calculateMonthlyAdjustmentRevenue(1254);
+const monthlyFromFees = parseFloat(feeAdjustment.monthlyRevenue);
 
-console.log(`\n2. TIPS COMMISSION (25% of rides, 30% take)`);
-console.log(`   Monthly: $${tipsRevenue.monthlyMogoRevenue}`);
-console.log(`   Annual: $${tipsRevenue.annualMogoRevenue}`);
+console.log(`\n2. PLATFORM & BOOKING FEE ADJUSTMENT ($0.25 + $0.25 per ride)`);
+console.log(`   Monthly: $${feeAdjustment.monthlyRevenue}`);
+console.log(`   Annual: $${feeAdjustment.annualRevenue}`);
 
-// Premium Features: 60% of rides with average $3.64 per feature
+// Premium Features: Optional add-ons per ride
+// 5 features with different adoption rates (scheduled, direct message, split, priority, accessibility)
 const featuresRevenue = featuresMgr.calculateMonthlyPremiumRevenue(1254);
 const monthlyFromFeatures = parseFloat(featuresRevenue.totalMonthlyRevenue);
 
-console.log(`\n3. PREMIUM FEATURES (mixed adoption by feature)`);
+console.log(`\n3. PREMIUM FEATURES (5 optional add-ons per ride)`);
 console.log(`   Monthly: $${featuresRevenue.totalMonthlyRevenue}`);
 console.log(`   Annual: $${featuresRevenue.annualRevenue}`);
 
@@ -59,13 +66,13 @@ console.log(`   Annual: $${featuresRevenue.annualRevenue}`);
 console.log("\n\n📍 TEST 2: Combined Monthly Revenue");
 console.log("-".repeat(80));
 
-const combinedMonthly = monthlyFromSurge + monthlyFromTips + monthlyFromFeatures;
+const combinedMonthly = monthlyFromSurge + monthlyFromFees + monthlyFromFeatures;
 const combinedAnnual = combinedMonthly * 12;
 
 console.log(`\nCOMBINED PURE PROFIT REVENUE:\n`);
-console.log(`  Surge Pricing:           $${monthlyFromSurge.toFixed(2).padStart(8)} → $${(monthlyFromSurge * 12).toFixed(2)}/year`);
-console.log(`  Tips Commission:         $${monthlyFromTips.toFixed(2).padStart(8)} → $${(monthlyFromTips * 12).toFixed(2)}/year`);
-console.log(`  Premium Features:        $${monthlyFromFeatures.toFixed(2).padStart(8)} → $${(monthlyFromFeatures * 12).toFixed(2)}/year`);
+console.log(`  Surge Pricing (75% mogo):     $${monthlyFromSurge.toFixed(2).padStart(8)} → $${(monthlyFromSurge * 12).toFixed(2)}/year`);
+console.log(`  Platform/Booking Fee Adj:     $${monthlyFromFees.toFixed(2).padStart(8)} → $${(monthlyFromFees * 12).toFixed(2)}/year`);
+console.log(`  Premium Features:             $${monthlyFromFeatures.toFixed(2).padStart(8)} → $${(monthlyFromFeatures * 12).toFixed(2)}/year`);
 console.log(`  ─────────────────────────────`);
 console.log(`  TOTAL MONTHLY:           $${combinedMonthly.toFixed(2).padStart(8)}`);
 console.log(`  TOTAL ANNUAL:            $${combinedAnnual.toFixed(2)}`);
@@ -96,19 +103,19 @@ console.log("\n\n📍 TEST 4: Revenue Distribution Breakdown");
 console.log("-".repeat(80));
 
 const surgePercent = (monthlyFromSurge / combinedMonthly) * 100;
-const tipsPercent = (monthlyFromTips / combinedMonthly) * 100;
+const feesPercent = (monthlyFromFees / combinedMonthly) * 100;
 const featuresPercent = (monthlyFromFeatures / combinedMonthly) * 100;
 
 console.log(`\nRevenue Mix:\n`);
-console.log(`  Surge Pricing:    ${surgePercent.toFixed(1)}% ($${monthlyFromSurge.toFixed(2)})`);
-console.log(`  Tips Commission:  ${tipsPercent.toFixed(1)}% ($${monthlyFromTips.toFixed(2)})`);
-console.log(`  Premium Features: ${featuresPercent.toFixed(1)}% ($${monthlyFromFeatures.toFixed(2)})`);
+console.log(`  Surge Pricing (75%):      ${surgePercent.toFixed(1)}% ($${monthlyFromSurge.toFixed(2)})`);
+console.log(`  Platform/Booking Fees:    ${feesPercent.toFixed(1)}% ($${monthlyFromFees.toFixed(2)})`);
+console.log(`  Premium Features:         ${featuresPercent.toFixed(1)}% ($${monthlyFromFeatures.toFixed(2)})`);
 
 // Create visual bar chart
 console.log(`\nVisual Distribution:`);
 const barLength = 50;
 console.log(`  Surge      ${'█'.repeat(Math.round(barLength * surgePercent / 100))}${' '.repeat(barLength - Math.round(barLength * surgePercent / 100))}`);
-console.log(`  Tips       ${'█'.repeat(Math.round(barLength * tipsPercent / 100))}${' '.repeat(barLength - Math.round(barLength * tipsPercent / 100))}`);
+console.log(`  Fees       ${'█'.repeat(Math.round(barLength * feesPercent / 100))}${' '.repeat(barLength - Math.round(barLength * feesPercent / 100))}`);
 console.log(`  Features   ${'█'.repeat(Math.round(barLength * featuresPercent / 100))}${' '.repeat(barLength - Math.round(barLength * featuresPercent / 100))}`);
 
 // =============================================================================
@@ -120,12 +127,12 @@ console.log("-".repeat(80));
 // Simulate a realistic month with all three streams
 let simulatedRevenue = {
   surge: 0,
-  tips: 0,
+  fees: 0,
   features: 0,
 };
 
 for (let i = 0; i < 1254; i++) {
-  // Random surge (20% chance with 1.5x)
+  // Random surge (20% chance with 1.5x, split 75/25)
   if (Math.random() < 0.20) {
     const baseFare = 15 + Math.random() * 20;
     const surge = surgeMgr.applySurge(
@@ -134,15 +141,12 @@ for (let i = 0; i < 1254; i++) {
       100 + Math.random() * 150,
       Math.random() > 0.85 ? 'rain' : 'clear'
     );
-    simulatedRevenue.surge += surge.surgePremium;
+    simulatedRevenue.surge += surge.mogoRevenue; // Mogo's 75% share
   }
 
-  // Random tip (25% chance with $5 average)
-  if (Math.random() < 0.25) {
-    const tip = 2 + Math.random() * 8;
-    const tipProcessing = tipsMgr.processTip(`ride_${i}`, tip, `driver_${i}@mogo.app`);
-    simulatedRevenue.tips += tipProcessing.mogoRevenue;
-  }
+  // Platform/Booking fee adjustment ($0.50 per ride)
+  const feeAdjRow = feeAdj.calculateAdjustmentForRide(`ride_${i}`);
+  simulatedRevenue.fees += feeAdjRow.mogoRevenue;
 
   // Random premium features (60% chance)
   if (Math.random() < 0.60) {
@@ -160,12 +164,12 @@ for (let i = 0; i < 1254; i++) {
   }
 }
 
-const simulatedTotal = simulatedRevenue.surge + simulatedRevenue.tips + simulatedRevenue.features;
+const simulatedTotal = simulatedRevenue.surge + simulatedRevenue.fees + simulatedRevenue.features;
 
 console.log(`\nSimulated Monthly Results (1,254 rides):\n`);
-console.log(`  Surge Pricing:    $${simulatedRevenue.surge.toFixed(2)}`);
-console.log(`  Tips Commission:  $${simulatedRevenue.tips.toFixed(2)}`);
-console.log(`  Premium Features: $${simulatedRevenue.features.toFixed(2)}`);
+console.log(`  Surge Pricing (75% mogo): $${simulatedRevenue.surge.toFixed(2)}`);
+console.log(`  Platform/Booking Fees:    $${simulatedRevenue.fees.toFixed(2)}`);
+console.log(`  Premium Features:         $${simulatedRevenue.features.toFixed(2)}`);
 console.log(`  ─────────────────────────────`);
 console.log(`  Total Simulated:  $${simulatedTotal.toFixed(2)}`);
 console.log(`  Calculated Total: $${combinedMonthly.toFixed(2)}`);
@@ -181,25 +185,25 @@ console.log(`\nPhase 1 Quick Wins - Implementation Timeline:\n`);
 
 const streams = [
   {
-    name: 'Surge Pricing',
+    name: 'Surge Pricing (75% mogo / 25% driver)',
     monthlyRevenue: monthlyFromSurge,
     devTime: '3-5 days',
     complexity: 'Low',
-    affectsDriver: false,
+    driverImpact: 'Positive (25% bonus)',
   },
   {
-    name: 'Tips Commission',
-    monthlyRevenue: monthlyFromTips,
+    name: 'Platform & Booking Fee Adjustment',
+    monthlyRevenue: monthlyFromFees,
     devTime: '1-2 days',
     complexity: 'Very Low',
-    affectsDriver: false,
+    driverImpact: 'None',
   },
   {
-    name: 'Premium Features',
+    name: 'Premium Features (5 add-ons)',
     monthlyRevenue: monthlyFromFeatures,
     devTime: '4-6 days',
     complexity: 'Medium',
-    affectsDriver: false,
+    driverImpact: 'None',
   },
 ];
 
@@ -208,7 +212,7 @@ streams.forEach((stream, idx) => {
   console.log(`   Monthly Revenue: $${stream.monthlyRevenue.toFixed(2)}`);
   console.log(`   Dev Time: ${stream.devTime}`);
   console.log(`   Complexity: ${stream.complexity}`);
-  console.log(`   Driver Impact: ${stream.affectsDriver ? 'YES - May affect payouts' : 'NONE - Pure profit'}`);
+  console.log(`   Driver Impact: ${stream.driverImpact}`);
   console.log(`   ROI: Excellent (passive revenue)`);
   console.log("");
 });
@@ -219,12 +223,12 @@ streams.forEach((stream, idx) => {
 console.log("\n📍 TEST 7: Pure Profit Characteristics");
 console.log("-".repeat(80));
 
-console.log(`\nWhy Phase 1 is 100% Pure Profit:\n`);
-console.log(`✓ NO driver payout changes`);
-console.log(`✓ NO rider subscription costs`);
-console.log(`✓ NO infrastructure investment`);
-console.log(`✓ NO ongoing support costs`);
-console.log(`✓ NO customer acquisition needed`);
+console.log(`\nWhy Phase 1 Generates Strong Revenue:\n`);
+console.log(`✓ Surge pricing INCENTIVIZES drivers (25% bonus)`);
+console.log(`✓ Mogo KEEPS 75% of surge premium`);
+console.log(`✓ NO driver payout to tips`);
+console.log(`✓ Platform fee adjustment has NO driver impact`);
+console.log(`✓ Premium features benefit both parties`);
 console.log(`✓ Leverages existing platform`);
 console.log(`✓ Implemented in 1-4 weeks`);
 console.log(`✓ Scalable with minimal marginal cost`);
